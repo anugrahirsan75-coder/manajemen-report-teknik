@@ -1,0 +1,90 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --asdp: #16357f;
+  --asdp-green: #7cc242;
+  --asdp-teal: #14b8c4;
+  --asdp-blue: #1ca3dd;
+}
+
+body {
+  background:
+    radial-gradient(900px 500px at 100% -5%, rgba(28, 163, 221, 0.10), transparent 55%),
+    radial-gradient(800px 500px at -5% 0%, rgba(124, 194, 66, 0.10), transparent 55%),
+    #eef2f7;
+  background-attachment: fixed;
+  color: #0f172a;
+}
+
+/* gradient brand ASDP */
+.asdp-gradient {
+  background: linear-gradient(100deg, #7cc242 0%, #14b8c4 45%, #1ca3dd 75%, #16357f 100%);
+}
+.asdp-text-gradient {
+  background: linear-gradient(100deg, #14b8c4, #16357f);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.glass {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+.card-hover {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 30px -8px rgba(22, 53, 127, 0.25);
+}
+@keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* ====== Print / PDF — A4 ====== */
+@media print {
+  body {
+    background: #fff;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-page {
+    box-shadow: none !important;
+    margin: 0 !important;
+    border: none !important;
+  }
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
+}
+
+/* Lembar dokumen tampil seperti kertas A4 */
+.print-page {
+  background: #fff;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 16px auto;
+  padding: 18mm 16mm;
+  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.15);
+  font-family: "Times New Roman", Times, serif;
+  font-size: 12pt;
+  line-height: 1.4;
+  color: #000;
+}
+.print-page.landscape {
+  width: 297mm;
+  min-height: 210mm;
+}
+.doc-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.doc-table th,
+.doc-table td {
+  border: 1px solid #000;
+  padding: 3px 5px;
+  vertical-align: top;
+}
