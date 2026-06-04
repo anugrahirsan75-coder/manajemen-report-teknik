@@ -1,6 +1,7 @@
 param(
   [Parameter(Mandatory=$true)][string]$In,
-  [Parameter(Mandatory=$true)][string]$Out
+  [Parameter(Mandatory=$true)][string]$Out,
+  [string]$Sheet = ""
 )
 $ErrorActionPreference = "Stop"
 $ext = [System.IO.Path]::GetExtension($In).ToLower()
@@ -25,8 +26,13 @@ elseif ($ext -eq ".xlsx" -or $ext -eq ".xls") {
   $app.DisplayAlerts = $false
   try {
     $wb = $app.Workbooks.Open($In, $false, $true)
-    # 0 = xlTypePDF
-    $wb.ExportAsFixedFormat(0, $Out)
+    # 0 = xlTypePDF. Jika -Sheet diisi, ekspor sheet itu saja.
+    if ($Sheet -ne "") {
+      $ws = $wb.Worksheets.Item($Sheet)
+      $ws.ExportAsFixedFormat(0, $Out)
+    } else {
+      $wb.ExportAsFixedFormat(0, $Out)
+    }
     $wb.Close($false)
   } finally {
     $app.Quit()

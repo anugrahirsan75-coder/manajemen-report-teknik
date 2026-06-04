@@ -42,6 +42,37 @@ body {
 }
 @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 
+/* ====== DARK MODE (chrome app saja; preview dokumen .print-page tetap putih) ====== */
+.dark body {
+  background:
+    radial-gradient(900px 500px at 100% -5%, rgba(28, 163, 221, 0.10), transparent 55%),
+    radial-gradient(800px 500px at -5% 0%, rgba(124, 194, 66, 0.08), transparent 55%),
+    #0b1220;
+  color: #e5e7eb;
+}
+.dark .glass { background: rgba(17, 24, 39, 0.8); }
+.dark .bg-white { background-color: #111827; }
+.dark .bg-slate-50 { background-color: #0f172a; }
+.dark .bg-slate-100 { background-color: #1e293b; }
+.dark .bg-sky-50 { background-color: rgba(2, 132, 199, 0.14); }
+.dark .bg-blue-50 { background-color: rgba(37, 99, 235, 0.16); }
+.dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.14); }
+.dark .text-slate-800 { color: #e5e7eb; }
+.dark .text-slate-700 { color: #d1d5db; }
+.dark .text-slate-600 { color: #cbd5e1; }
+.dark .text-slate-500 { color: #94a3b8; }
+.dark .text-slate-400 { color: #6b7280; }
+.dark .border, .dark .border-slate-100, .dark .border-slate-200, .dark .border-slate-300, .dark .border-sky-200 { border-color: #334155; }
+.dark input, .dark select, .dark textarea { background-color: #0f172a; color: #e5e7eb; border-color: #334155; }
+.dark kbd { background-color: #1e293b; color: #e5e7eb; border-color: #334155; }
+
+/* reset: jangan gelapkan isi preview dokumen (kertas A4) */
+.dark .print-page { background: #fff; color: #000; }
+.dark .print-page input { background: transparent; color: #000; }
+.dark .print-page .bg-blue-50 { background-color: #eff6ff; }
+.dark .print-page .bg-slate-100 { background-color: #f1f5f9; }
+.dark .print-page .text-slate-400 { color: #94a3b8; }
+
 /* ====== Print / PDF — A4 ====== */
 @media print {
   body {

@@ -84,6 +84,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       const { data: rows, error } = await supabase
         .from("projects")
         .select("*")
+        .filter("payload->>kind", "is", null)
         .order("created_at", { ascending: false })
         .limit(1);
       if (error) throw error;

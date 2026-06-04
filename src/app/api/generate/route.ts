@@ -4,28 +4,10 @@ import os from "os";
 import path from "path";
 import { spawn } from "child_process";
 import { ProjectData } from "@/lib/types";
-import { fillSpkDocx } from "@/lib/server/fillSpk";
-import { XLSX_FILLERS } from "@/lib/server/fillXlsx";
+import { META, buildNative, safeBase } from "@/lib/server/build";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
-
-const META: Record<string, { label: string; ext: "docx" | "xlsx" }> = {
-  spk: { label: "01. SPK Swakelola", ext: "docx" },
-  ba: { label: "02. BA Swakelola", ext: "xlsx" },
-  perhitungan: { label: "03. Daftar Perhitungan", ext: "xlsx" },
-  lampiran: { label: "04. Lampiran", ext: "xlsx" },
-  nominatif: { label: "05. Daftar Nominatif PPH21", ext: "xlsx" },
-  spkh: { label: "07. SPKH", ext: "xlsx" },
-  dokumentasi: { label: "08. Dokumentasi", ext: "xlsx" },
-};
-
-async function buildNative(slug: string, data: ProjectData): Promise<Buffer> {
-  if (slug === "spk") return fillSpkDocx(data);
-  const filler = XLSX_FILLERS[slug];
-  if (!filler) throw new Error("slug tidak dikenal: " + slug);
-  return filler(data);
-}
 
 function convertToPdf(input: string, output: string): Promise<void> {
   const script = path.join(process.cwd(), "scripts", "to-pdf.ps1");
@@ -46,7 +28,7 @@ export async function POST(req: NextRequest) {
     const meta = META[slug];
     if (!meta) return NextResponse.json({ error: "slug tidak dikenal" }, { status: 400 });
 
-    const baseName = `${meta.label} ${data.namaKapal} ${data.tahun}`.replace(/[\\/:*?"<>|]/g, "");
+    const baseName = safeBase(`${meta.label} ${data.namaKapal} ${data.tahun}`);
     const native = await buildNative(slug, data);
 
     if (format === "native") {

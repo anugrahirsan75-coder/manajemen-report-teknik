@@ -34,6 +34,19 @@ export function rupiahRp(n: number): string {
   return `Rp ${rupiah(n)}`;
 }
 
+// "2026-05-10" -> "Mei 2026"
+export function bulanTahun(iso: string): string {
+  if (!iso) return "";
+  const [y, m] = iso.split("-").map(Number);
+  return `${BULAN[m - 1]} ${y}`;
+}
+const ROMAWI = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+export function bulanRomawi(iso: string): string {
+  if (!iso) return "";
+  const m = Number(iso.split("-")[1]);
+  return ROMAWI[m - 1] ?? "";
+}
+
 const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
 export function namaHari(iso: string): string {
   if (!iso) return "";

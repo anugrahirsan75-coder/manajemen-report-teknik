@@ -22,6 +22,31 @@ export default function IsiData() {
     update({ crew: data.crew.filter((_, idx) => idx !== i).map((c, idx) => ({ ...c, no: idx + 1 })) });
   };
 
+  // "1.386.745" / "Rp 1,386,745" -> 1386745
+  const toInt = (s: string) => { const d = (s || "").replace(/[^\d]/g, ""); return d ? parseInt(d, 10) : 0; };
+
+  // paste blok dari Excel mulai dari (row=startRow, col=startCol)
+  // urutan kolom: Nama | Jabatan | NIK | NPWP | Nilai Bruto | PPH 21
+  const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
+    const text = e.clipboardData.getData("text/plain");
+    if (!text || (!text.includes("\t") && !text.includes("\n"))) return; // biar paste sel tunggal normal
+    e.preventDefault();
+    const rows = text.replace(/\r/g, "").replace(/\n$/, "").split("\n").map((r) => r.split("\t"));
+    const fields: (keyof CrewMember)[] = ["nama", "jabatan", "nik", "npwp", "nilaiBruto", "pph21"];
+    const next = [...data.crew];
+    rows.forEach((cells, ri) => {
+      const idx = startRow + ri;
+      if (!next[idx]) next[idx] = { no: idx + 1, nama: "", jabatan: "", nik: "", npwp: "", nilaiBruto: 0, pph21: 0 };
+      cells.forEach((val, ci) => {
+        const f = fields[startCol + ci];
+        if (!f) return;
+        if (f === "nilaiBruto" || f === "pph21") (next[idx] as any)[f] = toInt(val);
+        else (next[idx] as any)[f] = val.trim();
+      });
+    });
+    update({ crew: next.map((c, i) => ({ ...c, no: i + 1 })) });
+  };
+
   const totalBruto = data.crew.reduce((s, c) => s + (c.nilaiBruto || 0), 0);
   const totalPph = data.crew.reduce((s, c) => s + (c.pph21 || 0), 0);
 
@@ -124,8 +149,11 @@ export default function IsiData() {
       </Section>
 
       <Section title={`Crew Kapal (${data.crew.length})`} icon="👥">
+        <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-3 text-sm text-slate-700">
+          <b className="text-sky-800">📋 Paste dari Excel:</b> blok sel di Excel (urutan kolom <b>Nama · Jabatan · NIK · NPWP · Nilai Bruto · PPH 21</b>) → klik sel mana pun di tabel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>. Baris dibuat otomatis. Tak harus mulai dari kolom Nama — paste menyesuaikan kolom tempat kamu klik.
+        </div>
         <p className="text-xs text-slate-500 mb-3">
-          Nilai Bruto & PPH 21 bisa diisi manual, atau pakai tombol OCR di dokumen <b>Daftar Perhitungan</b>. Penerimaan Bersih = otomatis.
+          Nilai Bruto & PPH 21 juga bisa manual / OCR (dokumen <b>Daftar Perhitungan</b>) / <b>Perhitungan Swakelola</b>. Penerimaan Bersih = otomatis.
         </p>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
@@ -146,12 +174,12 @@ export default function IsiData() {
               {data.crew.map((c, i) => (
                 <tr key={i}>
                   <td className="border p-1 text-center w-8">{c.no}</td>
-                  <td className="border p-1"><input className="w-40 px-1" value={c.nama} onChange={(e) => setCrew(i, { nama: e.target.value })} /></td>
-                  <td className="border p-1"><input className="w-32 px-1" value={c.jabatan} onChange={(e) => setCrew(i, { jabatan: e.target.value })} /></td>
-                  <td className="border p-1"><input className="w-24 px-1" value={c.nik} onChange={(e) => setCrew(i, { nik: e.target.value })} /></td>
-                  <td className="border p-1"><input className="w-32 px-1" value={c.npwp} onChange={(e) => setCrew(i, { npwp: e.target.value })} /></td>
-                  <td className="border p-1"><input type="number" className="w-24 px-1 text-right" value={c.nilaiBruto} onChange={(e) => setCrew(i, { nilaiBruto: +e.target.value })} /></td>
-                  <td className="border p-1"><input type="number" className="w-20 px-1 text-right" value={c.pph21} onChange={(e) => setCrew(i, { pph21: +e.target.value })} /></td>
+                  <td className="border p-1"><input className="w-40 px-1" value={c.nama} onChange={(e) => setCrew(i, { nama: e.target.value })} onPaste={(e) => handlePaste(i, 0, e)} /></td>
+                  <td className="border p-1"><input className="w-32 px-1" value={c.jabatan} onChange={(e) => setCrew(i, { jabatan: e.target.value })} onPaste={(e) => handlePaste(i, 1, e)} /></td>
+                  <td className="border p-1"><input className="w-24 px-1" value={c.nik} onChange={(e) => setCrew(i, { nik: e.target.value })} onPaste={(e) => handlePaste(i, 2, e)} /></td>
+                  <td className="border p-1"><input className="w-32 px-1" value={c.npwp} onChange={(e) => setCrew(i, { npwp: e.target.value })} onPaste={(e) => handlePaste(i, 3, e)} /></td>
+                  <td className="border p-1"><input type="number" className="w-24 px-1 text-right" value={c.nilaiBruto} onChange={(e) => setCrew(i, { nilaiBruto: +e.target.value })} onPaste={(e) => handlePaste(i, 4, e)} /></td>
+                  <td className="border p-1"><input type="number" className="w-20 px-1 text-right" value={c.pph21} onChange={(e) => setCrew(i, { pph21: +e.target.value })} onPaste={(e) => handlePaste(i, 5, e)} /></td>
                   <td className="border p-1 text-right text-slate-500 w-24">{rupiah(penerimaanBersih(c))}</td>
                   <td className="border p-1 text-center"><button onClick={() => delCrew(i)} className="text-red-500 text-xs">hapus</button></td>
                 </tr>

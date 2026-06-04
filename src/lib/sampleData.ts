@@ -71,4 +71,15 @@ export const sampleData: ProjectData = {
     { no: "3", uraian: "Pengecetan seluruh area kamar mesin", qty: 1, satuan: "Ls", hasil: "100%", ket: "Selesai" },
   ],
   fotoDok: [],
+  distribusi: {
+    nilaiSwakelola: 13245000,
+    groups: [
+      { label: "Nakhoda / KKM", keywords: ["Nakhoda", "KKM", "Masinis I"], bobot: 24, jumlah: 2 },
+      { label: "Mualim I / Masinis II", keywords: ["Mualim I", "Masinis II"], bobot: 20, jumlah: 2 },
+      { label: "Perwira", keywords: ["Mualim II", "Mualim III", "Masinis III", "Masinis IV", "Owner Surveyor"], bobot: 17, jumlah: 4 },
+      { label: "Serang / Mandor", keywords: ["Serang", "Mandor"], bobot: 14, jumlah: 1 },
+      { label: "Juru Mudi / Juru Oliman", keywords: ["Juru Mudi", "Juru Minyak", "Oliman"], bobot: 13, jumlah: 5 },
+      { label: "Kelasi / Juru Masak", keywords: ["Kelasi", "Juru Masak"], bobot: 12, jumlah: 3 },
+    ],
+  },
 };

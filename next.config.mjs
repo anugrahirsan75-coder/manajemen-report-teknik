@@ -5,6 +5,11 @@ const nextConfig = {
   experimental: {
     outputFileTracingIncludes: {
       "/api/generate": ["./templates/**/*"],
+      "/api/generate-all": ["./templates/**/*"],
+      "/api/material/generate": ["./templates/material/**/*"],
+      "/api/material/generate-all": ["./templates/material/**/*"],
+      "/api/sppbj/generate": ["./templates/sppbj/**/*"],
+      "/api/sppbj/generate-all": ["./templates/sppbj/**/*"],
     },
   },
 };

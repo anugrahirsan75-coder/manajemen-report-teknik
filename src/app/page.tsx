@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { formatNomorSpk } from "@/lib/types";
 import { rupiahRp, tanggalIndo } from "@/lib/format";
+import { generateAll } from "@/lib/generateClient";
 
 const DOKUMEN = [
   { slug: "spk", no: "01", nama: "SPK Swakelola Docking", fmt: ["PDF", "Word"], icon: "📋", accent: "from-blue-500 to-indigo-600" },
@@ -26,6 +28,17 @@ const badgeColor: Record<string, string> = {
 
 export default function Home() {
   const { data, supabaseReady } = useStore();
+  const [zipBusy, setZipBusy] = useState(false);
+  const onGenerateAll = async () => {
+    setZipBusy(true);
+    try {
+      await generateAll(data);
+    } catch (e: any) {
+      alert("Gagal generate semua: " + (e?.message ?? e));
+    } finally {
+      setZipBusy(false);
+    }
+  };
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       {/* Hero */}
@@ -61,6 +74,25 @@ export default function Home() {
             ✏️ Isi / Ubah Data
           </Link>
         </div>
+      </section>
+
+      {/* Aksi cepat */}
+      <section className="mt-4 grid sm:grid-cols-2 gap-4">
+        <button onClick={onGenerateAll} disabled={zipBusy}
+          className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 text-left disabled:opacity-60">
+          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 grid place-items-center text-2xl text-white shadow-md shrink-0">🗂️</div>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800">{zipBusy ? "Menyiapkan ZIP…" : "Generate Semua"}</p>
+            <p className="text-xs text-slate-400">Unduh 8 file Word + Excel sekaligus (.zip)</p>
+          </div>
+        </button>
+        <Link href="/distribusi" className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 grid place-items-center text-2xl text-white shadow-md shrink-0">📐</div>
+          <div className="min-w-0">
+            <p className="font-semibold text-slate-800">Perhitungan Swakelola</p>
+            <p className="text-xs text-slate-400">Bagi total nilai per golongan → isi Nilai Bruto crew otomatis</p>
+          </div>
+        </Link>
       </section>
 
       {/* Dokumen */}

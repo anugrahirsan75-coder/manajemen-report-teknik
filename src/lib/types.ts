@@ -31,6 +31,53 @@ export interface DokFoto {
   dataUrl: string; // base64 image
 }
 
+// Perhitungan distribusi swakelola: total nilai dibagi per golongan jabatan (bobot)
+export interface DistribusiGroup {
+  label: string;
+  keywords: string[]; // cocokkan ke jabatan crew (contains, case-insensitive)
+  bobot: number;
+  jumlah: number; // jumlah karyawan golongan ini
+}
+
+export interface Distribusi {
+  nilaiSwakelola: number;
+  groups: DistribusiGroup[];
+}
+
+export interface DistribusiRow extends DistribusiGroup {
+  jmlhxBobot: number;
+  persentase: number; // 0..1
+  besaran: number; // besaran/level per golongan
+  brutoPerOrang: number;
+}
+
+export function hitungDistribusi(d: Distribusi): { rows: DistribusiRow[]; totalBobot: number; totalKaryawan: number; totalBruto: number } {
+  const totalBobot = d.groups.reduce((s, g) => s + g.jumlah * g.bobot, 0) || 1;
+  const totalKaryawan = d.groups.reduce((s, g) => s + g.jumlah, 0);
+  let totalBruto = 0;
+  const rows = d.groups.map((g) => {
+    const jmlhxBobot = g.jumlah * g.bobot;
+    const persentase = jmlhxBobot / totalBobot;
+    const besaran = persentase * d.nilaiSwakelola;
+    const brutoPerOrang = g.jumlah > 0 ? besaran / g.jumlah : 0;
+    totalBruto += besaran;
+    return { ...g, jmlhxBobot, persentase, besaran, brutoPerOrang };
+  });
+  return { rows, totalBobot, totalKaryawan, totalBruto };
+}
+
+// bruto per orang untuk jabatan tertentu (cari golongan yang keyword-nya cocok)
+export function brutoUntukJabatan(d: Distribusi, jabatan: string): number | null {
+  const { rows } = hitungDistribusi(d);
+  const j = jabatan || "";
+  // word-boundary match supaya "Masinis II" tidak ketukar "Masinis I"
+  const cocok = (k: string) => new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(j);
+  for (const r of rows) {
+    if (r.keywords.some(cocok)) return Math.round(r.brutoPerOrang);
+  }
+  return null;
+}
+
 export interface ProjectData {
   id?: string;
   // --- identitas umum ---
@@ -71,6 +118,8 @@ export interface ProjectData {
   pekerjaanMesin: PekerjaanItem[];
   // dokumentasi foto (file 7)
   fotoDok: DokFoto[];
+  // perhitungan distribusi swakelola (opsional)
+  distribusi?: Distribusi;
 }
 
 // Nomor SPK lengkap terformat
