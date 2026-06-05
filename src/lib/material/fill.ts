@@ -124,19 +124,119 @@ function fillPenawaranRows(ws: ExcelJS.Worksheet, items: MaterialItem[], firstRo
   return total;
 }
 
+// urutan kapal utk SC: KAPAL_DB dulu, lalu kapal lain yg muncul (tak hilang)
+function scGroups(items: MaterialItem[]): { kapal: string; items: MaterialItem[] }[] {
+  const order = KAPAL_DB.map((k) => k.nama);
+  const seen = new Set<string>();
+  const groups: { kapal: string; items: MaterialItem[] }[] = [];
+  const push = (nama: string) => {
+    if (seen.has(nama)) return;
+    const its = items.filter((i) => (i.kapal || "").trim() === nama);
+    if (its.length) { groups.push({ kapal: nama, items: its }); seen.add(nama); }
+  };
+  order.forEach(push);
+  items.forEach((i) => push((i.kapal || "").trim() || "(Tanpa Kapal)"));
+  return groups;
+}
+
 // ---------- 3. Penawaran Suku Cadang ----------
+// Dikelompokkan per KAPAL (header) + per MESIN (sub-header) + spasi 1 baris antar kapal,
+// nomor item berurutan menerus. Total/PPn/Grand & penutup digeser mengikuti jumlah baris.
 export async function fillPenawaranSC(req: MaterialRequest): Promise<Buffer> {
   const wb = await load("3_penawaran_sc.xlsx");
   const ws = wb.getWorksheet("Table 1")!;
   const items = req.items.filter((i) => itemKategori(i) === "SC");
-  // No surat di blok B2
   const noBaru = `CTT/E/${req.noPenawaran}/${bulanRomawi(req.tanggal)}/${req.tanggal.slice(0, 4)}`;
   replaceRich(ws.getCell("B2"), [
     [/CTT\/E\/[^\n\/]*\/[IVX]+\/\d{4}/g, noBaru],
     [/Pengadaan Suku Cadang KMP\.[^\n]*?Tahun \d{4}/g, `${req.judulSC} ${bulanTahun(req.tanggal)}`],
   ]);
-  // kolom Spesifikasi = part number item suku cadang
-  fillPenawaranRows(ws, items, 4, 15, (it) => it.partNumber || "");
+
+  const COLS = ["B", "C", "D", "E", "F", "G", "H", "I"];
+  const FIRST = 4;
+  // tangkap style template SEBELUM diutak-atik
+  const itemStyle: Record<string, any> = {};
+  COLS.forEach((c) => (itemStyle[c] = ws.getCell(`${c}${FIRST}`).style));
+  const styG = ws.getCell("G19").style;   // label total
+  const styH = ws.getCell("H19").style;   // nilai total (H:I)
+  const closeVal = ws.getCell("A22").value;
+  const closeStyle = ws.getCell("A22").style;
+
+  // lepas semua merge baris >=3 (kecuali header surat A1/B2), lalu kosongkan area
+  for (const range of [...(ws.model.merges || [])]) {
+    const top = parseInt(range.split(":")[0].replace(/[A-Z]+/, ""), 10);
+    if (top >= 3 && range !== "B2") { try { ws.unMergeCells(range); } catch {} }
+  }
+  for (let r = FIRST; r <= 60; r++) {
+    "ABCDEFGHI".split("").forEach((c) => { ws.getCell(`${c}${r}`).value = null; });
+  }
+
+  const styleRow = (r: number, extra?: (c: string, cell: ExcelJS.Cell) => void) =>
+    COLS.forEach((c) => { const cell = ws.getCell(`${c}${r}`); cell.style = { ...itemStyle[c] }; extra?.(c, cell); });
+  const mergeHI = (r: number) => { try { ws.mergeCells(`H${r}:I${r}`); } catch {} };
+
+  let r = FIRST, no = 1, firstItem = 0, lastItem = 0;
+  const groups = scGroups(items);
+  groups.forEach((g, gi) => {
+    // header KAPAL (B:I merged, bold, fill kuning muda)
+    styleRow(r, (c, cell) => {
+      cell.font = { ...(itemStyle[c].font || {}), bold: true };
+      cell.alignment = { horizontal: "center", vertical: "middle" };
+      cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFFE599" } };
+    });
+    ws.getCell(`B${r}`).value = g.kapal;
+    try { ws.mergeCells(`B${r}:I${r}`); } catch {}
+    r++;
+
+    // kelompok per mesin (sub-header) urut kemunculan
+    const order: string[] = [];
+    const byMesin: Record<string, MaterialItem[]> = {};
+    for (const it of g.items) {
+      const key = it.namaMesin?.trim() || "(Tanpa Mesin)";
+      if (!byMesin[key]) { byMesin[key] = []; order.push(key); }
+      byMesin[key].push(it);
+    }
+    for (const mesin of order) {
+      if (mesin !== "(Tanpa Mesin)") {
+        styleRow(r, (c, cell) => { if (c === "E") cell.font = { ...(itemStyle.E.font || {}), bold: true, italic: true }; });
+        ws.getCell(`E${r}`).value = mesin;
+        r++;
+      }
+      for (const it of byMesin[mesin]) {
+        styleRow(r);
+        ws.getCell(`B${r}`).value = no;
+        ws.getCell(`C${r}`).value = it.qty;
+        ws.getCell(`D${r}`).value = it.satuan;
+        ws.getCell(`E${r}`).value = it.nama;
+        ws.getCell(`F${r}`).value = it.partNumber || "";
+        ws.getCell(`G${r}`).value = it.harga;
+        ws.getCell(`H${r}`).value = { formula: `G${r}*C${r}` };
+        mergeHI(r);
+        if (!firstItem) firstItem = r;
+        lastItem = r;
+        no++; r++;
+      }
+    }
+    if (gi < groups.length - 1) r++; // spasi 1 baris antar kapal
+  });
+
+  // blok Total / PPn / Grand Total (geser mengikuti) + penutup
+  r++; // 1 baris jarak sebelum total
+  const sumRange = firstItem ? `SUM(H${firstItem}:H${lastItem})` : "0";
+  const totalRow = r;
+  ws.getCell(`G${r}`).style = styG; ws.getCell(`G${r}`).value = "Total";
+  ws.getCell(`H${r}`).style = styH; ws.getCell(`H${r}`).value = { formula: sumRange }; mergeHI(r); r++;
+  const pphRow = r;
+  ws.getCell(`G${r}`).style = styG; ws.getCell(`G${r}`).value = "PPn 11%";
+  ws.getCell(`H${r}`).style = styH; ws.getCell(`H${r}`).value = { formula: `11%*H${totalRow}` }; mergeHI(r); r++;
+  ws.getCell(`G${r}`).style = styG; ws.getCell(`G${r}`).value = "Grand Total";
+  ws.getCell(`H${r}`).style = styH; ws.getCell(`H${r}`).value = { formula: `H${totalRow}+H${pphRow}` }; mergeHI(r); r++;
+
+  r++; // jarak sebelum penutup
+  ws.getCell(`A${r}`).value = closeVal as any;
+  ws.getCell(`A${r}`).style = closeStyle;
+  try { ws.mergeCells(`A${r}:I${r}`); } catch {}
+
   applyFit(ws, 1);
   return out(wb);
 }

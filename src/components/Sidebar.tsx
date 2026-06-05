@@ -30,6 +30,7 @@ const SWAKELOLA_SUB = [
 
 const MATERIAL_SUB = [
   { href: "/material", label: "Dashboard", icon: "🏠" },
+  { href: "/material/cek", label: "Cek Kode Material", icon: "🔎" },
   { href: "/material/isi", label: "Input Item", icon: "✏️" },
 ];
 

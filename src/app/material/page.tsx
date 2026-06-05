@@ -31,7 +31,11 @@ export default function MaterialDashboard() {
         </div>
       </div>
 
-      <section className="mt-5 grid sm:grid-cols-2 gap-4">
+      <section className="mt-5 grid sm:grid-cols-3 gap-4">
+        <Link href="/material/cek" className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-600 grid place-items-center text-2xl text-white shadow-md">🔎</div>
+          <div><p className="font-semibold text-slate-800">Cek Kode Material</p><p className="text-xs text-slate-400">Cek item sudah punya kode (SAP) atau belum</p></div>
+        </Link>
         <Link href="/material/isi" className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 grid place-items-center text-2xl text-white shadow-md">✏️</div>
           <div><p className="font-semibold text-slate-800">Input Item</p><p className="text-xs text-slate-400">Tambah/ubah item, kode, harga, kapal</p></div>

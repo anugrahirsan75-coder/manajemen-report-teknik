@@ -74,6 +74,7 @@ export default function MaterialIsi() {
         <datalist id="kapalList">
           {KAPAL_DB.map((k) => <option key={k.nama} value={k.nama} />)}
         </datalist>
+        <button onClick={() => addItem()} className="mb-3 text-sm border px-3 py-1.5 rounded-lg">+ Tambah Item</button>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">
@@ -115,7 +116,6 @@ export default function MaterialIsi() {
             </tbody>
           </table>
         </div>
-        <button onClick={() => addItem()} className="mt-3 text-sm border px-3 py-1.5 rounded-lg">+ Tambah Item</button>
       </Section>
 
       <div className="flex justify-end">
