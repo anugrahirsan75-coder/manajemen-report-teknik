@@ -5,13 +5,19 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
 import { STATUS_LABEL, STATUS_COLOR, SppbjStatus } from "@/lib/sppbj/types";
-import { tanggalIndo } from "@/lib/format";
+import { tanggalIndo, bulanTahun } from "@/lib/format";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
   const router = useRouter();
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
+  const [bulan, setBulan] = useState(""); // "" = semua bulan, else "YYYY-MM"
+
+  // daftar bulan unik dari tanggal SPPBJ (desc)
+  const ym = (r: any): string => (r.payload?.tanggal || "").slice(0, 7);
+  const bulanList = Array.from(new Set(rows.map(ym).filter(Boolean))).sort().reverse();
+  const filtered = bulan ? rows.filter((r) => ym(r) === bulan) : rows;
 
   const refresh = async () => { setLoading(true); setRows(await listRemote()); setLoading(false); };
   useEffect(() => { if (supabaseReady) refresh(); /* eslint-disable-next-line */ }, [supabaseReady]);
@@ -21,10 +27,10 @@ export default function SppbjList() {
   const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
 
   const rekap = {
-    total: rows.length,
-    menunggu: rows.filter((r) => (r.status || "menunggu_spbj") === "menunggu_spbj").length,
-    spbj: rows.filter((r) => r.status === "spbj_terbit").length,
-    selesai: rows.filter((r) => r.status === "selesai").length,
+    total: filtered.length,
+    menunggu: filtered.filter((r) => (r.status || "menunggu_spbj") === "menunggu_spbj").length,
+    spbj: filtered.filter((r) => r.status === "spbj_terbit").length,
+    selesai: filtered.filter((r) => r.status === "selesai").length,
   };
 
   return (
@@ -48,9 +54,18 @@ export default function SppbjList() {
         <Stat label="Selesai" value={rekap.selesai} color="text-green-600" />
       </section>
 
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-6 flex items-center justify-between gap-3">
         <h2 className="font-bold text-slate-700">Riwayat Pengadaan</h2>
-        {supabaseReady && <button onClick={refresh} className="text-xs border px-3 py-1.5 rounded-lg">↻ Refresh</button>}
+        <div className="flex items-center gap-2">
+          {supabaseReady && (
+            <select value={bulan} onChange={(e) => setBulan(e.target.value)}
+              className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
+              <option value="">Semua bulan</option>
+              {bulanList.map((b) => <option key={b} value={b}>{bulanTahun(b + "-01")}</option>)}
+            </select>
+          )}
+          {supabaseReady && <button onClick={refresh} className="text-xs border px-3 py-1.5 rounded-lg">↻ Refresh</button>}
+        </div>
       </div>
 
       {!supabaseReady ? (
@@ -60,6 +75,10 @@ export default function SppbjList() {
       ) : rows.length === 0 ? (
         <div className="mt-3 text-center bg-white rounded-2xl border border-slate-100 p-8">
           <p className="text-slate-400 text-sm">Belum ada pengadaan. Klik <b>＋ Mulai Pengadaan</b>.</p>
+        </div>
+      ) : filtered.length === 0 ? (
+        <div className="mt-3 text-center bg-white rounded-2xl border border-slate-100 p-8">
+          <p className="text-slate-400 text-sm">Tak ada pengadaan di <b>{bulanTahun(bulan + "-01")}</b>. Ganti filter bulan.</p>
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto bg-white rounded-2xl shadow-sm border border-slate-100">
@@ -75,7 +94,7 @@ export default function SppbjList() {
               </tr>
             </thead>
             <tbody>
-              {rows.map((r, i) => {
+              {filtered.map((r, i) => {
                 const st = (r.status as SppbjStatus) || "menunggu_spbj";
                 const nomor = r.payload?.noSPPBJ || r.payload?.noKontrak || "-";
                 return (
