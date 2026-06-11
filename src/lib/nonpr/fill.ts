@@ -117,6 +117,45 @@ function addSheet(zip: PizZip, xml: string, sheetName: string) {
   zip.file("xl/workbook.xml", wb);
 }
 
+// ---------- Foto (sheet Foto) ----------
+// Template Foto: drawing5.xml berisi 1 shape judul + 1 pic anchor (image2.jpg). Kita
+// rebuild pic anchor per foto user (maks 2), repoint rels -> media baru. Nol struktur baru.
+function fillFotoRaw(zip: PizZip, req: NonprRequest) {
+  const fotos = (req.fotoDokumentasi || []).slice(0, 2)
+    .map((u) => { const m = /^data:image\/(png|jpe?g|gif);base64,(.+)$/i.exec(u || ""); return m ? { ext: /jpe?g/i.test(m[1]) ? "jpg" : m[1].toLowerCase(), buf: Buffer.from(m[2], "base64") } : null; })
+    .filter(Boolean) as { ext: string; buf: Buffer }[];
+  if (!fotos.length) return;
+
+  const d5p = "xl/drawings/drawing5.xml";
+  const relsp = "xl/drawings/_rels/drawing5.xml.rels";
+  const d5 = zip.file(d5p)!.asText();
+  const allAnchors = (d5.match(/<xdr:oneCellAnchor>[\s\S]*?<\/xdr:oneCellAnchor>/g) || []);
+  const picTpl = allAnchors.find((a) => a.includes("<xdr:pic>"));
+  if (!picTpl) return;
+  let body = d5.replace(picTpl, ""); // sisakan shape judul
+
+  let relRels = "", anchors = "";
+  fotos.forEach((fo, i) => {
+    const rid = `rIdFoto${i + 1}`;
+    const fname = `imageFoto${i + 1}.${fo.ext}`;
+    zip.file(`xl/media/${fname}`, fo.buf as any);
+    relRels += `<Relationship Id="${rid}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="../media/${fname}"/>`;
+    let a = picTpl.replace(/r:embed="[^"]+"/, `r:embed="${rid}"`).replace(/name="[^"]*"/, `name="${fname}"`);
+    a = a.replace(/(<xdr:from><xdr:col>\d+<\/xdr:col><xdr:colOff>\d+<\/xdr:colOff><xdr:row>)\d+(<\/xdr:row>)/, `$1${2 + i * 18}$2`);
+    anchors += a;
+  });
+  zip.file(d5p, body.replace("</xdr:wsDr>", `${anchors}</xdr:wsDr>`));
+  zip.file(relsp, `<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relRels}</Relationships>`);
+
+  let ct = zip.file("[Content_Types].xml")!.asText();
+  for (const fo of fotos) {
+    if (!new RegExp(`Extension="${fo.ext}"`, "i").test(ct)) {
+      ct = ct.replace(/<Types ([^>]*)>/, `<Types $1><Default Extension="${fo.ext}" ContentType="image/${fo.ext === "jpg" ? "jpeg" : fo.ext}"/>`);
+    }
+  }
+  zip.file("[Content_Types].xml", ct);
+}
+
 // ---------- ORKESTRASI ----------
 export function fillNonpr(req: NonprRequest): Buffer {
   const zip = openTpl();
@@ -133,5 +172,6 @@ export function fillNonpr(req: NonprRequest): Buffer {
   for (let i = 1; i < kapals.length; i++) {
     addSheet(zip, applyEdits(origBstb, bstbEdits(req, kapals[i], jab(kapals[i]))), `BSTB ${kapals[i].replace(/KMP\.?\s*/i, "")}`);
   }
+  fillFotoRaw(zip, req);
   return saveZip(zip);
 }
