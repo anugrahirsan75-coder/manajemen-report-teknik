@@ -39,6 +39,11 @@ const SPPBJ_SUB = [
   { href: "/sppbj/isi", label: "Input / Edit", icon: "✏️" },
 ];
 
+const NONPR_SUB = [
+  { href: "/nonpr", label: "Riwayat", icon: "🏠" },
+  { href: "/nonpr/isi", label: "Input / Edit", icon: "✏️" },
+];
+
 function Tool({ active, href, icon, label, sub, onNavigate, path }: any) {
   return (
     <div className={`rounded-xl ${active ? "bg-white/10" : ""}`}>
@@ -49,7 +54,7 @@ function Tool({ active, href, icon, label, sub, onNavigate, path }: any) {
       {active && (
         <div className="pb-2 pl-3">
           {sub.map((s: any) => {
-            const a = ["/", "/material", "/sppbj"].includes(s.href) ? path === s.href : path.startsWith(s.href);
+            const a = ["/", "/material", "/sppbj", "/nonpr"].includes(s.href) ? path === s.href : path.startsWith(s.href);
             return (
               <Link key={s.href} href={s.href} onClick={onNavigate}
                 className={`flex items-center gap-2 pl-4 pr-3 py-1.5 rounded-lg text-[13px] transition border-l-2 ${a ? "text-white border-white" : "text-white/60 border-white/15 hover:text-white"}`}>
@@ -67,7 +72,8 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const path = usePathname();
   const materialActive = path.startsWith("/material");
   const sppbjActive = path.startsWith("/sppbj");
-  const swakelolaActive = !materialActive && !sppbjActive && (path === "/" || path.startsWith("/isi-data") || path.startsWith("/dokumen") || path.startsWith("/distribusi"));
+  const nonprActive = path.startsWith("/nonpr");
+  const swakelolaActive = !materialActive && !sppbjActive && !nonprActive && (path === "/" || path.startsWith("/isi-data") || path.startsWith("/dokumen") || path.startsWith("/distribusi"));
 
   return (
     <div className="flex flex-col h-full">
@@ -93,12 +99,8 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <Tool active={materialActive} href="/material" icon="📦" label="Pengajuan Kode Material" sub={MATERIAL_SUB} onNavigate={onNavigate} path={path} />
         <div className="h-1" />
         <Tool active={sppbjActive} href="/sppbj" icon="📑" label="SPPBJ Pengadaan" sub={SPPBJ_SUB} onNavigate={onNavigate} path={path} />
-
-        {/* placeholder tool berikutnya */}
-        <div className="mt-1 flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm text-white/35 cursor-not-allowed">
-          <span className="text-lg">➕</span> Tool berikutnya
-          <span className="ml-auto text-[9px] bg-white/10 px-1.5 py-0.5 rounded">segera</span>
-        </div>
+        <div className="h-1" />
+        <Tool active={nonprActive} href="/nonpr" icon="🧾" label="SPPBJ Non PR PO" sub={NONPR_SUB} onNavigate={onNavigate} path={path} />
       </nav>
 
       <div className="px-3 pt-2 border-t border-white/10">

@@ -10,6 +10,7 @@ const nextConfig = {
       "/api/material/generate-all": ["./templates/material/**/*"],
       "/api/sppbj/generate": ["./templates/sppbj/**/*"],
       "/api/sppbj/generate-all": ["./templates/sppbj/**/*"],
+      "/api/nonpr/generate": ["./templates/nonpr/**/*"],
     },
   },
 };
