@@ -35,7 +35,11 @@ function sppbEdits(req: NonprRequest): Edit[] {
   let r = 16, no = 1;
   groupsOf(req).forEach((g, gi) => {
     if (gi === 0) e.push(S("D15", g.kapal));
-    else { if (r > 22) throw new Error("Item/kapal melebihi kapasitas SPPB (band 16-22). Pecah jadi beberapa pengadaan."); e.push(S(`D${r}`, g.kapal)); r++; }
+    else {
+      r++; // spasi 1 baris antar kapal
+      if (r > 22) throw new Error("Item/kapal melebihi kapasitas SPPB (band 16-22). Pecah jadi beberapa pengadaan.");
+      e.push(S(`D${r}`, g.kapal)); r++;
+    }
     for (const it of g.items) {
       if (r > 22) throw new Error("Item/kapal melebihi kapasitas SPPB (band 16-22). Pecah jadi beberapa pengadaan.");
       e.push(N(`A${r}`, no), N(`B${r}`, it.jumlah), S(`C${r}`, it.satuan), S(`D${r}`, it.nama), S(`O${r}`, it.spesifikasi || ""), N(`R${r}`, it.harga), F(`T${r}`, `R${r}*B${r}`));
@@ -53,7 +57,11 @@ function spkhEdits(req: NonprRequest): Edit[] {
   let r = 20, no = 1, first = 0, last = 0;
   groupsOf(req).forEach((g, gi) => {
     if (gi === 0) e.push(S("E19", g.kapal));
-    else { if (r > 24) throw new Error("Item/kapal melebihi kapasitas spkh (band 20-24). Pecah jadi beberapa pengadaan."); e.push(S(`E${r}`, g.kapal)); r++; }
+    else {
+      r++; // spasi 1 baris antar kapal
+      if (r > 24) throw new Error("Item/kapal melebihi kapasitas spkh (band 20-24). Pecah jadi beberapa pengadaan.");
+      e.push(S(`E${r}`, g.kapal)); r++;
+    }
     for (const it of g.items) {
       if (r > 24) throw new Error("Item/kapal melebihi kapasitas spkh (band 20-24). Pecah jadi beberapa pengadaan.");
       const uraian = it.spesifikasi ? `${it.nama} - ${it.spesifikasi}` : it.nama;
@@ -98,12 +106,31 @@ function bstbEdits(req: NonprRequest, kapal: string, jabatan: Jabatan): Edit[] {
 const maxIdx = (zip: PizZip, re: RegExp) =>
   Math.max(0, ...Object.keys(zip.files).map((f) => { const m = f.match(re); return m ? +m[1] : 0; }));
 
-// tambah worksheet baru dari XML (clone BSTB per kapal). Buang ref drawing biar tak butuh rels.
-function addSheet(zip: PizZip, xml: string, sheetName: string) {
-  const clean = xml.replace(/<drawing[^>]*\/>/g, "").replace(/<legacyDrawing[^>]*\/>/g, "");
+// tambah worksheet baru dari XML (clone BSTB per kapal) + clone drawing (logo ASDP) miliknya.
+function addSheet(zip: PizZip, srcSheetPath: string, xml: string, sheetName: string) {
   const sN = maxIdx(zip, /worksheets\/sheet(\d+)\.xml$/) + 1;
-  zip.file(`xl/worksheets/sheet${sN}.xml`, clean);
   let ct = zip.file("[Content_Types].xml")!.asText();
+
+  // clone rels sheet sumber; drawing di-remap ke salinan baru biar logo ikut
+  const srcRelsPath = srcSheetPath.replace("worksheets/", "worksheets/_rels/") + ".rels";
+  const srcRels = zip.file(srcRelsPath)?.asText();
+  if (srcRels) {
+    let rels = srcRels;
+    const drawName = srcRels.match(/Target="\.\.\/drawings\/(drawing\d+)\.xml"/)?.[1];
+    if (drawName) {
+      const dN = maxIdx(zip, /drawings\/drawing(\d+)\.xml$/) + 1;
+      zip.file(`xl/drawings/drawing${dN}.xml`, zip.file(`xl/drawings/${drawName}.xml`)!.asText());
+      const drawRels = zip.file(`xl/drawings/_rels/${drawName}.xml.rels`)?.asText();
+      if (drawRels) zip.file(`xl/drawings/_rels/drawing${dN}.xml.rels`, drawRels); // media dipakai bersama
+      rels = rels.replace(`Target="../drawings/${drawName}.xml"`, `Target="../drawings/drawing${dN}.xml"`);
+      ct = ct.replace("</Types>", `<Override ContentType="application/vnd.openxmlformats-officedocument.drawing+xml" PartName="/xl/drawings/drawing${dN}.xml"/></Types>`);
+    }
+    zip.file(`xl/worksheets/_rels/sheet${sN}.xml.rels`, rels);
+    zip.file(`xl/worksheets/sheet${sN}.xml`, xml);
+  } else {
+    // tak ada rels sumber -> buang ref drawing biar tak rusak
+    zip.file(`xl/worksheets/sheet${sN}.xml`, xml.replace(/<drawing[^>]*\/>/g, "").replace(/<legacyDrawing[^>]*\/>/g, ""));
+  }
   ct = ct.replace("</Types>", `<Override ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml" PartName="/xl/worksheets/sheet${sN}.xml"/></Types>`);
   zip.file("[Content_Types].xml", ct);
   let rels = zip.file("xl/_rels/workbook.xml.rels")!.asText();
@@ -170,7 +197,7 @@ export function fillNonpr(req: NonprRequest): Buffer {
   const origBstb = zip.file(bstbPath)!.asText();
   if (kapals[0]) zip.file(bstbPath, applyEdits(origBstb, bstbEdits(req, kapals[0], jab(kapals[0]))));
   for (let i = 1; i < kapals.length; i++) {
-    addSheet(zip, applyEdits(origBstb, bstbEdits(req, kapals[i], jab(kapals[i]))), `BSTB ${kapals[i].replace(/KMP\.?\s*/i, "")}`);
+    addSheet(zip, bstbPath, applyEdits(origBstb, bstbEdits(req, kapals[i], jab(kapals[i]))), `BSTB ${kapals[i].replace(/KMP\.?\s*/i, "")}`);
   }
   fillFotoRaw(zip, req);
   return saveZip(zip);
