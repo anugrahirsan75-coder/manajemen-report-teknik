@@ -44,7 +44,7 @@ export default function SppbjIsi() {
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
-      <div className="glass rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-6 sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3">
+      <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link href="/sppbj" className="text-xs text-slate-500 hover:text-[#16357f]">‹ SPPBJ</Link>
           <h1 className="text-xl font-extrabold asdp-text-gradient">Input SPPBJ</h1>

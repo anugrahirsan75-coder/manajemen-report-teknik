@@ -57,7 +57,7 @@ export default function Home() {
       </div>
 
       {/* Proyek aktif */}
-      <section className="mt-5 grid sm:grid-cols-[1fr_auto] gap-4 bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <section className="mt-5 grid sm:grid-cols-[1fr_auto] gap-4 bg-white rounded-2xl elev-md ring-line p-5">
         <div className="flex flex-wrap gap-x-8 gap-y-3">
           <Stat label="Kapal" value={data.namaKapal} />
           <Stat label="Tahun" value={String(data.tahun)} />
@@ -79,14 +79,14 @@ export default function Home() {
       {/* Aksi cepat */}
       <section className="mt-4 grid sm:grid-cols-2 gap-4">
         <button onClick={onGenerateAll} disabled={zipBusy}
-          className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 text-left disabled:opacity-60">
+          className="card-hover bg-white rounded-2xl elev-sm ring-line border border-transparent p-4 flex items-center gap-4 text-left disabled:opacity-60">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 grid place-items-center text-2xl text-white shadow-md shrink-0">🗂️</div>
           <div className="min-w-0">
             <p className="font-semibold text-slate-800">{zipBusy ? "Menyiapkan ZIP…" : "Generate Semua"}</p>
             <p className="text-xs text-slate-400">Unduh 8 file Word + Excel sekaligus (.zip)</p>
           </div>
         </button>
-        <Link href="/distribusi" className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+        <Link href="/distribusi" className="card-hover bg-white rounded-2xl elev-sm ring-line border border-transparent p-4 flex items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-teal-500 to-emerald-600 grid place-items-center text-2xl text-white shadow-md shrink-0">📐</div>
           <div className="min-w-0">
             <p className="font-semibold text-slate-800">Perhitungan Swakelola</p>

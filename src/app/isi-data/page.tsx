@@ -52,7 +52,7 @@ export default function IsiData() {
 
   return (
     <main className="max-w-5xl mx-auto px-6 py-8">
-      <div className="glass rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3 sticky top-3 z-20">
+      <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3 sticky top-3 z-20">
         <div>
           <Link href="/" className="text-xs text-slate-500 hover:text-[#16357f] inline-flex items-center gap-1"><span className="text-base leading-none">‹</span> Dashboard</Link>
           <h1 className="text-xl font-extrabold asdp-text-gradient">Isi Data Proyek Swakelola</h1>

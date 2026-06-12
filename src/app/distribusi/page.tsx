@@ -33,25 +33,25 @@ export default function DistribusiPage() {
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
-      <div className="glass rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
+      <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 flex flex-wrap items-center justify-between gap-3">
         <div>
           <Link href="/" className="text-xs text-slate-500 hover:text-[#16357f] inline-flex items-center gap-1"><span className="text-base leading-none">‹</span> Dashboard</Link>
           <h1 className="text-xl font-extrabold asdp-text-gradient">Perhitungan Swakelola (Distribusi)</h1>
           <p className="text-xs text-slate-500">Bagi total nilai per golongan jabatan → Penerimaan Bruto per orang.</p>
         </div>
-        <button onClick={terapkan} className="asdp-gradient text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md hover:opacity-95 transition">
+        <button onClick={terapkan} className="btn btn-primary px-5 py-2.5 text-sm hover:opacity-95 transition">
           ⤵️ Terapkan Bruto ke Crew
         </button>
       </div>
 
-      <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
+      <section className="bg-white rounded-2xl elev-md ring-line p-5 mb-5">
         <label className="block max-w-xs">
           <span className="text-xs font-medium text-slate-600">Jumlah Nilai Swakelola (Rp)</span>
           <Input type="number" value={dist.nilaiSwakelola} onChange={(e) => setDist({ nilaiSwakelola: +e.target.value })} className="mt-1" />
         </label>
       </section>
 
-      <section className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <section className="bg-white rounded-2xl elev-md ring-line p-5">
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">

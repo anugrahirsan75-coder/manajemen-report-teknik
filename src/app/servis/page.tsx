@@ -108,7 +108,7 @@ export default function ServisList() {
       {loading ? (
         <p className="mt-3 text-sm text-slate-400">Memuat…</p>
       ) : filtered.length === 0 ? (
-        <div className="mt-3 text-center bg-white rounded-2xl border border-slate-100 p-8">
+        <div className="mt-3 text-center bg-white rounded-2xl ring-line elev-sm p-8">
           <p className="text-slate-400 text-sm">{items.length === 0 ? <>Belum ada barang. Klik <b>＋ Input Barang</b>.</> : "Tak ada barang cocok filter."}</p>
         </div>
       ) : (

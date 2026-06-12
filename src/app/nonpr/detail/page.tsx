@@ -23,13 +23,13 @@ export default function NonprDetail() {
 
   return (
     <main className="max-w-3xl mx-auto px-5 py-8">
-      <div className="glass rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-6">
+      <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6">
         <Link href="/nonpr" className="text-xs text-slate-500 hover:text-[#16357f]">‹ SPPBJ Non PR PO</Link>
         <h1 className="text-xl font-extrabold asdp-text-gradient">{req.namaPengadaan || "(tanpa nama)"}</h1>
         <p className="text-xs text-slate-500">No. {req.noSPPB || "-"} · {tanggalIndo(req.tanggal)} · {req.items.length} item · {kapals.length} kapal</p>
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5 mb-5">
+      <div className="bg-white rounded-2xl elev-md ring-line p-5 mb-5">
         <div className="grid grid-cols-2 gap-3 text-sm">
           <Info label="Vendor" value={req.vendor || "-"} />
           <Info label="Mata Anggaran" value={req.mataAnggaran || "-"} />
@@ -39,7 +39,7 @@ export default function NonprDetail() {
         {over && <p className="mt-3 text-sm text-red-600">⚠️ Total melebihi batas Rp {rupiah(MAX_NILAI_NONPR)}. Generate akan tetap jalan, tapi sebaiknya dipecah.</p>}
       </div>
 
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-5">
+      <div className="bg-white rounded-2xl elev-md ring-line p-5">
         <h3 className="font-bold text-slate-800 mb-1">Generate File</h3>
         <p className="text-xs text-slate-500 mb-4">1 file Excel berisi: SPPB · spkh · BSTB (per kapal{kapals.length > 1 ? `, ${kapals.length} sheet` : ""}) · Foto.</p>
         <div className="flex flex-wrap gap-2">

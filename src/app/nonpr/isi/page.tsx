@@ -53,7 +53,7 @@ export default function NonprIsi() {
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
-      <div className="glass rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-6 sticky top-3 z-20 flex items-center justify-between gap-3">
+      <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 sticky top-3 z-20 flex items-center justify-between gap-3">
         <div>
           <Link href="/nonpr" className="text-xs text-slate-500 hover:text-[#16357f]">‹ SPPBJ Non PR PO</Link>
           <h1 className="text-xl font-extrabold asdp-text-gradient">Input Pengadaan Non PR PO</h1>
@@ -91,7 +91,7 @@ export default function NonprIsi() {
         <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-3 text-sm text-slate-700">
           <b className="text-sky-800">📋 Paste dari Excel</b> (urutan <b>Kapal · Jumlah · Satuan · Nama · Spesifikasi · Harga</b>) → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>.
         </div>
-        <button onClick={() => addItem()} className="mb-3 text-sm border px-3 py-1.5 rounded-lg">+ Tambah Item</button>
+        <button onClick={() => addItem()} className="btn btn-ghost text-sm mb-3">+ Tambah Item</button>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">

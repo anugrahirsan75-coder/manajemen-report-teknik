@@ -39,7 +39,7 @@ export default function MaterialIsi() {
 
   return (
     <main className="max-w-6xl mx-auto px-5 py-8">
-      <div className="glass rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-6 sticky top-3 z-20">
+      <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 sticky top-3 z-20">
         <Link href="/material" className="text-xs text-slate-500 hover:text-[#16357f]">‹ Pengajuan Kode Material</Link>
         <h1 className="text-xl font-extrabold asdp-text-gradient">Input Item Pengajuan</h1>
         <p className="text-xs text-slate-500">{req.items.length} item · {totalSC} suku cadang · {totalUmum} barang umum · periode {bt}</p>
@@ -74,7 +74,7 @@ export default function MaterialIsi() {
         <datalist id="kapalList">
           {KAPAL_DB.map((k) => <option key={k.nama} value={k.nama} />)}
         </datalist>
-        <button onClick={() => addItem()} className="mb-3 text-sm border px-3 py-1.5 rounded-lg">+ Tambah Item</button>
+        <button onClick={() => addItem()} className="btn btn-ghost text-sm mb-3">+ Tambah Item</button>
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">
@@ -119,7 +119,7 @@ export default function MaterialIsi() {
       </Section>
 
       <div className="flex justify-end">
-        <Link href="/material" className="asdp-gradient text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md">Selesai → Generate</Link>
+        <Link href="/material" className="btn btn-primary px-5 py-2.5 text-sm">Selesai → Generate</Link>
       </div>
     </main>
   );

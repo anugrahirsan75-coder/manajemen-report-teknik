@@ -21,8 +21,8 @@ export default function SppbjDetail() {
 
   return (
     <main className="max-w-4xl mx-auto px-5 py-8">
-      <div className="asdp-gradient rounded-3xl p-[1.5px] shadow-xl">
-        <div className="glass rounded-3xl px-7 py-5">
+      <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
+        <div className="glass hero-glow rounded-3xl px-7 py-5">
           <Link href="/sppbj" className="text-xs text-slate-500 hover:text-[#16357f]">‹ Riwayat Pengadaan</Link>
           <div className="flex items-center gap-4 mt-1">
             <div className="bg-white rounded-2xl p-2 shadow-md shrink-0"><Image src="/logo-asdp.png" alt="ASDP" width={50} height={34} className="object-contain" /></div>
@@ -49,8 +49,8 @@ export default function SppbjDetail() {
         <p className="font-semibold text-slate-800 text-sm">📊 Excel SPPBJ (1 file)</p>
         <p className="text-xs text-slate-400">Sheet <b>SPPBJ + KAK</b> dan <b>FORMAT SAP</b> sekaligus</p>
         <div className="flex flex-wrap gap-2 mt-2">
-          <button onClick={() => run(() => generateSppbjDoc("fase1", "native", req), "f1")} disabled={!!busy} className="bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">📊 {busy === "f1" ? "…" : "Excel (SPPBJ + SAP)"}</button>
-          <button onClick={() => run(() => generateSppbjDoc("sppbj", "pdf", req), "sp")} disabled={!!busy} className="bg-rose-600 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">📄 PDF SPPBJ</button>
+          <button onClick={() => run(() => generateSppbjDoc("fase1", "native", req), "f1")} disabled={!!busy} className="btn btn-success text-xs disabled:opacity-50">📊 {busy === "f1" ? "…" : "Excel (SPPBJ + SAP)"}</button>
+          <button onClick={() => run(() => generateSppbjDoc("sppbj", "pdf", req), "sp")} disabled={!!busy} className="btn btn-rose text-xs disabled:opacity-50">📄 PDF SPPBJ</button>
           <button onClick={() => run(() => generateSppbjDoc("sap", "pdf", req), "sapp")} disabled={!!busy} className="bg-rose-500 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">📄 PDF SAP</button>
         </div>
       </div>
@@ -78,8 +78,8 @@ export default function SppbjDetail() {
         <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4">
           <p className="font-semibold text-slate-800 text-sm">📝 BAPP — Berita Acara Penyelesaian</p>
           <div className="flex gap-2 mt-2">
-            <button onClick={() => run(() => generateSppbjDoc("bapp", "native", req), "bx")} disabled={!!busy} className="bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">📊 Excel</button>
-            <button onClick={() => run(() => generateSppbjDoc("bapp", "pdf", req), "bpp")} disabled={!!busy} className="bg-rose-600 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">📄 PDF</button>
+            <button onClick={() => run(() => generateSppbjDoc("bapp", "native", req), "bx")} disabled={!!busy} className="btn btn-success text-xs disabled:opacity-50">📊 Excel</button>
+            <button onClick={() => run(() => generateSppbjDoc("bapp", "pdf", req), "bpp")} disabled={!!busy} className="btn btn-rose text-xs disabled:opacity-50">📄 PDF</button>
           </div>
         </div>
       </div>

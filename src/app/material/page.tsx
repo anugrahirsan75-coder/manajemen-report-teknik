@@ -21,8 +21,8 @@ export default function MaterialDashboard() {
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
-      <div className="asdp-gradient rounded-3xl p-[1.5px] shadow-xl">
-        <div className="glass rounded-3xl px-7 py-6 flex items-center gap-4">
+      <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
+        <div className="glass hero-glow rounded-3xl px-7 py-6 flex items-center gap-4">
           <div className="bg-white rounded-2xl p-2 shadow-md shrink-0"><Image src="/logo-asdp.png" alt="ASDP" width={56} height={38} className="object-contain" /></div>
           <div>
             <h1 className="text-2xl font-extrabold asdp-text-gradient">Pengajuan Kode Material</h1>
@@ -32,16 +32,16 @@ export default function MaterialDashboard() {
       </div>
 
       <section className="mt-5 grid sm:grid-cols-3 gap-4">
-        <Link href="/material/cek" className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+        <Link href="/material/cek" className="card-hover bg-white rounded-2xl elev-sm ring-line border border-transparent p-4 flex items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-cyan-500 to-sky-600 grid place-items-center text-2xl text-white shadow-md">🔎</div>
           <div><p className="font-semibold text-slate-800">Cek Kode Material</p><p className="text-xs text-slate-400">Cek item sudah punya kode (SAP) atau belum</p></div>
         </Link>
-        <Link href="/material/isi" className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4">
+        <Link href="/material/isi" className="card-hover bg-white rounded-2xl elev-sm ring-line border border-transparent p-4 flex items-center gap-4">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 grid place-items-center text-2xl text-white shadow-md">✏️</div>
           <div><p className="font-semibold text-slate-800">Input Item</p><p className="text-xs text-slate-400">Tambah/ubah item, kode, harga, kapal</p></div>
         </Link>
         <button onClick={() => run(() => generateMaterialAll(req), "all")} disabled={!!busy}
-          className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 text-left disabled:opacity-60">
+          className="card-hover bg-white rounded-2xl elev-sm ring-line border border-transparent p-4 flex items-center gap-4 text-left disabled:opacity-60">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 grid place-items-center text-2xl text-white shadow-md">🗂️</div>
           <div><p className="font-semibold text-slate-800">{busy === "all" ? "Menyiapkan ZIP…" : "Generate Semua"}</p><p className="text-xs text-slate-400">4 dokumen Excel sekaligus (.zip)</p></div>
         </button>
@@ -60,9 +60,9 @@ export default function MaterialDashboard() {
             </div>
             <div className="flex gap-2 mt-3">
               <button onClick={() => run(() => generateMaterial(d.slug, "native", req), d.slug + "x")} disabled={!!busy}
-                className="bg-green-700 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">📊 Excel</button>
+                className="btn btn-success text-xs disabled:opacity-50">📊 Excel</button>
               <button onClick={() => run(() => generateMaterial(d.slug, "pdf", req), d.slug + "p")} disabled={!!busy}
-                className="bg-rose-600 text-white text-xs px-3 py-1.5 rounded-lg disabled:opacity-50">📄 PDF</button>
+                className="btn btn-rose text-xs disabled:opacity-50">📄 PDF</button>
             </div>
           </div>
         ))}

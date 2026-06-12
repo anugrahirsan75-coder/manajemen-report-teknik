@@ -97,7 +97,7 @@ export default function CekKodeMaterial() {
 
   return (
     <main className="max-w-6xl mx-auto px-5 py-8">
-      <div className="glass rounded-2xl border border-slate-100 shadow-sm px-5 py-4 mb-6 sticky top-3 z-20">
+      <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 sticky top-3 z-20">
         <Link href="/material" className="text-xs text-slate-500 hover:text-[#16357f]">‹ Pengajuan Kode Material</Link>
         <h1 className="text-xl font-extrabold asdp-text-gradient">Cek Kode Material</h1>
         <p className="text-xs text-slate-500">
@@ -117,7 +117,7 @@ export default function CekKodeMaterial() {
         </div>
 
         <div className="flex gap-2 mb-3">
-          <button onClick={addRow} className="text-sm border px-3 py-1.5 rounded-lg">+ Tambah Baris</button>
+          <button onClick={addRow} className="btn btn-ghost text-sm">+ Tambah Baris</button>
           <button onClick={cek} disabled={busy} className="asdp-gradient text-white text-sm font-semibold px-4 py-1.5 rounded-lg shadow disabled:opacity-60">
             {busy ? "Mengecek…" : "🔍 Cek Kode Material"}
           </button>

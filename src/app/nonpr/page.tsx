@@ -28,14 +28,14 @@ export default function NonprList() {
 
   return (
     <main className="max-w-4xl mx-auto px-5 py-8">
-      <div className="asdp-gradient rounded-3xl p-[1.5px] shadow-xl">
-        <div className="glass rounded-3xl px-7 py-6 flex items-center gap-4">
+      <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
+        <div className="glass hero-glow rounded-3xl px-7 py-6 flex items-center gap-4">
           <div className="bg-white rounded-2xl p-2 shadow-md shrink-0"><Image src="/logo-asdp.png" alt="ASDP" width={56} height={38} className="object-contain" /></div>
           <div className="flex-1">
             <h1 className="text-2xl font-extrabold asdp-text-gradient">SPPBJ Non PR PO</h1>
             <p className="text-slate-500 text-sm">Formulir Persetujuan Pengadaan Non Purchase Order — maks Rp {rupiah(MAX_NILAI_NONPR)}/file</p>
           </div>
-          <button onClick={mulai} className="asdp-gradient text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow-md">＋ Mulai Pengadaan</button>
+          <button onClick={mulai} className="btn btn-primary px-5 py-2.5 text-sm">＋ Mulai Pengadaan</button>
         </div>
       </div>
 
@@ -48,7 +48,7 @@ export default function NonprList() {
               {bulanList.map((b) => <option key={b} value={b}>{bulanTahun(b + "-01")}</option>)}
             </select>
           )}
-          {supabaseReady && <button onClick={refresh} className="text-xs border px-3 py-1.5 rounded-lg">↻ Refresh</button>}
+          {supabaseReady && <button onClick={refresh} className="btn btn-ghost text-xs">↻ Refresh</button>}
         </div>
       </div>
 
@@ -57,17 +57,17 @@ export default function NonprList() {
       ) : loading ? (
         <p className="mt-3 text-sm text-slate-400">Memuat…</p>
       ) : rows.length === 0 ? (
-        <div className="mt-3 text-center bg-white rounded-2xl border border-slate-100 p-8">
+        <div className="mt-3 text-center bg-white rounded-2xl ring-line elev-sm p-8">
           <p className="text-slate-400 text-sm">Belum ada pengadaan. Klik <b>＋ Mulai Pengadaan</b>.</p>
         </div>
       ) : filtered.length === 0 ? (
-        <div className="mt-3 text-center bg-white rounded-2xl border border-slate-100 p-8">
+        <div className="mt-3 text-center bg-white rounded-2xl ring-line elev-sm p-8">
           <p className="text-slate-400 text-sm">Tak ada pengadaan di <b>{bulanTahun(bulan + "-01")}</b>.</p>
         </div>
       ) : (
-        <div className="mt-3 overflow-x-auto bg-white rounded-2xl shadow-sm border border-slate-100">
+        <div className="mt-3 overflow-x-auto bg-white rounded-2xl elev-md ring-line anim-in">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-xs text-slate-600">
+            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-[11px] uppercase tracking-wide text-slate-500">
               <tr>
                 <th className="p-2 border-b text-center w-10">No</th>
                 <th className="p-2 border-b text-left">Nama Pengadaan</th>
@@ -82,15 +82,15 @@ export default function NonprList() {
                 const total = nonprTotal(r.payload?.items || []);
                 const over = total > MAX_NILAI_NONPR;
                 return (
-                  <tr key={r.id} className="border-b last:border-0 hover:bg-sky-50 cursor-pointer" onClick={() => buka(r)}>
+                  <tr key={r.id} className="border-b last:border-0 row-hover cursor-pointer" onClick={() => buka(r)}>
                     <td className="p-2 text-center text-slate-400">{i + 1}</td>
                     <td className="p-2 font-medium text-slate-800">{r.nama_pengadaan || "(tanpa nama)"}</td>
                     <td className="p-2 text-slate-600">{r.payload?.noSPPB || "-"}</td>
                     <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className={`p-2 text-right ${over ? "text-red-600 font-semibold" : "text-slate-600"}`}>{rupiah(total)}</td>
                     <td className="p-2 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => buka(r)} className="text-xs text-white asdp-gradient px-2.5 py-1 rounded-lg mr-1">Buka</button>
-                      <button onClick={() => hapus(r.id, r.nama_pengadaan)} className="text-xs text-red-500 border border-red-200 px-2.5 py-1 rounded-lg">Hapus</button>
+                      <button onClick={() => buka(r)} className="btn btn-primary text-[11px] px-2.5 py-1 mr-1">Buka</button>
+                      <button onClick={() => hapus(r.id, r.nama_pengadaan)} className="btn btn-danger-soft text-[11px] px-2.5 py-1">Hapus</button>
                     </td>
                   </tr>
                 );
