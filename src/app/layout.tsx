@@ -4,6 +4,7 @@ import { StoreProvider } from "@/lib/store";
 import { MaterialProvider } from "@/lib/material/store";
 import { SppbjProvider } from "@/lib/sppbj/store";
 import { NonprProvider } from "@/lib/nonpr/store";
+import { ServisProvider } from "@/lib/servis/store";
 import Sidebar from "@/components/Sidebar";
 
 export const metadata: Metadata = {
@@ -26,10 +27,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <MaterialProvider>
             <SppbjProvider>
               <NonprProvider>
-                <div className="md:flex min-h-screen">
-                  <Sidebar />
-                  <div className="flex-1 min-w-0">{children}</div>
-                </div>
+                <ServisProvider>
+                  <div className="md:flex min-h-screen">
+                    <Sidebar />
+                    <div className="flex-1 min-w-0">{children}</div>
+                  </div>
+                </ServisProvider>
               </NonprProvider>
             </SppbjProvider>
           </MaterialProvider>
