@@ -6,3 +6,4 @@ dist
 *.log
 
 tsconfig.tsbuildinfo
+server.log

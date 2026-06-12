@@ -4,10 +4,9 @@ cd /d "D:\ASDP\02. PROJEK\files\generator-swakelola"
 
 rem Build sekali jika belum ada hasil build
 if not exist ".next\BUILD_ID" (
-  echo Membuild aplikasi pertama kali...
-  call npm run build
+  echo Membuild aplikasi pertama kali... >> server.log
+  call npm run build >> server.log 2>&1
 )
 
-echo Menjalankan server di http://localhost:3001
-call npm run start
-pause
+echo [%date% %time%] Menjalankan server di http://localhost:3001 >> server.log
+call npm run start >> server.log 2>&1
