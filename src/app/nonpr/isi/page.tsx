@@ -42,9 +42,10 @@ export default function NonprIsi() {
   const setJab = (kapal: string, jab: "KKM" | "Nakhoda") => update({ jabatanByKapal: { ...req.jabatanByKapal, [kapal]: jab } });
 
   const onFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []).slice(0, 2);
+    const files = Array.from(e.target.files || []);
     const urls = await Promise.all(files.map((f) => new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f); })));
-    update({ fotoDokumentasi: urls });
+    update({ fotoDokumentasi: [...(req.fotoDokumentasi || []), ...urls].slice(0, 2) }); // tambah ke yg ada, maks 2
+    e.target.value = ""; // bisa pilih file sama lagi setelah dihapus
   };
 
   const simpan = async () => { await saveRemote(); };
@@ -182,7 +183,14 @@ export default function NonprIsi() {
         <input type="file" accept="image/*" multiple onChange={onFoto} className="text-sm" />
         {!!req.fotoDokumentasi?.length && (
           <div className="flex gap-3 mt-3">
-            {req.fotoDokumentasi.map((u, i) => <img key={i} src={u} alt={`foto ${i + 1}`} className="h-24 w-32 object-cover rounded-lg border" />)}
+            {req.fotoDokumentasi.map((u, i) => (
+              <div key={i} className="relative group">
+                <img src={u} alt={`foto ${i + 1}`} className="h-24 w-32 object-cover rounded-lg border" />
+                <button onClick={() => update({ fotoDokumentasi: req.fotoDokumentasi!.filter((_, fi) => fi !== i) })}
+                  title="Hapus foto"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs font-bold shadow grid place-items-center hover:bg-red-600">✕</button>
+              </div>
+            ))}
           </div>
         )}
       </Section>
