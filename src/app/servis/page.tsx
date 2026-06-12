@@ -17,6 +17,7 @@ export default function ServisList() {
   const [fKapal, setFKapal] = useState("");
   const [fBulan, setFBulan] = useState("");
   const [busy, setBusy] = useState(false);
+  const [lightbox, setLightbox] = useState<{ fotos: string[]; i: number } | null>(null);
 
   const bulanList = useMemo(() =>
     Array.from(new Set(items.map((i) => (i.tanggalKirim || "").slice(0, 7)).filter(Boolean))).sort().reverse(), [items]);
@@ -134,7 +135,10 @@ export default function ServisList() {
                     <td className="p-2">
                       <p className="font-medium text-slate-800 flex items-center gap-1.5">
                         {it.namaBarang || "(tanpa nama)"}
-                        {!!it.foto?.length && <span title={`${it.foto.length} foto`} className="text-[10px]">📷{it.foto.length}</span>}
+                        {!!it.foto?.length && (
+                          <button title={`Lihat ${it.foto.length} foto`} onClick={(e) => { e.stopPropagation(); setLightbox({ fotos: it.foto!, i: 0 }); }}
+                            className="text-[10px] bg-sky-100 text-sky-700 px-1.5 py-0.5 rounded hover:bg-sky-200">📷 {it.foto.length}</button>
+                        )}
                       </p>
                       {it.jenis && <p className="text-[11px] text-slate-400">{it.jenis}</p>}
                     </td>
@@ -155,6 +159,22 @@ export default function ServisList() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {lightbox && (
+        <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center p-4" onClick={() => setLightbox(null)}>
+          <button onClick={() => setLightbox(null)} className="absolute top-4 right-5 text-white text-3xl leading-none">✕</button>
+          <img src={lightbox.fotos[lightbox.i]} alt="foto" className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg" onClick={(e) => e.stopPropagation()} />
+          {lightbox.fotos.length > 1 && (
+            <>
+              <button onClick={(e) => { e.stopPropagation(); setLightbox({ ...lightbox, i: (lightbox.i - 1 + lightbox.fotos.length) % lightbox.fotos.length }); }}
+                className="absolute left-4 text-white text-4xl px-3 py-1 bg-white/10 rounded-full hover:bg-white/20">‹</button>
+              <button onClick={(e) => { e.stopPropagation(); setLightbox({ ...lightbox, i: (lightbox.i + 1) % lightbox.fotos.length }); }}
+                className="absolute right-4 text-white text-4xl px-3 py-1 bg-white/10 rounded-full hover:bg-white/20">›</button>
+              <span className="absolute bottom-5 text-white text-sm bg-black/50 px-3 py-1 rounded-full">{lightbox.i + 1} / {lightbox.fotos.length}</span>
+            </>
+          )}
         </div>
       )}
     </main>

@@ -24,17 +24,19 @@ export async function POST(req: NextRequest) {
       { h: "No", w: 5 }, { h: "Nama Barang", w: 28 }, { h: "Jenis", w: 16 }, { h: "Kapal", w: 20 },
       { h: "Bengkel", w: 22 }, { h: "Kerusakan", w: 30 }, { h: "Tgl Kirim", w: 15 }, { h: "Estimasi", w: 15 },
       { h: "Tgl Kembali", w: 15 }, { h: "Lama (hari)", w: 11 }, { h: "Status", w: 20 }, { h: "Biaya (Rp)", w: 15 }, { h: "Catatan", w: 25 },
+      { h: "Foto", w: 24 },
     ];
+    const FOTO_COL = COLS.length; // 1-based kolom Foto (N)
     COLS.forEach((c, i) => (ws.getColumn(i + 1).width = c.w));
 
     // judul
-    ws.mergeCells("A1:M1");
+    ws.mergeCells("A1:N1");
     const t = ws.getCell("A1");
     t.value = "MONITORING BARANG SERVIS BENGKEL — PT. ASDP INDONESIA FERRY (PERSERO) CABANG TERNATE";
     t.font = { bold: true, size: 13, color: { argb: BLUE } };
     t.alignment = { horizontal: "center", vertical: "middle" };
     ws.getRow(1).height = 24;
-    ws.mergeCells("A2:M2");
+    ws.mergeCells("A2:N2");
     ws.getCell("A2").value = `Dicetak ${tanggalIndo(new Date().toISOString().slice(0, 10))} · ${items.length} barang`;
     ws.getCell("A2").font = { size: 9, color: { argb: "FF64748B" } };
     ws.getCell("A2").alignment = { horizontal: "center" };
@@ -69,6 +71,29 @@ export async function POST(req: NextRequest) {
         if (ci === 11) cell.numFmt = "#,##0";
         if (ci === 10) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: STATUS_FILL[it.status] || "FFFFFFFF" } };
       });
+
+      // kolom Foto: embed gambar DALAM cell (maks 3 thumbnail berjajar)
+      const fc = r.getCell(FOTO_COL);
+      fc.border = border;
+      fc.alignment = { horizontal: "center", vertical: "middle" };
+      const fotos = (it.foto || []).slice(0, 3);
+      const rowIdx0 = 4 + i; // 0-based baris data (1-based 5+i)
+      if (fotos.length) {
+        r.height = 56;
+        fotos.forEach((url, fi) => {
+          const m = /^data:image\/(png|jpe?g|gif);base64,(.+)$/i.exec(url || "");
+          if (!m) return;
+          const extension = (/jpe?g/i.test(m[1]) ? "jpeg" : m[1].toLowerCase()) as "png" | "jpeg" | "gif";
+          const imgId = wb.addImage({ base64: m[2], extension });
+          ws.addImage(imgId, {
+            tl: { col: (FOTO_COL - 1) + 0.04 + fi * 0.33, row: rowIdx0 + 0.1 } as any,
+            ext: { width: 58, height: 50 },
+          });
+        });
+      } else {
+        fc.value = "-";
+        fc.font = { size: 10, color: { argb: "FF94A3B8" } };
+      }
     });
 
     // total biaya
