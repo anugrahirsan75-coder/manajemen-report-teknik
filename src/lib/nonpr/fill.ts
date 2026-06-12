@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
 import PizZip from "pizzip";
-import { NonprRequest, NonprItem, kapalUnikNonpr, tahunNonpr } from "./types";
+import { NonprRequest, NonprItem, kapalUnikNonpr, tahunNonpr, ketLines, bdLines } from "./types";
 import { penerimaBstb, vendorOf, Jabatan } from "./db";
 import { bulanRomawi, tanggalIndo } from "@/lib/format";
 import { applyEdits, sheetXmlPath, saveZip, esc, Edit } from "@/lib/sppbj/fill";
@@ -40,10 +40,24 @@ function sppbEdits(req: NonprRequest): Edit[] {
       if (r > 22) throw new Error("Item/kapal melebihi kapasitas SPPB (band 16-22). Pecah jadi beberapa pengadaan.");
       e.push(S(`D${r}`, g.kapal)); r++;
     }
+    let prevKet = "";
     for (const it of g.items) {
+      // header keterangan (di atas item) saat berganti
+      if ((it.keterangan || "") !== prevKet) {
+        for (const kl of ketLines(it)) {
+          if (r > 22) throw new Error("Item/kapal melebihi kapasitas SPPB (band 16-22). Pecah jadi beberapa pengadaan.");
+          e.push(S(`D${r}`, kl)); r++;
+        }
+        prevKet = it.keterangan || "";
+      }
       if (r > 22) throw new Error("Item/kapal melebihi kapasitas SPPB (band 16-22). Pecah jadi beberapa pengadaan.");
       e.push(N(`A${r}`, no), N(`B${r}`, it.jumlah), S(`C${r}`, it.satuan), S(`D${r}`, it.nama), S(`O${r}`, it.spesifikasi || ""), N(`R${r}`, it.harga), F(`T${r}`, `R${r}*B${r}`));
       no++; r++;
+      // rincian breakdown -> baris baru (kolom nama saja)
+      for (const bl of bdLines(it)) {
+        if (r > 22) throw new Error("Item/kapal melebihi kapasitas SPPB (band 16-22). Pecah jadi beberapa pengadaan.");
+        e.push(S(`D${r}`, bl)); r++;
+      }
     }
   });
   return e;
@@ -62,12 +76,24 @@ function spkhEdits(req: NonprRequest): Edit[] {
       if (r > 24) throw new Error("Item/kapal melebihi kapasitas spkh (band 20-24). Pecah jadi beberapa pengadaan.");
       e.push(S(`E${r}`, g.kapal)); r++;
     }
+    let prevKet = "";
     for (const it of g.items) {
+      if ((it.keterangan || "") !== prevKet) {
+        for (const kl of ketLines(it)) {
+          if (r > 24) throw new Error("Item/kapal melebihi kapasitas spkh (band 20-24). Pecah jadi beberapa pengadaan.");
+          e.push(S(`E${r}`, kl)); r++;
+        }
+        prevKet = it.keterangan || "";
+      }
       if (r > 24) throw new Error("Item/kapal melebihi kapasitas spkh (band 20-24). Pecah jadi beberapa pengadaan.");
       const uraian = it.spesifikasi ? `${it.nama} - ${it.spesifikasi}` : it.nama;
       e.push(N(`B${r}`, no), S(`C${r}`, it.satuan), N(`D${r}`, it.jumlah), S(`E${r}`, uraian), N(`G${r}`, it.harga), F(`H${r}`, `G${r}*D${r}`), F(`I${r}`, `+G${r}`), F(`J${r}`, `I${r}*D${r}`));
       if (!first) first = r;
       last = r; no++; r++;
+      for (const bl of bdLines(it)) {
+        if (r > 24) throw new Error("Item/kapal melebihi kapasitas spkh (band 20-24). Pecah jadi beberapa pengadaan.");
+        e.push(S(`E${r}`, bl)); r++;
+      }
     }
   });
   if (first) { e.push(F("H25", `SUM(H${first}:H${last})`), F("J25", `SUM(J${first}:J${last})`)); }
@@ -94,11 +120,22 @@ function bstbEdits(req: NonprRequest, kapal: string, jabatan: Jabatan): Edit[] {
     S("D10", nomorSPPB(req)), S("B14", kapal), S("B32", pen.nama), S("B33", pen.kepada),
   ];
   for (let r = 15; r <= 19; r++) ["A", "B", "G", "H", "I", "K", "O"].forEach((c) => e.push(CL(`${c}${r}`)));
-  let r = 15, no = 1;
+  let r = 15, no = 1, prevKet = "";
   for (const it of itemsKapal(req, kapal)) {
+    if ((it.keterangan || "") !== prevKet) {
+      for (const kl of ketLines(it)) {
+        if (r > 19) throw new Error(`Item kapal ${kapal} melebihi kapasitas BSTB (maks 5).`);
+        e.push(S(`B${r}`, kl)); r++;
+      }
+      prevKet = it.keterangan || "";
+    }
     if (r > 19) throw new Error(`Item kapal ${kapal} melebihi kapasitas BSTB (maks 5).`);
     e.push(N(`A${r}`, no), S(`B${r}`, it.nama), S(`G${r}`, it.spesifikasi || ""), S(`H${r}`, it.satuan), N(`I${r}`, it.jumlah), N(`K${r}`, it.harga), S(`O${r}`, "Baik"));
     no++; r++;
+    for (const bl of bdLines(it)) {
+      if (r > 19) throw new Error(`Item kapal ${kapal} melebihi kapasitas BSTB (maks 5).`);
+      e.push(S(`B${r}`, bl)); r++;
+    }
   }
   return e;
 }

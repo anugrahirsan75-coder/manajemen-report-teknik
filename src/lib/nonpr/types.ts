@@ -8,7 +8,17 @@ export interface NonprItem {
   nama: string;
   spesifikasi: string;
   harga: number; // harga satuan
+  breakdown?: string[]; // rincian di bawah item (baris "-"), tanpa harga
+  keterangan?: string;  // header/kategori di ATAS item (multi-baris), grup >1 item
 }
+
+// baris header keterangan (1 baris per poin), muncul di atas item saat keterangan berganti
+export const ketLines = (it: NonprItem): string[] =>
+  (it.keterangan || "").split("\n").map((s) => s.trim()).filter(Boolean);
+
+// baris-baris rincian breakdown (tiap poin -> "- xxx"), untuk baris terpisah di dokumen
+export const bdLines = (it: NonprItem): string[] =>
+  (it.breakdown || []).filter((b) => b.trim()).map((b) => `- ${b.trim().replace(/^[-•*]\s*/, "")}`);
 
 export interface NonprRequest {
   id?: string;

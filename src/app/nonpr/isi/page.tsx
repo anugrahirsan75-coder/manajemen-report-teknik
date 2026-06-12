@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
+import { Fragment, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useNonpr } from "@/lib/nonpr/store";
 import { Field, Input, Section } from "@/components/Field";
 import { rupiah } from "@/lib/format";
 import { MATA_ANGGARAN_NONPR, VENDOR_NONPR, KAPAL_LIST_NONPR, MAX_NILAI_NONPR } from "@/lib/nonpr/db";
-import { NonprItem, emptyNonprItem, kapalUnikNonpr, nonprTotal } from "@/lib/nonpr/types";
+import { NonprItem, emptyNonprItem, kapalUnikNonpr, nonprTotal, ketLines } from "@/lib/nonpr/types";
 
 export default function NonprIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving, lastSaved, supabaseReady } = useNonpr();
   const router = useRouter();
+  const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
 
   const total = nonprTotal(req.items);
   const over = total > MAX_NILAI_NONPR;
@@ -106,7 +108,14 @@ export default function NonprIsi() {
             </thead>
             <tbody>
               {req.items.map((it, ri) => (
-                <tr key={it.id}>
+                <Fragment key={it.id}>
+                {ri > 0 && it.kapal.trim() !== (req.items[ri - 1].kapal || "").trim() &&
+                  <tr aria-hidden><td colSpan={9} className="h-3 bg-slate-100/60"></td></tr>}
+                {(it.keterangan || "") !== (ri > 0 ? req.items[ri - 1].keterangan || "" : "") &&
+                  ketLines(it).map((kl, ki) => (
+                    <tr key={"kt" + ki}><td className="border p-1"></td><td colSpan={8} className="border p-1 font-bold text-slate-700 bg-amber-50">{kl}</td></tr>
+                  ))}
+                <tr>
                   <td className="border p-1 text-center text-xs text-slate-400">{ri + 1}</td>
                   <td className="border p-1"><input list="kapalListNonpr" className="w-32 px-1" value={it.kapal} onChange={(e) => setItem(it.id, { kapal: e.target.value })} onPaste={(e) => handlePaste(ri, 0, e)} /></td>
                   <td className="border p-1"><input type="number" className="w-14 px-1 text-center" value={it.jumlah} onChange={(e) => setItem(it.id, { jumlah: +e.target.value })} onPaste={(e) => handlePaste(ri, 1, e)} /></td>
@@ -115,8 +124,32 @@ export default function NonprIsi() {
                   <td className="border p-1"><input className="w-40 px-1" value={it.spesifikasi} onChange={(e) => setItem(it.id, { spesifikasi: e.target.value })} onPaste={(e) => handlePaste(ri, 4, e)} /></td>
                   <td className="border p-1"><input type="number" className="w-28 px-1 text-right" value={it.harga} onChange={(e) => setItem(it.id, { harga: +e.target.value })} onPaste={(e) => handlePaste(ri, 5, e)} /></td>
                   <td className="border p-1 text-right text-slate-600 w-28">{rupiah(it.harga * it.jumlah)}</td>
-                  <td className="border p-1 text-center"><button onClick={() => delItem(it.id)} className="text-red-500 text-xs">hapus</button></td>
+                  <td className="border p-1 text-center whitespace-nowrap">
+                    <button onClick={() => setOpenBd((o) => ({ ...o, [it.id]: !o[it.id] }))} className={`text-xs px-2 py-0.5 rounded border mr-1 ${(it.breakdown?.length || it.keterangan) ? "bg-sky-100 border-sky-300 text-sky-700" : "border-slate-300 text-sky-600"}`}>＋ ket/rincian</button>
+                    <button onClick={() => delItem(it.id)} className="text-red-500 text-xs px-1.5 py-0.5 rounded border border-red-200">hapus</button>
+                  </td>
                 </tr>
+                {it.breakdown?.filter((b) => b.trim()).map((b, bi) => (
+                  <tr key={"bd" + bi} className="text-slate-500">
+                    <td className="border p-1"></td>
+                    <td colSpan={8} className="border p-1 pl-6 text-xs">- {b.trim().replace(/^[-•*]\s*/, "")}</td>
+                  </tr>
+                ))}
+                {openBd[it.id] && (
+                  <tr>
+                    <td className="border p-1"></td>
+                    <td className="border p-1" colSpan={8}>
+                      <p className="text-[11px] text-amber-700 mb-1 mt-1">Keterangan / header DI ATAS item (1 baris = 1 header; item dgn keterangan sama & berurutan dikelompokkan):</p>
+                      <textarea rows={2} className="w-full text-xs border rounded p-1 bg-amber-50" placeholder={"PERBAIKAN PIPA AIR LAUT\nME : YANMAR…"}
+                        value={it.keterangan || ""} onChange={(e) => setItem(it.id, { keterangan: e.target.value })} />
+                      <p className="text-[11px] text-slate-500 mb-1 mt-2">Rincian / breakdown (1 baris = 1 poin, DI BAWAH item — tak perlu tanda &quot;-&quot;):</p>
+                      <textarea rows={3} className="w-full text-xs border rounded p-1" placeholder={"Pengelasan pipa bocor\nGanti clamp"}
+                        value={(it.breakdown || []).join("\n")}
+                        onChange={(e) => setItem(it.id, { breakdown: e.target.value.split("\n") })} />
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>
