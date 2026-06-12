@@ -11,8 +11,8 @@ import Sidebar from "@/components/Sidebar";
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap", variable: "--font-sans" });
 
 export const metadata: Metadata = {
-  title: "Otomatisasi Dokumen Teknik ASDP",
-  description: "Platform otomatisasi dokumen teknik PT. ASDP Indonesia Ferry",
+  title: "Manajemen Report Teknik ASDP Ternate",
+  description: "Platform manajemen report teknik PT. ASDP Indonesia Ferry — Cabang Ternate",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

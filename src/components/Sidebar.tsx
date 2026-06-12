@@ -92,7 +92,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
             <Image src="/logo-asdp.png" alt="ASDP" width={40} height={28} className="object-contain" />
           </div>
           <div className="leading-tight">
-            <p className="text-white font-extrabold text-sm tracking-tight">Otomatisasi Dokumen</p>
+            <p className="text-white font-extrabold text-sm tracking-tight">Manajemen Report</p>
             <p className="text-white/60 text-xs">Teknik ASDP · Ternate</p>
           </div>
         </div>
@@ -140,7 +140,7 @@ export default function Sidebar() {
       {/* Topbar mobile */}
       <div className="no-print md:hidden sticky top-0 z-40 flex items-center gap-3 px-4 py-3 asdp-gradient text-white shadow">
         <button onClick={() => setOpen(true)} aria-label="Menu" className="text-xl">☰</button>
-        <span className="font-bold text-sm">Otomatisasi Dokumen Teknik ASDP</span>
+        <span className="font-bold text-sm">Manajemen Report Teknik ASDP Ternate</span>
       </div>
 
       {/* Sidebar desktop */}
