@@ -36,7 +36,6 @@ const MATERIAL_SUB = [
 
 const SPPBJ_SUB = [
   { href: "/sppbj", label: "Riwayat Pengadaan", icon: "🏠" },
-  { href: "/sppbj/analisa", label: "Analisa Anggaran", icon: "📊" },
   { href: "/sppbj/isi", label: "Input / Edit", icon: "✏️" },
 ];
 
@@ -101,7 +100,15 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
 
       {/* Tools */}
       <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
-        <p className="text-[10px] uppercase tracking-[0.15em] text-white/40 font-bold px-2 mb-2">Menu Tools</p>
+        <p className="text-[10px] uppercase tracking-[0.15em] text-white/40 font-bold px-2 mb-2">Resume</p>
+        <Link href="/dashboard" onClick={onNavigate}
+          className={`relative flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-semibold transition ${path.startsWith("/dashboard") ? "text-white bg-white/[0.07] ring-1 ring-white/10" : "text-white/75 hover:bg-white/5 hover:text-white"}`}>
+          {path.startsWith("/dashboard") && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
+          <span className={`grid place-items-center h-8 w-8 rounded-lg text-base shrink-0 ${path.startsWith("/dashboard") ? "bg-white/15" : "bg-white/5"}`}>📊</span>
+          Dashboard Anggaran
+        </Link>
+
+        <p className="text-[10px] uppercase tracking-[0.15em] text-white/40 font-bold px-2 mb-2 mt-4">Menu Tools</p>
 
         <Tool active={swakelolaActive} href="/" icon="⚓" label="Generator Swakelola" sub={SWAKELOLA_SUB} onNavigate={onNavigate} path={path} />
         <div className="h-1" />
