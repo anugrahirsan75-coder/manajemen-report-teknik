@@ -9,6 +9,8 @@ import { rupiah, bulanTahun } from "@/lib/format";
 
 const reqEstimasi = (p: any) => sppbjTotal(p?.items || []);
 const reqFinal = (p: any) => (p?.items || []).reduce((s: number, it: any) => s + hargaSpbjOf(it) * (it.jumlah || 0), 0);
+// kategori anggaran dari nama pengadaan: ada kata "investasi" -> Investasi, lainnya -> Biaya
+const kategoriAnggaran = (nama: string): "Investasi" | "Biaya" => (/investasi/i.test(nama || "") ? "Investasi" : "Biaya");
 
 export default function SppbjAnalisa() {
   const { listRemote, loadById, supabaseReady } = useSppbj();
@@ -29,10 +31,13 @@ export default function SppbjAnalisa() {
     const byStatus: Record<string, { n: number; nilai: number }> = {};
     const byMA: Record<string, { n: number; nilai: number }> = {};
     const byBulan: Record<string, number> = {};
+    const byKat: Record<"Biaya" | "Investasi", { n: number; nilai: number }> = { Biaya: { n: 0, nilai: 0 }, Investasi: { n: 0, nilai: 0 } };
     for (const r of data) {
       const p = r.payload || {};
       const est = reqEstimasi(p);
       estimasi += est; final += reqFinal(p);
+      const kat = kategoriAnggaran(r.nama_pengadaan || p.namaPengadaan || "");
+      byKat[kat].n++; byKat[kat].nilai += est;
       const st = p.status || "menunggu_spbj";
       (byStatus[st] = byStatus[st] || { n: 0, nilai: 0 }).n++; byStatus[st].nilai += est;
       const mas: string[] = Array.isArray(p.mataAnggaran) && p.mataAnggaran.length ? p.mataAnggaran : ["(Tanpa Mata Anggaran)"];
@@ -43,7 +48,7 @@ export default function SppbjAnalisa() {
     const bulanSeries = Object.entries(byBulan).map(([k, v]) => ({ k, v })).sort((x, y) => x.k.localeCompare(y.k));
     const top = data.map((r) => ({ nama: r.nama_pengadaan || "(tanpa nama)", nilai: reqEstimasi(r.payload), st: r.payload?.status, row: r }))
       .sort((x, y) => y.nilai - x.nilai).slice(0, 5);
-    return { estimasi, final, ppn: Math.round(estimasi * 0.11), grand: Math.round(estimasi * 1.11), n: data.length, byStatus, maList, bulanSeries, top };
+    return { estimasi, final, ppn: Math.round(estimasi * 0.11), grand: Math.round(estimasi * 1.11), n: data.length, byStatus, byKat, maList, bulanSeries, top };
   }, [data]);
 
   const maMax = Math.max(1, ...a.maList.map((m) => m.nilai));
@@ -51,13 +56,13 @@ export default function SppbjAnalisa() {
 
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
+      <Link href="/sppbj" className="btn btn-ghost text-sm mb-4 inline-flex">← Kembali ke SPPBJ Pengadaan</Link>
       <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
         <div className="glass hero-glow rounded-3xl px-7 py-6 flex items-center gap-4">
           <div className="h-12 w-12 rounded-2xl asdp-gradient grid place-items-center text-2xl text-white shadow-md shrink-0">📊</div>
           <div className="flex-1">
-            <Link href="/sppbj" className="text-xs text-slate-500 hover:text-[#16357f]">‹ SPPBJ Pengadaan</Link>
             <h1 className="text-2xl font-extrabold asdp-text-gradient tracking-tight">Analisa Anggaran</h1>
-            <p className="text-slate-500 text-sm">Ringkasan nilai pengadaan per status, mata anggaran &amp; periode</p>
+            <p className="text-slate-500 text-sm">Ringkasan nilai pengadaan per status, kategori, mata anggaran &amp; periode</p>
           </div>
           {supabaseReady && (
             <select value={bulan} onChange={(e) => setBulan(e.target.value)} className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
@@ -85,6 +90,37 @@ export default function SppbjAnalisa() {
           {a.n === 0 ? (
             <div className="mt-5 text-center bg-white rounded-2xl ring-line elev-sm p-10 text-slate-400 text-sm">Belum ada data pengadaan{bulan ? " di bulan ini" : ""}.</div>
           ) : (
+            <>
+            {/* Biaya vs Investasi */}
+            <div className="mt-5 bg-white rounded-2xl elev-md ring-line p-5 anim-in">
+              <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
+                <span className="h-8 w-8 rounded-lg asdp-gradient text-white grid place-items-center text-sm">⚖️</span>
+                <span className="accent-bar">Biaya vs Investasi</span>
+              </h3>
+              <div className="grid sm:grid-cols-2 gap-4">
+                {([["Biaya", "from-cyan-500 to-teal-600", "🛠️"], ["Investasi", "from-indigo-500 to-blue-700", "📈"]] as const).map(([k, grad, ic]) => {
+                  const v = a.byKat[k];
+                  const pct = a.estimasi ? Math.round((v.nilai / a.estimasi) * 100) : 0;
+                  return (
+                    <div key={k} className="rounded-xl ring-1 ring-slate-100 p-4">
+                      <div className="flex items-center gap-2.5">
+                        <span className={`grid place-items-center h-10 w-10 rounded-xl bg-gradient-to-br ${grad} text-white text-lg shadow-sm`}>{ic}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-slate-700">{k}</p>
+                          <p className="text-[11px] text-slate-400">{v.n} pengadaan · {pct}% dari total</p>
+                        </div>
+                        <p className="text-lg font-extrabold asdp-text-gradient">{rupiah(v.nilai)}</p>
+                      </div>
+                      <div className="h-2 rounded-full bg-slate-100 overflow-hidden mt-3">
+                        <div className={`h-full rounded-full bg-gradient-to-r ${grad}`} style={{ width: `${pct}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-[11px] text-slate-400 mt-3">Kategori otomatis dari nama pengadaan: mengandung kata <b>&quot;Investasi&quot;</b> → Investasi, selain itu → Biaya.</p>
+            </div>
+
             <div className="mt-5 grid lg:grid-cols-2 gap-5">
               {/* Per status */}
               <Card title="Distribusi Status" icon="🚦">
@@ -153,6 +189,7 @@ export default function SppbjAnalisa() {
                 </div>
               </Card>
             </div>
+            </>
           )}
         </>
       )}
