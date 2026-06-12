@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
@@ -64,6 +65,7 @@ export default function SppbjList() {
               {bulanList.map((b) => <option key={b} value={b}>{bulanTahun(b + "-01")}</option>)}
             </select>
           )}
+          <Link href="/sppbj/analisa" className="btn btn-ghost text-xs">📊 Analisa Anggaran</Link>
           {supabaseReady && <button onClick={refresh} className="btn btn-ghost text-xs">↻ Refresh</button>}
         </div>
       </div>

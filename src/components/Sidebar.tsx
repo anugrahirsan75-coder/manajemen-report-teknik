@@ -36,6 +36,7 @@ const MATERIAL_SUB = [
 
 const SPPBJ_SUB = [
   { href: "/sppbj", label: "Riwayat Pengadaan", icon: "🏠" },
+  { href: "/sppbj/analisa", label: "Analisa Anggaran", icon: "📊" },
   { href: "/sppbj/isi", label: "Input / Edit", icon: "✏️" },
 ];
 
