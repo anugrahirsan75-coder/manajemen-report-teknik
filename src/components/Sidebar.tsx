@@ -51,19 +51,21 @@ const SERVIS_SUB = [
 
 function Tool({ active, href, icon, label, sub, onNavigate, path }: any) {
   return (
-    <div className={`rounded-xl ${active ? "bg-white/10" : ""}`}>
+    <div className={`rounded-xl transition ${active ? "bg-white/[0.07] ring-1 ring-white/10 shadow-[0_8px_24px_-12px_rgba(0,0,0,0.6)]" : ""}`}>
       <Link href={href} onClick={onNavigate}
-        className={`flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-sm font-semibold transition ${active ? "text-white" : "text-white/80 hover:bg-white/5"}`}>
-        <span className="text-lg">{icon}</span> {label}
+        className={`relative flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-semibold transition ${active ? "text-white" : "text-white/75 hover:bg-white/5 hover:text-white"}`}>
+        {active && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
+        <span className={`grid place-items-center h-8 w-8 rounded-lg text-base shrink-0 transition ${active ? "bg-white/15 shadow-inner" : "bg-white/5"}`}>{icon}</span>
+        <span className="truncate">{label}</span>
       </Link>
       {active && (
-        <div className="pb-2 pl-3">
+        <div className="pb-2 pl-3.5 pr-1.5 anim-in">
           {sub.map((s: any) => {
             const a = ["/", "/material", "/sppbj", "/nonpr", "/servis"].includes(s.href) ? path === s.href : path.startsWith(s.href);
             return (
               <Link key={s.href} href={s.href} onClick={onNavigate}
-                className={`flex items-center gap-2 pl-4 pr-3 py-1.5 rounded-lg text-[13px] transition border-l-2 ${a ? "text-white border-white" : "text-white/60 border-white/15 hover:text-white"}`}>
-                <span className="text-xs">{s.icon}</span> {s.label}
+                className={`flex items-center gap-2 pl-3.5 pr-3 py-1.5 rounded-lg text-[13px] transition border-l-2 ${a ? "text-white border-[#14b8c4] bg-white/5 font-medium" : "text-white/55 border-white/10 hover:text-white hover:border-white/30"}`}>
+                <span className="text-xs opacity-90">{s.icon}</span> {s.label}
               </Link>
             );
           })}
@@ -86,19 +88,19 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Brand */}
       <div className="px-4 py-5 border-b border-white/10">
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-xl p-1.5 shadow shrink-0">
+          <div className="bg-white rounded-xl p-1.5 shadow-lg shrink-0 ring-1 ring-white/20">
             <Image src="/logo-asdp.png" alt="ASDP" width={40} height={28} className="object-contain" />
           </div>
           <div className="leading-tight">
-            <p className="text-white font-bold text-sm">Otomatisasi Dokumen</p>
-            <p className="text-white/70 text-xs">Teknik ASDP</p>
+            <p className="text-white font-extrabold text-sm tracking-tight">Otomatisasi Dokumen</p>
+            <p className="text-white/60 text-xs">Teknik ASDP · Ternate</p>
           </div>
         </div>
       </div>
 
       {/* Tools */}
-      <nav className="flex-1 overflow-y-auto px-3 py-4">
-        <p className="text-[10px] uppercase tracking-wider text-white/40 font-semibold px-2 mb-2">Tools</p>
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-0.5">
+        <p className="text-[10px] uppercase tracking-[0.15em] text-white/40 font-bold px-2 mb-2">Menu Tools</p>
 
         <Tool active={swakelolaActive} href="/" icon="⚓" label="Generator Swakelola" sub={SWAKELOLA_SUB} onNavigate={onNavigate} path={path} />
         <div className="h-1" />

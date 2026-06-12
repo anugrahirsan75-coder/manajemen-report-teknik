@@ -1,11 +1,14 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import { StoreProvider } from "@/lib/store";
 import { MaterialProvider } from "@/lib/material/store";
 import { SppbjProvider } from "@/lib/sppbj/store";
 import { NonprProvider } from "@/lib/nonpr/store";
 import { ServisProvider } from "@/lib/servis/store";
 import Sidebar from "@/components/Sidebar";
+
+const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap", variable: "--font-sans" });
 
 export const metadata: Metadata = {
   title: "Otomatisasi Dokumen Teknik ASDP",
@@ -14,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" suppressHydrationWarning>
+    <html lang="id" suppressHydrationWarning className={jakarta.variable}>
       <head>
         <script
           dangerouslySetInnerHTML={{

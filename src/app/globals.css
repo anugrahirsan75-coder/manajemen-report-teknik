@@ -7,16 +7,73 @@
   --asdp-green: #7cc242;
   --asdp-teal: #14b8c4;
   --asdp-blue: #1ca3dd;
+  --ring: rgba(28, 163, 221, 0.35);
+  --shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.04), 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-md: 0 4px 12px -2px rgba(22, 53, 127, 0.10), 0 2px 6px -2px rgba(15, 23, 42, 0.06);
+  --shadow-lg: 0 18px 40px -12px rgba(22, 53, 127, 0.22);
 }
+
+* { -webkit-tap-highlight-color: transparent; }
+html { scroll-behavior: smooth; }
 
 body {
   background:
-    radial-gradient(900px 500px at 100% -5%, rgba(28, 163, 221, 0.10), transparent 55%),
-    radial-gradient(800px 500px at -5% 0%, rgba(124, 194, 66, 0.10), transparent 55%),
+    radial-gradient(1000px 560px at 100% -8%, rgba(28, 163, 221, 0.12), transparent 56%),
+    radial-gradient(900px 540px at -6% 2%, rgba(124, 194, 66, 0.11), transparent 56%),
+    radial-gradient(700px 600px at 50% 120%, rgba(20, 184, 196, 0.08), transparent 60%),
     #eef2f7;
   background-attachment: fixed;
   color: #0f172a;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  letter-spacing: -0.01em;
 }
+
+/* ====== Scrollbar elegan ====== */
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-track { background: transparent; }
+*::-webkit-scrollbar-thumb { background: rgba(100, 116, 139, 0.35); border-radius: 9999px; border: 2px solid transparent; background-clip: content-box; }
+*::-webkit-scrollbar-thumb:hover { background: rgba(100, 116, 139, 0.55); background-clip: content-box; }
+.dark *::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.28); background-clip: content-box; }
+
+/* ====== Animasi masuk ====== */
+@keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes popIn { from { opacity: 0; transform: scale(0.96); } to { opacity: 1; transform: none; } }
+.anim-in { animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.anim-pop { animation: popIn 0.3s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > * { animation: fadeUp 0.45s cubic-bezier(0.22, 1, 0.36, 1) both; }
+.stagger > *:nth-child(1) { animation-delay: 0.03s; }
+.stagger > *:nth-child(2) { animation-delay: 0.08s; }
+.stagger > *:nth-child(3) { animation-delay: 0.13s; }
+.stagger > *:nth-child(4) { animation-delay: 0.18s; }
+.stagger > *:nth-child(5) { animation-delay: 0.23s; }
+@media (prefers-reduced-motion: reduce) { .anim-in, .anim-pop, .stagger > * { animation: none; } }
+
+/* ====== Kartu & elevasi ====== */
+.elev-sm { box-shadow: var(--shadow-sm); }
+.elev-md { box-shadow: var(--shadow-md); }
+.elev-lg { box-shadow: var(--shadow-lg); }
+.ring-line { box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.06); }
+
+/* ====== Tombol ====== */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 0.4rem; font-weight: 600; font-size: 0.82rem; border-radius: 0.65rem; padding: 0.5rem 0.95rem; transition: transform 0.12s ease, box-shadow 0.18s ease, background 0.18s ease, opacity 0.18s; cursor: pointer; white-space: nowrap; }
+.btn:active { transform: translateY(1px) scale(0.99); }
+.btn:disabled { opacity: 0.55; cursor: not-allowed; }
+.btn-primary { color: #fff; background: linear-gradient(100deg, #14b8c4, #1ca3dd 55%, #16357f); box-shadow: 0 6px 18px -6px rgba(22, 53, 127, 0.5); }
+.btn-primary:hover:not(:disabled) { box-shadow: 0 10px 24px -6px rgba(22, 53, 127, 0.6); }
+.btn-ghost { color: #334155; background: #fff; box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.10); }
+.btn-ghost:hover:not(:disabled) { background: #f8fafc; box-shadow: inset 0 0 0 1px rgba(28, 163, 221, 0.4); }
+.btn-success { color: #fff; background: linear-gradient(100deg, #16a34a, #15803d); box-shadow: 0 6px 18px -6px rgba(21, 128, 61, 0.5); }
+.btn-danger-soft { color: #dc2626; background: #fff; box-shadow: inset 0 0 0 1px rgba(220, 38, 38, 0.25); }
+.btn-danger-soft:hover { background: #fef2f2; }
+.dark .btn-ghost { color: #cbd5e1; background: #111827; box-shadow: inset 0 0 0 1px #334155; }
+.dark .btn-ghost:hover:not(:disabled) { background: #0f172a; }
+
+/* ====== Chip / badge ====== */
+.chip { display: inline-flex; align-items: center; gap: 0.3rem; font-weight: 600; font-size: 0.66rem; padding: 0.16rem 0.55rem; border-radius: 9999px; letter-spacing: 0.01em; }
+
+/* ====== Field fokus ====== */
+input:focus-visible, select:focus-visible, textarea:focus-visible { outline: none; }
 
 /* gradient brand ASDP */
 .asdp-gradient {
@@ -29,18 +86,32 @@ body {
   color: transparent;
 }
 .glass {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
 }
 .card-hover {
-  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  transition: transform 0.2s cubic-bezier(0.22,1,0.36,1), box-shadow 0.2s ease, border-color 0.2s ease;
 }
 .card-hover:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 12px 30px -8px rgba(22, 53, 127, 0.25);
+  transform: translateY(-4px);
+  box-shadow: 0 18px 38px -12px rgba(22, 53, 127, 0.28);
+  border-color: rgba(28, 163, 221, 0.35);
 }
 @keyframes floaty { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
+
+/* baris tabel halus */
+.row-hover { transition: background 0.15s ease, box-shadow 0.15s ease; }
+.row-hover:hover { background: linear-gradient(90deg, rgba(28,163,221,0.06), rgba(124,194,66,0.04)); }
+.dark .row-hover:hover { background: rgba(28,163,221,0.10); }
+
+/* judul section dgn aksen */
+.accent-bar { position: relative; padding-left: 0.7rem; }
+.accent-bar::before { content: ""; position: absolute; left: 0; top: 0.1em; bottom: 0.1em; width: 4px; border-radius: 9999px; background: linear-gradient(180deg, #14b8c4, #16357f); }
+
+/* hero card dgn glow brand */
+.hero-glow { position: relative; overflow: hidden; }
+.hero-glow::after { content: ""; position: absolute; inset: 0; background: radial-gradient(420px 180px at 88% -30%, rgba(124,194,66,0.18), transparent 60%); pointer-events: none; }
 
 /* ====== DARK MODE (chrome app saja; preview dokumen .print-page tetap putih) ====== */
 .dark body {

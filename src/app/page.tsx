@@ -42,10 +42,10 @@ export default function Home() {
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       {/* Hero */}
-      <div className="asdp-gradient rounded-3xl p-[1.5px] shadow-xl">
-        <div className="glass rounded-3xl px-7 py-7">
+      <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
+        <div className="glass hero-glow rounded-3xl px-7 py-7">
           <div className="flex items-center gap-4">
-            <div className="bg-white rounded-2xl p-2 shadow-md shrink-0" style={{ animation: "floaty 5s ease-in-out infinite" }}>
+            <div className="bg-white rounded-2xl p-2.5 elev-md shrink-0 ring-1 ring-black/5" style={{ animation: "floaty 5s ease-in-out infinite" }}>
               <Image src="/logo-asdp.png" alt="ASDP" width={64} height={44} className="object-contain" />
             </div>
             <div>
@@ -100,9 +100,9 @@ export default function Home() {
         <h2 className="font-bold text-slate-700">Dokumen</h2>
         <span className="text-xs text-slate-400">{DOKUMEN.length} dokumen · PDF / Word / Excel</span>
       </div>
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid sm:grid-cols-2 gap-4 stagger">
         {DOKUMEN.map((d) => (
-          <Link key={d.slug} href={`/dokumen/${d.slug}`} className="card-hover bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex items-center gap-4 group">
+          <Link key={d.slug} href={`/dokumen/${d.slug}`} className="card-hover bg-white rounded-2xl elev-sm ring-line border border-transparent p-4 flex items-center gap-4 group">
             <div className={`h-14 w-14 rounded-xl bg-gradient-to-br ${d.accent} grid place-items-center text-2xl text-white shadow-md shrink-0`}>
               {d.icon}
             </div>
