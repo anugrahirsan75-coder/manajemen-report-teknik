@@ -62,6 +62,7 @@ export interface SppbjRequest {
   jenisPengadaan?: "barang" | "jasa"; // FORMAT SAP kolom I
   matlGroup?: string; // FORMAT SAP kolom Matl Grup (kode B0xxxx dari DATABASE)
   penerima?: Record<string, string>; // BSTB: kapal -> nama/penerima
+  fotoDokumentasi?: string[]; // foto dokumentasi (URL/base64)
 }
 
 export const tahunDari = (iso: string) => (iso || "").slice(0, 4);

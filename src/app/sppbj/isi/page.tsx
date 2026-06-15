@@ -3,11 +3,12 @@
 import Link from "next/link";
 import { useSppbj } from "@/lib/sppbj/store";
 import { MATA_ANGGARAN, STAF_TEKNIK, KAPAL_LIST, DEPT_HEAD, VENDOR_DB, MATL_GROUP } from "@/lib/sppbj/db";
-import { SppbjItem, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines } from "@/lib/sppbj/types";
+import { SppbjItem, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest } from "@/lib/sppbj/types";
 import { useState, Fragment } from "react";
 import { Field, Input, Section } from "@/components/Field";
 import DrpPicker from "@/components/DrpPicker";
 import { rupiah, bulanTahun } from "@/lib/format";
+import FotoUploader from "@/components/FotoUploader";
 
 export default function SppbjIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving } = useSppbj();
@@ -17,6 +18,8 @@ export default function SppbjIsi() {
   const toInt = (s: string) => { const d = (s || "").replace(/[^\d]/g, ""); return d ? parseInt(d, 10) : 0; };
   const toNum = (s: string) => { const x = parseFloat((s || "").replace(/[^\d.]/g, "")); return isNaN(x) ? 0 : x; };
   const FIELDS: (keyof SppbjItem)[] = ["kapal", "jumlah", "satuan", "nama", "spesifikasi", "harga"];
+
+  const addFotos = (urls: string[]) => update({ fotoDokumentasi: [...(req.fotoDokumentasi || []), ...urls].slice(0, 5) });
   const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text/plain");
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
@@ -218,6 +221,21 @@ export default function SppbjIsi() {
             </table>
           </div>
         </div>
+      </Section>
+
+      <Section title="Dokumentasi (Foto, maks 5)" icon="📷">
+        <FotoUploader onAdd={addFotos} max={5 - (req.fotoDokumentasi?.length || 0)} hint="kompres otomatis maks 1024px" />
+        {!!req.fotoDokumentasi?.length && (
+          <div className="flex gap-3 mt-3 flex-wrap">
+            {req.fotoDokumentasi.map((u, i) => (
+              <div key={i} className="relative">
+                <img src={u} alt={`foto ${i + 1}`} className="h-24 w-32 object-cover rounded-lg border" />
+                <button onClick={() => update({ fotoDokumentasi: req.fotoDokumentasi!.filter((_, fi) => fi !== i) })} title="Hapus foto"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-red-500 text-white text-xs font-bold shadow grid place-items-center hover:bg-red-600">✕</button>
+              </div>
+            ))}
+          </div>
+        )}
       </Section>
 
       <div className="flex justify-end gap-3">

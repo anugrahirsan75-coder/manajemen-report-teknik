@@ -24,6 +24,7 @@ export interface MaterialRequest {
   judulSC: string; // file3: "Pengadaan Suku Cadang Kapal {Bulan Tahun}"
   judulUmum: string; // file4: "Pengadaan Barang Umum Kapal {Bulan Tahun}"
   items: MaterialItem[];
+  fotoDokumentasi?: string[]; // foto dokumentasi (URL/base64)
 }
 
 export const itemKategori = (it: MaterialItem): "SC" | "UMUM" =>

@@ -31,20 +31,55 @@ export default function FotoUploader({ onAdd, max, label = "Pilih / Tarik / Past
     } finally { setBusy(0); }
   };
 
-  // PASTE Ctrl+V — aktif saat area di-hover/fokus, biar tidak bentrok dgn input form lain
+  // PASTE Ctrl+V global — aktif di mana saja selama tidak sedang ketik di input/textarea
   useEffect(() => {
     const onPaste = (e: ClipboardEvent) => {
-      if (!hovered) return;
+      const active = document.activeElement;
+      if (active && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || (active as HTMLElement).isContentEditable)) return;
       const items = Array.from(e.clipboardData?.items || []);
-      const files = items.filter((it) => it.kind === "file" && it.type.startsWith("image/")).map((it) => it.getAsFile()!).filter(Boolean) as File[];
+      const files = items
+        .filter((it) => it.kind === "file" && it.type.startsWith("image/"))
+        .map((it) => it.getAsFile()!)
+        .filter(Boolean) as File[];
       if (!files.length) return;
       e.preventDefault();
       handleFiles(files);
     };
     window.addEventListener("paste", onPaste);
     return () => window.removeEventListener("paste", onPaste);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hovered, max]);
+  }, [max]);
+
+  // Modern Clipboard API fallback (navigator.clipboard.read)
+  const readClipboard = async () => {
+    try {
+      if (!navigator.clipboard?.read) {
+        alert("Browser tidak mendukung navigator.clipboard.read(). Gunakan Ctrl+V atau drag-drop.");
+        return;
+      }
+      const items = await navigator.clipboard.read();
+      const files: File[] = [];
+      for (const item of items) {
+        for (const type of item.types) {
+          if (type.startsWith("image/")) {
+            const blob = await item.getType(type);
+            files.push(new File([blob], `clipboard-${Date.now()}.${type.split("/")[1]}`, { type }));
+            break;
+          }
+        }
+      }
+      if (!files.length) {
+        alert("Tidak ada gambar di clipboard.");
+        return;
+      }
+      handleFiles(files);
+    } catch (e: any) {
+      if (e.name === "NotAllowedError" || e.name === "SecurityError") {
+        alert("Izin clipboard ditolak. Izinkan akses clipboard di pengaturan browser, atau gunakan Ctrl+V / drag-drop.");
+      } else {
+        alert("Gagal baca clipboard: " + (e?.message ?? e));
+      }
+    }
+  };
 
   const onDrop = (e: React.DragEvent) => {
     e.preventDefault(); setDrag(false);
@@ -80,6 +115,10 @@ export default function FotoUploader({ onAdd, max, label = "Pilih / Tarik / Past
           {max ? <span className="text-slate-400"> · sisa {max} slot</span> : null}
         </p>
       </div>
+      <button type="button" onClick={readClipboard} disabled={busy > 0}
+        className="mt-2 w-full text-xs px-3 py-1.5 rounded-lg border border-slate-300 bg-white hover:bg-slate-50 text-slate-600 disabled:opacity-50 transition flex items-center justify-center gap-1.5">
+        <span>📋</span> Ambil dari Clipboard
+      </button>
     </div>
   );
 }
