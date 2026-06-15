@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSppbj } from "@/lib/sppbj/store";
 import { MATA_ANGGARAN, STAF_TEKNIK, KAPAL_LIST, DEPT_HEAD, VENDOR_DB, MATL_GROUP } from "@/lib/sppbj/db";
-import { SppbjItem, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest } from "@/lib/sppbj/types";
+import { SppbjItem, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest, fullNoKontrak } from "@/lib/sppbj/types";
 import { useState, Fragment } from "react";
 import { Field, Input, Section } from "@/components/Field";
 import DrpPicker from "@/components/DrpPicker";
@@ -166,9 +166,15 @@ export default function SppbjIsi() {
           SPBJ (PO) sudah terbit — aktifkan BSTB / BAPP
         </label>
         <div className="grid sm:grid-cols-3 gap-4">
-          <Field label="No. Kontrak / SPBJ (= No. SPBJ)"><Input value={req.noKontrak || ""} onChange={(e) => update({ noKontrak: e.target.value })} placeholder="mis. SPB/J.384/PBJ/ASDP-2026" /></Field>
-          <Field label="Tanggal SPBJ"><Input type="date" value={req.tanggalSPBJ || ""} onChange={(e) => update({ tanggalSPBJ: e.target.value })} /></Field>
-          <Field label="Tanggal Kontrak"><Input type="date" value={req.tanggalKontrak || ""} onChange={(e) => update({ tanggalKontrak: e.target.value })} /></Field>
+          <Field label="No. SPBJ (angka saja, mis. 3798)"><Input value={req.noSpbjNum || ""} onChange={(e) => update({ noSpbjNum: e.target.value })} placeholder="3798" /></Field>
+          <Field label="Bulan SPBJ (romawi, mis. VI)"><Input value={req.noSpbjBulan || ""} onChange={(e) => update({ noSpbjBulan: e.target.value.toUpperCase() })} placeholder="VI" maxLength={4} /></Field>
+          <div className="sm:col-span-3">
+            <label className="block">
+              <span className="text-xs font-semibold text-slate-600">No. Kontrak (otomatis)</span>
+              <div className="mt-1"><Input value={fullNoKontrak(req) || "— isi angka & romawi —"} readOnly className="bg-slate-50 text-slate-500 font-mono" /></div>
+            </label>
+          </div>
+          <Field label="Tanggal SPBJ (= Tanggal Kontrak)"><Input type="date" value={req.tanggalSPBJ || ""} onChange={(e) => update({ tanggalSPBJ: e.target.value })} /></Field>
           <Field label="Tanggal BAPP"><Input type="date" value={req.tanggalBAPP || ""} onChange={(e) => update({ tanggalBAPP: e.target.value })} /></Field>
           <Field label="Vendor / Rekanan (BAPP)">
             <Input list="vendorList" value={req.vendor || ""} onChange={(e) => update({ vendor: e.target.value })} />

@@ -55,8 +55,9 @@ export interface SppbjRequest {
   // Fase 2 (setelah SPBJ/PO terbit oleh SCM)
   noSPBJ?: string; // angka, mis "384"
   tanggalSPBJ?: string;
-  noKontrak?: string; // No. Kontrak/SPBJ (BAPP C7)
-  tanggalKontrak?: string;
+  // No SPBJ/Kontrak dipecah: isi angka + romawi bulan -> otomatis jadi SPB/J.{angka}/PBJ/{romawi}/ASDP-{tahun}
+  noSpbjNum?: string; // angka saja, mis "3798"
+  noSpbjBulan?: string; // romawi bulan, mis "VI"
   tanggalBAPP?: string; // isi manual
   vendor?: string; // nama PT/CV (rekanan)
   jenisPengadaan?: "barang" | "jasa"; // FORMAT SAP kolom I
@@ -66,6 +67,18 @@ export interface SppbjRequest {
 }
 
 export const tahunDari = (iso: string) => (iso || "").slice(0, 4);
+
+// Generate full noKontrak from components: SPB/J.{num}/PBJ/{romawi}/ASDP-{tahun}
+export const fullNoKontrak = (req: SppbjRequest): string => {
+  const num = (req.noSpbjNum || "").trim();
+  const bulan = (req.noSpbjBulan || "").trim().toUpperCase();
+  const thn = tahunDari(req.tanggal);
+  if (!num || !bulan) return "";
+  return `SPB/J.${num}/PBJ/${bulan}/ASDP-${thn}`;
+};
+
+// tanggalKontrak = tanggalSPBJ (sama)
+export const tanggalKontrak = (req: SppbjRequest): string => req.tanggalSPBJ || "";
 
 export function emptySppbjItem(kapal = ""): SppbjItem {
   return { id: globalThis.crypto?.randomUUID?.() ?? String(Math.random()), kapal, jumlah: 1, satuan: "unit", nama: "", spesifikasi: "", harga: 0 };

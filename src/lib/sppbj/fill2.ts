@@ -1,12 +1,12 @@
-import { SppbjRequest, SppbjItem, kapalUnik, tahunDari, hargaSpbjOf, bdLines, ketLines } from "./types";
+import { SppbjRequest, SppbjItem, kapalUnik, tahunDari, hargaSpbjOf, bdLines, ketLines, fullNoKontrak, tanggalKontrak } from "./types";
 import { tanggalIndo, rupiah } from "@/lib/format";
 import { genWorkbook, buildSppbjEdits, Edit, openTpl, sheetXmlPath, applyEdits, saveZip } from "./fill";
 import type PizZip from "pizzip";
 
 const storLoc = (kapal: string) => kapal.replace(/KMP\.?/i, "").trim().toLowerCase();
 const itemsKapal = (req: SppbjRequest, kapal: string) => req.items.filter((i) => i.kapal.trim() === kapal);
-// No SPBJ = No Kontrak. Angka untuk BSTB/BAPP diambil dari grup angka pertama No.Kontrak.
-const nomorSPBJ = (req: SppbjRequest) => (req.noKontrak?.match(/\d+/)?.[0]) || "";
+// Nomor SPBJ untuk BSTB/BAPP = angka dari noSpbjNum
+const nomorSPBJ = (req: SppbjRequest) => (req.noSpbjNum || "").trim();
 
 // ---------- BSTB ----------
 // kapal diberikan -> 1 kapal; kapal null -> semua item (sub-header per kapal di kolom B)
@@ -30,7 +30,7 @@ export function buildBstbEdits(req: SppbjRequest, kapal: string | null): Edit[] 
     { ref: "C9", kind: "str", value: kapal ?? "Semua Kapal" },
     { ref: "H7", kind: "str", value: `${noNum}/BSTB-LOG//${tahun}` },
     { ref: "H9", kind: "str", value: req.tanggalSPBJ ? tanggalIndo(req.tanggalSPBJ) : "" },
-    { ref: "C12", kind: "str", value: req.noKontrak ? `SPBJ No. ${req.noKontrak}` : "" },
+    { ref: "C12", kind: "str", value: fullNoKontrak(req) ? `SPBJ No. ${fullNoKontrak(req)}` : "" },
   ];
   for (let r = 21; r <= 33; r++) ["A", "B", "E", "G", "H", "I", "J"].forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
   let r = 21, no = 1;
@@ -64,8 +64,8 @@ export function buildBappEdits(req: SppbjRequest): Edit[] {
   const edits: Edit[] = [
     { ref: "C6", kind: "str", value: req.vendor || "" },
     { ref: "L6", kind: "str", value: `${nomorSPBJ(req)}/BAPPB//${tahun}` },
-    { ref: "C7", kind: "str", value: req.noKontrak || "" },
-    { ref: "C8", kind: "str", value: req.tanggalKontrak ? tanggalIndo(req.tanggalKontrak) : "" },
+    { ref: "C7", kind: "str", value: fullNoKontrak(req) || "" },
+    { ref: "C8", kind: "str", value: tanggalKontrak(req) ? tanggalIndo(tanggalKontrak(req)) : "" },
     { ref: "L7", kind: "str", value: req.tanggalBAPP ? tanggalIndo(req.tanggalBAPP) : "" },
   ];
   // tabel item 14-30 (grup per kapal): B kapal header, lalu item A,B,G,H,I,J,L
