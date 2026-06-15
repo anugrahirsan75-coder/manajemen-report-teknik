@@ -8,7 +8,7 @@ import { Field, Input, Section } from "@/components/Field";
 import { rupiah } from "@/lib/format";
 import { MATA_ANGGARAN_NONPR, VENDOR_NONPR, KAPAL_LIST_NONPR, MAX_NILAI_NONPR } from "@/lib/nonpr/db";
 import { NonprItem, emptyNonprItem, kapalUnikNonpr, nonprTotal, ketLines } from "@/lib/nonpr/types";
-import { uploadFoto } from "@/lib/fotoStorage";
+import FotoUploader from "@/components/FotoUploader";
 
 export default function NonprIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving, lastSaved, supabaseReady } = useNonpr();
@@ -42,12 +42,7 @@ export default function NonprIsi() {
 
   const setJab = (kapal: string, jab: "KKM" | "Nakhoda") => update({ jabatanByKapal: { ...req.jabatanByKapal, [kapal]: jab } });
 
-  const onFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const urls = await Promise.all(files.map((f) => uploadFoto(f))); // Storage (fallback base64)
-    update({ fotoDokumentasi: [...(req.fotoDokumentasi || []), ...urls].slice(0, 2) }); // tambah ke yg ada, maks 2
-    e.target.value = ""; // bisa pilih file sama lagi setelah dihapus
-  };
+  const addFotos = (urls: string[]) => update({ fotoDokumentasi: [...(req.fotoDokumentasi || []), ...urls].slice(0, 2) });
 
   const simpan = async () => { await saveRemote(); };
   const simpanLanjut = async () => { await saveRemote(); router.push("/nonpr/detail"); };
@@ -181,7 +176,7 @@ export default function NonprIsi() {
       )}
 
       <Section title="Dokumentasi (Foto, maks 2)" icon="📷">
-        <input type="file" accept="image/*" multiple onChange={onFoto} className="text-sm" />
+        <FotoUploader onAdd={addFotos} max={2 - (req.fotoDokumentasi?.length || 0)} />
         {!!req.fotoDokumentasi?.length && (
           <div className="flex gap-3 mt-3">
             {req.fotoDokumentasi.map((u, i) => (

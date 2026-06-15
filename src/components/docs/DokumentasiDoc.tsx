@@ -5,6 +5,7 @@ import { useStore } from "@/lib/store";
 import { DokFoto } from "@/lib/types";
 import DocToolbar from "@/components/DocToolbar";
 import { uploadFoto } from "@/lib/fotoStorage";
+import FotoUploader from "@/components/FotoUploader";
 
 export default function DokumentasiDoc() {
   const { data: d, update } = useStore();
@@ -21,11 +22,19 @@ export default function DokumentasiDoc() {
   const setCaption = (id: string, caption: string) => update({ fotoDok: d.fotoDok.map((f) => (f.id === id ? { ...f, caption } : f)) });
   const del = (id: string) => update({ fotoDok: d.fotoDok.filter((f) => f.id !== id) });
 
+  const addFromUploader = (kategori: "DECK" | "MESIN") => (urls: string[]) => {
+    const baru: DokFoto[] = urls.map((u) => ({ id: crypto.randomUUID(), kategori, caption: "", dataUrl: u }));
+    update({ fotoDok: [...d.fotoDok, ...baru] });
+  };
+
   const Grid = ({ kategori }: { kategori: "DECK" | "MESIN" }) => {
     const fotos = d.fotoDok.filter((f) => f.kategori === kategori);
     return (
       <>
         <div className="bg-blue-50 font-bold border border-black px-2 py-1 mt-4">{kategori}</div>
+        <div className="no-print mt-2">
+          <FotoUploader onAdd={addFromUploader(kategori)} compact label={`Tambah foto ${kategori}`} />
+        </div>
         {fotos.length === 0 ? (
           <p className="text-slate-400 text-sm my-2 no-print">Belum ada foto {kategori}.</p>
         ) : (

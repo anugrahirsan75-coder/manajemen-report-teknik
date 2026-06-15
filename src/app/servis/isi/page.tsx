@@ -8,7 +8,7 @@ import { ServisItem, ServisStatus, SERVIS_STATUS_LABEL, JENIS_BARANG, newServisI
 import { KAPAL_LIST_NONPR, VENDOR_NONPR } from "@/lib/nonpr/db";
 import { Field, Input, Section } from "@/components/Field";
 
-import { uploadFoto } from "@/lib/fotoStorage";
+import FotoUploader from "@/components/FotoUploader";
 
 export default function ServisIsi() {
   const { editing, setEditing, saveItem, deleteItem } = useServis();
@@ -27,12 +27,7 @@ export default function ServisIsi() {
     set(patch);
   };
 
-  const onFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
-    const urls = await Promise.all(files.map((f) => uploadFoto(f)));
-    set({ foto: [...(it.foto || []), ...urls].slice(0, 3) });
-    e.target.value = "";
-  };
+  const addFotos = (urls: string[]) => set({ foto: [...(it.foto || []), ...urls].slice(0, 3) });
 
   const simpan = async () => {
     if (!it.namaBarang.trim()) { alert("Nama barang wajib diisi."); return; }
@@ -113,8 +108,7 @@ export default function ServisIsi() {
       </Section>
 
       <Section title="Dokumentasi (Foto, maks 3)" icon="📷">
-        <input type="file" accept="image/*" multiple onChange={onFoto} className="text-sm" />
-        <p className="text-[11px] text-slate-400 mt-1">Foto otomatis dikompres (maks 1024px) biar hemat penyimpanan.</p>
+        <FotoUploader onAdd={addFotos} max={3 - (it.foto?.length || 0)} hint="kompres otomatis maks 1024px" />
         {!!it.foto?.length && (
           <div className="flex gap-3 mt-3 flex-wrap">
             {it.foto.map((u, i) => (
