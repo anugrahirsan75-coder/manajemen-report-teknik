@@ -137,6 +137,7 @@ export default function CekKodeMaterial() {
                 <th className="p-2 border">Kategori</th>
                 <th className="p-2 border">Kode Material</th>
                 <th className="p-2 border text-left">Material Description</th>
+                <th className="p-2 border text-left">Purchase Order Text</th>
                 <th className="p-2 border">Status</th>
                 <th className="p-2 border text-left">Kode/Deskripsi Lainnya <span className="text-[9px] text-slate-400">(SC)</span></th>
                 <th className="p-2 border"></th>
@@ -151,6 +152,7 @@ export default function CekKodeMaterial() {
                 const sel = cand?.length ? cand[selIdx] : undefined;
                 const showKode = sel ? sel.kode : (x?.kode || "");
                 const showDesc = sel ? sel.desc : (x?.desc || "");
+                const showPO = sel ? sel.po : (x?.po || "");
                 const rowColor = x ? (x.status === "ada" ? "bg-emerald-50/40" : x.status === "cek" ? "bg-amber-50/40" : "bg-rose-50/40") : "";
                 const stBadge = x?.status === "ada" ? "bg-emerald-100 text-emerald-700" : x?.status === "cek" ? "bg-amber-100 text-amber-700" : "bg-rose-100 text-rose-700";
                 const multi = (cand?.length ?? 0) > 1;
@@ -178,6 +180,7 @@ export default function CekKodeMaterial() {
                         </div>
                       ) : (showDesc || "—")}
                     </td>
+                    <td className="border p-1 text-xs text-slate-600">{showPO || <span className="text-slate-300">—</span>}</td>
                     <td className="border p-1 text-center">
                       {x ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${stBadge}`}>{x.status}</span> : <span className="text-slate-300 text-xs">—</span>}
                     </td>
@@ -189,14 +192,14 @@ export default function CekKodeMaterial() {
                   {isOpen && cand && (
                     <tr className="bg-sky-50/50">
                       <td className="border"></td>
-                      <td className="border p-2" colSpan={8}>
+                      <td className="border p-2" colSpan={9}>
                         <div className="text-[11px] font-semibold text-slate-600 mb-1.5">Pilih material description yang sesuai untuk &quot;{r.nama || r.partNumber}&quot; ({cand.length} kandidat):</div>
                         <div className="grid sm:grid-cols-2 gap-1">
                           {cand.map((c, ci) => (
                             <button key={ci} onClick={() => { setPick((p) => ({ ...p, [r.id]: ci })); setOpen((o) => ({ ...o, [r.id]: false })); }}
                               className={`flex items-center gap-2 text-left text-xs px-2 py-1 rounded border ${ci === selIdx ? "bg-emerald-100 border-emerald-300 font-semibold" : "bg-white border-slate-200 hover:bg-slate-50"}`}>
                               <span className="font-mono text-slate-500 w-24 shrink-0">{c.kode}</span>
-                              <span className="flex-1">{c.desc}</span>
+                              <span className="flex-1">{c.desc}{c.po && <span className="text-slate-400"> · {c.po}</span>}</span>
                               {ci === selIdx && <span className="text-emerald-600">✓</span>}
                             </button>
                           ))}

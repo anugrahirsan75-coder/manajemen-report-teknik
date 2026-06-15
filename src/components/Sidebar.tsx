@@ -121,8 +121,12 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <Tool active={servisActive} href="/servis" icon="🔧" label="Monitoring Servis" sub={SERVIS_SUB} onNavigate={onNavigate} path={path} />
       </nav>
 
-      <div className="px-3 pt-2 border-t border-white/10">
+      <div className="px-3 pt-2 border-t border-white/10 space-y-1">
         <ThemeToggle />
+        <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; }}
+          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-white/80 hover:bg-white/10 transition">
+          <span className="text-base">🚪</span> Keluar
+        </button>
       </div>
       <div className="px-4 py-3 text-[10px] text-white/40 leading-relaxed">
         PT. ASDP Indonesia Ferry (Persero)
@@ -134,6 +138,8 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
 
 export default function Sidebar() {
   const [open, setOpen] = useState(false);
+  const path = usePathname();
+  if (path === "/login") return null; // halaman login tanpa sidebar
 
   return (
     <>
