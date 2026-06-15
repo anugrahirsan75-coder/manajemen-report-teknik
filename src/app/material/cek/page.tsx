@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, Fragment } from "react";
+import { saveAs } from "file-saver";
 import { Section } from "@/components/Field";
 import type { CekResult } from "@/lib/material/kodeCheck";
 
@@ -16,7 +17,33 @@ export default function CekKodeMaterial() {
   const [open, setOpen] = useState<Record<string, boolean>>({}); // UMUM: baris rincian kandidat terbuka
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   const [meta, setMeta] = useState<{ count: number; source: string; lastSync: number | null } | null>(null);
+
+  // baris export sesuai tabel (ikut kandidat terpilih)
+  const exportExcel = async () => {
+    const out = rows
+      .filter((r) => r.nama.trim() || r.partNumber.trim())
+      .map((r, i) => {
+        const x = res[r.id];
+        const cand = x?.candidates;
+        const sel = cand?.length ? cand[Math.min(pick[r.id] ?? 0, cand.length - 1)] : undefined;
+        return {
+          no: i + 1, nama: r.nama, part: r.partNumber,
+          kategori: x?.kategori || (r.partNumber.trim() ? "SC" : "UMUM"),
+          kode: sel ? sel.kode : x?.kode || "", desc: sel ? sel.desc : x?.desc || "",
+          po: sel ? sel.po : x?.po || "", status: x?.status || "-",
+          lainnya: x?.kode2 ? `${x.kode2} — ${x.desc2 || ""}` : "",
+        };
+      });
+    if (!out.length) { alert("Belum ada item."); return; }
+    setExporting(true);
+    try {
+      const r = await fetch("/api/material/cek-export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: out }) });
+      if (!r.ok) throw new Error((await r.json()).error || "Gagal export");
+      saveAs(await r.blob(), `Cek Kode Material ${new Date().toISOString().slice(0, 10)}.xlsx`);
+    } catch (e: any) { alert("Gagal: " + (e?.message ?? e)); } finally { setExporting(false); }
+  };
 
   const setRow = (id: string, patch: Partial<Row>) =>
     setRows((rs) => rs.map((r) => (r.id === id ? { ...r, ...patch } : r)));
@@ -124,6 +151,9 @@ export default function CekKodeMaterial() {
           <button onClick={sync} disabled={syncing} title="Tarik data terbaru dari spreadsheet sekarang"
             className="text-sm border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 disabled:opacity-60">
             {syncing ? "Menyinkron…" : "🔄 Sinkron DB"}
+          </button>
+          <button onClick={exportExcel} disabled={exporting} className="btn btn-success text-sm">
+            {exporting ? "Menyiapkan…" : "📊 Export Excel"}
           </button>
         </div>
 
