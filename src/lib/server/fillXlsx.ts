@@ -3,6 +3,7 @@ import path from "path";
 import ExcelJS from "exceljs";
 import { ProjectData, formatNomorSpk } from "@/lib/types";
 import { tanggalIndo, kalimatTanggal, terbilangRupiah } from "@/lib/format";
+import { resolveFotoBuffer } from "@/lib/server/foto";
 
 const tpl = (n: string) => path.join(process.cwd(), "templates", n);
 const LOGO = path.join(process.cwd(), "templates", "logo_asdp.png");
@@ -178,30 +179,31 @@ export async function fillNominatif(d: ProjectData): Promise<Buffer> {
 }
 
 // ---------- 08 Dokumentasi (foto) ----------
+// foto: base64 (lama) atau URL Supabase Storage -> resolveFotoBuffer
 export async function fillDokumentasi(d: ProjectData): Promise<Buffer> {
   const wb = await load("08_dokumentasi.xlsx");
   const deck = wb.getWorksheet("Deck") ?? wb.worksheets[0];
   const mesin = wb.getWorksheet("Mesin") ?? wb.worksheets[1];
   set(deck, "A1", `DOKUMENTASI PEKERJAAN SWAKELOLA DOCKING ${d.namaKapal} TAHUN ${d.tahun}`);
 
-  const place = (ws: ExcelJS.Worksheet, fotos: typeof d.fotoDok) => {
+  const place = async (ws: ExcelJS.Worksheet, fotos: typeof d.fotoDok) => {
     if (!ws) return;
     const perRow = 2, colW = 5, rowH = 14; // sel: 2 foto per baris
-    fotos.forEach((f, idx) => {
-      const m = f.dataUrl.match(/^data:image\/(png|jpe?g);base64,(.+)$/);
-      if (!m) return;
-      const ext = m[1].startsWith("jp") ? "jpeg" : "png";
-      const id = wb.addImage({ base64: m[2], extension: ext as any });
+    for (let idx = 0; idx < fotos.length; idx++) {
+      const f = fotos[idx];
+      const resolved = await resolveFotoBuffer(f.dataUrl); // base64 ATAU URL Storage
+      if (!resolved) continue;
+      const id = wb.addImage({ buffer: resolved.buf as any, extension: resolved.ext });
       const gx = idx % perRow, gy = Math.floor(idx / perRow);
       const col = gx * colW + 0.3;
       const row = 3 + gy * rowH + 0.3;
       ws.addImage(id, { tl: { col, row }, ext: { width: 300, height: 200 } });
       const capRow = 3 + gy * rowH + 11;
       set(ws, `${String.fromCharCode(65 + gx * colW)}${capRow}`, f.caption || `${f.kategori} ${idx + 1}`);
-    });
+    }
   };
-  place(deck, d.fotoDok.filter((f) => f.kategori === "DECK"));
-  place(mesin, d.fotoDok.filter((f) => f.kategori === "MESIN"));
+  await place(deck, d.fotoDok.filter((f) => f.kategori === "DECK"));
+  await place(mesin, d.fotoDok.filter((f) => f.kategori === "MESIN"));
   addLogo(wb, deck, 110, 74);
   return out(wb);
 }

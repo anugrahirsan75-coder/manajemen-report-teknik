@@ -4,15 +4,7 @@ import { useRef } from "react";
 import { useStore } from "@/lib/store";
 import { DokFoto } from "@/lib/types";
 import DocToolbar from "@/components/DocToolbar";
-
-function fileToDataUrl(file: File): Promise<string> {
-  return new Promise((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => res(fr.result as string);
-    fr.onerror = rej;
-    fr.readAsDataURL(file);
-  });
-}
+import { uploadFoto } from "@/lib/fotoStorage";
 
 export default function DokumentasiDoc() {
   const { data: d, update } = useStore();
@@ -22,7 +14,7 @@ export default function DokumentasiDoc() {
   const addFotos = async (files: FileList, kategori: "DECK" | "MESIN") => {
     const baru: DokFoto[] = [];
     for (const f of Array.from(files)) {
-      baru.push({ id: crypto.randomUUID(), kategori, caption: "", dataUrl: await fileToDataUrl(f) });
+      baru.push({ id: crypto.randomUUID(), kategori, caption: "", dataUrl: await uploadFoto(f) }); // Storage URL / fallback base64
     }
     update({ fotoDok: [...d.fotoDok, ...baru] });
   };

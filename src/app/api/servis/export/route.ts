@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import ExcelJS from "exceljs";
 import { ServisItem, SERVIS_STATUS_LABEL, lamaHari } from "@/lib/servis/types";
 import { tanggalIndo } from "@/lib/format";
+import { resolveFotoBuffer } from "@/lib/server/foto";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -54,7 +55,8 @@ export async function POST(req: NextRequest) {
     hr.height = 20;
 
     // data
-    items.forEach((it, i) => {
+    for (let i = 0; i < items.length; i++) {
+      const it = items[i];
       const r = ws.getRow(5 + i);
       const vals: (string | number)[] = [
         i + 1, it.namaBarang, it.jenis || "", it.kapal, it.bengkel || "", it.kerusakan || "",
@@ -80,21 +82,20 @@ export async function POST(req: NextRequest) {
       const rowIdx0 = 4 + i; // 0-based baris data (1-based 5+i)
       if (fotos.length) {
         r.height = 56;
-        fotos.forEach((url, fi) => {
-          const m = /^data:image\/(png|jpe?g|gif);base64,(.+)$/i.exec(url || "");
-          if (!m) return;
-          const extension = (/jpe?g/i.test(m[1]) ? "jpeg" : m[1].toLowerCase()) as "png" | "jpeg" | "gif";
-          const imgId = wb.addImage({ base64: m[2], extension });
+        for (let fi = 0; fi < fotos.length; fi++) {
+          const resolved = await resolveFotoBuffer(fotos[fi]); // base64 ATAU URL Storage
+          if (!resolved) continue;
+          const imgId = wb.addImage({ buffer: resolved.buf as any, extension: resolved.ext });
           ws.addImage(imgId, {
             tl: { col: (FOTO_COL - 1) + 0.04 + fi * 0.33, row: rowIdx0 + 0.1 } as any,
             ext: { width: 58, height: 50 },
           });
-        });
+        }
       } else {
         fc.value = "-";
         fc.font = { size: 10, color: { argb: "FF94A3B8" } };
       }
-    });
+    }
 
     // total biaya
     const tr = ws.getRow(5 + items.length);

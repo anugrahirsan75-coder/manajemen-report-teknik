@@ -8,15 +8,7 @@ import { ServisItem, ServisStatus, SERVIS_STATUS_LABEL, JENIS_BARANG, newServisI
 import { KAPAL_LIST_NONPR, VENDOR_NONPR } from "@/lib/nonpr/db";
 import { Field, Input, Section } from "@/components/Field";
 
-// kompres foto (canvas, maks 1024px, jpeg 0.72) biar payload Supabase kecil
-async function compress(file: File, maxDim = 1024, q = 0.72): Promise<string> {
-  const img = await createImageBitmap(file);
-  const scale = Math.min(1, maxDim / Math.max(img.width, img.height));
-  const c = document.createElement("canvas");
-  c.width = Math.round(img.width * scale); c.height = Math.round(img.height * scale);
-  c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
-  return c.toDataURL("image/jpeg", q);
-}
+import { uploadFoto } from "@/lib/fotoStorage";
 
 export default function ServisIsi() {
   const { editing, setEditing, saveItem, deleteItem } = useServis();
@@ -37,7 +29,7 @@ export default function ServisIsi() {
 
   const onFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const urls = await Promise.all(files.map((f) => compress(f)));
+    const urls = await Promise.all(files.map((f) => uploadFoto(f)));
     set({ foto: [...(it.foto || []), ...urls].slice(0, 3) });
     e.target.value = "";
   };

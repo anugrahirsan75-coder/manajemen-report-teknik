@@ -5,6 +5,7 @@ import { NonprRequest, NonprItem, kapalUnikNonpr, tahunNonpr, ketLines, bdLines 
 import { penerimaBstb, vendorOf, Jabatan } from "./db";
 import { bulanRomawi, tanggalIndo } from "@/lib/format";
 import { applyEdits, sheetXmlPath, saveZip, esc, Edit } from "@/lib/sppbj/fill";
+import { fotoToDataUrl } from "@/lib/server/foto";
 
 // exceljs MERUSAK template ini -> WAJIB raw-XML (reuse engine sppbj).
 const tplPath = path.join(process.cwd(), "templates", "nonpr", "nonpr.xlsx");
@@ -300,7 +301,12 @@ function fillFotoRaw(zip: PizZip, req: NonprRequest) {
 }
 
 // ---------- ORKESTRASI ----------
-export function fillNonpr(req: NonprRequest): Buffer {
+export async function fillNonpr(req: NonprRequest): Promise<Buffer> {
+  // foto bisa URL Supabase Storage -> konversi ke data URL utk embed raw-XML
+  if (req.fotoDokumentasi?.length) {
+    const resolved = await Promise.all(req.fotoDokumentasi.map(fotoToDataUrl));
+    req = { ...req, fotoDokumentasi: resolved.filter(Boolean) };
+  }
   const zip = openTpl();
   const apply = (sheet: string, edits: Edit[]) => { const p = sheetXmlPath(zip, sheet); zip.file(p, applyEdits(zip.file(p)!.asText(), edits)); };
 

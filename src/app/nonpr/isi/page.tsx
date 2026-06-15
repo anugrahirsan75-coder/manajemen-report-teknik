@@ -8,6 +8,7 @@ import { Field, Input, Section } from "@/components/Field";
 import { rupiah } from "@/lib/format";
 import { MATA_ANGGARAN_NONPR, VENDOR_NONPR, KAPAL_LIST_NONPR, MAX_NILAI_NONPR } from "@/lib/nonpr/db";
 import { NonprItem, emptyNonprItem, kapalUnikNonpr, nonprTotal, ketLines } from "@/lib/nonpr/types";
+import { uploadFoto } from "@/lib/fotoStorage";
 
 export default function NonprIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving, lastSaved, supabaseReady } = useNonpr();
@@ -43,7 +44,7 @@ export default function NonprIsi() {
 
   const onFoto = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const urls = await Promise.all(files.map((f) => new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(r.result as string); r.readAsDataURL(f); })));
+    const urls = await Promise.all(files.map((f) => uploadFoto(f))); // Storage (fallback base64)
     update({ fotoDokumentasi: [...(req.fotoDokumentasi || []), ...urls].slice(0, 2) }); // tambah ke yg ada, maks 2
     e.target.value = ""; // bisa pilih file sama lagi setelah dihapus
   };
