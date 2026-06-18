@@ -14,11 +14,23 @@ export default function SppbjList() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [bulan, setBulan] = useState(""); // "" = semua bulan, else "YYYY-MM"
+  const [query, setQuery] = useState("");
 
   // daftar bulan unik dari tanggal SPPBJ (desc)
   const ym = (r: any): string => (r.payload?.tanggal || "").slice(0, 7);
   const bulanList = Array.from(new Set(rows.map(ym).filter(Boolean))).sort().reverse();
-  const filtered = bulan ? rows.filter((r) => ym(r) === bulan) : rows;
+
+  // gabung field yang dicari (judul/nomor/kapal/status) -> normalisasi lowercase
+  const matchTokens = (r: any, q: string): boolean => {
+    if (!q) return true;
+    const items: any[] = r.payload?.items || [];
+    const hay = [
+      r.nama_pengadaan, r.payload?.noSPPBJ, r.payload?.noKontrak, r.payload?.status,
+      ...items.map((i) => i.kapal), ...items.map((i) => i.nama),
+    ].filter(Boolean).join(" ").toLowerCase();
+    return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
+  };
+  const filtered = rows.filter((r) => (!bulan || ym(r) === bulan) && matchTokens(r, query));
 
   const refresh = async () => { setLoading(true); setRows(await listRemote()); setLoading(false); };
   useEffect(() => { if (supabaseReady) refresh(); /* eslint-disable-next-line */ }, [supabaseReady]);
@@ -55,9 +67,16 @@ export default function SppbjList() {
         <Stat label="Selesai" value={rekap.selesai} color="text-green-600" />
       </section>
 
-      <div className="mt-6 flex items-center justify-between gap-3">
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-bold text-slate-700">Riwayat Pengadaan</h2>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative">
+            <input value={query} onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari judul / nomor / kapal…"
+              className="text-xs border px-3 py-1.5 rounded-lg bg-white pl-7 w-56 focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 outline-none" />
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
+            {query && <button onClick={() => setQuery("")} className="absolute right-1.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 text-xs px-1">✕</button>}
+          </div>
           {supabaseReady && (
             <select value={bulan} onChange={(e) => setBulan(e.target.value)}
               className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
@@ -80,7 +99,11 @@ export default function SppbjList() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="mt-3 text-center bg-white rounded-2xl ring-line elev-sm p-8">
-          <p className="text-slate-400 text-sm">Tak ada pengadaan di <b>{bulanTahun(bulan + "-01")}</b>. Ganti filter bulan.</p>
+          <p className="text-slate-400 text-sm">
+            {query
+              ? <>Tak ada hasil untuk &quot;<b>{query}</b>&quot;. Coba kata lain atau hapus filter bulan.</>
+              : <>Tak ada pengadaan di <b>{bulanTahun(bulan + "-01")}</b>. Ganti filter bulan.</>}
+          </p>
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto bg-white rounded-2xl elev-md ring-line anim-in">
