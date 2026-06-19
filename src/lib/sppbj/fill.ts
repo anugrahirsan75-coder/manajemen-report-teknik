@@ -155,28 +155,11 @@ export function genWorkbook(parts: { sheet: string; edits: Edit[] }[]): Buffer {
   return saveZip(zip);
 }
 
-// KAK point B "Lingkup pelaksanaan..." -> 6 point (point 1 = namaPengadaan, 2-6 template tetap)
-const KAK_POINTS_TEMPLATE = [
-  "Pengadaan barang dan/atau jasa yang diperlukan sesuai spesifikasi teknis yang telah ditetapkan.",
-  "Penyediaan tenaga kerja, peralatan, dan material pendukung yang dibutuhkan dalam pelaksanaan pekerjaan.",
-  "Seluruh barang dan/atau jasa yang diadakan wajib memenuhi ketentuan Tingkat Komponen Dalam Negeri (TKDN) sesuai peraturan perundang-undangan yang berlaku.",
-  "Pelaksanaan pekerjaan wajib mengacu pada ketentuan Keselamatan dan Kesehatan Kerja (K3) serta peraturan perundang-undangan yang berlaku.",
-  "Penyerahan dokumen serah terima barang dan/atau hasil pekerjaan sesuai ketentuan yang ditetapkan dalam kontrak.",
-];
-
-// rows 71-90 KAK: ganti tabel item dgn 6 point teks (point 1 = namaPengadaan auto).
-// Tulis A=nomor, D=teks (kolom D mengisi sampai N di template). Sisa baris di-clear.
+// KAK point B "Lingkup Pelaksanaan...": template (Google) sudah berisi nomor B71-76 (1-6)
+// + teks point 2-6 statis di C72-76 (merged C:G). Point 1 (C71) = nama pengadaan otomatis.
+// Section C-H di bawahnya statis dari template — JANGAN diutak-atik.
 function kakPointEdits(namaPengadaan: string): Edit[] {
-  const edits: Edit[] = [];
-  // clear seluruh band tabel KAK lama 71-90 (kolom A-G)
-  for (let r = 71; r <= 90; r++) ["A", "B", "C", "D", "E", "F", "G"].forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
-  const points = [namaPengadaan || "", ...KAK_POINTS_TEMPLATE];
-  for (let i = 0; i < points.length; i++) {
-    const r = 71 + i;
-    edits.push({ ref: `C${r}`, kind: "str", value: `${i + 1}.` });
-    edits.push({ ref: `D${r}`, kind: "str", value: points[i] });
-  }
-  return edits;
+  return [{ ref: "C71", kind: "str", value: namaPengadaan || "" }];
 }
 
 export function buildSppbjEdits(req: SppbjRequest): Edit[] {
