@@ -155,6 +155,30 @@ export function genWorkbook(parts: { sheet: string; edits: Edit[] }[]): Buffer {
   return saveZip(zip);
 }
 
+// KAK point B "Lingkup pelaksanaan..." -> 6 point (point 1 = namaPengadaan, 2-6 template tetap)
+const KAK_POINTS_TEMPLATE = [
+  "Pengadaan barang dan/atau jasa yang diperlukan sesuai spesifikasi teknis yang telah ditetapkan.",
+  "Penyediaan tenaga kerja, peralatan, dan material pendukung yang dibutuhkan dalam pelaksanaan pekerjaan.",
+  "Seluruh barang dan/atau jasa yang diadakan wajib memenuhi ketentuan Tingkat Komponen Dalam Negeri (TKDN) sesuai peraturan perundang-undangan yang berlaku.",
+  "Pelaksanaan pekerjaan wajib mengacu pada ketentuan Keselamatan dan Kesehatan Kerja (K3) serta peraturan perundang-undangan yang berlaku.",
+  "Penyerahan dokumen serah terima barang dan/atau hasil pekerjaan sesuai ketentuan yang ditetapkan dalam kontrak.",
+];
+
+// rows 71-90 KAK: ganti tabel item dgn 6 point teks (point 1 = namaPengadaan auto).
+// Tulis A=nomor, D=teks (kolom D mengisi sampai N di template). Sisa baris di-clear.
+function kakPointEdits(namaPengadaan: string): Edit[] {
+  const edits: Edit[] = [];
+  // clear seluruh band tabel KAK lama 71-90 (kolom A-G)
+  for (let r = 71; r <= 90; r++) ["A", "B", "C", "D", "E", "F", "G"].forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
+  const points = [namaPengadaan || "", ...KAK_POINTS_TEMPLATE];
+  for (let i = 0; i < points.length; i++) {
+    const r = 71 + i;
+    edits.push({ ref: `A${r}`, kind: "num", value: i + 1 });
+    edits.push({ ref: `D${r}`, kind: "str", value: points[i] });
+  }
+  return edits;
+}
+
 export function buildSppbjEdits(req: SppbjRequest): Edit[] {
   const bt = bulanTahun(req.tanggal);
   const groups = groupByKapal(req.items);
@@ -169,7 +193,7 @@ export function buildSppbjEdits(req: SppbjRequest): Edit[] {
     { ref: "E45", kind: "str", value: req.stafTeknik },
     { ref: "E52", kind: "str", value: req.deptHead },
     ...tableEdits(17, 35, groups, true),
-    ...tableEdits(73, 90, groups, false),
+    ...kakPointEdits(req.namaPengadaan),
   ];
   return edits;
 }
