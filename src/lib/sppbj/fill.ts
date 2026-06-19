@@ -173,7 +173,7 @@ function kakPointEdits(namaPengadaan: string): Edit[] {
   const points = [namaPengadaan || "", ...KAK_POINTS_TEMPLATE];
   for (let i = 0; i < points.length; i++) {
     const r = 71 + i;
-    edits.push({ ref: `A${r}`, kind: "str", value: `${i + 1}.` });
+    edits.push({ ref: `C${r}`, kind: "str", value: `${i + 1}.` });
     edits.push({ ref: `D${r}`, kind: "str", value: points[i] });
   }
   return edits;
