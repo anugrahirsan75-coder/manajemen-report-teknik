@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useStore } from "@/lib/store";
 import { sampleData } from "@/lib/sampleData";
 import { Distribusi, DistribusiGroup, hitungDistribusi, brutoUntukJabatan } from "@/lib/types";
-import { rupiah } from "@/lib/format";
+import { rupiah, rupiah5 } from "@/lib/format";
 import { Input } from "@/components/Field";
 
 export default function DistribusiPage() {
@@ -77,7 +77,7 @@ export default function DistribusiPage() {
                   <td className="border p-1 text-center">{r.jmlhxBobot}</td>
                   <td className="border p-1 text-center">{(r.persentase * 100).toFixed(0)}%</td>
                   <td className="border p-1 text-right">{rupiah(r.besaran)}</td>
-                  <td className="border p-1 text-right font-semibold">{rupiah(Math.round(r.brutoPerOrang))}</td>
+                  <td className="border p-1 text-right font-semibold">{rupiah5(r.brutoPerOrang)}</td>
                   <td className="border p-1 text-center"><button onClick={() => delGroup(i)} className="text-red-500 text-xs">×</button></td>
                 </tr>
               ))}

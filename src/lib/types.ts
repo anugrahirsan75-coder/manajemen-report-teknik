@@ -73,7 +73,7 @@ export function brutoUntukJabatan(d: Distribusi, jabatan: string): number | null
   // word-boundary match supaya "Masinis II" tidak ketukar "Masinis I"
   const cocok = (k: string) => new RegExp(`\\b${k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`, "i").test(j);
   for (const r of rows) {
-    if (r.keywords.some(cocok)) return Math.round(r.brutoPerOrang);
+    if (r.keywords.some(cocok)) return r.brutoPerOrang; // presisi penuh, tak dibulatkan
   }
   return null;
 }

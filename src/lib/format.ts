@@ -29,6 +29,11 @@ export function rupiah(n: number): string {
   return new Intl.NumberFormat("id-ID").format(Math.round(n || 0));
 }
 
+// presisi 5 desimal, tanpa pembulatan -> "1.172.987,98765"
+export function rupiah5(n: number): string {
+  return new Intl.NumberFormat("id-ID", { minimumFractionDigits: 5, maximumFractionDigits: 5 }).format(n || 0);
+}
+
 // 17537500 -> "Rp 17.537.500"
 export function rupiahRp(n: number): string {
   return `Rp ${rupiah(n)}`;
