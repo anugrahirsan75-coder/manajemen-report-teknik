@@ -10,3 +10,6 @@ server.log
 
 # RAB master (sumber katalog, di-generate jadi src/lib/katalog/katalogSeed.json)
 RAB_MASTER*.xlsx
+
+# output generator (file live katalog dll — artifact, jangan commit)
+output/
