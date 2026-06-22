@@ -9,6 +9,8 @@ import { Field, Input, Section } from "@/components/Field";
 import DrpPicker from "@/components/DrpPicker";
 import { rupiah, bulanTahun } from "@/lib/format";
 import FotoUploader from "@/components/FotoUploader";
+import KatalogPicker from "@/components/KatalogPicker";
+import { KatalogItem } from "@/lib/katalog/source";
 
 export default function SppbjIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving } = useSppbj();
@@ -20,6 +22,17 @@ export default function SppbjIsi() {
   const FIELDS: (keyof SppbjItem)[] = ["kapal", "jumlah", "satuan", "nama", "spesifikasi", "harga"];
 
   const addFotos = (urls: string[]) => update({ fotoDokumentasi: [...(req.fotoDokumentasi || []), ...urls].slice(0, 5) });
+  // isi item dari Katalog HSPK (metadata kodeKatalog/sumberHarga utk feedback harga; tak ubah format SPPBJ)
+  const applyKatalog = (id: string, k: KatalogItem) => setItem(id, {
+    nama: k.nama,
+    spesifikasi: k.spesifikasi || "",
+    satuan: k.satuan || "unit",
+    harga: k.harga || 0,
+    breakdown: k.breakdown?.length ? [...k.breakdown] : undefined,
+    kodeKatalog: k.kode,
+    sumberHarga: (k.sumber === "Riil" || k.sumber === "Pasar") ? k.sumber : undefined,
+    kategoriKatalog: k.kategori || undefined,
+  });
   const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text/plain");
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
@@ -123,7 +136,18 @@ export default function SppbjIsi() {
                   <td className="border p-1"><input list="kapalListSppbj" className="w-28 px-1" value={it.kapal} onChange={(e) => setItem(it.id, { kapal: e.target.value })} onPaste={(e) => handlePaste(ri, 0, e)} /></td>
                   <td className="border p-1"><input type="number" className="w-14 px-1 text-center" value={it.jumlah} onChange={(e) => setItem(it.id, { jumlah: +e.target.value })} onPaste={(e) => handlePaste(ri, 1, e)} /></td>
                   <td className="border p-1"><input className="w-14 px-1 text-center" value={it.satuan} onChange={(e) => setItem(it.id, { satuan: e.target.value })} onPaste={(e) => handlePaste(ri, 2, e)} /></td>
-                  <td className="border p-1"><input className="w-48 px-1" value={it.nama} onChange={(e) => setItem(it.id, { nama: e.target.value })} onPaste={(e) => handlePaste(ri, 3, e)} /></td>
+                  <td className="border p-1">
+                    <div className="flex items-center gap-1">
+                      <input className="w-48 px-1" value={it.nama} onChange={(e) => setItem(it.id, { nama: e.target.value })} onPaste={(e) => handlePaste(ri, 3, e)} />
+                      <KatalogPicker initialQuery={it.nama} onPick={(k) => applyKatalog(it.id, k)} />
+                    </div>
+                    {it.kodeKatalog && (
+                      <div className="flex items-center gap-1 mt-0.5">
+                        <span className="font-mono text-[9px] text-slate-400">{it.kodeKatalog}</span>
+                        {it.sumberHarga && <span className={`text-[9px] font-semibold px-1 rounded ${it.sumberHarga === "Riil" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{it.sumberHarga === "Riil" ? "Riil ✓" : "Pasar ⚠ verifikasi"}</span>}
+                      </div>
+                    )}
+                  </td>
                   <td className="border p-1"><input className="w-36 px-1" value={it.spesifikasi} onChange={(e) => setItem(it.id, { spesifikasi: e.target.value })} onPaste={(e) => handlePaste(ri, 4, e)} /></td>
                   <td className="border p-1"><input type="number" className="w-28 px-1 text-right" value={it.harga} onChange={(e) => setItem(it.id, { harga: +e.target.value })} onPaste={(e) => handlePaste(ri, 5, e)} /></td>
                   <td className="border p-1 text-right text-slate-500 w-28">{rupiah(it.harga * it.jumlah)}</td>

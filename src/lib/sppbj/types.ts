@@ -9,6 +9,10 @@ export interface SppbjItem {
   hargaSpbj?: number; // harga satuan FINAL dari SPBJ/PO (tabel Data SPBJ) -> BSTB/BAPP
   breakdown?: string[]; // rincian di bawah item (khusus jasa), tanpa harga
   keterangan?: string; // header/kategori di ATAS item (boleh multi-baris), grup >1 item
+  // --- metadata katalog HSPK (opsional, TIDAK dipakai fill.ts/template — output SPPBJ tetap) ---
+  kodeKatalog?: string;   // kode item katalog RAB, mis. JS2-HL-002 (utk feedback harga riil)
+  sumberHarga?: "Riil" | "Pasar"; // asal harga saat dipilih dari katalog
+  kategoriKatalog?: string; // kategori katalog (utk filter/telusur)
 }
 
 // baris header keterangan (1 baris per poin), muncul di atas item saat keterangan berganti

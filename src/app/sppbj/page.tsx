@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
-import { STATUS_LABEL, STATUS_COLOR, SppbjStatus } from "@/lib/sppbj/types";
+import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak } from "@/lib/sppbj/types";
 import { tanggalIndo, bulanTahun } from "@/lib/format";
+import { getKatalog } from "@/lib/katalog/source";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
@@ -38,6 +39,46 @@ export default function SppbjList() {
   const mulai = () => { newDraft(); router.push("/sppbj/isi"); };
   const buka = (r: any) => { loadById(r); router.push("/sppbj/detail"); };
   const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
+
+  // Feedback loop: kumpulkan harga final SPPBJ per kode katalog -> Excel usulan update Riil ke RAB
+  const [exporting, setExporting] = useState(false);
+  const exportUsulan = async () => {
+    setExporting(true);
+    try {
+      const list = await listRemote();
+      const kat = await getKatalog();
+      const byKode: Record<string, any> = {};
+      kat.forEach((k) => { byKode[k.kode] = k; });
+      const out: any[] = [];
+      list.forEach((r: any) => {
+        const p = r.payload || {};
+        (p.items || []).forEach((it: any) => {
+          const finalHarga = it.hargaSpbj && it.hargaSpbj > 0 ? it.hargaSpbj : 0;
+          if (it.kodeKatalog && finalHarga > 0) {
+            out.push({
+              kode: it.kodeKatalog,
+              nama: it.nama || byKode[it.kodeKatalog]?.nama || "",
+              kategori: it.kategoriKatalog || byKode[it.kodeKatalog]?.kategori || "",
+              satuan: it.satuan || byKode[it.kodeKatalog]?.satuan || "",
+              sumberLama: it.sumberHarga || byKode[it.kodeKatalog]?.sumber || "",
+              hargaHspk: byKode[it.kodeKatalog]?.harga ?? 0,
+              hargaAktual: finalHarga,
+              tanggal: p.tanggal || "",
+              noSpbj: fullNoKontrak(p) || p.noSpbjNum || "",
+              vendor: p.vendor || "",
+              pengadaan: r.nama_pengadaan || p.namaPengadaan || "",
+            });
+          }
+        });
+      });
+      if (!out.length) { alert("Belum ada item ber-kode katalog dengan Harga SPBJ final.\nPilih item via 📚 Katalog di form, lalu isi Harga SPBJ (Fase 2)."); return; }
+      const res = await fetch("/api/sppbj/usulan-harga-export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: out }) });
+      if (!res.ok) { alert("Gagal ekspor: " + res.status); return; }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a"); a.href = url; a.download = `Usulan_Harga_Riil_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click(); URL.revokeObjectURL(url);
+    } finally { setExporting(false); }
+  };
 
   const rekap = {
     total: filtered.length,
@@ -85,6 +126,7 @@ export default function SppbjList() {
             </select>
           )}
           <Link href="/dashboard" className="btn btn-ghost text-xs">📊 Dashboard Anggaran</Link>
+          {supabaseReady && <button onClick={exportUsulan} disabled={exporting} className="btn btn-ghost text-xs" title="Excel usulan update harga Riil ke RAB master dari realisasi SPPBJ">{exporting ? "…" : "📤 Usulan Harga Riil"}</button>}
           {supabaseReady && <button onClick={refresh} className="btn btn-ghost text-xs">↻ Refresh</button>}
         </div>
       </div>
