@@ -78,7 +78,7 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
         </div>
 
         {/* tabel */}
-        <div className="flex-1 overflow-auto">
+        <div className="flex-1 min-h-0 overflow-auto">
           <table className="w-full text-xs">
             <thead className="sticky top-0 bg-slate-100 text-slate-600 z-10">
               <tr>
