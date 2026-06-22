@@ -12,7 +12,7 @@ export interface KatalogItem {
   spesifikasi: string;
   satuan: string;
   harga: number;            // harga satuan (pre-PPN)
-  sumber: "Riil" | "Pasar" | string;
+  sumber: "Riil" | "Pasar";
   breakdown?: string[];     // rincian komponen (khusus item ber-detail)
 }
 

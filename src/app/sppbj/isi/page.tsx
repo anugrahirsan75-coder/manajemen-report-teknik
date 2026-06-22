@@ -10,12 +10,14 @@ import DrpPicker from "@/components/DrpPicker";
 import { rupiah, bulanTahun } from "@/lib/format";
 import FotoUploader from "@/components/FotoUploader";
 import KatalogPicker from "@/components/KatalogPicker";
+import KatalogBrowser from "@/components/KatalogBrowser";
 import { KatalogItem } from "@/lib/katalog/source";
 
 export default function SppbjIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving } = useSppbj();
   const total = sppbjTotal(req.items);
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
+  const [browseKatalog, setBrowseKatalog] = useState(false);
 
   const toInt = (s: string) => { const d = (s || "").replace(/[^\d]/g, ""); return d ? parseInt(d, 10) : 0; };
   const toNum = (s: string) => { const x = parseFloat((s || "").replace(/[^\d.]/g, "")); return isNaN(x) ? 0 : x; };
@@ -33,6 +35,22 @@ export default function SppbjIsi() {
     sumberHarga: (k.sumber === "Riil" || k.sumber === "Pasar") ? k.sumber : undefined,
     kategoriKatalog: k.kategori || undefined,
   });
+  // tambah BANYAK item sekaligus dari browser katalog -> langsung jadi baris tabel SPPBJ
+  const addFromKatalog = (picked: KatalogItem[], kapal: string) => {
+    const baru = picked.map((k) => ({
+      ...emptySppbjItem(kapal),
+      jumlah: 1,
+      satuan: k.satuan || "unit",
+      nama: k.nama,
+      spesifikasi: k.spesifikasi || "",
+      harga: k.harga || 0,
+      breakdown: k.breakdown?.length ? [...k.breakdown] : undefined,
+      kodeKatalog: k.kode,
+      sumberHarga: (k.sumber === "Riil" || k.sumber === "Pasar") ? k.sumber : undefined,
+      kategoriKatalog: k.kategori || undefined,
+    }));
+    setItems([...req.items, ...baru]);
+  };
   const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text/plain");
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
@@ -114,9 +132,13 @@ export default function SppbjIsi() {
           <b className="text-sky-800">📋 Paste dari Excel:</b> urutan <b>Kapal · Jumlah · Satuan · Nama Barang/Jasa · Spesifikasi · Harga</b> → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>. Item dengan kapal sama dikelompokkan + dibuat sheet BSTB-nya nanti.
         </div>
         <datalist id="kapalListSppbj">{KAPAL_LIST.map((k) => <option key={k} value={k} />)}</datalist>
-        <div className="mb-2">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
           <button onClick={() => addItem()} className="bg-[#16357f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">＋ Tambah Item</button>
+          <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
+          <span className="text-[11px] text-slate-400">telusur seluruh harga satuan HSPK tanpa mengetik → centang → tambah</span>
         </div>
+        <KatalogBrowser open={browseKatalog} onClose={() => setBrowseKatalog(false)} onAdd={addFromKatalog}
+          defaultKapal={req.items.length ? req.items[req.items.length - 1].kapal : ""} />
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">
