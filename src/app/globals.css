@@ -20,9 +20,13 @@ body {
   background:
     radial-gradient(1000px 560px at 100% -8%, rgba(28, 163, 221, 0.12), transparent 56%),
     radial-gradient(900px 540px at -6% 2%, rgba(124, 194, 66, 0.11), transparent 56%),
-    radial-gradient(700px 600px at 50% 120%, rgba(20, 184, 196, 0.08), transparent 60%),
+    linear-gradient(180deg, rgba(238, 242, 247, 0.86), rgba(238, 242, 247, 0.92)),
+    url('/bg-port.jpg'),
     #eef2f7;
-  background-attachment: fixed;
+  background-attachment: fixed, fixed, fixed, fixed, fixed;
+  background-size: auto, auto, cover, cover, auto;
+  background-position: center, center, center, center, center;
+  background-repeat: no-repeat;
   color: #0f172a;
   font-family: var(--font-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -119,7 +123,13 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
   background:
     radial-gradient(900px 500px at 100% -5%, rgba(28, 163, 221, 0.10), transparent 55%),
     radial-gradient(800px 500px at -5% 0%, rgba(124, 194, 66, 0.08), transparent 55%),
+    linear-gradient(180deg, rgba(8, 15, 30, 0.90), rgba(8, 15, 30, 0.94)),
+    url('/bg-port.jpg'),
     #0b1220;
+  background-attachment: fixed, fixed, fixed, fixed, fixed;
+  background-size: auto, auto, cover, cover, auto;
+  background-position: center, center, center, center, center;
+  background-repeat: no-repeat;
   color: #e5e7eb;
 }
 .dark .glass { background: rgba(17, 24, 39, 0.8); }
