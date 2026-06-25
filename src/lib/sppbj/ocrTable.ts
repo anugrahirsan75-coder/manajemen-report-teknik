@@ -26,7 +26,7 @@ function collectLines(data: any): Line[] {
   const lines: Line[] = [];
   const pushLine = (ln: any) => {
     const words: Word[] = (ln.words || [])
-      .filter((w: any) => (w.text || "").trim())
+      .filter((w: any) => (w.text || "").trim() && (w.confidence ?? 100) >= 35) // buang kata sampah confidence rendah
       .map((w: any) => ({ text: w.text.trim(), x0: w.bbox?.x0 ?? 0, x1: w.bbox?.x1 ?? 0, xc: ((w.bbox?.x0 ?? 0) + (w.bbox?.x1 ?? 0)) / 2 }));
     if (!words.length) return;
     const y = (ln.bbox?.y0 ?? 0 + (ln.bbox?.y1 ?? 0)) / 2;
@@ -103,7 +103,7 @@ export async function ocrTableItems(file: File | Blob, onProgress?: (p: number) 
   });
   let data: any;
   try {
-    await worker.setParameters({ tessedit_pageseg_mode: "6" as any, preserve_interword_spaces: "1" });
+    await worker.setParameters({ tessedit_pageseg_mode: "4" as any, preserve_interword_spaces: "1" });
     const r = await worker.recognize(input as any, {}, { blocks: true, text: true } as any);
     data = r.data;
   } finally { await worker.terminate(); }
@@ -123,7 +123,11 @@ export async function ocrTableItems(file: File | Blob, onProgress?: (p: number) 
     if (idx === headerIdx) return { type: "skip" };
     const t = line.text.trim();
     if (!t) return { type: "skip" };
-    if (/^estimasi|^total\b|^jumlah\b[\s\S]*\d{3}/i.test(t)) return { type: "skip" }; // baris total
+    const tl = t.toLowerCase();
+    // skip baris-baris header/judul tabel & baris total
+    if (/estimasi harga|harga satuan|nama barang.*spesifikasi|^no\s+jumlah|^total\b/i.test(t)) return { type: "skip" };
+    if (/^(jumlah|satuan|spesifikasi|nama barang|harga|no)$/i.test(tl)) return { type: "skip" };
+    if (/^jumlah\b[\s\S]*\d{3}/i.test(t)) return { type: "skip" };
     if (isShip(t) && !/^\d/.test(t)) return { type: "ship", text: t.replace(/\s{2,}/g, " ").trim() };
 
     if (bounds) {

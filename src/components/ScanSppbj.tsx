@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ocrTableItems, ParsedItem } from "@/lib/sppbj/ocrTable";
+import { scanWithAI, NoAIKeyError } from "@/lib/sppbj/scanAI";
 
 /** Modal: screenshot tabel Excel -> OCR -> preview EDITABLE -> isi item SPPBJ. */
 export default function ScanSppbj({ open, onClose, onAdd }: {
@@ -12,21 +13,34 @@ export default function ScanSppbj({ open, onClose, onAdd }: {
   const [rows, setRows] = useState<ParsedItem[]>([]);
   const [scanned, setScanned] = useState(0);   // jumlah gambar diproses
   const [err, setErr] = useState("");
+  const [forceOcr, setForceOcr] = useState(false);   // paksa OCR lokal (offline)
+  const [stage, setStage] = useState<"ai" | "ocr" | "">("");
+  const [engineUsed, setEngineUsed] = useState<"ai" | "ocr" | "">("");
+  const [aiUnavailable, setAiUnavailable] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (!open) { setBusy(false); setProgress(0); setRows([]); setScanned(0); setErr(""); } }, [open]);
+  useEffect(() => { if (!open) { setBusy(false); setProgress(0); setRows([]); setScanned(0); setErr(""); setStage(""); setEngineUsed(""); } }, [open]);
 
   const runMany = async (files: File[]) => {
     if (!files.length) return;
     setErr(""); setBusy(true); setProgress(0);
+    const useAI = !forceOcr && !aiUnavailable;
     try {
       for (const f of files) {
-        const items = await ocrTableItems(f, setProgress);
-        setRows((prev) => [...prev, ...items]);
+        let items: ParsedItem[] | null = null;
+        if (useAI) {
+          try { setStage("ai"); items = await scanWithAI(f); setEngineUsed("ai"); }
+          catch (e: any) {
+            if (e instanceof NoAIKeyError) { setAiUnavailable(true); }
+            else setErr("AI gagal (" + (e?.message || e) + ") — pakai OCR lokal.");
+          }
+        }
+        if (!items) { setStage("ocr"); items = await ocrTableItems(f, setProgress); setEngineUsed("ocr"); }
+        setRows((prev) => [...prev, ...items!]);
         setScanned((n) => n + 1);
       }
-    } catch (e: any) { setErr("Gagal OCR: " + (e?.message || e)); }
-    finally { setBusy(false); }
+    } catch (e: any) { setErr("Gagal baca: " + (e?.message || e)); }
+    finally { setBusy(false); setStage(""); }
   };
 
   // paste Ctrl+V gambar (bisa berkali-kali, hasil ditambahkan)
@@ -53,11 +67,24 @@ export default function ScanSppbj({ open, onClose, onAdd }: {
       <div className="bg-white w-full max-w-4xl my-4 rounded-2xl shadow-2xl overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
         <div className="px-5 py-3 border-b flex items-center justify-between bg-slate-50">
           <div>
-            <h3 className="font-extrabold text-slate-800">📷 Scan Tabel dari Excel (OCR)</h3>
-            <p className="text-[11px] text-slate-500">Screenshot tabel → terbaca otomatis → <b>periksa &amp; edit</b> → tambah. Bisa scan beberapa gambar.</p>
+            <h3 className="font-extrabold text-slate-800">📷 Scan Tabel dari Excel</h3>
+            <p className="text-[11px] text-slate-500">Screenshot → terbaca otomatis → <b>periksa &amp; edit</b> → tambah. Bisa beberapa gambar.</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 text-[11px] text-slate-600 cursor-pointer" title="Matikan AI, pakai OCR offline di browser">
+              <input type="checkbox" checked={forceOcr} onChange={(e) => setForceOcr(e.target.checked)} disabled={busy} />
+              OCR lokal
+            </label>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
+          </div>
         </div>
+        {(engineUsed || aiUnavailable) && (
+          <div className="px-5 py-1.5 text-[11px] border-b bg-white flex items-center gap-2">
+            {engineUsed === "ai" && <span className="text-emerald-700 bg-emerald-50 rounded px-1.5 py-0.5 font-semibold">🤖 Dibaca pakai AI (akurat)</span>}
+            {engineUsed === "ocr" && <span className="text-sky-700 bg-sky-50 rounded px-1.5 py-0.5 font-semibold">💻 Dibaca pakai OCR lokal</span>}
+            {aiUnavailable && !forceOcr && <span className="text-amber-600">AI belum aktif (set GEMINI_API_KEY di server agar lebih akurat) — sementara pakai OCR lokal.</span>}
+          </div>
+        )}
 
         <div className="px-5 py-4">
           {/* dropzone selalu ada (utk tambah gambar lagi) */}
@@ -67,8 +94,14 @@ export default function ScanSppbj({ open, onClose, onAdd }: {
             className={`cursor-pointer rounded-2xl border-2 border-dashed px-4 py-4 text-center transition ${busy ? "border-sky-300 bg-sky-50" : "border-slate-300 hover:border-[#1ca3dd] hover:bg-sky-50/50"}`}>
             {busy ? (
               <div>
-                <div className="text-sm font-semibold text-slate-700 mb-1">⏳ Membaca tabel… {progress}%</div>
-                <div className="h-2 bg-slate-100 rounded-full overflow-hidden max-w-xs mx-auto"><div className="h-full bg-[#1ca3dd] transition-all" style={{ width: `${progress}%` }} /></div>
+                {stage === "ai" ? (
+                  <div className="text-sm font-semibold text-slate-700">🤖 Menganalisa dengan AI… (akurat, butuh beberapa detik)</div>
+                ) : (
+                  <>
+                    <div className="text-sm font-semibold text-slate-700 mb-1">💻 OCR lokal… {progress}%</div>
+                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden max-w-xs mx-auto"><div className="h-full bg-[#1ca3dd] transition-all" style={{ width: `${progress}%` }} /></div>
+                  </>
+                )}
               </div>
             ) : (
               <>
