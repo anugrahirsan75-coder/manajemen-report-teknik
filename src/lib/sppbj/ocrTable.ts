@@ -1,6 +1,7 @@
 // OCR tabel item SPPBJ dari screenshot Excel (client-side, tesseract.js).
 // Rekonstruksi kolom via bounding-box + deteksi baris kapal (header) & rincian (breakdown).
 import { createWorker } from "tesseract.js";
+import { preprocessImage } from "./imagePrep";
 
 export interface ParsedItem {
   kapal: string;
@@ -11,6 +12,7 @@ export interface ParsedItem {
   harga: number;
   keterangan?: string;   // header/kategori di ATAS item (mis. "ME, Merk : MITSUBISHI…")
   breakdown?: string[];  // rincian di BAWAH item
+  warn?: boolean;        // harga meragukan (mismatch qty×harga vs total / harga kosong) -> perlu cek
 }
 
 interface Word { text: string; x0: number; x1: number; xc: number; }
@@ -83,13 +85,26 @@ function parseFallback(line: Line): { no: number; qty: number; sat: string; nama
   return { no, qty, sat, nama, spek: "", harga };
 }
 
+// koreksi harga pakai redundansi kolom total (qty × harga ≈ total).
+function fixHarga(qty: number, harga: number, total: number): { harga: number; warn: boolean } {
+  if (total > 0 && qty > 0) {
+    if (harga === 0) return { harga: Math.round(total / qty), warn: false };
+    if (Math.abs(qty * harga - total) > Math.max(total * 0.02, 500)) return { harga: Math.round(total / qty), warn: true };
+    return { harga, warn: false };
+  }
+  return { harga, warn: harga === 0 };
+}
+
 export async function ocrTableItems(file: File | Blob, onProgress?: (p: number) => void): Promise<ParsedItem[]> {
+  let input: Blob = file;
+  try { input = await preprocessImage(file); } catch { /* pakai gambar asli bila prep gagal */ }
   const worker = await createWorker("eng", 1, {
     logger: (m) => { if (m.status === "recognizing text" && onProgress) onProgress(Math.round(m.progress * 100)); },
   });
   let data: any;
   try {
-    const r = await worker.recognize(file as any, {}, { blocks: true, text: true } as any);
+    await worker.setParameters({ tessedit_pageseg_mode: "6" as any, preserve_interword_spaces: "1" });
+    const r = await worker.recognize(input as any, {}, { blocks: true, text: true } as any);
     data = r.data;
   } finally { await worker.terminate(); }
 
@@ -116,11 +131,13 @@ export async function ocrTableItems(file: File | Blob, onProgress?: (p: number) 
       const no = toInt(c[0]);
       const namaCell = (c[3] || "").trim();
       if (no > 0 && (namaCell || c[4])) {
-        return { type: "item", item: { jumlah: toInt(c[1]) || 1, satuan: (c[2] || "unit").trim(), nama: namaCell, spesifikasi: (c[4] || "").trim(), harga: toInt(c[5]) } };
+        const qty = toInt(c[1]) || 1;
+        const { harga, warn } = fixHarga(qty, toInt(c[5]), toInt(c[6]));
+        return { type: "item", item: { jumlah: qty, satuan: (c[2] || "unit").trim(), nama: namaCell, spesifikasi: (c[4] || "").trim(), harga, ...(warn ? { warn: true } : {}) } };
       }
     } else if (/^\d/.test(t)) {
       const p = parseFallback(line);
-      if (p && p.nama) return { type: "item", item: { jumlah: p.qty, satuan: p.sat, nama: p.nama, spesifikasi: p.spek, harga: p.harga } };
+      if (p && p.nama) return { type: "item", item: { jumlah: p.qty, satuan: p.sat, nama: p.nama, spesifikasi: p.spek, harga: p.harga, ...(p.harga === 0 ? { warn: true } : {}) } };
     }
     return { type: "text", text: t };
   });
