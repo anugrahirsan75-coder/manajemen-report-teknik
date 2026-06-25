@@ -107,6 +107,12 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
           <span className={`grid place-items-center h-8 w-8 rounded-lg text-base shrink-0 ${path.startsWith("/dashboard") ? "bg-white/15" : "bg-white/5"}`}>📊</span>
           Dashboard Anggaran
         </Link>
+        <Link href="/kapal" onClick={onNavigate}
+          className={`relative flex items-center gap-2.5 px-2.5 py-2.5 rounded-xl text-sm font-semibold transition mt-0.5 ${path.startsWith("/kapal") ? "text-white bg-white/[0.07] ring-1 ring-white/10" : "text-white/75 hover:bg-white/5 hover:text-white"}`}>
+          {path.startsWith("/kapal") && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
+          <span className={`grid place-items-center h-8 w-8 rounded-lg text-base shrink-0 ${path.startsWith("/kapal") ? "bg-white/15" : "bg-white/5"}`}>🚢</span>
+          Ship Database
+        </Link>
 
         <p className="text-[10px] uppercase tracking-[0.15em] text-white/40 font-bold px-2 mb-2 mt-4">Menu Tools</p>
 
