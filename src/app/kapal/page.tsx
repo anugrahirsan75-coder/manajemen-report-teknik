@@ -182,8 +182,7 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center p-3 bg-black/50 overflow-auto" onMouseDown={onClose}>
-      <div className="bg-white w-full max-w-3xl my-4 rounded-2xl shadow-2xl overflow-hidden" onMouseDown={(e) => e.stopPropagation()}
-        style={{ backgroundImage: "linear-gradient(rgba(22,53,127,0.025) 1px,transparent 1px),linear-gradient(90deg,rgba(22,53,127,0.025) 1px,transparent 1px)", backgroundSize: "22px 22px" }}>
+      <div className="bg-white w-full max-w-4xl my-4 rounded-2xl shadow-2xl overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
         {/* header */}
         <div className="px-6 py-4 text-white relative" style={{ background: "linear-gradient(135deg,#16357f,#0e2456)" }}>
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7cc242] via-[#14b8c4] to-[#f5b301]" />
@@ -204,63 +203,59 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
         </div>
 
         {/* body */}
-        <div className="px-6 py-5 max-h-[64vh] overflow-auto">
-          <SectionBand title="General Data" />
-          <div className="grid sm:grid-cols-2 gap-x-6">
+        <div className="px-6 py-5 space-y-6 max-h-[66vh] overflow-auto bg-slate-50/40">
+          <Section title="General Data">
             {GENERAL_FIELDS.map((f) => (
-              <Row key={f.key} label={f.label} value={draft.general[f.key]} onChange={(v) => setG(f.key, v)} wide={f.key === "lintasan"} />
+              <Field key={f.key} label={f.label} value={draft.general[f.key]} onChange={(v) => setG(f.key, v)} wide={f.key === "lintasan"} />
             ))}
-          </div>
+          </Section>
 
-          <SectionBand title="Main Dimension" />
-          <div className="grid sm:grid-cols-2 gap-x-6">
+          <Section title="Main Dimension">
             {DIM_FIELDS.map((f) => (
-              <Row key={f.key} label={f.label} value={draft.dimension[f.key]} unit={f.unit} onChange={(v) => setD(f.key, v)} />
+              <Field key={f.key} label={f.label} value={draft.dimension[f.key]} unit={f.unit} onChange={(v) => setD(f.key, v)} />
             ))}
-          </div>
+          </Section>
 
-          <SectionBand title="Main Engine" sub="Mesin Induk" />
-          <div className="grid sm:grid-cols-2 gap-x-6">
+          <Section title="Main Engine" sub="Mesin Induk">
             {ENGINE_FIELDS.map((f) => (
-              <Row key={f.key} label={f.label} value={draft.mainEngine[f.key]} onChange={(v) => setME(f.key, v)} />
+              <Field key={f.key} label={f.label} value={draft.mainEngine[f.key]} onChange={(v) => setME(f.key, v)} />
             ))}
-          </div>
+          </Section>
 
-          <SectionBand title="Auxiliary Engine" sub="Mesin Bantu" />
-          <div className="grid sm:grid-cols-2 gap-x-6">
+          <Section title="Auxiliary Engine" sub="Mesin Bantu">
             {ENGINE_FIELDS.map((f) => (
-              <Row key={f.key} label={f.label} value={draft.auxEngine[f.key]} onChange={(v) => setAE(f.key, v)} />
+              <Field key={f.key} label={f.label} value={draft.auxEngine[f.key]} onChange={(v) => setAE(f.key, v)} />
             ))}
-          </div>
+          </Section>
 
-          <SectionBand title="Gearbox" sub="Transmisi" />
-          <div className="grid sm:grid-cols-2 gap-x-6">
+          <Section title="Gearbox" sub="Transmisi">
             {GEARBOX_FIELDS.map((f) => (
-              <Row key={f.key} label={f.label} value={draft.gearbox[f.key]} onChange={(v) => setGB(f.key, v)} />
+              <Field key={f.key} label={f.label} value={draft.gearbox[f.key]} onChange={(v) => setGB(f.key, v)} />
             ))}
-          </div>
+          </Section>
 
-          <SectionBand title="Daftar Inventaris" sub="file — klik untuk buka" />
-          <div className="space-y-1.5">
-            {draft.inventaris.length === 0 && <p className="text-xs text-slate-400 py-1">Belum ada file inventaris. Unggah PDF / Excel / gambar di bawah.</p>}
-            {draft.inventaris.map((f) => (
-              <div key={f.url} className="flex items-center gap-2 bg-slate-50 hover:bg-sky-50 rounded-lg px-3 py-2 ring-1 ring-slate-100">
-                <span className="text-lg shrink-0">{fileIcon(f)}</span>
-                <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0">
-                  <span className="block text-[13px] font-medium text-[#16357f] truncate hover:underline">{f.name}</span>
-                  <span className="block text-[10px] text-slate-400">{fmtSize(f.size)} · {new Date(f.uploadedAt).toLocaleDateString("id-ID")}</span>
-                </a>
-                <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-[11px] px-2 py-1 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-100 shrink-0">Buka ↗</a>
-                <button onClick={() => onDeleteFile(f)} title="Hapus file" className="text-red-400 hover:text-red-600 text-sm px-1 shrink-0">✕</button>
-              </div>
-            ))}
-            <label className={`mt-1 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-3 text-sm cursor-pointer transition ${uploading ? "border-sky-300 bg-sky-50 text-sky-600" : "border-slate-300 text-slate-500 hover:border-[#1ca3dd] hover:bg-sky-50/50"}`}>
-              <span>{uploading ? "⏳ Mengunggah…" : "⬆️ Unggah / Update File Inventaris"}</span>
-              <input type="file" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,image/*" className="hidden" disabled={uploading || !supabaseReady}
-                onChange={(e) => { onUpload(e.target.files); e.target.value = ""; }} />
-            </label>
-            {!supabaseReady && <p className="text-[11px] text-amber-600">File inventaris butuh Supabase aktif (penyimpanan online).</p>}
-          </div>
+          <Section title="Daftar Inventaris" sub="file — klik untuk buka">
+            <div className="sm:col-span-2 space-y-1.5">
+              {draft.inventaris.length === 0 && <p className="text-xs text-slate-400 py-1">Belum ada file. Unggah PDF / Excel / gambar di bawah.</p>}
+              {draft.inventaris.map((f) => (
+                <div key={f.url} className="flex items-center gap-2 bg-white hover:bg-sky-50 rounded-xl px-3 py-2 ring-1 ring-slate-200 transition">
+                  <span className="text-lg shrink-0">{fileIcon(f)}</span>
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0">
+                    <span className="block text-[13px] font-medium text-[#16357f] truncate hover:underline">{f.name}</span>
+                    <span className="block text-[10px] text-slate-400">{fmtSize(f.size)} · {new Date(f.uploadedAt).toLocaleDateString("id-ID")}</span>
+                  </a>
+                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-[11px] px-2 py-1 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-100 shrink-0">Buka ↗</a>
+                  <button onClick={() => onDeleteFile(f)} title="Hapus file" className="text-red-400 hover:text-red-600 text-sm px-1 shrink-0">✕</button>
+                </div>
+              ))}
+              <label className={`mt-1 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-3 text-sm cursor-pointer transition ${uploading ? "border-sky-300 bg-sky-50 text-sky-600" : "border-slate-300 text-slate-500 hover:border-[#1ca3dd] hover:bg-sky-50/50"}`}>
+                <span>{uploading ? "⏳ Mengunggah…" : "⬆️ Unggah / Update File Inventaris"}</span>
+                <input type="file" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,image/*" className="hidden" disabled={uploading || !supabaseReady}
+                  onChange={(e) => { onUpload(e.target.files); e.target.value = ""; }} />
+              </label>
+              {!supabaseReady && <p className="text-[11px] text-amber-600">File inventaris butuh Supabase aktif (penyimpanan online).</p>}
+            </div>
+          </Section>
         </div>
 
         {/* footer */}
@@ -293,28 +288,30 @@ function fileIcon(f: ShipFile): string {
   return "📄";
 }
 
-function SectionBand({ title, sub }: { title: string; sub?: string }) {
+function Section({ title, sub, children }: { title: string; sub?: string; children: React.ReactNode }) {
   return (
-    <div className="flex items-center gap-2 mt-5 mb-2 first:mt-0">
-      <span className="h-3.5 w-1 rounded-full bg-[#f5b301]" />
-      <h3 className="text-[12px] font-extrabold uppercase tracking-[0.18em] text-[#16357f]">{title}</h3>
-      {sub && <span className="text-[11px] text-slate-400 normal-case tracking-normal font-normal">· {sub}</span>}
-      <span className="flex-1 h-px bg-gradient-to-r from-slate-200 to-transparent ml-1" />
-    </div>
+    <section>
+      <div className="flex items-center gap-2 mb-3">
+        <span className="h-4 w-1.5 rounded-full bg-[#f5b301]" />
+        <h3 className="text-sm font-extrabold uppercase tracking-wide text-[#16357f]">{title}</h3>
+        {sub && <span className="text-[11px] text-slate-400 font-medium">· {sub}</span>}
+      </div>
+      <div className="bg-white rounded-2xl p-4 sm:p-5 ring-1 ring-slate-200/80 elev-sm grid sm:grid-cols-2 gap-x-6 gap-y-4">
+        {children}
+      </div>
+    </section>
   );
 }
 
-function Row({ label, value, onChange, unit, wide }: { label: string; value: string; onChange: (v: string) => void; unit?: string; wide?: boolean }) {
+function Field({ label, value, onChange, unit, wide }: { label: string; value: string; onChange: (v: string) => void; unit?: string; wide?: boolean }) {
   return (
-    <div className={`grid grid-cols-[140px_10px_1fr] items-center py-1 border-b border-dashed border-slate-200/70 ${wide ? "sm:col-span-2" : ""}`}>
-      <span className="text-[12px] text-slate-500">{label}</span>
-      <span className="text-slate-300 text-center">:</span>
-      <div className="flex items-center gap-1.5">
-        <input value={value} onChange={(e) => onChange(e.target.value)}
-          className="flex-1 min-w-0 font-mono text-[13px] text-slate-800 bg-transparent rounded px-1 py-0.5 outline-none focus:bg-sky-50 hover:bg-slate-50 transition placeholder:text-slate-300 placeholder:font-sans placeholder:not-italic"
-          placeholder="—" />
-        {unit && <span className="text-[11px] text-slate-400 shrink-0">{unit}</span>}
+    <label className={`block ${wide ? "sm:col-span-2" : ""}`}>
+      <span className="block text-[10px] uppercase tracking-wide text-slate-400 font-bold mb-1">{label}</span>
+      <div className="flex items-stretch gap-1.5">
+        <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="—"
+          className="w-full min-w-0 text-sm text-slate-800 font-medium bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 outline-none focus:bg-white focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/15 transition placeholder:text-slate-300 placeholder:font-normal" />
+        {unit && <span className="text-[11px] text-slate-400 shrink-0 self-center font-medium">{unit}</span>}
       </div>
-    </div>
+    </label>
   );
 }
