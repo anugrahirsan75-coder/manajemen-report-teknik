@@ -11,13 +11,16 @@ import { rupiah, bulanTahun } from "@/lib/format";
 import FotoUploader from "@/components/FotoUploader";
 import KatalogPicker from "@/components/KatalogPicker";
 import KatalogBrowser from "@/components/KatalogBrowser";
+import ScanSppbj from "@/components/ScanSppbj";
 import { KatalogItem } from "@/lib/katalog/source";
+import { ParsedItem } from "@/lib/sppbj/ocrTable";
 
 export default function SppbjIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving } = useSppbj();
   const total = sppbjTotal(req.items);
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
   const [browseKatalog, setBrowseKatalog] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
 
   const toInt = (s: string) => { const d = (s || "").replace(/[^\d]/g, ""); return d ? parseInt(d, 10) : 0; };
   const toNum = (s: string) => { const x = parseFloat((s || "").replace(/[^\d.]/g, "")); return isNaN(x) ? 0 : x; };
@@ -48,6 +51,19 @@ export default function SppbjIsi() {
       kodeKatalog: k.kode,
       sumberHarga: (k.sumber === "Riil" || k.sumber === "Pasar") ? k.sumber : undefined,
       kategoriKatalog: k.kategori || undefined,
+    }));
+    setItems([...req.items, ...baru]);
+  };
+  // hasil OCR screenshot Excel -> append jadi baris tabel (+ id)
+  const addFromScan = (parsed: ParsedItem[]) => {
+    const baru = parsed.map((p) => ({
+      ...emptySppbjItem(p.kapal || ""),
+      jumlah: p.jumlah || 1,
+      satuan: p.satuan || "unit",
+      nama: p.nama || "",
+      spesifikasi: p.spesifikasi || "",
+      harga: p.harga || 0,
+      breakdown: p.breakdown?.length ? [...p.breakdown] : undefined,
     }));
     setItems([...req.items, ...baru]);
   };
@@ -135,10 +151,12 @@ export default function SppbjIsi() {
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <button onClick={() => addItem()} className="bg-[#16357f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">＋ Tambah Item</button>
           <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
-          <span className="text-[11px] text-slate-400">telusur seluruh harga satuan HSPK tanpa mengetik → centang → tambah</span>
+          <button onClick={() => setScanOpen(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">📷 Scan dari Excel (OCR)</button>
+          <span className="text-[11px] text-slate-400">screenshot tabel → terisi otomatis</span>
         </div>
         <KatalogBrowser open={browseKatalog} onClose={() => setBrowseKatalog(false)} onAdd={addFromKatalog}
           defaultKapal={req.items.length ? req.items[req.items.length - 1].kapal : ""} />
+        <ScanSppbj open={scanOpen} onClose={() => setScanOpen(false)} onAdd={addFromScan} />
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">
