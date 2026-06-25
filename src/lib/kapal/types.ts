@@ -8,6 +8,8 @@ export interface ShipGeneral {
 }
 export interface ShipDimension { gt: string; loa: string; lbp: string; b: string; h: string; t: string; }
 export interface ShipEngine { merk: string; type: string; ehp: string; rpm: string; serialStbd: string; serialPrsd: string; }
+export interface ShipGearbox { merk: string; type: string; ratio: string; serialStbd: string; serialPrsd: string; }
+export interface ShipFile { name: string; url: string; size: number; type?: string; path?: string; uploadedAt: string; }
 
 export interface Ship {
   id: string;          // slug
@@ -16,6 +18,8 @@ export interface Ship {
   dimension: ShipDimension;
   mainEngine: ShipEngine;
   auxEngine: ShipEngine;
+  gearbox: ShipGearbox;
+  inventaris: ShipFile[]; // file daftar inventaris (upload, klik buka)
 }
 
 export const slugKapal = (nama: string) => nama.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -25,9 +29,10 @@ const DEF = { bendera: "Indonesia", tipe: "Ferry Ro-Ro", pemilik: "PT. ASDP Indo
 const emptyGeneral = (): ShipGeneral => ({ registerBKI: "", imo: "", callSign: "", bendera: DEF.bendera, tipe: DEF.tipe, pelabuhanDaftar: "", klasLambung: "", klasMesin: "", galangan: "", tahun: "", pemilik: DEF.pemilik, operator: DEF.operator, lintasan: "" });
 const emptyDim = (): ShipDimension => ({ gt: "", loa: "", lbp: "", b: "", h: "", t: "" });
 const emptyEngine = (): ShipEngine => ({ merk: "", type: "", ehp: "", rpm: "", serialStbd: "", serialPrsd: "" });
+const emptyGearbox = (): ShipGearbox => ({ merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" });
 
 export const emptyShip = (nama: string): Ship => ({
-  id: slugKapal(nama), nama, general: emptyGeneral(), dimension: emptyDim(), mainEngine: emptyEngine(), auxEngine: emptyEngine(),
+  id: slugKapal(nama), nama, general: emptyGeneral(), dimension: emptyDim(), mainEngine: emptyEngine(), auxEngine: emptyEngine(), gearbox: emptyGearbox(), inventaris: [],
 });
 
 // data terisi: KMP. ARIWANGAN (dari lampiran particular)
@@ -42,6 +47,8 @@ const ARIWANGAN: Ship = {
   dimension: { gt: "157", loa: "29,05", lbp: "25", b: "7", h: "2,2", t: "1,25" },
   mainEngine: { merk: "YANMAR", type: "6 HA-HTA", ehp: "240", rpm: "2000", serialStbd: "12397", serialPrsd: "12398" },
   auxEngine: { merk: "YANMAR", type: "4 CHL-N", ehp: "38", rpm: "", serialStbd: "", serialPrsd: "" },
+  gearbox: emptyGearbox(),
+  inventaris: [],
 };
 
 export const SHIP_SEED: Ship[] = KAPAL_LIST.map((nama) =>
@@ -64,12 +71,16 @@ export const ENGINE_FIELDS: { key: keyof ShipEngine; label: string }[] = [
   { key: "merk", label: "Merk" }, { key: "type", label: "Type" }, { key: "ehp", label: "EHP (HP)" }, { key: "rpm", label: "RPM" },
   { key: "serialStbd", label: "Serial Number (STBD)" }, { key: "serialPrsd", label: "Serial Number (PRSD)" },
 ];
+export const GEARBOX_FIELDS: { key: keyof ShipGearbox; label: string }[] = [
+  { key: "merk", label: "Merk" }, { key: "type", label: "Type Gearbox" }, { key: "ratio", label: "Rasio Reduksi" },
+  { key: "serialStbd", label: "Serial Number (STBD)" }, { key: "serialPrsd", label: "Serial Number (PRSD)" },
+];
 
 // hitung kelengkapan data (utk badge)
 export const shipFilled = (s: Ship): number => {
   const vals = [
     ...Object.values(s.general), ...Object.values(s.dimension),
-    ...Object.values(s.mainEngine), ...Object.values(s.auxEngine),
+    ...Object.values(s.mainEngine), ...Object.values(s.auxEngine), ...Object.values(s.gearbox),
   ];
   const isi = vals.filter((v) => String(v || "").trim()).length;
   return Math.round((isi / vals.length) * 100);

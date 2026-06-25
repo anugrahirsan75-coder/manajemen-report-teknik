@@ -5,9 +5,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { useKapalDb } from "@/lib/kapal/store";
 import {
-  Ship, GENERAL_FIELDS, DIM_FIELDS, ENGINE_FIELDS, shipFilled,
-  ShipGeneral, ShipDimension, ShipEngine,
+  Ship, GENERAL_FIELDS, DIM_FIELDS, ENGINE_FIELDS, GEARBOX_FIELDS, shipFilled,
+  ShipGeneral, ShipDimension, ShipEngine, ShipGearbox, ShipFile,
 } from "@/lib/kapal/types";
+import { uploadInventaris, removeInventaris } from "@/lib/kapal/upload";
 
 export default function ShipDatabasePage() {
   const { ships, loading, saving, lastSaved, supabaseReady, updateShip, saveAll } = useKapalDb();
@@ -69,6 +70,7 @@ export default function ShipDatabasePage() {
           saving={saving}
           supabaseReady={supabaseReady}
           onClose={() => setOpenId(null)}
+          onPersist={async (next) => { updateShip(next.id, next); await saveAll(ships.map((s) => (s.id === next.id ? next : s))); }}
           onSave={async (next) => { updateShip(next.id, next); await saveAll(ships.map((s) => (s.id === next.id ? next : s))); setOpenId(null); }}
         />
       )}
@@ -100,6 +102,9 @@ function ShipCard({ ship, onClick, index }: { ship: Ship; onClick: () => void; i
           <Chip label="GT" value={d.gt} />
           <Chip label="Tahun" value={g.tahun} />
           <Chip label="ME" value={ship.mainEngine.merk} />
+          {ship.inventaris?.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px] bg-emerald-50 text-emerald-700 rounded-lg px-2 py-0.5 font-semibold">📄 {ship.inventaris.length}</span>
+          )}
         </div>
         <p className="text-[11px] text-slate-400 uppercase tracking-wide font-semibold">Lintasan</p>
         <p className="text-xs text-slate-600 line-clamp-2 min-h-[2rem]">{g.lintasan || <span className="text-slate-300">belum ada data lintasan</span>}</p>
@@ -142,17 +147,38 @@ function WaveDeco() {
 }
 
 /* ---------- Modal vessel particulars (editable) ---------- */
-function ShipModal({ ship, onClose, onSave, saving, supabaseReady }: {
-  ship: Ship; onClose: () => void; onSave: (s: Ship) => void; saving: boolean; supabaseReady: boolean;
+function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: {
+  ship: Ship; onClose: () => void; onSave: (s: Ship) => void; onPersist: (s: Ship) => Promise<void>; saving: boolean; supabaseReady: boolean;
 }) {
-  const [draft, setDraft] = useState<Ship>(ship);
-  useEffect(() => { setDraft(ship); }, [ship]);
+  const [draft, setDraft] = useState<Ship>({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" } });
+  const [uploading, setUploading] = useState(false);
+  useEffect(() => { setDraft({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" } }); }, [ship]);
   const pct = shipFilled(draft);
 
   const setG = (k: keyof ShipGeneral, v: string) => setDraft((p) => ({ ...p, general: { ...p.general, [k]: v } }));
   const setD = (k: keyof ShipDimension, v: string) => setDraft((p) => ({ ...p, dimension: { ...p.dimension, [k]: v } }));
   const setME = (k: keyof ShipEngine, v: string) => setDraft((p) => ({ ...p, mainEngine: { ...p.mainEngine, [k]: v } }));
   const setAE = (k: keyof ShipEngine, v: string) => setDraft((p) => ({ ...p, auxEngine: { ...p.auxEngine, [k]: v } }));
+  const setGB = (k: keyof ShipGearbox, v: string) => setDraft((p) => ({ ...p, gearbox: { ...p.gearbox, [k]: v } }));
+
+  // upload file inventaris -> langsung simpan (biar tak hilang referensinya)
+  const onUpload = async (files: FileList | null) => {
+    if (!files?.length) return;
+    setUploading(true);
+    try {
+      const added: ShipFile[] = [];
+      for (const f of Array.from(files)) added.push(await uploadInventaris(draft.id, f));
+      const next = { ...draft, inventaris: [...draft.inventaris, ...added] };
+      setDraft(next); await onPersist(next);
+    } catch (e: any) { alert("Gagal unggah: " + (e?.message || e)); }
+    finally { setUploading(false); }
+  };
+  const onDeleteFile = async (f: ShipFile) => {
+    if (!confirm(`Hapus file "${f.name}"?`)) return;
+    await removeInventaris(f);
+    const next = { ...draft, inventaris: draft.inventaris.filter((x) => x.url !== f.url) };
+    setDraft(next); await onPersist(next);
+  };
 
   return (
     <div className="fixed inset-0 z-[60] flex items-start sm:items-center justify-center p-3 bg-black/50 overflow-auto" onMouseDown={onClose}>
@@ -206,6 +232,35 @@ function ShipModal({ ship, onClose, onSave, saving, supabaseReady }: {
               <Row key={f.key} label={f.label} value={draft.auxEngine[f.key]} onChange={(v) => setAE(f.key, v)} />
             ))}
           </div>
+
+          <SectionBand title="Gearbox" sub="Transmisi" />
+          <div className="grid sm:grid-cols-2 gap-x-6">
+            {GEARBOX_FIELDS.map((f) => (
+              <Row key={f.key} label={f.label} value={draft.gearbox[f.key]} onChange={(v) => setGB(f.key, v)} />
+            ))}
+          </div>
+
+          <SectionBand title="Daftar Inventaris" sub="file — klik untuk buka" />
+          <div className="space-y-1.5">
+            {draft.inventaris.length === 0 && <p className="text-xs text-slate-400 py-1">Belum ada file inventaris. Unggah PDF / Excel / gambar di bawah.</p>}
+            {draft.inventaris.map((f) => (
+              <div key={f.url} className="flex items-center gap-2 bg-slate-50 hover:bg-sky-50 rounded-lg px-3 py-2 ring-1 ring-slate-100">
+                <span className="text-lg shrink-0">{fileIcon(f)}</span>
+                <a href={f.url} target="_blank" rel="noopener noreferrer" className="flex-1 min-w-0">
+                  <span className="block text-[13px] font-medium text-[#16357f] truncate hover:underline">{f.name}</span>
+                  <span className="block text-[10px] text-slate-400">{fmtSize(f.size)} · {new Date(f.uploadedAt).toLocaleDateString("id-ID")}</span>
+                </a>
+                <a href={f.url} target="_blank" rel="noopener noreferrer" className="text-[11px] px-2 py-1 rounded-md border border-sky-300 text-sky-700 hover:bg-sky-100 shrink-0">Buka ↗</a>
+                <button onClick={() => onDeleteFile(f)} title="Hapus file" className="text-red-400 hover:text-red-600 text-sm px-1 shrink-0">✕</button>
+              </div>
+            ))}
+            <label className={`mt-1 flex items-center justify-center gap-2 rounded-xl border-2 border-dashed px-4 py-3 text-sm cursor-pointer transition ${uploading ? "border-sky-300 bg-sky-50 text-sky-600" : "border-slate-300 text-slate-500 hover:border-[#1ca3dd] hover:bg-sky-50/50"}`}>
+              <span>{uploading ? "⏳ Mengunggah…" : "⬆️ Unggah / Update File Inventaris"}</span>
+              <input type="file" multiple accept=".pdf,.xlsx,.xls,.doc,.docx,.csv,image/*" className="hidden" disabled={uploading || !supabaseReady}
+                onChange={(e) => { onUpload(e.target.files); e.target.value = ""; }} />
+            </label>
+            {!supabaseReady && <p className="text-[11px] text-amber-600">File inventaris butuh Supabase aktif (penyimpanan online).</p>}
+          </div>
         </div>
 
         {/* footer */}
@@ -221,6 +276,21 @@ function ShipModal({ ship, onClose, onSave, saving, supabaseReady }: {
       </div>
     </div>
   );
+}
+
+function fmtSize(b: number): string {
+  if (!b) return "—";
+  if (b < 1024) return b + " B";
+  if (b < 1024 * 1024) return (b / 1024).toFixed(0) + " KB";
+  return (b / 1024 / 1024).toFixed(1) + " MB";
+}
+function fileIcon(f: ShipFile): string {
+  const n = (f.type || "") + " " + f.name.toLowerCase();
+  if (/pdf/.test(n)) return "📕";
+  if (/sheet|xls|csv/.test(n)) return "📗";
+  if (/word|doc/.test(n)) return "📘";
+  if (/image|png|jpg|jpeg|webp|gif/.test(n)) return "🖼️";
+  return "📄";
 }
 
 function SectionBand({ title, sub }: { title: string; sub?: string }) {
