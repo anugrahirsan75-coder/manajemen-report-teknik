@@ -63,6 +63,7 @@ export default function SppbjIsi() {
       nama: p.nama || "",
       spesifikasi: p.spesifikasi || "",
       harga: p.harga || 0,
+      keterangan: p.keterangan || undefined,
       breakdown: p.breakdown?.length ? [...p.breakdown] : undefined,
     }));
     setItems([...req.items, ...baru]);

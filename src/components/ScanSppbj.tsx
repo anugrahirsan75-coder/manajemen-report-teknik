@@ -86,6 +86,7 @@ export default function ScanSppbj({ open, onClose, onAdd }: {
                       <span className="text-slate-400 text-xs mt-0.5 w-5 shrink-0">{i + 1}.</span>
                       <div className="flex-1 min-w-0">
                         {it.kapal && <span className="text-[10px] font-bold text-[#16357f] bg-sky-50 rounded px-1.5 py-0.5 mr-1">{it.kapal}</span>}
+                        {it.keterangan && <div className="text-[11px] font-semibold text-amber-700 bg-amber-50 rounded px-1.5 py-0.5 mb-0.5 inline-block whitespace-pre-line">{it.keterangan}</div>}
                         <span className="font-medium text-slate-800">{it.nama || <em className="text-slate-300">—</em>}</span>
                         {it.spesifikasi && <span className="text-slate-400 text-xs"> · {it.spesifikasi}</span>}
                         <div className="text-[11px] text-slate-500">{it.jumlah} {it.satuan} × {rupiah(it.harga)}{it.breakdown?.length ? <span className="text-sky-600"> · {it.breakdown.length} rincian</span> : null}</div>

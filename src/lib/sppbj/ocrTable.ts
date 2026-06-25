@@ -9,7 +9,8 @@ export interface ParsedItem {
   nama: string;
   spesifikasi: string;
   harga: number;
-  breakdown?: string[];
+  keterangan?: string;   // header/kategori di ATAS item (mis. "ME, Merk : MITSUBISHI…")
+  breakdown?: string[];  // rincian di BAWAH item
 }
 
 interface Word { text: string; x0: number; x1: number; xc: number; }
@@ -101,43 +102,59 @@ export async function ocrTableItems(file: File | Blob, onProgress?: (p: number) 
     return /\bno\b/.test(t) && t.includes("nama");
   });
 
-  const items: ParsedItem[] = [];
-  let kapal = "";
-  let last: ParsedItem | null = null;
-
-  lines.forEach((line, idx) => {
-    if (idx === headerIdx) return;
+  // 1) klasifikasi tiap baris: ship | item | text
+  type Cls = { type: "ship" | "item" | "text" | "skip"; text?: string; item?: Omit<ParsedItem, "kapal"> };
+  const classified: Cls[] = lines.map((line, idx) => {
+    if (idx === headerIdx) return { type: "skip" };
     const t = line.text.trim();
-    if (!t) return;
-    if (/^estimasi|^jumlah\b.*\d|^total/i.test(t)) return; // baris total
-
-    // baris kapal (header grup)
-    if (isShip(t) && !/^\d/.test(t)) { kapal = t.replace(/\s{2,}/g, " ").trim(); return; }
+    if (!t) return { type: "skip" };
+    if (/^estimasi|^total\b|^jumlah\b[\s\S]*\d{3}/i.test(t)) return { type: "skip" }; // baris total
+    if (isShip(t) && !/^\d/.test(t)) return { type: "ship", text: t.replace(/\s{2,}/g, " ").trim() };
 
     if (bounds) {
       const c = splitCols(line, bounds); // [No,Jumlah,Satuan,Nama,Spek,Harga,(Total)]
       const no = toInt(c[0]);
       const namaCell = (c[3] || "").trim();
-      const isItem = no > 0 && (namaCell || c[4]);
-      if (isItem) {
-        last = { kapal, jumlah: toInt(c[1]) || 1, satuan: (c[2] || "unit").trim(), nama: namaCell, spesifikasi: (c[4] || "").trim(), harga: toInt(c[5]) };
-        items.push(last);
-      } else if (last && (namaCell || c[4])) {
-        (last.breakdown ||= []).push([namaCell, c[4]].filter(Boolean).join(" ").trim());
+      if (no > 0 && (namaCell || c[4])) {
+        return { type: "item", item: { jumlah: toInt(c[1]) || 1, satuan: (c[2] || "unit").trim(), nama: namaCell, spesifikasi: (c[4] || "").trim(), harga: toInt(c[5]) } };
       }
-      return;
-    }
-
-    // fallback tanpa header
-    if (/^\d/.test(t)) {
+    } else if (/^\d/.test(t)) {
       const p = parseFallback(line);
-      if (p && p.nama) { last = { kapal, jumlah: p.qty, satuan: p.sat, nama: p.nama, spesifikasi: p.spek, harga: p.harga }; items.push(last); }
-    } else if (last) {
-      (last.breakdown ||= []).push(t);
+      if (p && p.nama) return { type: "item", item: { jumlah: p.qty, satuan: p.sat, nama: p.nama, spesifikasi: p.spek, harga: p.harga } };
     }
+    return { type: "text", text: t };
   });
 
-  // bersihkan breakdown kosong
+  // baris kategori mesin (mis. "ME, Merk : MITSUBISHI…", "AE …") -> header di ATAS item
+  const isCategory = (s: string) => /^(M\.?E|A\.?E|MESIN|MAIN ENGINE|AUX|AUXILIARY)\b/i.test(s) && (s.includes(":") || /merk/i.test(s));
+
+  // 2) rakit jadi item; teks SEBELUM item -> keterangan(atas), SESUDAH item -> breakdown(bawah)
+  const items: ParsedItem[] = [];
+  let kapal = "";
+  let last: ParsedItem | null = null;
+  let pendingKet: string[] = [];
+
+  for (const cl of classified) {
+    if (cl.type === "skip") continue;
+    if (cl.type === "ship") { kapal = cl.text!; last = null; continue; }
+    if (cl.type === "item") {
+      last = { kapal, ...cl.item!, ...(pendingKet.length ? { keterangan: pendingKet.join("\n") } : {}) };
+      // selamatkan part-number yg ke-gabung di nama -> spesifikasi (saat spek kosong)
+      if (!last.spesifikasi) {
+        const m = last.nama.match(/^(.*\S)\s+([0-9][0-9A-Za-z.\/-]{4,})$/);
+        if (m && /\d/.test(m[2])) { last.nama = m[1].trim(); last.spesifikasi = m[2]; }
+      }
+      items.push(last);
+      pendingKet = [];
+      continue;
+    }
+    // type === "text"
+    const t = cl.text!;
+    if (isCategory(t)) { pendingKet.push(t); last = null; }      // kategori baru -> keterangan utk item berikut
+    else if (!last) pendingKet.push(t);                          // teks sebelum item pertama -> keterangan
+    else (last.breakdown ||= []).push(t);                        // teks setelah item -> breakdown
+  }
+
   for (const it of items) if (it.breakdown) it.breakdown = it.breakdown.filter((b) => b.trim());
   return items;
 }
