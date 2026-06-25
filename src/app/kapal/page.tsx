@@ -15,6 +15,12 @@ export default function ShipDatabasePage() {
   const [q, setQ] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
 
+  // buka modal langsung via ?open=<id> (dari tombol Edit di Profil Armada)
+  useEffect(() => {
+    const sp = new URLSearchParams(window.location.search).get("open");
+    if (sp) setOpenId(sp);
+  }, []);
+
   const filtered = useMemo(() => {
     const n = q.trim().toLowerCase();
     if (!n) return ships;
