@@ -9,6 +9,7 @@ import {
   ShipGeneral, ShipDimension, ShipEngine, ShipGearbox, ShipFile,
 } from "@/lib/kapal/types";
 import { uploadInventaris, removeInventaris } from "@/lib/kapal/upload";
+import { SailingWaves, EmptyShip } from "@/components/MaritimeFx";
 
 export default function ShipDatabasePage() {
   const { ships, loading, saving, lastSaved, supabaseReady, updateShip, saveAll } = useKapalDb();
@@ -35,7 +36,7 @@ export default function ShipDatabasePage() {
       {/* HERO */}
       <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
         <div className="glass hero-glow rounded-3xl px-7 py-6 relative overflow-hidden">
-          <WaveDeco />
+          <SailingWaves />
           <div className="flex items-center gap-4 relative">
             <div className="bg-white rounded-2xl p-2 shadow-md shrink-0"><Image src="/logo-asdp.png" alt="ASDP" width={56} height={38} className="object-contain" /></div>
             <div className="flex-1">
@@ -67,7 +68,7 @@ export default function ShipDatabasePage() {
         {filtered.map((s, i) => (
           <ShipCard key={s.id} ship={s} onClick={() => setOpenId(s.id)} index={i} />
         ))}
-        {filtered.length === 0 && <p className="col-span-full text-center text-slate-400 text-sm py-10">Tak ada kapal cocok.</p>}
+        {filtered.length === 0 && <div className="col-span-full"><EmptyShip title="Tak ada kapal cocok" hint="Coba kata kunci lain." /></div>}
       </div>
 
       {open && (
@@ -90,7 +91,7 @@ function ShipCard({ ship, onClick, index }: { ship: Ship; onClick: () => void; i
   const g = ship.general, d = ship.dimension;
   return (
     <button onClick={onClick} style={{ animationDelay: `${index * 40}ms` }}
-      className="anim-in text-left bg-white rounded-2xl ring-line elev-sm card-hover overflow-hidden group">
+      className="anim-in float-hover text-left bg-white rounded-2xl ring-line elev-sm card-hover overflow-hidden group">
       {/* band atas */}
       <div className="relative px-4 pt-4 pb-3 text-white" style={{ background: "linear-gradient(135deg,#16357f,#0e2456)" }}>
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7cc242] via-[#14b8c4] to-[#f5b301]" />
@@ -143,14 +144,6 @@ function Ring({ pct }: { pct: number }) {
   );
 }
 
-function WaveDeco() {
-  return (
-    <svg className="absolute -bottom-2 right-0 w-72 opacity-[0.07] pointer-events-none" viewBox="0 0 200 60" fill="none">
-      <path d="M0 40 Q25 20 50 40 T100 40 T150 40 T200 40" stroke="#16357f" strokeWidth="3" />
-      <path d="M0 50 Q25 30 50 50 T100 50 T150 50 T200 50" stroke="#16357f" strokeWidth="3" />
-    </svg>
-  );
-}
 
 /* ---------- Modal vessel particulars (editable) ---------- */
 function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: {

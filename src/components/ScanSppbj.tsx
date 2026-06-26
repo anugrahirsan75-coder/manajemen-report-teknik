@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { ocrTableItems, ParsedItem } from "@/lib/sppbj/ocrTable";
 import { scanWithAI, scanWithOllama, probeOllama, NoAIKeyError, NoOllamaError } from "@/lib/sppbj/scanAI";
+import { ShipLoader } from "@/components/MaritimeFx";
 
 type Eng = "ollama" | "ai" | "ocr";
 
@@ -105,16 +106,11 @@ export default function ScanSppbj({ open, onClose, onAdd }: {
             className={`cursor-pointer rounded-2xl border-2 border-dashed px-4 py-4 text-center transition ${busy ? "border-sky-300 bg-sky-50" : "border-slate-300 hover:border-[#1ca3dd] hover:bg-sky-50/50"}`}>
             {busy ? (
               <div>
-                {stage === "ollama" ? (
-                  <div className="text-sm font-semibold text-slate-700">🖥️ Menganalisa dgn AI lokal (Ollama)… bisa agak lama di CPU</div>
-                ) : stage === "ai" ? (
-                  <div className="text-sm font-semibold text-slate-700">☁️ Menganalisa dengan AI cloud… (beberapa detik)</div>
-                ) : (
-                  <>
-                    <div className="text-sm font-semibold text-slate-700 mb-1">🔤 OCR lokal… {progress}%</div>
-                    <div className="h-2 bg-slate-100 rounded-full overflow-hidden max-w-xs mx-auto"><div className="h-full bg-[#1ca3dd] transition-all" style={{ width: `${progress}%` }} /></div>
-                  </>
-                )}
+                <ShipLoader
+                  label={stage === "ollama" ? "Menganalisa dgn AI lokal (Ollama)…" : stage === "ai" ? "Menganalisa dengan AI cloud…" : `OCR lokal… ${progress}%`}
+                  sub={stage === "ollama" ? "bisa agak lama di CPU" : stage === "ai" ? "beberapa detik" : undefined}
+                />
+                {stage === "ocr" && <div className="h-2 bg-slate-100 rounded-full overflow-hidden max-w-xs mx-auto -mt-2"><div className="h-full bg-[#1ca3dd] transition-all" style={{ width: `${progress}%` }} /></div>}
               </div>
             ) : (
               <>

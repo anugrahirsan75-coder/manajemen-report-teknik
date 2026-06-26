@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useKapalDb } from "@/lib/kapal/store";
 import { Ship, shipFilled } from "@/lib/kapal/types";
+import { SailingWaves, EmptyShip } from "@/components/MaritimeFx";
 
 export default function ArmadaPage() {
   const { ships, loading } = useKapalDb();
@@ -22,7 +23,7 @@ export default function ArmadaPage() {
     <main className="max-w-6xl mx-auto px-5 py-8">
       <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
         <div className="glass hero-glow rounded-3xl px-7 py-6 relative overflow-hidden">
-          <svg className="absolute -bottom-3 right-0 w-80 opacity-[0.06]" viewBox="0 0 200 60" fill="none"><path d="M0 40 Q25 20 50 40 T100 40 T150 40 T200 40" stroke="#16357f" strokeWidth="3"/><path d="M0 50 Q25 30 50 50 T100 50 T150 50 T200 50" stroke="#16357f" strokeWidth="3"/></svg>
+          <SailingWaves />
           <div className="flex items-center gap-4 relative">
             <div className="bg-white rounded-2xl p-2 shadow-md shrink-0"><Image src="/logo-asdp.png" alt="ASDP" width={56} height={38} className="object-contain" /></div>
             <div className="flex-1">
@@ -50,7 +51,7 @@ export default function ArmadaPage() {
 
       <div className="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((s, i) => <ViewCard key={s.id} ship={s} index={i} />)}
-        {!loading && filtered.length === 0 && <p className="col-span-full text-center text-slate-400 text-sm py-10">Tak ada kapal cocok.</p>}
+        {!loading && filtered.length === 0 && <div className="col-span-full"><EmptyShip title="Tak ada kapal cocok" hint="Coba kata kunci lain." /></div>}
       </div>
     </main>
   );
@@ -61,7 +62,7 @@ function ViewCard({ ship, index }: { ship: Ship; index: number }) {
   const g = ship.general, d = ship.dimension;
   return (
     <Link href={`/armada/${ship.id}`} style={{ animationDelay: `${index * 40}ms` }}
-      className="anim-in block bg-white rounded-2xl ring-line elev-sm card-hover overflow-hidden group">
+      className="anim-in float-hover block bg-white rounded-2xl ring-line elev-sm card-hover overflow-hidden group">
       <div className="relative px-4 pt-4 pb-3 text-white" style={{ background: "linear-gradient(135deg,#16357f,#0e2456)" }}>
         <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#7cc242] via-[#14b8c4] to-[#f5b301]" />
         <span className="absolute right-3 bottom-1 text-5xl opacity-[0.08] leading-none">⚓</span>

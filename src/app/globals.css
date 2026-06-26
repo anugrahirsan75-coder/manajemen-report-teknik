@@ -201,3 +201,21 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
   padding: 3px 5px;
   vertical-align: top;
 }
+
+/* ====== Animasi maritim (hormati reduced-motion) ====== */
+@keyframes mf-sail { 0% { transform: translateX(-14%) translateY(0) rotate(-1deg); } 50% { transform: translateX(50%) translateY(-3px) rotate(1deg); } 100% { transform: translateX(114%) translateY(0) rotate(-1deg); } }
+@keyframes mf-bob { 0%,100% { transform: translateY(0) rotate(-1deg); } 50% { transform: translateY(-4px) rotate(1deg); } }
+@keyframes mf-wave { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+@keyframes mf-cloud { from { transform: translateX(-10%); } to { transform: translateX(120%); } }
+@keyframes mf-cross { 0% { left: -16%; } 100% { left: 116%; } }
+@media (prefers-reduced-motion: no-preference) {
+  .mf-bob { animation: mf-bob 4s ease-in-out infinite; }
+  .mf-wave { animation: mf-wave 9s linear infinite; }
+  .mf-wave-slow { animation: mf-wave 16s linear infinite; }
+  .mf-cloud { animation: mf-cloud 38s linear infinite; }
+  .mf-cloud-2 { animation: mf-cloud 60s linear infinite; }
+  .mf-sail { animation: mf-sail 14s ease-in-out infinite; }
+  .mf-cross { animation: mf-cross 22s linear infinite; }
+  .float-hover { transition: transform 0.25s ease, box-shadow 0.25s ease; }
+  .float-hover:hover { animation: mf-bob 3s ease-in-out infinite; }
+}

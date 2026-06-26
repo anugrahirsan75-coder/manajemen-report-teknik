@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
+import { Ferry } from "@/components/MaritimeFx";
 
 function LoginForm() {
   const router = useRouter();
@@ -25,8 +26,16 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen grid place-items-center px-5">
-      <div className="w-full max-w-sm anim-in">
+    <div className="min-h-screen grid place-items-center px-5 relative overflow-hidden">
+      {/* scene kapal berlayar */}
+      <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
+        <div className="mf-cloud absolute top-[10%] h-7 w-28 rounded-full bg-white/35 blur-md" />
+        <div className="mf-cloud-2 absolute top-[20%] h-6 w-20 rounded-full bg-white/25 blur-md" />
+        <div className="mf-sail absolute top-[60%] w-32 drop-shadow-lg"><Ferry className="mf-bob w-full" /></div>
+        <svg className="absolute bottom-0 left-0 w-[200%] h-32 opacity-25 mf-wave-slow" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0 60 Q150 20 300 60 T600 60 T900 60 T1200 60 V120 H0 Z" fill="#16357f" /></svg>
+        <svg className="absolute bottom-0 left-0 w-[200%] h-24 opacity-30 mf-wave" viewBox="0 0 1200 120" preserveAspectRatio="none"><path d="M0 70 Q150 36 300 70 T600 70 T900 70 T1200 70 V120 H0 Z" fill="#1ca3dd" /></svg>
+      </div>
+      <div className="w-full max-w-sm anim-in relative z-10">
         <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg">
           <div className="glass hero-glow rounded-3xl p-7">
             <div className="flex items-center gap-3 mb-6">

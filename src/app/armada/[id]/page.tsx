@@ -6,6 +6,7 @@ import { useKapalDb } from "@/lib/kapal/store";
 import {
   Ship, GENERAL_FIELDS, ENGINE_FIELDS, GEARBOX_FIELDS, shipFilled, ShipFile,
 } from "@/lib/kapal/types";
+import { SailingWaves } from "@/components/MaritimeFx";
 
 export default function ArmadaDetail() {
   const { id } = useParams<{ id: string }>();
@@ -37,8 +38,9 @@ export default function ArmadaDetail() {
 
       {/* HERO */}
       <div className="rounded-3xl overflow-hidden elev-lg anim-in relative text-white" style={{ background: "linear-gradient(135deg,#16357f 0%,#0e2456 70%)" }}>
-        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#7cc242] via-[#14b8c4] to-[#f5b301]" />
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#7cc242] via-[#14b8c4] to-[#f5b301] z-10" />
         <span className="absolute -right-6 -bottom-10 text-[12rem] leading-none opacity-[0.06] select-none">⚓</span>
+        <SailingWaves />
         <div className="px-6 sm:px-9 py-7 relative">
           <p className="text-white/55 text-[11px] uppercase tracking-[0.25em] font-semibold">Vessel Particulars</p>
           <div className="flex flex-wrap items-end justify-between gap-4 mt-1">
