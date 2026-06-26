@@ -26,7 +26,9 @@ export default function ArmadaDetail() {
   return (
     <main className="max-w-5xl mx-auto px-4 sm:px-5 py-6 print-area">
       <div className="no-print flex items-center justify-between mb-4">
-        <Link href="/armada" className="text-sm text-slate-500 hover:text-[#16357f]">‹ Profil Armada</Link>
+        <Link href="/armada" className="inline-flex items-center gap-2 bg-white text-[#16357f] font-semibold text-sm px-4 py-2 rounded-xl ring-1 ring-[#16357f]/15 shadow-sm hover:bg-[#16357f] hover:text-white hover:ring-[#16357f] transition">
+          <span className="text-base leading-none">←</span> Kembali ke Profil Armada
+        </Link>
         <div className="flex items-center gap-2">
           <button onClick={() => window.print()} className="btn btn-ghost text-xs">🖨️ Cetak</button>
           <Link href={`/kapal?open=${ship.id}`} className="btn btn-primary text-xs">✏️ Edit Data</Link>
