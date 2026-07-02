@@ -95,18 +95,46 @@ function fixHarga(qty: number, harga: number, total: number): { harga: number; w
   return { harga, warn: harga === 0 };
 }
 
+// skor kualitas hasil parse: banyak item valid, minim huruf sampah
+function scoreItems(items: ParsedItem[]): number {
+  if (!items.length) return 0;
+  let valid = 0, chars = 0, junk = 0;
+  for (const it of items) {
+    const okNama = it.nama.length >= 3 && /[a-z]{3}/i.test(it.nama);
+    if (okNama && (it.harga > 0 || it.jumlah > 0)) valid++;
+    const s = it.nama + " " + it.spesifikasi;
+    chars += s.length;
+    junk += (s.match(/[^\w\s.,:;()\/\-+"'%°²³&]/g) || []).length;
+  }
+  const junkRatio = chars ? junk / chars : 1;
+  return valid * (1 - Math.min(1, junkRatio * 3));
+}
+
 export async function ocrTableItems(file: File | Blob, onProgress?: (p: number) => void): Promise<ParsedItem[]> {
   let input: Blob = file;
   try { input = await preprocessImage(file); } catch { /* pakai gambar asli bila prep gagal */ }
   const worker = await createWorker("eng", 1, {
     logger: (m) => { if (m.status === "recognizing text" && onProgress) onProgress(Math.round(m.progress * 100)); },
   });
-  let data: any;
+  // dual-pass: PSM 4 (kolom) lalu PSM 6 (blok seragam) bila hasil lemah -> pilih skor terbaik
+  const passes: any[] = [];
   try {
-    await worker.setParameters({ tessedit_pageseg_mode: "4" as any, preserve_interword_spaces: "1" });
-    const r = await worker.recognize(input as any, {}, { blocks: true, text: true } as any);
-    data = r.data;
+    for (const psm of ["4", "6"]) {
+      await worker.setParameters({ tessedit_pageseg_mode: psm as any, preserve_interword_spaces: "1" });
+      const r = await worker.recognize(input as any, {}, { blocks: true, text: true } as any);
+      passes.push(r.data);
+      // pass pertama sudah bagus? (>=5 item valid) -> tak perlu pass kedua
+      const quick = parseData(r.data);
+      if (scoreItems(quick) >= 5) break;
+    }
   } finally { await worker.terminate(); }
+  const results = passes.map((p) => parseData(p));
+  results.sort((a, b) => scoreItems(b) - scoreItems(a));
+  return results[0] || [];
+}
+
+// parse hasil tesseract (dipisah agar bisa dipakai dual-pass)
+function parseData(data: any): ParsedItem[] {
 
   const lines = collectLines(data);
   if (!lines.length) return [];

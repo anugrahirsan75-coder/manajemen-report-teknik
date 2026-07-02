@@ -95,6 +95,7 @@ export default function ScanSppbj({ open, onClose, onAdd }: {
             {engineUsed === "ollama" && <span className="text-emerald-700 bg-emerald-50 rounded px-1.5 py-0.5 font-semibold">🖥️ Dibaca pakai AI Lokal (Ollama, privat)</span>}
             {engineUsed === "ai" && <span className="text-emerald-700 bg-emerald-50 rounded px-1.5 py-0.5 font-semibold">☁️ Dibaca pakai AI Cloud (Gemini)</span>}
             {engineUsed === "ocr" && <span className="text-sky-700 bg-sky-50 rounded px-1.5 py-0.5 font-semibold">🔤 Dibaca pakai OCR lokal</span>}
+            {engineUsed === "ocr" && <span className="text-slate-400">gambar buram? akurasi tertinggi pakai engine AI (Gemini / Ollama vision)</span>}
           </div>
         )}
 
