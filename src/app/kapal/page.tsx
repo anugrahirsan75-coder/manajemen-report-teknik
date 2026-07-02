@@ -5,8 +5,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { useKapalDb } from "@/lib/kapal/store";
 import {
-  Ship, GENERAL_FIELDS, DIM_FIELDS, ENGINE_FIELDS, GEARBOX_FIELDS, shipFilled,
-  ShipGeneral, ShipDimension, ShipEngine, ShipGearbox, ShipFile,
+  Ship, GENERAL_FIELDS, DIM_FIELDS, ENGINE_FIELDS, GEARBOX_FIELDS, SHAFT_FIELDS, shipFilled,
+  ShipGeneral, ShipDimension, ShipEngine, ShipGearbox, ShipShaft, ShipFile,
 } from "@/lib/kapal/types";
 import { uploadInventaris, removeInventaris } from "@/lib/kapal/upload";
 import { SailingWaves, EmptyShip } from "@/components/MaritimeFx";
@@ -149,9 +149,9 @@ function Ring({ pct }: { pct: number }) {
 function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: {
   ship: Ship; onClose: () => void; onSave: (s: Ship) => void; onPersist: (s: Ship) => Promise<void>; saving: boolean; supabaseReady: boolean;
 }) {
-  const [draft, setDraft] = useState<Ship>({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" } });
+  const [draft, setDraft] = useState<Ship>({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" }, shaft: ship.shaft || { propKanan: "", propKiri: "", kemudiKanan: "", kemudiKiri: "" } });
   const [uploading, setUploading] = useState(false);
-  useEffect(() => { setDraft({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" } }); }, [ship]);
+  useEffect(() => { setDraft({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" }, shaft: ship.shaft || { propKanan: "", propKiri: "", kemudiKanan: "", kemudiKiri: "" } }); }, [ship]);
   const pct = shipFilled(draft);
 
   const setG = (k: keyof ShipGeneral, v: string) => setDraft((p) => ({ ...p, general: { ...p.general, [k]: v } }));
@@ -159,6 +159,7 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
   const setME = (k: keyof ShipEngine, v: string) => setDraft((p) => ({ ...p, mainEngine: { ...p.mainEngine, [k]: v } }));
   const setAE = (k: keyof ShipEngine, v: string) => setDraft((p) => ({ ...p, auxEngine: { ...p.auxEngine, [k]: v } }));
   const setGB = (k: keyof ShipGearbox, v: string) => setDraft((p) => ({ ...p, gearbox: { ...p.gearbox, [k]: v } }));
+  const setSH = (k: keyof ShipShaft, v: string) => setDraft((p) => ({ ...p, shaft: { ...p.shaft, [k]: v } }));
 
   // upload file inventaris -> langsung simpan (biar tak hilang referensinya)
   const onUpload = async (files: FileList | null) => {
@@ -230,6 +231,12 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
           <Section title="Gearbox" sub="Transmisi">
             {GEARBOX_FIELDS.map((f) => (
               <Field key={f.key} label={f.label} value={draft.gearbox[f.key]} onChange={(v) => setGB(f.key, v)} />
+            ))}
+          </Section>
+
+          <Section title="Ukuran Shaft" sub="Poros propeller & kemudi">
+            {SHAFT_FIELDS.map((f) => (
+              <Field key={f.key} label={f.label} value={draft.shaft[f.key]} unit={f.unit} onChange={(v) => setSH(f.key, v)} />
             ))}
           </Section>
 

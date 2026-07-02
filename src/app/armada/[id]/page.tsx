@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useKapalDb } from "@/lib/kapal/store";
 import {
-  Ship, GENERAL_FIELDS, ENGINE_FIELDS, GEARBOX_FIELDS, shipFilled, ShipFile,
+  Ship, GENERAL_FIELDS, ENGINE_FIELDS, GEARBOX_FIELDS, SHAFT_FIELDS, shipFilled, ShipFile,
 } from "@/lib/kapal/types";
 import { SailingWaves } from "@/components/MaritimeFx";
 
@@ -105,6 +105,13 @@ export default function ArmadaDetail() {
         <EngineCard title="Auxiliary Engine" sub="Mesin Bantu" fields={ENGINE_FIELDS} data={ship.auxEngine} accent="#0e7490" />
         <EngineCard title="Gearbox" sub="Transmisi" fields={GEARBOX_FIELDS} data={ship.gearbox} accent="#b45309" />
       </div>
+
+      {/* SHAFT */}
+      <Card title="Ukuran Shaft" icon="⚙️">
+        <dl className="grid grid-cols-2 sm:grid-cols-4 gap-x-8 gap-y-0">
+          {SHAFT_FIELDS.map((f) => <DT key={f.key} label={f.label} value={(ship.shaft || ({} as any))[f.key] || ""} unit={f.unit} />)}
+        </dl>
+      </Card>
 
       {/* INVENTARIS */}
       <Card title="Daftar Inventaris" icon="🗂️">
