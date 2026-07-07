@@ -27,28 +27,31 @@ let built = false;
 let loading: Promise<void> | null = null;
 
 // ---------- CSV ----------
-function parseLine(line: string): string[] {
-  const o: string[] = [];
-  let c = "", q = false;
-  for (let i = 0; i < line.length; i++) {
-    const ch = line[i];
+// State machine seluruh teks: newline DI DALAM sel ber-quote aman (deskripsi/PO Text
+// multi-baris tidak lagi memecah baris & menggeser kolom).
+function parseCsvGrid(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [], c = "", q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
     if (q) {
-      if (ch === '"') { if (line[i + 1] === '"') { c += '"'; i++; } else q = false; }
+      if (ch === '"') { if (text[i + 1] === '"') { c += '"'; i++; } else q = false; }
       else c += ch;
     } else {
       if (ch === '"') q = true;
-      else if (ch === ",") { o.push(c); c = ""; }
-      else c += ch;
+      else if (ch === ",") { row.push(c); c = ""; }
+      else if (ch === "\n") { row.push(c); rows.push(row); row = []; c = ""; }
+      else if (ch !== "\r") c += ch;
     }
   }
-  o.push(c);
-  return o;
+  if (c.length || row.length) { row.push(c); rows.push(row); }
+  return rows;
 }
 function parseCsv(text: string): KodeRow[] {
-  const lines = text.split(/\r?\n/).filter(Boolean);
+  const grid = parseCsvGrid(text);
   const out: KodeRow[] = [];
-  for (let i = 1; i < lines.length; i++) { // skip header
-    const f = parseLine(lines[i]);
+  for (let i = 1; i < grid.length; i++) { // skip header
+    const f = grid[i];
     const m = (f[C_MAT] || "").trim();
     if (!m) continue;
     out.push({ m, d: (f[C_DESC] || "").trim(), p: (f[C_PART] || "").trim(), g: (f[C_GROUP] || "").trim(), po: (f[C_PO] || "").trim() });
@@ -81,6 +84,18 @@ async function refresh(force = false) {
 const normPart = (s: string) => (s || "").toUpperCase().replace(/[^A-Z0-9]/g, ""); // abaikan semua pemisah
 const normDesc = (s: string) => (s || "").toUpperCase().replace(/\s+/g, " ").trim();
 const tokenize = (s: string) => s.split(/[^A-Z0-9]+/).filter((t) => t.length >= 2);
+// sel part bisa berisi >1 nomor ("2654403/2654407", "13002-5/633313190C").
+// Index tiap token (pemisah / , ; spasi) DAN gabungan penuh (utk part yg memang mengandung "/").
+function partKeys(raw: string): string[] {
+  const set = new Set<string>();
+  const full = normPart(raw);
+  if (full) set.add(full);
+  for (const t of (raw || "").split(/[\/,;\s]+/)) {
+    const k = normPart(t);
+    if (k.length >= 3) set.add(k);
+  }
+  return Array.from(set);
+}
 
 let partIdx: Map<string, string[]> = new Map();
 let matDesc: Map<string, string> = new Map();
@@ -97,8 +112,9 @@ function buildIndexes() {
     if (r.m && !matDesc.has(r.m)) matDesc.set(r.m, r.d);
     if (r.m && r.po && !matPO.has(r.m)) matPO.set(r.m, r.po);
     if (r.p) {
-      const k = normPart(r.p);
-      if (k) { let arr = partIdx.get(k); if (!arr) { arr = []; partIdx.set(k, arr); } if (!arr.includes(r.m)) arr.push(r.m); }
+      for (const k of partKeys(r.p)) {
+        let arr = partIdx.get(k); if (!arr) { arr = []; partIdx.set(k, arr); } if (!arr.includes(r.m)) arr.push(r.m);
+      }
     }
     const nd = normDesc(r.d);
     if (nd && !seenDesc.has(nd)) { seenDesc.add(nd); descList.push({ nd, kode: r.m, desc: r.d, toks: tokenize(nd), po: r.po || "" }); }
@@ -149,11 +165,28 @@ export async function cekKode(items: CekInput[], opts?: { refresh?: boolean }): 
   return items.map((it) => {
     const part = (it.partNumber || "").trim();
     if (part) {
-      // SUKU CADANG
-      const mats = partIdx.get(normPart(part)) || [];
+      // SUKU CADANG — cocokkan exact key; input multi-nilai juga dicoba per token
+      let mats: string[] = [];
+      for (const k of partKeys(part)) {
+        const hit = partIdx.get(k);
+        if (hit) for (const m of hit) if (!mats.includes(m)) mats.push(m);
+      }
+      let status: CekResult["status"] = mats.length ? "ada" : "tidak ada";
+      if (!mats.length) {
+        // fallback: substring dua arah (min 5 digit) -> kandidat "cek", bukan klaim "ada"
+        const key = normPart(part);
+        if (key.length >= 5) {
+          outer: for (const [k, ms] of partIdx) {
+            if (k.includes(key) || (k.length >= 5 && key.includes(k))) {
+              for (const m of ms) { if (!mats.includes(m)) mats.push(m); if (mats.length >= MAX_CAND) break outer; }
+            }
+          }
+          if (mats.length) status = "cek";
+        }
+      }
       if (!mats.length) return { id: it.id, kategori: "SC", kode: "", desc: "", po: "", status: "tidak ada" };
       const candidates: Cand[] = mats.map((m) => ({ kode: m, desc: matDesc.get(m) || "", po: matPO.get(m) || "" }));
-      const r: CekResult = { id: it.id, kategori: "SC", kode: candidates[0].kode, desc: candidates[0].desc, po: candidates[0].po, status: "ada", candidates };
+      const r: CekResult = { id: it.id, kategori: "SC", kode: candidates[0].kode, desc: candidates[0].desc, po: candidates[0].po, status, candidates };
       if (mats.length > 1) { r.kode2 = candidates[1].kode; r.desc2 = candidates[1].desc; }
       return r;
     }
