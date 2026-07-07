@@ -176,7 +176,7 @@ export async function cekKode(items: CekInput[], opts?: { refresh?: boolean }): 
         // fallback: substring dua arah (min 5 digit) -> kandidat "cek", bukan klaim "ada"
         const key = normPart(part);
         if (key.length >= 5) {
-          outer: for (const [k, ms] of partIdx) {
+          outer: for (const [k, ms] of Array.from(partIdx.entries())) {
             if (k.includes(key) || (k.length >= 5 && key.includes(k))) {
               for (const m of ms) { if (!mats.includes(m)) mats.push(m); if (mats.length >= MAX_CAND) break outer; }
             }
