@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useSppbj } from "@/lib/sppbj/store";
-import { MATA_ANGGARAN, STAF_TEKNIK, KAPAL_LIST, DEPT_HEAD, VENDOR_DB, MATL_GROUP } from "@/lib/sppbj/db";
+import { MATA_ANGGARAN, STAF_TEKNIK, KAPAL_LIST, DEPT_HEAD, VENDOR_DB, MATL_GROUP, KATEGORI_REKAP } from "@/lib/sppbj/db";
 import { SppbjItem, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest, fullNoKontrak } from "@/lib/sppbj/types";
 import { useState, Fragment } from "react";
 import { Field, Input, Section } from "@/components/Field";
@@ -14,6 +14,7 @@ import KatalogBrowser from "@/components/KatalogBrowser";
 import ScanSppbj from "@/components/ScanSppbj";
 import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
+import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 
 export default function SppbjIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving } = useSppbj();
@@ -21,6 +22,22 @@ export default function SppbjIsi() {
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
   const [browseKatalog, setBrowseKatalog] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [rekapBusy, setRekapBusy] = useState(false);
+
+  // kirim pengadaan ini ke spreadsheet REKAP (tab bulan sesuai tanggal)
+  const kirimRekap = async () => {
+    if (!(req.noPRSAP || "").trim() && !(req.noSPPBJ || "").trim()) { alert("Isi No. PR SAP dulu — jadi kunci baris di rekap."); return; }
+    if (!req.kategoriRekap && !confirm("Kategori Rekap (KET.) belum dipilih. Lanjut kirim tanpa KET?")) return;
+    setRekapBusy(true);
+    try {
+      const r = await sendToRekap([buildRekapRow(req)]);
+      if (r.ok) { const res = r.results?.[0]; alert(`Terkirim ke rekap → tab "${res?.sheet || "-"}" (${res?.action === "append" ? "baris baru" : "diperbarui"}).`); }
+      else alert("Gagal kirim: " + r.error);
+    } catch (e: any) {
+      if (e instanceof NoRekapConfigError) alert("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET di server (lihat docs/rekap-apps-script.gs).");
+      else alert("Gagal: " + (e?.message || e));
+    } finally { setRekapBusy(false); }
+  };
 
   const toInt = (s: string) => { const d = (s || "").replace(/[^\d]/g, ""); return d ? parseInt(d, 10) : 0; };
   const toNum = (s: string) => { const x = parseFloat((s || "").replace(/[^\d.]/g, "")); return isNaN(x) ? 0 : x; };
@@ -101,7 +118,10 @@ export default function SppbjIsi() {
           <h1 className="text-xl font-extrabold asdp-text-gradient">Input SPPBJ</h1>
           <p className="text-xs text-slate-500">{req.items.length} item · {bulanTahun(req.tanggal)} · estimasi {rupiah(total)}</p>
         </div>
-        <button onClick={saveRemote} disabled={saving} className="asdp-gradient text-white text-sm font-semibold px-5 py-2 rounded-xl shadow">{saving ? "…" : "💾 Simpan"}</button>
+        <div className="flex items-center gap-2">
+          <button onClick={kirimRekap} disabled={rekapBusy} className="text-sm font-semibold px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50" title="Kirim ke spreadsheet REKAP PJK (tab bulan sesuai tanggal)">{rekapBusy ? "…" : "📊 Kirim ke Rekap"}</button>
+          <button onClick={saveRemote} disabled={saving} className="asdp-gradient text-white text-sm font-semibold px-5 py-2 rounded-xl shadow">{saving ? "…" : "💾 Simpan"}</button>
+        </div>
       </div>
 
       <div className="mb-3 flex items-center gap-2">
@@ -114,6 +134,13 @@ export default function SppbjIsi() {
           <Field label="Tanggal (bulan & tahun dipakai)"><Input type="date" value={req.tanggal} onChange={(e) => update({ tanggal: e.target.value })} /></Field>
           <Field label="No. SPPB/J (kosong = isi manual)"><Input value={req.noSPPBJ} onChange={(e) => update({ noSPPBJ: e.target.value })} placeholder="biarkan kosong" /></Field>
           <Field label="No. DRP (cari deskripsi)"><DrpPicker value={req.noDRP} onChange={(v) => update({ noDRP: v })} /></Field>
+          <Field label="No. PR SAP (rekap: kolom B & F)"><Input value={req.noPRSAP || ""} onChange={(e) => update({ noPRSAP: e.target.value })} placeholder="2000xxxxxx" /></Field>
+          <Field label="Kategori Rekap (KET. di spreadsheet)">
+            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.kategoriRekap || ""} onChange={(e) => update({ kategoriRekap: e.target.value })}>
+              <option value="">— pilih —</option>
+              {KATEGORI_REKAP.map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </Field>
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} /></Field>
           <Field label="Dasar Pelimpahan (= KAK poin A)"><Input value={req.dasarPelimpahan} onChange={(e) => update({ dasarPelimpahan: e.target.value })} /></Field>
           <Field label="Staf Teknik (TTD)">

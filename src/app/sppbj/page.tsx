@@ -8,6 +8,7 @@ import { useSppbj } from "@/lib/sppbj/store";
 import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak } from "@/lib/sppbj/types";
 import { tanggalIndo, bulanTahun } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
+import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
@@ -39,6 +40,23 @@ export default function SppbjList() {
   const mulai = () => { newDraft(); router.push("/sppbj/isi"); };
   const buka = (r: any) => { loadById(r); router.push("/sppbj/detail"); };
   const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
+
+  // Sync ke spreadsheet REKAP PJK (semua pengadaan di filter -> tab bulan masing-masing)
+  const [rekapBusy, setRekapBusy] = useState(false);
+  const syncRekap = async () => {
+    const rows = filtered.map((r) => buildRekapRow(r.payload)).filter((x) => x.nomorSppbj && x.month);
+    if (!rows.length) { alert("Tak ada pengadaan dgn No. PR SAP di filter ini. Isi No. PR SAP dulu."); return; }
+    if (!confirm(`Kirim ${rows.length} pengadaan ke spreadsheet REKAP?\n(pengadaan tanpa No. PR SAP dilewati)`)) return;
+    setRekapBusy(true);
+    try {
+      const r = await sendToRekap(rows);
+      if (r.ok) alert(`Terkirim ${r.results?.length || rows.length} baris ke rekap (per tab bulan).`);
+      else alert("Gagal kirim: " + r.error);
+    } catch (e: any) {
+      if (e instanceof NoRekapConfigError) alert("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET (lihat docs/rekap-apps-script.gs).");
+      else alert("Gagal: " + (e?.message || e));
+    } finally { setRekapBusy(false); }
+  };
 
   // Feedback loop: kumpulkan harga final SPPBJ per kode katalog -> Excel usulan update Riil ke RAB
   const [exporting, setExporting] = useState(false);
@@ -126,6 +144,7 @@ export default function SppbjList() {
             </select>
           )}
           <Link href="/dashboard" className="btn btn-ghost text-xs">📊 Dashboard Anggaran</Link>
+          {supabaseReady && <button onClick={syncRekap} disabled={rekapBusy} className="btn btn-ghost text-xs" title="Kirim semua pengadaan (filter ini) ke spreadsheet REKAP PJK, per tab bulan">{rekapBusy ? "…" : "📊 Sync ke Rekap"}</button>}
           {supabaseReady && <button onClick={exportUsulan} disabled={exporting} className="btn btn-ghost text-xs" title="Excel usulan update harga Riil ke RAB master dari realisasi SPPBJ">{exporting ? "…" : "📤 Usulan Harga Riil"}</button>}
           {supabaseReady && <button onClick={refresh} className="btn btn-ghost text-xs">↻ Refresh</button>}
         </div>

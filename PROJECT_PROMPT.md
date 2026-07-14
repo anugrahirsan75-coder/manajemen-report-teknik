@@ -50,6 +50,8 @@ APP_USERS=admin:<pwd>,teknik:<pwd>
 AUTH_TOKEN=<string acak 24+ byte hex>
 MATERIAL_DB_CSV_URL=(opsional override gviz URL DB material)
 GEMINI_API_KEY=(opsional — aktifkan Scan AI Vision tabel SPPBJ; tanpa ini fallback OCR lokal)
+REKAP_GAS_URL=(opsional — URL /exec Apps Script utk sync SPPBJ ke spreadsheet REKAP PJK)
+REKAP_GAS_SECRET=(secret cocok dgn Apps Script; lihat docs/rekap-apps-script.gs)
 NEXT_PUBLIC_KATALOG_CSV_URL=(opsional — katalog HSPK live gviz)
 NEXT_PUBLIC_KATALOG_BREAKDOWN_CSV_URL=(opsional — breakdown katalog gviz)
 ```

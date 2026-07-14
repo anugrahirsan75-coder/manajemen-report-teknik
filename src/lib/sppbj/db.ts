@@ -1,3 +1,11 @@
+// Kategori Rekap (kolom KET. di spreadsheet REKAP PJK KAPAL PERBULAN) — dropdown
+export const KATEGORI_REKAP: string[] = [
+  "DOCKING(BIAYA)",
+  "DOCKING (INVESTASI)",
+  "RUTIN",
+  "INVESTASI DILUAR DOCKING",
+];
+
 // Mata Anggaran (dari sheet DATABASE) — bisa pilih >1
 export const MATA_ANGGARAN: string[] = [
   "5010403003 (Kapal Ro-Ro)",
