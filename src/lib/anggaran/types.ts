@@ -72,6 +72,14 @@ export interface RREntry {
   nilai: Record<string, Record<string, number>>; // kapal -> { kodeMA: nilai }
 }
 
+// ====== Plafon Rutin bulanan (Persetujuan Rutin Kapal) ======
+// Baris pagu BEBAS per Mata Anggaran (tak terkunci 9 master). Key cocok realisasi = kodeMA / slug label.
+export interface PlafonRow { ma: string; nilai: number }
+export interface PlafonRutin { bulan: string; rows: PlafonRow[]; catatan?: string }
+
+// kunci pencocokan pagu <-> realisasi: kode MA bila ada, else slug label
+export const maKey = (s: string): string => kodeMA(s) || (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+
 export const rupiahShort = (n: number): string => {
   const a = Math.abs(n);
   if (a >= 1e9) return `${(n / 1e9).toFixed(1).replace(/\.0$/, "")} M`;

@@ -1,17 +1,17 @@
 "use client";
 
 import { useMemo, useState, useCallback } from "react";
-import { useAnggaran, PengadaanRow } from "@/lib/anggaran/store";
+import { useAnggaran, PengadaanRow, realisasiRutin } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN,
-  namaKapalPenuh, MA_RENCANA, RKA, RREntry,
+  namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonRow, maKey, fullMA,
 } from "@/lib/anggaran/types";
 import { rupiah, bulanTahun } from "@/lib/format";
 
 const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) => s + (it.harga || 0) * (it.jumlah || 0), 0);
 
 export default function DashboardAnggaran() {
-  const { ready, loading, pengadaan, rka, rr, reload, saveRka, saveRr } = useAnggaran();
+  const { ready, loading, pengadaan, rka, rr, plafon, reload, saveRka, saveRr, savePlafon } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
 
   const tahunList = useMemo(() => Array.from(new Set(pengadaan.map((r) => (r.tanggal || "").slice(0, 4)).filter(Boolean))).sort().reverse(), [pengadaan]);
@@ -73,6 +73,9 @@ export default function DashboardAnggaran() {
             <Kpi label="Penyerapan Investasi" value={rupiah(a.investasi)} sub="mata anggaran 10206x" icon="📈" tint="indigo" />
             <Kpi label="RKA (acuan)" value={rupiah(rkaTotal)} sub={rkaTotal ? `terserap ${serapPct}%` : "belum diisi"} icon="🎯" tint="green" />
           </section>
+
+          {/* Kendali Anggaran Rutin bulanan (pagu vs realisasi RUTIN) */}
+          <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} />
 
           {/* RKA vs penyerapan */}
           <RkaSection rka={rka} perMA={a.perMA} onSave={saveRka} />
@@ -463,6 +466,204 @@ function RencanaRealisasi({ rr, onSave }: { rr: RREntry[]; onSave: (r: RREntry[]
           </tfoot>
         </table>
       </div>
+    </div>
+  );
+}
+
+/* ---------- Kendali Anggaran Rutin bulanan ---------- */
+const prevMonth = (ym: string): string => {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(y, m - 2, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+function parsePlafonPaste(text: string): PlafonRow[] {
+  const out: PlafonRow[] = [];
+  for (const line of (text || "").split(/\r?\n/)) {
+    const t = line.trim(); if (!t) continue;
+    let ma = "", val = "";
+    if (t.includes("\t")) { const parts = t.split("\t"); val = (parts.pop() || "").trim(); ma = parts.join(" ").trim(); }
+    else { const m = t.match(/^(.*?)[\s:;]+([\d][\d.,]{3,})\s*$/); if (m) { ma = m[1].trim(); val = m[2]; } }
+    const n = parseInt((val || "").replace(/[^\d]/g, ""), 10);
+    if (ma && n) out.push({ ma, nilai: n });
+  }
+  return out;
+}
+const statusRutin = (pct: number) => pct > 100 ? { c: "text-red-600 bg-red-50", t: "OVERBUDGET" } : pct >= 80 ? { c: "text-amber-600 bg-amber-50", t: "Waspada" } : { c: "text-emerald-600 bg-emerald-50", t: "Aman" };
+
+function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonRutin[]) => Promise<void> }) {
+  const bulanList = useMemo(() => {
+    const s = new Set<string>();
+    plafon.forEach((p) => p.bulan && s.add(p.bulan));
+    pengadaan.forEach((r) => { if (/rutin/i.test(r.kategoriRekap || "") && r.tanggal) s.add(r.tanggal.slice(0, 7)); });
+    return Array.from(s).sort().reverse();
+  }, [plafon, pengadaan]);
+  const [bulanSel, setBulanSel] = useState("");
+  const bulan = bulanSel || bulanList[0] || new Date().toISOString().slice(0, 7);
+
+  const entry = plafon.find((p) => p.bulan === bulan);
+  const rows = entry?.rows || [];
+  const real = useMemo(() => realisasiRutin(pengadaan, bulan), [pengadaan, bulan]);
+
+  const [edit, setEdit] = useState(false);
+  const [draft, setDraft] = useState<PlafonRow[]>([]);
+  const [busy, setBusy] = useState(false);
+  const [paste, setPaste] = useState<string | null>(null);
+
+  // gabung pagu + realisasi (termasuk realisasi tanpa pagu)
+  const merged = useMemo(() => {
+    const by: Record<string, { ma: string; pagu: number; pakai: number }> = {};
+    rows.forEach((r) => { const k = maKey(r.ma); by[k] = { ma: r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), pakai: by[k]?.pakai || 0 }; });
+    Object.entries(real.perKey).forEach(([k, v]) => {
+      if (by[k]) by[k].pakai = v;
+      else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { ma: lbl, pagu: 0, pakai: v }; }
+    });
+    return Object.values(by).sort((x, y) => (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)));
+  }, [rows, real]);
+
+  const totalPagu = rows.reduce((s, r) => s + (r.nilai || 0), 0);
+  const totalPakai = real.total;
+  const sisa = totalPagu - totalPakai;
+  const pctTot = totalPagu ? Math.round((totalPakai / totalPagu) * 100) : 0;
+
+  const startEdit = () => { setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]); setEdit(true); };
+  const salin = () => { const pe = plafon.find((p) => p.bulan === prevMonth(bulan)); if (pe?.rows?.length) setDraft(pe.rows.map((r) => ({ ...r }))); else alert("Pagu bulan sebelumnya belum ada."); };
+  const simpan = async () => {
+    setBusy(true);
+    try {
+      const clean = draft.filter((r) => r.ma.trim() && r.nilai);
+      const next = plafon.filter((p) => p.bulan !== bulan);
+      if (clean.length) next.push({ bulan, rows: clean });
+      await onSave(next);
+      setEdit(false);
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Card title="Kendali Anggaran Rutin (Persetujuan Rutin per bulan)" icon="🧭">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <select value={bulan} onChange={(e) => setBulanSel(e.target.value)} className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
+          {bulanList.length === 0 && <option value={bulan}>{bulanTahun(bulan + "-01")}</option>}
+          {bulanList.map((b) => <option key={b} value={b}>{bulanTahun(b + "-01")}</option>)}
+        </select>
+        <span className="text-[11px] text-slate-400">realisasi = SPPBJ kategori RUTIN bulan ini (final bila ada, else estimasi)</span>
+        <div className="ml-auto flex items-center gap-2">
+          {!edit ? (
+            <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>
+          ) : (
+            <>
+              <button onClick={salin} className="btn btn-ghost text-xs">⧉ Salin bln lalu</button>
+              <button onClick={() => setPaste("")} className="btn btn-ghost text-xs">📋 Tempel dari Excel</button>
+              <button onClick={simpan} disabled={busy} className="btn btn-primary text-xs">{busy ? "…" : "💾 Simpan"}</button>
+              <button onClick={() => setEdit(false)} className="btn btn-ghost text-xs">Batal</button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* KPI mini */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        <MiniStat label="Total Pagu" val={rupiah(totalPagu)} tint="text-slate-800" />
+        <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-700" />
+        <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-600" : "text-emerald-700"} />
+        <MiniStat label="Serapan" val={`${pctTot}%`} tint={pctTot > 100 ? "text-red-600" : "text-slate-800"} />
+      </div>
+
+      {edit ? (
+        <div className="rounded-xl ring-1 ring-slate-200 p-3">
+          <datalist id="maRutinList">{MATA_ANGGARAN.map((m) => <option key={m.kode} value={fullMA(m.kode)} />)}</datalist>
+          {draft.map((r, i) => (
+            <div key={i} className="flex items-center gap-2 mb-1.5">
+              <input list="maRutinList" value={r.ma} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, ma: e.target.value } : x))} placeholder="Mata Anggaran (mis. Pelumas / 5010403009 Akomodasi)" className="flex-1 text-xs border rounded px-2 py-1.5" />
+              <input type="number" value={r.nilai || ""} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, nilai: +e.target.value } : x))} placeholder="pagu Rp" className="w-36 text-xs border rounded px-2 py-1.5 text-right" />
+              <button onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button>
+            </div>
+          ))}
+          <button onClick={() => setDraft((d) => [...d, { ma: "", nilai: 0 }])} className="text-xs text-[#16357f] hover:underline mt-1">+ baris Mata Anggaran</button>
+        </div>
+      ) : merged.length === 0 ? (
+        <p className="text-sm text-slate-400 py-3 text-center">Belum ada pagu/realisasi rutin bulan ini. Klik <b>Atur Pagu</b> untuk isi dari dokumen Persetujuan.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+              <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
+            </thead>
+            <tbody>
+              {merged.map((m, i) => {
+                const pct = m.pagu ? Math.round((m.pakai / m.pagu) * 100) : (m.pakai ? 999 : 0);
+                const s = statusRutin(pct);
+                const sisaM = m.pagu - m.pakai;
+                return (
+                  <tr key={i} className="border-b last:border-0">
+                    <td className="p-2 text-slate-700">{m.ma}</td>
+                    <td className="p-2 text-right text-slate-600">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-300">tanpa pagu</span>}</td>
+                    <td className="p-2 text-right font-medium text-slate-800">{rupiah(m.pakai)}</td>
+                    <td className={`p-2 text-right font-semibold ${sisaM < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisaM)}</td>
+                    <td className="p-2">
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                          <div className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                        </div>
+                        <span className="text-[11px] text-slate-500 w-9 text-right">{m.pagu ? pct + "%" : "—"}</span>
+                      </div>
+                    </td>
+                    <td className="p-2 text-center"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span></td>
+                  </tr>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="bg-slate-50 font-bold text-slate-700">
+                <td className="p-2">TOTAL</td>
+                <td className="p-2 text-right">{rupiah(totalPagu)}</td>
+                <td className="p-2 text-right">{rupiah(totalPakai)}</td>
+                <td className={`p-2 text-right ${sisa < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
+                <td className="p-2 text-right">{pctTot}%</td>
+                <td className="p-2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+
+      {/* daftar pengadaan rutin bulan ini */}
+      {!edit && real.list.length > 0 && (
+        <details className="mt-3 text-xs">
+          <summary className="cursor-pointer text-slate-500 hover:text-slate-700">{real.list.length} pengadaan RUTIN bulan ini</summary>
+          <ul className="mt-2 space-y-1">
+            {real.list.map((x) => (
+              <li key={x.id} className="flex justify-between gap-3 border-b border-slate-100 pb-1">
+                <span className="text-slate-600 truncate">{x.nama} <span className="text-slate-300">· {x.ma || "tanpa MA"}</span></span>
+                <span className="font-medium text-slate-700 whitespace-nowrap">{rupiah(x.nilai)}</span>
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
+
+      {/* modal tempel */}
+      {paste !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-black/40" onMouseDown={() => setPaste(null)}>
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-5" onMouseDown={(e) => e.stopPropagation()}>
+            <h4 className="font-bold text-slate-800 mb-1">Tempel Pagu dari Excel/Sheets</h4>
+            <p className="text-[11px] text-slate-500 mb-2">Salin 2 kolom (Mata Anggaran &amp; nilai) dari dokumen Persetujuan → tempel di sini.</p>
+            <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={8} className="w-full border rounded-lg p-2 text-xs font-mono" placeholder={"Akomodasi Kapal\t102066000\nFumigasi\t3500000\nPermesinan dan Kelistrikan\t156379140"} />
+            <div className="flex justify-end gap-2 mt-2">
+              <button onClick={() => setPaste(null)} className="btn btn-ghost text-xs">Tutup</button>
+              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(p); setEdit(true); setPaste(null); } else alert("Tak terbaca. Pastikan tiap baris: Mata Anggaran lalu nilai."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+function MiniStat({ label, val, tint }: { label: string; val: string; tint: string }) {
+  return (
+    <div className="bg-slate-50 rounded-xl p-3">
+      <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">{label}</p>
+      <p className={`text-lg font-extrabold ${tint}`}>{val}</p>
     </div>
   );
 }

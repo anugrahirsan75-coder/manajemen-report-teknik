@@ -15,6 +15,9 @@ import ScanSppbj from "@/components/ScanSppbj";
 import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
+import { useAnggaran, realisasiRutin, nilaiPengadaan } from "@/lib/anggaran/store";
+import { maKey } from "@/lib/anggaran/types";
+import { useMemo } from "react";
 
 export default function SppbjIsi() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving } = useSppbj();
@@ -24,8 +27,31 @@ export default function SppbjIsi() {
   const [scanOpen, setScanOpen] = useState(false);
   const [rekapBusy, setRekapBusy] = useState(false);
 
+  // ===== Guardrail pagu RUTIN (anti-overbudget) =====
+  const { plafon, pengadaan } = useAnggaran();
+  const rutinInfo = useMemo(() => {
+    if (!/rutin/i.test(req.kategoriRekap || "")) return null;
+    const ma = (req.mataAnggaran || [])[0] || "";
+    if (!ma || !req.tanggal) return null;
+    const bulan = req.tanggal.slice(0, 7);
+    const key = maKey(ma);
+    const pe = plafon.find((p) => p.bulan === bulan);
+    const pagu = pe?.rows.find((r) => maKey(r.ma) === key)?.nilai || 0;
+    const lain = realisasiRutin(pengadaan.filter((p) => p.id !== req.id), bulan).perKey[key] || 0;
+    const sisa = pagu - lain;
+    const nilaiIni = nilaiPengadaan(req.items);
+    return { ma, bulan, pagu, sisa, nilaiIni, hasPagu: pagu > 0, over: pagu > 0 && nilaiIni > sisa };
+  }, [req.kategoriRekap, req.mataAnggaran, req.tanggal, req.items, req.id, plafon, pengadaan]);
+
+  const lolosGuard = (): boolean => {
+    if (rutinInfo?.over) return confirm(`⚠ OVERBUDGET pagu RUTIN.\nPengadaan ini ${rupiah(rutinInfo.nilaiIni)} melebihi sisa pagu ${rupiah(rutinInfo.sisa)} (lewat ${rupiah(rutinInfo.nilaiIni - rutinInfo.sisa)}).\nTetap lanjut?`);
+    return true;
+  };
+  const simpanGuard = async () => { if (lolosGuard()) await saveRemote(); };
+
   // kirim pengadaan ini ke spreadsheet REKAP (tab bulan sesuai tanggal)
   const kirimRekap = async () => {
+    if (!lolosGuard()) return;
     if (!(req.noPRSAP || "").trim() && !(req.noSPPBJ || "").trim()) { alert("Isi No. PR SAP dulu — jadi kunci baris di rekap."); return; }
     if (!req.kategoriRekap && !confirm("Kategori Rekap (KET.) belum dipilih. Lanjut kirim tanpa KET?")) return;
     setRekapBusy(true);
@@ -120,9 +146,18 @@ export default function SppbjIsi() {
         </div>
         <div className="flex items-center gap-2">
           <button onClick={kirimRekap} disabled={rekapBusy} className="text-sm font-semibold px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50" title="Kirim ke spreadsheet REKAP PJK (tab bulan sesuai tanggal)">{rekapBusy ? "…" : "📊 Kirim ke Rekap"}</button>
-          <button onClick={saveRemote} disabled={saving} className="asdp-gradient text-white text-sm font-semibold px-5 py-2 rounded-xl shadow">{saving ? "…" : "💾 Simpan"}</button>
+          <button onClick={simpanGuard} disabled={saving} className="asdp-gradient text-white text-sm font-semibold px-5 py-2 rounded-xl shadow">{saving ? "…" : "💾 Simpan"}</button>
         </div>
       </div>
+
+      {rutinInfo && (
+        <div className={`mb-4 rounded-xl px-4 py-2.5 text-sm flex flex-wrap items-center gap-2 border ${rutinInfo.over ? "bg-red-50 text-red-700 border-red-200" : rutinInfo.hasPagu ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
+          <span>🧭 Pagu RUTIN <b>{rutinInfo.ma}</b> ({bulanTahun(rutinInfo.bulan + "-01")}):</span>
+          {rutinInfo.hasPagu ? (
+            <span>sisa <b>{rupiah(rutinInfo.sisa)}</b> · pengadaan ini {rupiah(rutinInfo.nilaiIni)}{rutinInfo.over && <b> → OVERBUDGET {rupiah(rutinInfo.nilaiIni - rutinInfo.sisa)}</b>}</span>
+          ) : (<span>belum ada pagu bulan ini — atur di Dashboard Anggaran → Kendali Anggaran Rutin</span>)}
+        </div>
+      )}
 
       <div className="mb-3 flex items-center gap-2">
         <span className="h-7 w-7 rounded-lg asdp-gradient text-white grid place-items-center text-xs font-bold">1</span>
