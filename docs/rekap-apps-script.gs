@@ -68,15 +68,26 @@ function resolveSheet(ss, month, year) {
   return ns;
 }
 
+// baris data terakhir = baris terakhir yg kolom B (NOMOR SPPBJ) ada isinya.
+// JANGAN pakai getLastRow(): dia ikut menghitung sisa format/konten jauh di bawah -> baris nyasar.
+function lastDataRow(sh) {
+  var last = sh.getLastRow();
+  if (last < DATA_START_ROW) return DATA_START_ROW - 1;
+  var vals = sh.getRange(DATA_START_ROW, COL.sppbj, last - DATA_START_ROW + 1, 1).getValues();
+  var r = DATA_START_ROW - 1;
+  for (var i = 0; i < vals.length; i++) if (String(vals[i][0]).trim() !== "") r = DATA_START_ROW + i;
+  return r;
+}
+
 function writeRow(ss, r) {
   if (!r.month || !r.year) return { sppbj: r.nomorSppbj, error: "tanggal kosong" };
   var sh = resolveSheet(ss, r.month, r.year);
 
   // cari baris berdasarkan NOMOR SPPBJ (kolom B) -> upsert
-  var last = sh.getLastRow();
+  var lastData = lastDataRow(sh);
   var targetRow = -1, maxNo = 0;
-  if (last >= DATA_START_ROW) {
-    var rng = sh.getRange(DATA_START_ROW, COL.no, last - DATA_START_ROW + 1, COL.sppbj).getValues();
+  if (lastData >= DATA_START_ROW) {
+    var rng = sh.getRange(DATA_START_ROW, COL.no, lastData - DATA_START_ROW + 1, COL.sppbj).getValues();
     for (var k = 0; k < rng.length; k++) {
       var no = parseInt(rng[k][0], 10); if (!isNaN(no) && no > maxNo) maxNo = no;
       var b = String(rng[k][1]).trim();
@@ -84,7 +95,7 @@ function writeRow(ss, r) {
     }
   }
   var action = "update";
-  if (targetRow < 0) { targetRow = Math.max(DATA_START_ROW, last + 1); action = "append"; }
+  if (targetRow < 0) { targetRow = lastData + 1; action = "append"; }
 
   if (action === "append") sh.getRange(targetRow, COL.no).setValue(maxNo + 1);
   // kolom milik app (D FILE & K GR TIDAK ditimpa -> data manual aman)
