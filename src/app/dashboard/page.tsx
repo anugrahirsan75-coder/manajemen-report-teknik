@@ -476,6 +476,11 @@ const prevMonth = (ym: string): string => {
   const d = new Date(y, m - 2, 1);
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
+const nextMonth = (ym: string): string => {
+  const [y, m] = ym.split("-").map(Number);
+  const d = new Date(y, m, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
 function parsePlafonPaste(text: string): PlafonRow[] {
   const out: PlafonRow[] = [];
   for (const line of (text || "").split(/\r?\n/)) {
@@ -526,6 +531,14 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
   const pctTot = totalPagu ? Math.round((totalPakai / totalPagu) * 100) : 0;
 
   const startEdit = () => { setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]); setEdit(true); };
+  // siapkan pagu bulan BERIKUTNYA: lompat bulan + salin pagu bulan aktif + langsung mode edit
+  const bulanLain = () => {
+    const nb = nextMonth(bulan);
+    const src = plafon.find((p) => p.bulan === nb)?.rows || rows;
+    setBulanSel(nb);
+    setDraft(src.length ? src.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]);
+    setEdit(true);
+  };
   const salin = () => { const pe = plafon.find((p) => p.bulan === prevMonth(bulan)); if (pe?.rows?.length) setDraft(pe.rows.map((r) => ({ ...r }))); else alert("Pagu bulan sebelumnya belum ada."); };
   const simpan = async () => {
     setBusy(true);
@@ -557,7 +570,10 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
         <span className="text-[11px] text-slate-400">realisasi = SPPBJ kategori RUTIN bulan ini (final bila ada, else estimasi)</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
-            <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>
+            <>
+              <button onClick={bulanLain} className="btn btn-ghost text-xs" title={`Siapkan pagu ${bulanTahun(nextMonth(bulan) + "-01")} (disalin dari bulan ini)`}>➕ Pagu Bulan Lain</button>
+              <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>
+            </>
           ) : (
             <>
               <button onClick={salin} className="btn btn-ghost text-xs">⧉ Salin bln lalu</button>
@@ -579,6 +595,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
 
       {edit ? (
         <div className="rounded-xl ring-1 ring-slate-200 p-3">
+          <p className="text-xs text-slate-500 mb-2">Mengisi pagu untuk <b className="text-[#16357f]">{bulanTahun(bulan + "-01")}</b> — ganti bulan lewat kalender di atas bila perlu.</p>
           <datalist id="maRutinList">{MATA_ANGGARAN.map((m) => <option key={m.kode} value={fullMA(m.kode)} />)}</datalist>
           {draft.map((r, i) => (
             <div key={i} className="flex items-center gap-2 mb-1.5">
