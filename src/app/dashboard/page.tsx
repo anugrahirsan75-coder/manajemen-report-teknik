@@ -541,10 +541,19 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
   return (
     <Card title="Kendali Anggaran Rutin (Persetujuan Rutin per bulan)" icon="🧭">
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <select value={bulan} onChange={(e) => setBulanSel(e.target.value)} className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
-          {bulanList.length === 0 && <option value={bulan}>{bulanTahun(bulan + "-01")}</option>}
-          {bulanList.map((b) => <option key={b} value={b}>{bulanTahun(b + "-01")}</option>)}
-        </select>
+        <input type="month" value={bulan} onChange={(e) => setBulanSel(e.target.value)}
+          className="text-xs border px-2.5 py-1.5 rounded-lg bg-white" title="Pilih bulan mana pun (termasuk bulan baru)" />
+        {bulanList.length > 0 && (
+          <div className="flex items-center gap-1">
+            <span className="text-[10px] text-slate-400">ada data:</span>
+            {bulanList.slice(0, 6).map((b) => (
+              <button key={b} onClick={() => setBulanSel(b)}
+                className={`text-[10px] px-1.5 py-0.5 rounded-md border transition ${b === bulan ? "bg-[#16357f] text-white border-[#16357f]" : "border-slate-300 text-slate-500 hover:border-[#1ca3dd] hover:text-[#16357f]"}`}>
+                {bulanTahun(b + "-01")}
+              </button>
+            ))}
+          </div>
+        )}
         <span className="text-[11px] text-slate-400">realisasi = SPPBJ kategori RUTIN bulan ini (final bila ada, else estimasi)</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
