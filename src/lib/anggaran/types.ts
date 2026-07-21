@@ -78,6 +78,8 @@ export interface RREntry {
 // Baris pagu BEBAS per Mata Anggaran (tak terkunci 9 master). Key cocok realisasi = kodeMA / slug label.
 export interface PlafonRow { ma: string; nilai: number }
 export interface PlafonRutin { bulan: string; rows: PlafonRow[]; catatan?: string }
+// Pagu DOCKING per kapal + tahun (dari Persetujuan Pusat "Budget Control" — Total Persetujuan per MA)
+export interface PlafonDocking { kapal: string; tahun: number; noSurat?: string; rows: PlafonRow[] }
 
 // kunci pencocokan pagu <-> realisasi.
 // 1) kalau ada kode 6+ digit -> pakai kode. 2) kalau label bebas ("Pelumas", "Akomodasi Kapal")

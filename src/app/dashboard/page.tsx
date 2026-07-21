@@ -1,17 +1,17 @@
 "use client";
 
 import { useMemo, useState, useCallback, Fragment } from "react";
-import { useAnggaran, PengadaanRow, realisasiRutin } from "@/lib/anggaran/store";
+import { useAnggaran, PengadaanRow, realisasiRutin, realisasiDocking } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN,
-  namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonRow, maKey, fullMA,
+  namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA,
 } from "@/lib/anggaran/types";
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 
 const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) => s + (it.harga || 0) * (it.jumlah || 0), 0);
 
 export default function DashboardAnggaran() {
-  const { ready, loading, pengadaan, rka, rr, plafon, reload, saveRka, saveRr, savePlafon } = useAnggaran();
+  const { ready, loading, pengadaan, rka, rr, plafon, docking, reload, saveRka, saveRr, savePlafon, saveDocking } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
 
   const tahunList = useMemo(() => Array.from(new Set(pengadaan.map((r) => (r.tanggal || "").slice(0, 4)).filter(Boolean))).sort().reverse(), [pengadaan]);
@@ -89,6 +89,9 @@ export default function DashboardAnggaran() {
 
           {/* Kendali Anggaran Rutin bulanan (pagu vs realisasi RUTIN) */}
           <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} />
+
+          {/* Kendali Anggaran Docking per kapal (pagu Persetujuan Pusat vs realisasi DOCKING) */}
+          <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} />
 
           {/* RKA vs penyerapan */}
           <RkaSection rka={rka} perMA={a.perMA} detail={detailMA} onSave={saveRka} />
@@ -794,6 +797,157 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
             <div className="flex justify-end gap-2 mt-2">
               <button onClick={() => setPaste(null)} className="btn btn-ghost text-xs">Tutup</button>
               <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(p); setEdit(true); setPaste(null); } else alert("Tak terbaca. Pastikan tiap baris: Mata Anggaran lalu nilai."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/* ---------- Kendali Anggaran Docking (per kapal) ---------- */
+function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDocking[]; pengadaan: PengadaanRow[]; onSave: (d: PlafonDocking[]) => Promise<void> }) {
+  const thisYear = new Date().getFullYear();
+  const [kapal, setKapal] = useState(KAPAL_ANGGARAN[0]);
+  const [tahun, setTahun] = useState(thisYear);
+  const [edit, setEdit] = useState(false);
+  const [draft, setDraft] = useState<PlafonRow[]>([]);
+  const [noSurat, setNoSurat] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [paste, setPaste] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
+
+  const entry = docking.find((d) => d.kapal === kapal && d.tahun === tahun);
+  const rows = entry?.rows || [];
+  const real = useMemo(() => realisasiDocking(pengadaan, kapal, tahun), [pengadaan, kapal, tahun]);
+
+  const merged = useMemo(() => {
+    const by: Record<string, { key: string; ma: string; pagu: number; pakai: number }> = {};
+    rows.forEach((r) => { const k = maKey(r.ma); by[k] = { key: k, ma: r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), pakai: by[k]?.pakai || 0 }; });
+    Object.entries(real.perKey).forEach(([k, v]) => { if (by[k]) by[k].pakai = v; else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { key: k, ma: lbl, pagu: 0, pakai: v }; } });
+    return Object.values(by).sort((x, y) => (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)));
+  }, [rows, real]);
+
+  const totalPagu = rows.reduce((s, r) => s + (r.nilai || 0), 0);
+  const totalPakai = real.total;
+  const sisa = totalPagu - totalPakai;
+  const pctTot = totalPagu ? Math.round((totalPakai / totalPagu) * 100) : 0;
+
+  const startEdit = () => { setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]); setNoSurat(entry?.noSurat || ""); setEdit(true); };
+  const simpan = async () => {
+    setBusy(true);
+    try {
+      const clean = draft.filter((r) => r.ma.trim() && r.nilai);
+      const next = docking.filter((d) => !(d.kapal === kapal && d.tahun === tahun));
+      if (clean.length) next.push({ kapal, tahun, noSurat: noSurat.trim() || undefined, rows: clean });
+      await onSave(next);
+      setEdit(false);
+    } finally { setBusy(false); }
+  };
+
+  return (
+    <Card title="Kendali Anggaran Docking (Persetujuan Pusat per kapal)" icon="🛠️">
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <select value={kapal} onChange={(e) => setKapal(e.target.value)} className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
+          {KAPAL_ANGGARAN.map((k) => <option key={k} value={k}>{k}</option>)}
+        </select>
+        <input type="number" value={tahun} onChange={(e) => setTahun(+e.target.value)} className="text-xs border px-2 py-1.5 rounded-lg bg-white w-20" />
+        {entry?.noSurat && !edit && <span className="text-[11px] text-slate-400">No. {entry.noSurat}</span>}
+        <span className="text-[11px] text-slate-400">realisasi = SPPBJ/Non PR PO kategori DOCKING utk kapal ini, per Mata Anggaran</span>
+        <div className="ml-auto flex items-center gap-2">
+          {!edit ? (
+            <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
+          ) : (
+            <>
+              <button onClick={() => setPaste("")} className="btn btn-ghost text-xs">📋 Tempel dari Excel</button>
+              <button onClick={simpan} disabled={busy} className="btn btn-primary text-xs">{busy ? "…" : "💾 Simpan"}</button>
+              <button onClick={() => setEdit(false)} className="btn btn-ghost text-xs">Batal</button>
+            </>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+        <MiniStat label="Total Pagu Docking" val={rupiah(totalPagu)} tint="text-slate-800" />
+        <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-700" />
+        <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-600" : "text-emerald-700"} />
+        <MiniStat label="Serapan" val={`${pctTot}%`} tint={pctTot > 100 ? "text-red-600" : "text-slate-800"} />
+      </div>
+
+      {edit ? (
+        <div className="rounded-xl ring-1 ring-slate-200 p-3">
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-xs text-slate-500">Pagu docking <b className="text-[#16357f]">{kapal}</b> {tahun}:</span>
+            <input value={noSurat} onChange={(e) => setNoSurat(e.target.value)} placeholder="No. Surat Persetujuan (opsional)" className="text-xs border rounded px-2 py-1 flex-1 max-w-xs" />
+          </div>
+          <datalist id="maDockList">{MATA_ANGGARAN.map((m) => <option key={m.kode} value={fullMA(m.kode)} />)}</datalist>
+          {draft.map((r, i) => (
+            <div key={i} className="flex items-center gap-2 mb-1.5">
+              <input list="maDockList" value={r.ma} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, ma: e.target.value } : x))} placeholder="Mata Anggaran (mis. 5010403003 Kapal Ro-Ro)" className="flex-1 text-xs border rounded px-2 py-1.5" />
+              <input type="number" value={r.nilai || ""} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, nilai: +e.target.value } : x))} placeholder="pagu (Total Persetujuan)" className="w-40 text-xs border rounded px-2 py-1.5 text-right" />
+              <button onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button>
+            </div>
+          ))}
+          <button onClick={() => setDraft((d) => [...d, { ma: "", nilai: 0 }])} className="text-xs text-[#16357f] hover:underline mt-1">+ baris Mata Anggaran</button>
+        </div>
+      ) : merged.length === 0 ? (
+        <p className="text-sm text-slate-400 py-3 text-center">Belum ada pagu/realisasi docking utk {kapal} {tahun}. Klik <b>Atur Pagu Docking</b> untuk isi dari Persetujuan Pusat.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+              <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
+            </thead>
+            <tbody>
+              {merged.map((m) => {
+                const pct = m.pagu ? Math.round((m.pakai / m.pagu) * 100) : (m.pakai ? 999 : 0);
+                const s = statusRutin(pct);
+                const sisaM = m.pagu - m.pakai;
+                const rinci = real.list.filter((x) => x.key === m.key);
+                const isOpen = openKey === m.key;
+                return (
+                  <Fragment key={m.key}>
+                    <tr className={`border-b row-hover cursor-pointer ${isOpen ? "bg-sky-50/60" : ""}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
+                      <td className="p-2 text-slate-700"><span className="inline-flex items-center gap-1"><span className={`text-slate-400 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>{m.ma}{rinci.length > 0 && <span className="text-[10px] text-sky-600">· {rinci.length}</span>}</span></td>
+                      <td className="p-2 text-right text-slate-600">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-300">tanpa pagu</span>}</td>
+                      <td className="p-2 text-right font-medium text-slate-800">{rupiah(m.pakai)}</td>
+                      <td className={`p-2 text-right font-semibold ${sisaM < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisaM)}</td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden"><div className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(100, pct)}%` }} /></div>
+                          <span className="text-[11px] text-slate-500 w-9 text-right">{m.pagu ? pct + "%" : "—"}</span>
+                        </div>
+                      </td>
+                      <td className="p-2 text-center"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span></td>
+                    </tr>
+                    {isOpen && <tr className="bg-slate-50/70"><td colSpan={6} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>}
+                  </Fragment>
+                );
+              })}
+            </tbody>
+            <tfoot>
+              <tr className="bg-slate-50 font-bold text-slate-700">
+                <td className="p-2">TOTAL</td>
+                <td className="p-2 text-right">{rupiah(totalPagu)}</td>
+                <td className="p-2 text-right">{rupiah(totalPakai)}</td>
+                <td className={`p-2 text-right ${sisa < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
+                <td className="p-2 text-right">{pctTot}%</td>
+                <td className="p-2"></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      )}
+
+      {paste !== null && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-black/40" onMouseDown={() => setPaste(null)}>
+          <div className="bg-white w-full max-w-lg rounded-2xl shadow-2xl p-5" onMouseDown={(e) => e.stopPropagation()}>
+            <h4 className="font-bold text-slate-800 mb-1">Tempel Pagu Docking dari Excel</h4>
+            <p className="text-[11px] text-slate-500 mb-2">Salin 2 kolom dari "Budget Control": <b>Mata Anggaran</b> &amp; <b>Total Persetujuan</b> → tempel.</p>
+            <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={8} className="w-full border rounded-lg p-2 text-xs font-mono" placeholder={"5010403003 Kapal Ro-Ro\t852446993\n5010303001 Pelumas\t35348770\n5010403100 Permesinan\t144546074"} />
+            <div className="flex justify-end gap-2 mt-2">
+              <button onClick={() => setPaste(null)} className="btn btn-ghost text-xs">Tutup</button>
+              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(p); setEdit(true); setPaste(null); } else alert("Tak terbaca."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
             </div>
           </div>
         </div>
