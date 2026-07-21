@@ -344,6 +344,13 @@ export default function SppbjIsi() {
                       <input className="w-48 px-1" value={it.nama} onChange={(e) => setItem(it.id, { nama: e.target.value })} onPaste={(e) => handlePaste(ri, 3, e)} />
                       <KatalogPicker initialQuery={it.nama} onPick={(k) => applyKatalog(it.id, k)} />
                     </div>
+                    {(it.breakdown || []).some((b) => (b || "").trim()) && (
+                      <ul className="mt-0.5 ml-1 text-[11px] text-slate-500 leading-snug">
+                        {(it.breakdown || []).filter((b) => (b || "").trim()).map((b, bi) => (
+                          <li key={bi}>- {b.trim().replace(/^[-•*]\s*/, "")}</li>
+                        ))}
+                      </ul>
+                    )}
                     {it.kodeKatalog && (
                       <div className="flex items-center gap-1 mt-0.5">
                         <span className="font-mono text-[9px] text-slate-400">{it.kodeKatalog}</span>
@@ -364,7 +371,10 @@ export default function SppbjIsi() {
                   <td className="border p-1"><input type="number" className="w-28 px-1 text-right" value={it.harga} onChange={(e) => setItem(it.id, { harga: +e.target.value })} onPaste={(e) => handlePaste(ri, 5, e)} /></td>
                   <td className="border p-1 text-right text-slate-500 w-28">{rupiah(it.harga * it.jumlah)}</td>
                   <td className="border p-1 text-center whitespace-nowrap">
-                    <button onClick={() => setOpenBd((o) => ({ ...o, [it.id]: !o[it.id] }))} className={`text-xs px-2 py-0.5 rounded border mr-1 ${(it.breakdown?.length || it.keterangan) ? "bg-sky-100 border-sky-300 text-sky-700" : "border-slate-300 text-sky-600"}`}>＋ ket/rincian</button>
+                    <button onClick={() => setOpenBd((o) => ({ ...o, [it.id]: !o[it.id] }))} className={`text-xs px-2 py-0.5 rounded border mr-1 ${(it.breakdown?.length || it.keterangan) ? "bg-sky-100 border-sky-300 text-sky-700" : "border-slate-300 text-sky-600"}`}>
+                      {openBd[it.id] ? "▴ tutup" : "＋ ket/rincian"}
+                      {(() => { const n = (it.breakdown || []).filter((b) => (b || "").trim()).length; return n ? ` (${n})` : ""; })()}
+                    </button>
                     <button onClick={() => delItemU(it.id)} className="text-red-500 text-xs px-1.5 py-0.5 rounded border border-red-200">hapus</button>
                   </td>
                 </tr>
