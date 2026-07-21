@@ -31,6 +31,18 @@ export default function SppbjIsi() {
   const nCol = multiMA ? 10 : 9;
   const kodeSingkat = (m: string) => (m || "").match(/\d{6,}/)?.[0] || m;
 
+  // isi nama kapal ke SEMUA item sekaligus (pengadaan 1 kapal)
+  const [kapalMassal, setKapalMassal] = useState("");
+  const kapalPertama = (req.items.find((i) => (i.kapal || "").trim())?.kapal || "").trim();
+  const isiKapalSemua = () => {
+    const k = (kapalMassal || kapalPertama).trim();
+    if (!k) { alert("Pilih / ketik nama kapal dulu."); return; }
+    if (!req.items.length) { alert("Belum ada item."); return; }
+    const beda = Array.from(new Set(req.items.map((i) => (i.kapal || "").trim()).filter(Boolean)));
+    if (beda.length > 1 && !confirm(`Item punya ${beda.length} kapal berbeda (${beda.join(", ")}).\nTimpa SEMUA jadi "${k}"?`)) return;
+    setItems(req.items.map((it) => ({ ...it, kapal: k })));
+  };
+
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
   const { plafon, pengadaan } = useAnggaran();
   const rutinInfo = useMemo(() => {
@@ -228,6 +240,12 @@ export default function SppbjIsi() {
           <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
           <button onClick={() => setScanOpen(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">📷 Scan dari Excel (OCR)</button>
           <span className="text-[11px] text-slate-400">screenshot tabel → terisi otomatis</span>
+          <div className="flex items-center gap-1.5 ml-auto">
+            <input list="kapalListSppbj" value={kapalMassal} onChange={(e) => setKapalMassal(e.target.value)}
+              placeholder={kapalPertama || "pilih kapal…"} className="w-36 text-xs border rounded-lg px-2 py-1.5 bg-white" />
+            <button onClick={isiKapalSemua} title="Isi nama kapal ini ke SEMUA item (pengadaan 1 kapal)"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#16357f]/30 bg-[#16357f]/5 text-[#16357f] hover:bg-[#16357f]/10">🚢 Isi Kapal ke Semua Item</button>
+          </div>
         </div>
         <KatalogBrowser open={browseKatalog} onClose={() => setBrowseKatalog(false)} onAdd={addFromKatalog}
           defaultKapal={req.items.length ? req.items[req.items.length - 1].kapal : ""} />
