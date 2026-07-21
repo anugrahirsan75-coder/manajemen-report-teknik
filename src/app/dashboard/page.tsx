@@ -1,12 +1,12 @@
 "use client";
 
-import { useMemo, useState, useCallback } from "react";
+import { useMemo, useState, useCallback, Fragment } from "react";
 import { useAnggaran, PengadaanRow, realisasiRutin } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN,
   namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonRow, maKey, fullMA,
 } from "@/lib/anggaran/types";
-import { rupiah, bulanTahun } from "@/lib/format";
+import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 
 const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) => s + (it.harga || 0) * (it.jumlah || 0), 0);
 
@@ -513,14 +513,15 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
   const [draft, setDraft] = useState<PlafonRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [paste, setPaste] = useState<string | null>(null);
+  const [openKey, setOpenKey] = useState<string | null>(null);
 
   // gabung pagu + realisasi (termasuk realisasi tanpa pagu)
   const merged = useMemo(() => {
-    const by: Record<string, { ma: string; pagu: number; pakai: number }> = {};
-    rows.forEach((r) => { const k = maKey(r.ma); by[k] = { ma: r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), pakai: by[k]?.pakai || 0 }; });
+    const by: Record<string, { key: string; ma: string; pagu: number; pakai: number }> = {};
+    rows.forEach((r) => { const k = maKey(r.ma); by[k] = { key: k, ma: r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), pakai: by[k]?.pakai || 0 }; });
     Object.entries(real.perKey).forEach(([k, v]) => {
       if (by[k]) by[k].pakai = v;
-      else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { ma: lbl, pagu: 0, pakai: v }; }
+      else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { key: k, ma: lbl, pagu: 0, pakai: v }; }
     });
     return Object.values(by).sort((x, y) => (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)));
   }, [rows, real]);
@@ -615,26 +616,58 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
               <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
             </thead>
             <tbody>
-              {merged.map((m, i) => {
+              {merged.map((m) => {
                 const pct = m.pagu ? Math.round((m.pakai / m.pagu) * 100) : (m.pakai ? 999 : 0);
                 const s = statusRutin(pct);
                 const sisaM = m.pagu - m.pakai;
+                const rinci = real.list.filter((x) => x.key === m.key);
+                const isOpen = openKey === m.key;
                 return (
-                  <tr key={i} className="border-b last:border-0">
-                    <td className="p-2 text-slate-700">{m.ma}</td>
-                    <td className="p-2 text-right text-slate-600">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-300">tanpa pagu</span>}</td>
-                    <td className="p-2 text-right font-medium text-slate-800">{rupiah(m.pakai)}</td>
-                    <td className={`p-2 text-right font-semibold ${sisaM < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisaM)}</td>
-                    <td className="p-2">
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                          <div className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                  <Fragment key={m.key}>
+                    <tr className={`border-b row-hover cursor-pointer ${isOpen ? "bg-sky-50/60" : ""}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
+                      <td className="p-2 text-slate-700">
+                        <span className="inline-flex items-center gap-1">
+                          <span className={`text-slate-400 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
+                          {m.ma}
+                          {rinci.length > 0 && <span className="text-[10px] text-sky-600">· {rinci.length}</span>}
+                        </span>
+                      </td>
+                      <td className="p-2 text-right text-slate-600">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-300">tanpa pagu</span>}</td>
+                      <td className="p-2 text-right font-medium text-slate-800">{rupiah(m.pakai)}</td>
+                      <td className={`p-2 text-right font-semibold ${sisaM < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisaM)}</td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
+                            <div className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                          </div>
+                          <span className="text-[11px] text-slate-500 w-9 text-right">{m.pagu ? pct + "%" : "—"}</span>
                         </div>
-                        <span className="text-[11px] text-slate-500 w-9 text-right">{m.pagu ? pct + "%" : "—"}</span>
-                      </div>
-                    </td>
-                    <td className="p-2 text-center"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span></td>
-                  </tr>
+                      </td>
+                      <td className="p-2 text-center"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span></td>
+                    </tr>
+                    {isOpen && (
+                      <tr className="bg-slate-50/70">
+                        <td colSpan={6} className="px-3 py-2">
+                          {rinci.length === 0 ? (
+                            <p className="text-[11px] text-slate-400">Belum ada pengadaan pada Mata Anggaran ini bulan ini.</p>
+                          ) : (
+                            <table className="w-full text-[11px]">
+                              <tbody>
+                                {rinci.map((x) => (
+                                  <tr key={x.id} className="border-b border-slate-100 last:border-0">
+                                    <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-semibold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
+                                    <td className="py-1 pr-2 text-slate-700">{x.nama}</td>
+                                    <td className="py-1 pr-2 text-slate-400 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
+                                    <td className="py-1 text-right font-medium text-slate-700 whitespace-nowrap">{rupiah(x.nilai)}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
@@ -655,11 +688,11 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
       {/* daftar pengadaan rutin bulan ini */}
       {!edit && real.list.length > 0 && (
         <details className="mt-3 text-xs">
-          <summary className="cursor-pointer text-slate-500 hover:text-slate-700">{real.list.length} pengadaan RUTIN bulan ini</summary>
+          <summary className="cursor-pointer text-slate-500 hover:text-slate-700">Semua {real.list.length} pengadaan bulan ini (klik baris Mata Anggaran di atas utk rincian per pos)</summary>
           <ul className="mt-2 space-y-1">
             {real.list.map((x) => (
               <li key={x.id} className="flex justify-between gap-3 border-b border-slate-100 pb-1">
-                <span className="text-slate-600 truncate">{x.nama} <span className="text-slate-300">· {x.ma || "tanpa MA"}</span></span>
+                <span className="text-slate-600 truncate"><span className={`text-[9px] font-semibold px-1 rounded mr-1 ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{x.sumber === "Non PR PO" ? "NonPR" : "SPPBJ"}</span>{x.nama} <span className="text-slate-300">· {x.ma || "tanpa MA"}</span></span>
                 <span className="font-medium text-slate-700 whitespace-nowrap">{rupiah(x.nilai)}</span>
               </li>
             ))}

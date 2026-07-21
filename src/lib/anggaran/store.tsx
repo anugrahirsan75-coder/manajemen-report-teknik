@@ -34,21 +34,23 @@ export function nilaiPengadaan(items: any[]): number {
   return arr.reduce((s, it) => s + (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0), 0);
 }
 
-// realisasi RUTIN per kunci MA utk 1 bulan ("YYYY-MM")
+export interface RealisasiItem { id: string; nama: string; ma: string; nilai: number; key: string; sumber: string; tanggal: string }
+// realisasi RUTIN per kunci MA utk 1 bulan ("YYYY-MM") — SPPBJ + Non PR PO
 export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
   const perKey: Record<string, number> = {};
-  const list: { id: string; nama: string; ma: string; nilai: number; key: string }[] = [];
+  const list: RealisasiItem[] = [];
   for (const p of rows) {
-    if (p.sumber !== "SPPBJ") continue;
     // rutin = RUTIN atau TANPA kategori. DOCKING/INVESTASI dikecualikan (punya budget sendiri).
     if (/docking|investasi/i.test(p.kategoriRekap || "")) continue;
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
     const nilai = nilaiPengadaan(p.items);
+    if (nilai <= 0) continue;
     const ma = (p.mataAnggaran || [])[0] || "";
     const key = maKey(ma);
     perKey[key] = (perKey[key] || 0) + nilai;
-    list.push({ id: p.id, nama: p.nama, ma, nilai, key });
+    list.push({ id: p.id, nama: p.nama, ma, nilai, key, sumber: p.sumber, tanggal: p.tanggal });
   }
+  list.sort((a, b) => b.nilai - a.nilai);
   const total = Object.values(perKey).reduce((s, v) => s + v, 0);
   return { perKey, list, total };
 }
