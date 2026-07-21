@@ -641,7 +641,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
             ))}
           </div>
         )}
-        <span className="text-[11px] text-slate-400">realisasi = SPPBJ RUTIN / tanpa kategori, per Mata Anggaran (DOCKING &amp; INVESTASI dikecualikan)</span>
+        <span className="text-[11px] text-slate-400">realisasi = SPPBJ + Non PR PO ber-<b>Jenis Anggaran: Rutin</b>, per Mata Anggaran (Docking terpisah, tak overlap)</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
             <>
@@ -863,7 +863,7 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
         </select>
         <input type="number" value={tahun} onChange={(e) => setTahun(+e.target.value)} className="text-xs border px-2 py-1.5 rounded-lg bg-white w-20" />
         {entry?.noSurat && !edit && <span className="text-[11px] text-slate-400">No. {entry.noSurat}</span>}
-        <span className="text-[11px] text-slate-400">realisasi = SPPBJ/Non PR PO kategori DOCKING utk kapal ini, per Mata Anggaran</span>
+        <span className="text-[11px] text-slate-400">realisasi = SPPBJ/Non PR PO ber-<b>Jenis Anggaran: Docking</b> utk kapal ini, per Mata Anggaran</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
             <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>

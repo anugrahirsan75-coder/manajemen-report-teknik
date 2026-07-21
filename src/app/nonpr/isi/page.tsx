@@ -72,6 +72,13 @@ export default function NonprIsi() {
             <Input list="maList" value={req.mataAnggaran} onChange={(e) => update({ mataAnggaran: e.target.value })} placeholder="pilih / ketik" />
             <datalist id="maList">{MATA_ANGGARAN_NONPR.map((m) => <option key={m.kode} value={m.label} />)}</datalist>
           </Field>
+          <Field label="Jenis Anggaran (Dashboard)">
+            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.jenisAnggaran || ""} onChange={(e) => update({ jenisAnggaran: (e.target.value || undefined) as any })}>
+              <option value="">— pilih —</option>
+              <option value="Rutin">Rutin (Persetujuan Rutin bulanan)</option>
+              <option value="Docking">Docking (Persetujuan Pusat)</option>
+            </select>
+          </Field>
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} placeholder="Jasa Perbaikan ... KMP ... Bulan 2026" /></Field>
           <Field label="Dasar Pelimpahan (jika ada)"><Input value={req.dasarPelimpahan} onChange={(e) => update({ dasarPelimpahan: e.target.value })} /></Field>
           <Field label="Vendor (Surat Pernyataan Harga)">

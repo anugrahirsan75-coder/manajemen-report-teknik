@@ -27,6 +27,7 @@ export interface NonprRequest {
   namaPengadaan: string;
   dasarPelimpahan: string;
   mataAnggaran: string;   // label dari MATA_ANGGARAN_NONPR (atau manual)
+  jenisAnggaran?: "Rutin" | "Docking"; // klasifikasi Dashboard Anggaran (anti-overlap)
   vendor: string;         // nama vendor (Database) -> narasi spkh
   stafTeknik: string;     // R31 (default IRSAN ANUGRAH)
   jabatanByKapal: Record<string, Jabatan>; // kapal -> KKM|Nakhoda (penerima BSTB)

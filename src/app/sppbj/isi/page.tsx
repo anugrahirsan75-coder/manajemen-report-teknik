@@ -16,7 +16,7 @@ import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import { useAnggaran, realisasiRutin, nilaiPengadaan } from "@/lib/anggaran/store";
-import { maKey } from "@/lib/anggaran/types";
+import { maKey, jenisAnggaranOf } from "@/lib/anggaran/types";
 import { useMemo } from "react";
 
 export default function SppbjIsi() {
@@ -30,7 +30,7 @@ export default function SppbjIsi() {
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
   const { plafon, pengadaan } = useAnggaran();
   const rutinInfo = useMemo(() => {
-    if (!/rutin/i.test(req.kategoriRekap || "")) return null;
+    if (jenisAnggaranOf(req) !== "rutin") return null;
     const ma = (req.mataAnggaran || [])[0] || "";
     if (!ma || !req.tanggal) return null;
     const bulan = req.tanggal.slice(0, 7);
@@ -41,7 +41,7 @@ export default function SppbjIsi() {
     const sisa = pagu - lain;
     const nilaiIni = nilaiPengadaan(req.items);
     return { ma, bulan, pagu, sisa, nilaiIni, hasPagu: pagu > 0, over: pagu > 0 && nilaiIni > sisa };
-  }, [req.kategoriRekap, req.mataAnggaran, req.tanggal, req.items, req.id, plafon, pengadaan]);
+  }, [req.jenisAnggaran, req.kategoriRekap, req.mataAnggaran, req.tanggal, req.items, req.id, plafon, pengadaan]);
 
   const lolosGuard = (): boolean => {
     if (rutinInfo?.over) return confirm(`⚠ OVERBUDGET pagu RUTIN.\nPengadaan ini ${rupiah(rutinInfo.nilaiIni)} melebihi sisa pagu ${rupiah(rutinInfo.sisa)} (lewat ${rupiah(rutinInfo.nilaiIni - rutinInfo.sisa)}).\nTetap lanjut?`);
@@ -171,9 +171,17 @@ export default function SppbjIsi() {
           <Field label="No. DRP (cari deskripsi)"><DrpPicker value={req.noDRP} onChange={(v) => update({ noDRP: v })} /></Field>
           <Field label="No. PR SAP (rekap: kolom B & F)"><Input value={req.noPRSAP || ""} onChange={(e) => update({ noPRSAP: e.target.value })} placeholder="2000xxxxxx" /></Field>
           <Field label="Kategori Rekap (KET. di spreadsheet)">
-            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.kategoriRekap || ""} onChange={(e) => update({ kategoriRekap: e.target.value })}>
+            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.kategoriRekap || ""}
+              onChange={(e) => { const v = e.target.value; update({ kategoriRekap: v, jenisAnggaran: /docking/i.test(v) ? "Docking" : (v ? "Rutin" : req.jenisAnggaran) }); }}>
               <option value="">— pilih —</option>
               {KATEGORI_REKAP.map((k) => <option key={k} value={k}>{k}</option>)}
+            </select>
+          </Field>
+          <Field label="Jenis Anggaran (Dashboard)">
+            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.jenisAnggaran || ""} onChange={(e) => update({ jenisAnggaran: (e.target.value || undefined) as any })}>
+              <option value="">— otomatis dari Kategori —</option>
+              <option value="Rutin">Rutin (Persetujuan Rutin bulanan)</option>
+              <option value="Docking">Docking (Persetujuan Pusat)</option>
             </select>
           </Field>
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} /></Field>

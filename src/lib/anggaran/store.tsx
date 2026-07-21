@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
-import { RKA, RREntry, PlafonRutin, PlafonDocking, maKey, namaKapalPenuh } from "./types";
+import { RKA, RREntry, PlafonRutin, PlafonDocking, maKey, namaKapalPenuh, jenisAnggaranOf } from "./types";
 
 const LS_RKA = "anggaran_rka";
 const LS_RR = "anggaran_rr";
@@ -16,6 +16,7 @@ export interface PengadaanRow {
   tanggal: string;
   mataAnggaran: string[]; // label2
   kategoriRekap: string;  // "RUTIN" / "DOCKING(BIAYA)" / ...
+  jenis: "rutin" | "docking"; // klasifikasi anti-overlap
   items: any[];           // {kapal,jumlah,harga,hargaSpbj?}
 }
 
@@ -24,7 +25,7 @@ function rowsFromProjects(data: any[]): PengadaanRow[] {
     const p = r.payload || {};
     const sumber = p.kind === "nonpr" ? "Non PR PO" : "SPPBJ";
     const ma = Array.isArray(p.mataAnggaran) ? p.mataAnggaran : p.mataAnggaran ? [p.mataAnggaran] : [];
-    return { id: r.id, sumber, nama: r.nama_kapal || p.namaPengadaan || "(tanpa nama)", tanggal: p.tanggal || "", mataAnggaran: ma, kategoriRekap: p.kategoriRekap || "", items: p.items || [] } as PengadaanRow;
+    return { id: r.id, sumber, nama: r.nama_kapal || p.namaPengadaan || "(tanpa nama)", tanggal: p.tanggal || "", mataAnggaran: ma, kategoriRekap: p.kategoriRekap || "", jenis: jenisAnggaranOf(p), items: p.items || [] } as PengadaanRow;
   });
 }
 
@@ -41,8 +42,8 @@ export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
   const perKey: Record<string, number> = {};
   const list: RealisasiItem[] = [];
   for (const p of rows) {
-    // rutin = RUTIN atau TANPA kategori. DOCKING/INVESTASI dikecualikan (punya budget sendiri).
-    if (/docking|investasi/i.test(p.kategoriRekap || "")) continue;
+    // RUTIN = SPPBJ + Non PR PO ber-jenis rutin (docking dikecualikan). Anti-overlap: tepat 1 bucket.
+    if (p.jenis !== "rutin") continue;
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
     const nilai = nilaiPengadaan(p.items);
     if (nilai <= 0) continue;
@@ -62,7 +63,7 @@ export function realisasiDocking(rows: PengadaanRow[], kapal: string, tahun: num
   const perKey: Record<string, number> = {};
   const list: RealisasiItem[] = [];
   for (const p of rows) {
-    if (!/docking/i.test(p.kategoriRekap || "")) continue;
+    if (p.jenis !== "docking") continue;
     if (parseInt((p.tanggal || "").slice(0, 4), 10) !== tahun) continue;
     const hasFinal = (p.items || []).some((it: any) => (it.hargaSpbj || 0) > 0);
     let nilai = 0;

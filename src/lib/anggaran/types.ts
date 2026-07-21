@@ -23,6 +23,13 @@ export const kodeMA = (s: string): string => (s || "").match(/\d{6,}/)?.[0] || "
 export const labelMA = (kode: string) => MATA_ANGGARAN.find((m) => m.kode === kode)?.label || kode;
 export const fullMA = (kode: string) => (kode ? `${kode} (${labelMA(kode)})` : "(Tanpa Mata Anggaran)");
 
+// klasifikasi Rutin vs Docking (anti-overlap): field eksplisit, else turunkan dari kategoriRekap.
+export function jenisAnggaranOf(p: { jenisAnggaran?: string; kategoriRekap?: string }): "rutin" | "docking" {
+  const j = (p.jenisAnggaran || "").toLowerCase();
+  if (j === "rutin" || j === "docking") return j as "rutin" | "docking";
+  return /docking/i.test(p.kategoriRekap || "") ? "docking" : "rutin";
+}
+
 // kategori dari teks mata anggaran (utama) atau nama pengadaan (fallback)
 export function kategoriPengadaan(mataAnggaran: string[] | string | undefined, nama?: string): Kategori {
   const arr = Array.isArray(mataAnggaran) ? mataAnggaran : mataAnggaran ? [mataAnggaran] : [];
