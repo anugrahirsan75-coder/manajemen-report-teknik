@@ -40,7 +40,8 @@ export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
   const list: { id: string; nama: string; ma: string; nilai: number; key: string }[] = [];
   for (const p of rows) {
     if (p.sumber !== "SPPBJ") continue;
-    if (!/rutin/i.test(p.kategoriRekap || "")) continue;
+    // rutin = RUTIN atau TANPA kategori. DOCKING/INVESTASI dikecualikan (punya budget sendiri).
+    if (/docking|investasi/i.test(p.kategoriRekap || "")) continue;
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
     const nilai = nilaiPengadaan(p.items);
     const ma = (p.mataAnggaran || [])[0] || "";

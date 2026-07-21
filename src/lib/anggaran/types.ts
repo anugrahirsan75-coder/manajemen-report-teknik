@@ -79,8 +79,24 @@ export interface RREntry {
 export interface PlafonRow { ma: string; nilai: number }
 export interface PlafonRutin { bulan: string; rows: PlafonRow[]; catatan?: string }
 
-// kunci pencocokan pagu <-> realisasi: kode MA bila ada, else slug label
-export const maKey = (s: string): string => kodeMA(s) || (s || "").toLowerCase().replace(/[^a-z0-9]+/g, "");
+// kunci pencocokan pagu <-> realisasi.
+// 1) kalau ada kode 6+ digit -> pakai kode. 2) kalau label bebas ("Pelumas", "Akomodasi Kapal")
+//    -> cari MA master yg labelnya memuat semua kata (prefer Biaya) -> pakai kodenya.
+//    3) fallback slug. Ini bikin pagu "Pelumas" nyambung ke SPPBJ MA "5010303001 (Beban Bahan Pelumas)".
+const normLbl = (x: string) => (x || "").toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+export function maKey(s: string): string {
+  const code = kodeMA(s);
+  if (code) return code;
+  const q = normLbl(s);
+  if (!q) return "";
+  const words = q.split(" ").filter((w) => w.length >= 3);
+  if (words.length) {
+    const cands = MATA_ANGGARAN.filter((m) => { const l = normLbl(m.label); return words.every((w) => l.includes(w)); });
+    const pick = cands.find((m) => m.kategori === "Biaya") || cands[0];
+    if (pick) return pick.kode;
+  }
+  return q.replace(/\s+/g, "");
+}
 
 export const rupiahShort = (n: number): string => {
   const a = Math.abs(n);

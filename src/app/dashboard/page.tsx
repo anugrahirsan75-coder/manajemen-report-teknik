@@ -567,7 +567,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
             ))}
           </div>
         )}
-        <span className="text-[11px] text-slate-400">realisasi = SPPBJ kategori RUTIN bulan ini (final bila ada, else estimasi)</span>
+        <span className="text-[11px] text-slate-400">realisasi = SPPBJ RUTIN / tanpa kategori, per Mata Anggaran (DOCKING &amp; INVESTASI dikecualikan)</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
             <>
