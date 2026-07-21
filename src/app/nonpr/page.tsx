@@ -7,6 +7,7 @@ import { useNonpr } from "@/lib/nonpr/store";
 import { tanggalIndo, rupiah, bulanTahun } from "@/lib/format";
 import { nonprTotal } from "@/lib/nonpr/types";
 import { MAX_NILAI_NONPR } from "@/lib/nonpr/db";
+import { jenisAnggaranOf } from "@/lib/anggaran/types";
 
 export default function NonprList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useNonpr();
@@ -81,10 +82,16 @@ export default function NonprList() {
               {filtered.map((r, i) => {
                 const total = nonprTotal(r.payload?.items || []);
                 const over = total > MAX_NILAI_NONPR;
+                const jenis = jenisAnggaranOf(r.payload || {});
                 return (
                   <tr key={r.id} className="border-b last:border-0 row-hover cursor-pointer" onClick={() => buka(r)}>
                     <td className="p-2 text-center text-slate-400">{i + 1}</td>
-                    <td className="p-2 font-medium text-slate-800">{r.nama_pengadaan || "(tanpa nama)"}</td>
+                    <td className="p-2 font-medium text-slate-800">
+                      <span className="flex items-center gap-2">
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${jenis === "docking" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>{jenis === "docking" ? "Docking" : "Rutin"}</span>
+                        {r.nama_pengadaan || "(tanpa nama)"}
+                      </span>
+                    </td>
                     <td className="p-2 text-slate-600">{r.payload?.noSPPB || "-"}</td>
                     <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className={`p-2 text-right ${over ? "text-red-600 font-semibold" : "text-slate-600"}`}>{rupiah(total)}</td>

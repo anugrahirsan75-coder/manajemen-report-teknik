@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
 import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak } from "@/lib/sppbj/types";
+import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import { tanggalIndo, bulanTahun } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
@@ -183,10 +184,16 @@ export default function SppbjList() {
               {filtered.map((r, i) => {
                 const st = (r.status as SppbjStatus) || "menunggu_spbj";
                 const nomor = r.payload?.noSPPBJ || r.payload?.noKontrak || "-";
+                const jenis = jenisAnggaranOf(r.payload || {});
                 return (
                   <tr key={r.id} className="border-b last:border-0 row-hover cursor-pointer" onClick={() => buka(r)}>
                     <td className="p-2 text-center text-slate-400">{i + 1}</td>
-                    <td className="p-2 font-medium text-slate-800">{r.nama_pengadaan || "(tanpa nama)"}</td>
+                    <td className="p-2 font-medium text-slate-800">
+                      <span className="flex items-center gap-2">
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${jenis === "docking" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>{jenis === "docking" ? "Docking" : "Rutin"}</span>
+                        {r.nama_pengadaan || "(tanpa nama)"}
+                      </span>
+                    </td>
                     <td className="p-2 text-slate-600">{nomor}</td>
                     <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className="p-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
