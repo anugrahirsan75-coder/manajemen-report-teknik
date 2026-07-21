@@ -43,6 +43,19 @@ export default function DashboardAnggaran() {
   const rkaTotal = Object.values(rka.nilai || {}).reduce((s, v) => s + (v || 0), 0);
   const serapPct = rkaTotal ? Math.round((a.total / rkaTotal) * 100) : 0;
 
+  // rincian pengadaan per kode Mata Anggaran (utk klik-baris di RKA & Penyerapan per MA)
+  const detailMA = useMemo(() => {
+    const by: Record<string, { id: string; nama: string; nilai: number; sumber: string; tanggal: string }[]> = {};
+    for (const r of data) {
+      const est = estPengadaan(r);
+      const codes = r.mataAnggaran.length ? r.mataAnggaran.map(kodeMA).filter(Boolean) : [];
+      if (!codes.length || est <= 0) continue;
+      for (const c of codes) (by[c] ||= []).push({ id: r.id, nama: r.nama, nilai: est / codes.length, sumber: r.sumber, tanggal: r.tanggal });
+    }
+    Object.values(by).forEach((l) => l.sort((x, y) => y.nilai - x.nilai));
+    return by;
+  }, [data]);
+
   return (
     <main className="max-w-6xl mx-auto px-5 py-8">
       <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
@@ -78,11 +91,11 @@ export default function DashboardAnggaran() {
           <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} />
 
           {/* RKA vs penyerapan */}
-          <RkaSection rka={rka} perMA={a.perMA} onSave={saveRka} />
+          <RkaSection rka={rka} perMA={a.perMA} detail={detailMA} onSave={saveRka} />
 
           {/* Penyerapan per mata anggaran */}
           <Card title="Penyerapan per Mata Anggaran (Biaya & Investasi)" icon="🏷️">
-            <MaTable perMA={a.perMA} />
+            <MaTable perMA={a.perMA} detail={detailMA} />
           </Card>
 
           {/* Penyerapan per kapal */}
@@ -124,8 +137,27 @@ function Card({ title, icon, children }: { title: string; icon: string; children
   );
 }
 
+/* ---------- rincian pengadaan per MA (reusable) ---------- */
+type MaDetailItem = { id: string; nama: string; nilai: number; sumber: string; tanggal: string };
+function MaDetailList({ list }: { list: MaDetailItem[] }) {
+  if (!list || !list.length) return <p className="text-[11px] text-slate-400 py-1">Belum ada pengadaan pada Mata Anggaran ini.</p>;
+  return (
+    <table className="w-full text-[11px]"><tbody>
+      {list.map((x) => (
+        <tr key={x.id} className="border-b border-slate-100 last:border-0">
+          <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-semibold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
+          <td className="py-1 pr-2 text-slate-700">{x.nama}</td>
+          <td className="py-1 pr-2 text-slate-400 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
+          <td className="py-1 text-right font-medium text-slate-700 whitespace-nowrap">{rupiah(x.nilai)}</td>
+        </tr>
+      ))}
+    </tbody></table>
+  );
+}
+
 /* ---------- RKA ---------- */
-function RkaSection({ rka, perMA, onSave }: { rka: RKA; perMA: Record<string, number>; onSave: (r: RKA) => Promise<void> }) {
+function RkaSection({ rka, perMA, detail, onSave }: { rka: RKA; perMA: Record<string, number>; detail: Record<string, MaDetailItem[]>; onSave: (r: RKA) => Promise<void> }) {
+  const [openKode, setOpenKode] = useState<string | null>(null);
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState<Record<string, number>>(rka.nilai || {});
   const [tahun, setTahun] = useState(rka.tahun);
@@ -166,26 +198,39 @@ function RkaSection({ rka, perMA, onSave }: { rka: RKA; perMA: Record<string, nu
               const serap = Math.round(perMA[m.kode] || 0);
               const sisa = rkaV - serap;
               const pct = rkaV ? Math.round((serap / rkaV) * 100) : 0;
+              const rinci = detail[m.kode] || [];
+              const isOpen = openKode === m.kode;
               return (
-                <tr key={m.kode} className="border-b last:border-0">
-                  <td className="p-2"><span className="font-mono text-xs text-slate-400">{m.kode}</span> {m.label}</td>
-                  <td className="p-2 text-center"><span className={`chip ${m.kategori === "Investasi" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"}`}>{m.kategori}</span></td>
-                  <td className="p-2 text-right">
-                    {edit ? (
-                      <input type="number" value={draft[m.kode] || ""} onChange={(e) => setDraft({ ...draft, [m.kode]: +e.target.value })}
-                        className="w-32 text-right border rounded px-2 py-1 text-xs" placeholder="0" />
-                    ) : (rkaV ? rupiah(rkaV) : <span className="text-slate-300">—</span>)}
-                  </td>
-                  <td className="p-2 text-right text-slate-600">{rupiah(serap)}</td>
-                  <td className="p-2 text-right">
-                    {rkaV ? (
-                      <div className="flex items-center justify-end gap-2">
-                        <span className={sisa < 0 ? "text-red-600 font-semibold" : "text-slate-500"}>{rupiah(sisa)}</span>
-                        <span className={`chip ${pct > 100 ? "bg-red-100 text-red-700" : pct >= 80 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>{pct}%</span>
-                      </div>
-                    ) : <span className="text-slate-300">—</span>}
-                  </td>
-                </tr>
+                <Fragment key={m.kode}>
+                  <tr className={`border-b row-hover ${!edit ? "cursor-pointer" : ""} ${isOpen ? "bg-sky-50/60" : ""}`} onClick={() => { if (!edit) setOpenKode(isOpen ? null : m.kode); }}>
+                    <td className="p-2">
+                      <span className="inline-flex items-center gap-1">
+                        {!edit && <span className={`text-slate-400 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>}
+                        <span className="font-mono text-xs text-slate-400">{m.kode}</span> {m.label}
+                        {!edit && rinci.length > 0 && <span className="text-[10px] text-sky-600">· {rinci.length}</span>}
+                      </span>
+                    </td>
+                    <td className="p-2 text-center"><span className={`chip ${m.kategori === "Investasi" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"}`}>{m.kategori}</span></td>
+                    <td className="p-2 text-right" onClick={(e) => edit && e.stopPropagation()}>
+                      {edit ? (
+                        <input type="number" value={draft[m.kode] || ""} onChange={(e) => setDraft({ ...draft, [m.kode]: +e.target.value })}
+                          className="w-32 text-right border rounded px-2 py-1 text-xs" placeholder="0" />
+                      ) : (rkaV ? rupiah(rkaV) : <span className="text-slate-300">—</span>)}
+                    </td>
+                    <td className="p-2 text-right text-slate-600">{rupiah(serap)}</td>
+                    <td className="p-2 text-right">
+                      {rkaV ? (
+                        <div className="flex items-center justify-end gap-2">
+                          <span className={sisa < 0 ? "text-red-600 font-semibold" : "text-slate-500"}>{rupiah(sisa)}</span>
+                          <span className={`chip ${pct > 100 ? "bg-red-100 text-red-700" : pct >= 80 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>{pct}%</span>
+                        </div>
+                      ) : <span className="text-slate-300">—</span>}
+                    </td>
+                  </tr>
+                  {!edit && isOpen && (
+                    <tr className="bg-slate-50/70"><td colSpan={5} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>
+                  )}
+                </Fragment>
               );
             })}
           </tbody>
@@ -197,25 +242,36 @@ function RkaSection({ rka, perMA, onSave }: { rka: RKA; perMA: Record<string, nu
 }
 
 /* ---------- per Mata Anggaran ---------- */
-function MaTable({ perMA }: { perMA: Record<string, number> }) {
+function MaTable({ perMA, detail }: { perMA: Record<string, number>; detail: Record<string, MaDetailItem[]> }) {
+  const [openKode, setOpenKode] = useState<string | null>(null);
   const rows = MATA_ANGGARAN.map((m) => ({ ...m, nilai: Math.round(perMA[m.kode] || 0) })).filter((r) => r.nilai > 0).sort((x, y) => y.nilai - x.nilai);
   const max = Math.max(1, ...rows.map((r) => r.nilai));
   if (!rows.length) return <p className="text-xs text-slate-400">Belum ada penyerapan.</p>;
   return (
     <div className="space-y-2.5">
-      {rows.map((m) => (
-        <div key={m.kode}>
-          <div className="flex items-center justify-between text-xs mb-1 gap-3">
-            <span className="text-slate-600 truncate"><span className="font-mono text-slate-400">{m.kode}</span> {m.label}
-              <span className={`chip ml-2 ${m.kategori === "Investasi" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"}`}>{m.kategori}</span>
-            </span>
-            <span className="text-slate-700 font-semibold shrink-0">{rupiah(m.nilai)}</span>
+      {rows.map((m) => {
+        const rinci = detail[m.kode] || [];
+        const isOpen = openKode === m.kode;
+        return (
+          <div key={m.kode}>
+            <button onClick={() => setOpenKode(isOpen ? null : m.kode)} className="w-full text-left">
+              <div className="flex items-center justify-between text-xs mb-1 gap-3">
+                <span className="text-slate-600 truncate">
+                  <span className={`text-slate-400 text-[10px] inline-block mr-0.5 transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
+                  <span className="font-mono text-slate-400">{m.kode}</span> {m.label}
+                  <span className={`chip ml-2 ${m.kategori === "Investasi" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"}`}>{m.kategori}</span>
+                  {rinci.length > 0 && <span className="text-[10px] text-sky-600 ml-1">· {rinci.length}</span>}
+                </span>
+                <span className="text-slate-700 font-semibold shrink-0">{rupiah(m.nilai)}</span>
+              </div>
+              <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                <div className={`h-full rounded-full ${m.kategori === "Investasi" ? "bg-gradient-to-r from-indigo-500 to-blue-700" : "bg-gradient-to-r from-[#14b8c4] to-[#16357f]"}`} style={{ width: `${(m.nilai / max) * 100}%` }} />
+              </div>
+            </button>
+            {isOpen && <div className="mt-2 ml-4 pl-3 border-l-2 border-slate-100"><MaDetailList list={rinci} /></div>}
           </div>
-          <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
-            <div className={`h-full rounded-full ${m.kategori === "Investasi" ? "bg-gradient-to-r from-indigo-500 to-blue-700" : "bg-gradient-to-r from-[#14b8c4] to-[#16357f]"}`} style={{ width: `${(m.nilai / max) * 100}%` }} />
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
