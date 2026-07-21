@@ -45,23 +45,23 @@ export default function SppbjIsi() {
     return MA_WARNA[(i < 0 ? 0 : i) % MA_WARNA.length];
   };
 
-  // ===== Undo / Redo tabel item (snapshot sebelum aksi masal, bukan tiap ketikan) =====
+  // ===== Undo / Redo tabel item (maks 50 langkah; snapshot sebelum aksi masal, bukan tiap ketikan) =====
   const [past, setPast] = useState<SppbjItem[][]>([]);
   const [future, setFuture] = useState<SppbjItem[][]>([]);
   const salin = (arr: SppbjItem[]) => arr.map((x) => ({ ...x }));
-  const snapshot = () => { setPast((p) => [...p.slice(-19), salin(req.items)]); setFuture([]); };
+  const snapshot = () => { setPast((p) => [...p.slice(-49), salin(req.items)]); setFuture([]); };
   const undo = () => {
     if (!past.length) return;
     const prev = past[past.length - 1];
     setPast((p) => p.slice(0, -1));
-    setFuture((f) => [salin(req.items), ...f].slice(0, 20));
+    setFuture((f) => [salin(req.items), ...f].slice(0, 50));
     setItems(prev);
   };
   const redo = () => {
     if (!future.length) return;
     const next = future[0];
     setFuture((f) => f.slice(1));
-    setPast((p) => [...p.slice(-19), salin(req.items)]);
+    setPast((p) => [...p.slice(-49), salin(req.items)]);
     setItems(next);
   };
   // pembungkus aksi yang mengubah banyak baris -> tercatat di riwayat
