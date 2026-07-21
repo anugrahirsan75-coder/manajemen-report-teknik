@@ -587,6 +587,20 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
   const sisa = totalPagu - totalPakai;
   const pctTot = totalPagu ? Math.round((totalPakai / totalPagu) * 100) : 0;
 
+  // proyeksi akhir bulan (hanya utk bulan berjalan): ekstrapolasi laju pemakaian
+  const proj = useMemo(() => {
+    const now = new Date();
+    const curYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+    if (bulan !== curYm) return { active: false, factor: 1, total: totalPakai, pct: pctTot, dayToday: 0, daysInMonth: 0 };
+    const dayToday = now.getDate();
+    const [y, mo] = bulan.split("-").map(Number);
+    const daysInMonth = new Date(y, mo, 0).getDate();
+    const factor = dayToday > 0 ? daysInMonth / dayToday : 1;
+    const total = totalPakai * factor;
+    const pct = totalPagu ? Math.round((total / totalPagu) * 100) : 0;
+    return { active: true, factor, total, pct, dayToday, daysInMonth };
+  }, [bulan, totalPakai, totalPagu, pctTot]);
+
   const startEdit = () => { setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]); setEdit(true); };
   // siapkan pagu bulan BERIKUTNYA: lompat bulan + salin pagu bulan aktif + langsung mode edit
   const bulanLain = () => {
@@ -650,6 +664,15 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
         <MiniStat label="Serapan" val={`${pctTot}%`} tint={pctTot > 100 ? "text-red-600" : "text-slate-800"} />
       </div>
 
+      {proj.active && totalPagu > 0 && (
+        <div className={`mb-3 rounded-xl px-3 py-2 text-xs flex flex-wrap items-center gap-x-2 gap-y-1 border ${proj.pct > 100 ? "bg-red-50 text-red-700 border-red-200" : proj.pct >= 80 ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+          <span>📈 Proyeksi akhir bulan (laju sampai hari ke-{proj.dayToday}/{proj.daysInMonth}):</span>
+          <b>~{rupiah(Math.round(proj.total))}</b>
+          <span>({proj.pct}% pagu)</span>
+          {proj.pct > 100 ? <b>— berpotensi OVERBUDGET ~{rupiah(Math.round(proj.total - totalPagu))}, rem pengeluaran</b> : proj.pct >= 80 ? <b>— mendekati pagu, pantau</b> : <span>— on-track</span>}
+        </div>
+      )}
+
       {edit ? (
         <div className="rounded-xl ring-1 ring-slate-200 p-3">
           <p className="text-xs text-slate-500 mb-2">Mengisi pagu untuk <b className="text-[#16357f]">{bulanTahun(bulan + "-01")}</b> — ganti bulan lewat kalender di atas bila perlu.</p>
@@ -699,7 +722,12 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
                           <span className="text-[11px] text-slate-500 w-9 text-right">{m.pagu ? pct + "%" : "—"}</span>
                         </div>
                       </td>
-                      <td className="p-2 text-center"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span></td>
+                      <td className="p-2 text-center">
+                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span>
+                        {proj.active && m.pagu > 0 && pct <= 100 && Math.round(m.pakai * proj.factor) > m.pagu && (
+                          <span className="block text-[9px] text-amber-600 mt-0.5">proyeksi lewat</span>
+                        )}
+                      </td>
                     </tr>
                     {isOpen && (
                       <tr className="bg-slate-50/70">
