@@ -31,6 +31,29 @@ export default function SppbjIsi() {
   const nCol = multiMA ? 10 : 9;
   const kodeSingkat = (m: string) => (m || "").match(/\d{6,}/)?.[0] || m;
 
+  // ===== Undo / Redo tabel item (snapshot sebelum aksi masal, bukan tiap ketikan) =====
+  const [past, setPast] = useState<SppbjItem[][]>([]);
+  const [future, setFuture] = useState<SppbjItem[][]>([]);
+  const salin = (arr: SppbjItem[]) => arr.map((x) => ({ ...x }));
+  const snapshot = () => { setPast((p) => [...p.slice(-19), salin(req.items)]); setFuture([]); };
+  const undo = () => {
+    if (!past.length) return;
+    const prev = past[past.length - 1];
+    setPast((p) => p.slice(0, -1));
+    setFuture((f) => [salin(req.items), ...f].slice(0, 20));
+    setItems(prev);
+  };
+  const redo = () => {
+    if (!future.length) return;
+    const next = future[0];
+    setFuture((f) => f.slice(1));
+    setPast((p) => [...p.slice(-19), salin(req.items)]);
+    setItems(next);
+  };
+  // pembungkus aksi yang mengubah banyak baris -> tercatat di riwayat
+  const addItemU = (kapal?: string) => { snapshot(); addItem(kapal); };
+  const delItemU = (id: string) => { snapshot(); delItem(id); };
+
   // isi nama kapal ke SEMUA item / rentang nomor tertentu (mis. 1-20)
   const [kapalMassal, setKapalMassal] = useState("");
   const [dariNo, setDariNo] = useState("");
@@ -49,6 +72,7 @@ export default function SppbjIsi() {
     const beda = Array.from(new Set(target.map((i) => (i.kapal || "").trim()).filter(Boolean)));
     const cakupan = seluruh ? "SEMUA item" : `item no ${rDari}–${rSampai} (${target.length} baris)`;
     if (beda.length > 1 && !confirm(`${cakupan} punya ${beda.length} kapal berbeda (${beda.join(", ")}).\nTimpa jadi "${k}"?`)) return;
+    snapshot();
     setItems(req.items.map((it, i) => (i >= rDari - 1 && i <= rSampai - 1 ? { ...it, kapal: k } : it)));
   };
 
@@ -108,6 +132,7 @@ export default function SppbjIsi() {
   });
   // tambah BANYAK item sekaligus dari browser katalog -> langsung jadi baris tabel SPPBJ
   const addFromKatalog = (picked: KatalogItem[], kapal: string) => {
+    snapshot();
     const baru = picked.map((k) => ({
       ...emptySppbjItem(kapal),
       jumlah: 1,
@@ -124,6 +149,7 @@ export default function SppbjIsi() {
   };
   // hasil OCR screenshot Excel -> append jadi baris tabel (+ id)
   const addFromScan = (parsed: ParsedItem[]) => {
+    snapshot();
     const baru = parsed.map((p) => ({
       ...emptySppbjItem(p.kapal || ""),
       jumlah: p.jumlah || 1,
@@ -245,10 +271,16 @@ export default function SppbjIsi() {
         </div>
         <datalist id="kapalListSppbj">{KAPAL_LIST.map((k) => <option key={k} value={k} />)}</datalist>
         <div className="mb-2 flex flex-wrap items-center gap-2">
-          <button onClick={() => addItem()} className="bg-[#16357f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">＋ Tambah Item</button>
+          <button onClick={() => addItemU()} className="bg-[#16357f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">＋ Tambah Item</button>
           <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
           <button onClick={() => setScanOpen(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">📷 Scan dari Excel (OCR)</button>
           <span className="text-[11px] text-slate-400">screenshot tabel → terisi otomatis</span>
+          <span className="flex items-center gap-1 ml-2">
+            <button onClick={undo} disabled={!past.length} title={past.length ? `Batalkan perubahan terakhir (${past.length} langkah tersimpan)` : "Belum ada yang bisa dibatalkan"}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">↶ Undo{past.length ? ` (${past.length})` : ""}</button>
+            <button onClick={redo} disabled={!future.length} title={future.length ? `Ulangi perubahan (${future.length})` : "Tak ada yang bisa diulangi"}
+              className="text-xs font-semibold px-2.5 py-1.5 rounded-lg border border-slate-300 bg-white text-slate-600 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed">↷ Redo{future.length ? ` (${future.length})` : ""}</button>
+          </span>
           <div className="flex items-center gap-1.5 ml-auto">
             <input list="kapalListSppbj" value={kapalMassal} onChange={(e) => setKapalMassal(e.target.value)}
               placeholder={kapalPertama || "pilih kapal…"} className="w-36 text-xs border rounded-lg px-2 py-1.5 bg-white" />
@@ -312,7 +344,7 @@ export default function SppbjIsi() {
                   <td className="border p-1 text-right text-slate-500 w-28">{rupiah(it.harga * it.jumlah)}</td>
                   <td className="border p-1 text-center whitespace-nowrap">
                     <button onClick={() => setOpenBd((o) => ({ ...o, [it.id]: !o[it.id] }))} className={`text-xs px-2 py-0.5 rounded border mr-1 ${(it.breakdown?.length || it.keterangan) ? "bg-sky-100 border-sky-300 text-sky-700" : "border-slate-300 text-sky-600"}`}>＋ ket/rincian</button>
-                    <button onClick={() => delItem(it.id)} className="text-red-500 text-xs px-1.5 py-0.5 rounded border border-red-200">hapus</button>
+                    <button onClick={() => delItemU(it.id)} className="text-red-500 text-xs px-1.5 py-0.5 rounded border border-red-200">hapus</button>
                   </td>
                 </tr>
                 {openBd[it.id] && (
