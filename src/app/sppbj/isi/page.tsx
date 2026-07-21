@@ -30,6 +30,20 @@ export default function SppbjIsi() {
   const multiMA = (req.mataAnggaran || []).length > 1;
   const nCol = multiMA ? 10 : 9;
   const kodeSingkat = (m: string) => (m || "").match(/\d{6,}/)?.[0] || m;
+  // warna per Mata Anggaran (urutan sesuai centang) biar mudah dibedakan sekilas
+  const MA_WARNA = [
+    "bg-sky-50 text-sky-800 border-sky-300",
+    "bg-amber-50 text-amber-800 border-amber-300",
+    "bg-violet-50 text-violet-800 border-violet-300",
+    "bg-emerald-50 text-emerald-800 border-emerald-300",
+    "bg-rose-50 text-rose-800 border-rose-300",
+    "bg-teal-50 text-teal-800 border-teal-300",
+  ];
+  const warnaMA = (ma: string) => {
+    const efektif = (ma || "").trim() || (req.mataAnggaran || [])[0] || "";
+    const i = (req.mataAnggaran || []).indexOf(efektif);
+    return MA_WARNA[(i < 0 ? 0 : i) % MA_WARNA.length];
+  };
 
   // ===== Undo / Redo tabel item (snapshot sebelum aksi masal, bukan tiap ketikan) =====
   const [past, setPast] = useState<SppbjItem[][]>([]);
@@ -258,7 +272,11 @@ export default function SppbjIsi() {
           <div className="grid sm:grid-cols-2 gap-1 mt-1">
             {MATA_ANGGARAN.map((ma) => (
               <label key={ma} className="flex items-center gap-2 text-sm">
-                <input type="checkbox" checked={req.mataAnggaran.includes(ma)} onChange={() => toggleMA(ma)} /> {ma}
+                <input type="checkbox" checked={req.mataAnggaran.includes(ma)} onChange={() => toggleMA(ma)} />
+                {multiMA && req.mataAnggaran.includes(ma) && (
+                  <span className={`inline-block h-3.5 w-3.5 rounded border shrink-0 ${warnaMA(ma)}`} title="warna penanda di kolom M. Anggaran" />
+                )}
+                {ma}
               </label>
             ))}
           </div>
@@ -334,7 +352,7 @@ export default function SppbjIsi() {
                   {multiMA && (
                     <td className="border p-1">
                       <select value={it.mataAnggaran || ""} onChange={(e) => setItem(it.id, { mataAnggaran: e.target.value || undefined })}
-                        className="w-28 px-1 py-0.5 text-xs bg-white border rounded" title={it.mataAnggaran || `ikut ${req.mataAnggaran[0] || "-"}`}>
+                        className={`w-28 px-1 py-0.5 text-xs border rounded font-semibold ${warnaMA(it.mataAnggaran || "")}`} title={it.mataAnggaran || `ikut ${req.mataAnggaran[0] || "-"}`}>
                         <option value="">↳ {kodeSingkat(req.mataAnggaran[0] || "")}</option>
                         {req.mataAnggaran.map((m) => <option key={m} value={m}>{kodeSingkat(m)}</option>)}
                       </select>
