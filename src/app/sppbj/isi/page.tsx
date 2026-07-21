@@ -31,16 +31,25 @@ export default function SppbjIsi() {
   const nCol = multiMA ? 10 : 9;
   const kodeSingkat = (m: string) => (m || "").match(/\d{6,}/)?.[0] || m;
 
-  // isi nama kapal ke SEMUA item sekaligus (pengadaan 1 kapal)
+  // isi nama kapal ke SEMUA item / rentang nomor tertentu (mis. 1-20)
   const [kapalMassal, setKapalMassal] = useState("");
+  const [dariNo, setDariNo] = useState("");
+  const [sampaiNo, setSampaiNo] = useState("");
   const kapalPertama = (req.items.find((i) => (i.kapal || "").trim())?.kapal || "").trim();
+  const nItem = req.items.length;
+  const rDari = Math.max(1, parseInt(dariNo || "1", 10) || 1);
+  const rSampai = Math.min(nItem || 1, parseInt(sampaiNo || String(nItem || 1), 10) || nItem || 1);
+  const seluruh = rDari <= 1 && rSampai >= nItem;
   const isiKapalSemua = () => {
     const k = (kapalMassal || kapalPertama).trim();
     if (!k) { alert("Pilih / ketik nama kapal dulu."); return; }
-    if (!req.items.length) { alert("Belum ada item."); return; }
-    const beda = Array.from(new Set(req.items.map((i) => (i.kapal || "").trim()).filter(Boolean)));
-    if (beda.length > 1 && !confirm(`Item punya ${beda.length} kapal berbeda (${beda.join(", ")}).\nTimpa SEMUA jadi "${k}"?`)) return;
-    setItems(req.items.map((it) => ({ ...it, kapal: k })));
+    if (!nItem) { alert("Belum ada item."); return; }
+    if (rDari > rSampai) { alert(`Rentang tak valid (${rDari} > ${rSampai}).`); return; }
+    const target = req.items.slice(rDari - 1, rSampai);
+    const beda = Array.from(new Set(target.map((i) => (i.kapal || "").trim()).filter(Boolean)));
+    const cakupan = seluruh ? "SEMUA item" : `item no ${rDari}–${rSampai} (${target.length} baris)`;
+    if (beda.length > 1 && !confirm(`${cakupan} punya ${beda.length} kapal berbeda (${beda.join(", ")}).\nTimpa jadi "${k}"?`)) return;
+    setItems(req.items.map((it, i) => (i >= rDari - 1 && i <= rSampai - 1 ? { ...it, kapal: k } : it)));
   };
 
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
@@ -243,8 +252,16 @@ export default function SppbjIsi() {
           <div className="flex items-center gap-1.5 ml-auto">
             <input list="kapalListSppbj" value={kapalMassal} onChange={(e) => setKapalMassal(e.target.value)}
               placeholder={kapalPertama || "pilih kapal…"} className="w-36 text-xs border rounded-lg px-2 py-1.5 bg-white" />
-            <button onClick={isiKapalSemua} title="Isi nama kapal ini ke SEMUA item (pengadaan 1 kapal)"
-              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#16357f]/30 bg-[#16357f]/5 text-[#16357f] hover:bg-[#16357f]/10">🚢 Isi Kapal ke Semua Item</button>
+            <span className="text-[11px] text-slate-400">no</span>
+            <input type="number" min={1} value={dariNo} onChange={(e) => setDariNo(e.target.value)} placeholder="1"
+              className="w-14 text-xs border rounded-lg px-2 py-1.5 bg-white text-center" title="dari nomor item" />
+            <span className="text-[11px] text-slate-400">–</span>
+            <input type="number" min={1} value={sampaiNo} onChange={(e) => setSampaiNo(e.target.value)} placeholder={String(nItem || 1)}
+              className="w-14 text-xs border rounded-lg px-2 py-1.5 bg-white text-center" title="sampai nomor item (kosong = terakhir)" />
+            <button onClick={isiKapalSemua} title="Isi nama kapal ke item pada rentang nomor (kosongkan rentang = semua item)"
+              className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-[#16357f]/30 bg-[#16357f]/5 text-[#16357f] hover:bg-[#16357f]/10">
+              🚢 Isi Kapal {seluruh ? "ke Semua Item" : `no ${rDari}–${rSampai}`}
+            </button>
           </div>
         </div>
         <KatalogBrowser open={browseKatalog} onClose={() => setBrowseKatalog(false)} onAdd={addFromKatalog}
