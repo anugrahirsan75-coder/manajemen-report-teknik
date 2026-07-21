@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, Fragment } from "react";
-import { useAnggaran, PengadaanRow, realisasiRutin, realisasiDocking, nilaiPerMA } from "@/lib/anggaran/store";
+import { useAnggaran, PengadaanRow, realisasiRutin, realisasiRutinKapal, realisasiDocking, nilaiPerMA, type RealisasiKapal } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN,
   namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
@@ -587,12 +587,14 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
   const entry = plafon.find((p) => p.bulan === bulan);
   const rows = entry?.rows || [];
   const real = useMemo(() => realisasiRutin(pengadaan, bulan), [pengadaan, bulan]);
+  const perKapal = useMemo(() => realisasiRutinKapal(pengadaan, bulan), [pengadaan, bulan]);
 
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState<PlafonRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [paste, setPaste] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [tampil, setTampil] = useState<"ma" | "kapal">("ma"); // rincian per Mata Anggaran / per Kapal
 
   // gabung pagu + realisasi (termasuk realisasi tanpa pagu)
   const merged = useMemo(() => {
@@ -712,6 +714,20 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
       ) : merged.length === 0 ? (
         <p className="text-sm text-slate-500 py-3 text-center">Belum ada pagu/realisasi rutin bulan ini. Klik <b>Atur Pagu</b> untuk isi dari dokumen Persetujuan.</p>
       ) : (
+        <>
+        {/* pilih rincian: per Mata Anggaran (ada pagu) atau per Kapal (serapan) */}
+        <div className="flex items-center gap-1 mb-2">
+          {([["ma", "Per Mata Anggaran"], ["kapal", `Per Kapal (${perKapal.list.length})`]] as const).map(([v, t]) => (
+            <button key={v} onClick={() => setTampil(v)}
+              className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${tampil === v ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f]"}`}>
+              {t}
+            </button>
+          ))}
+          {tampil === "kapal" && <span className="text-[11px] text-slate-500 ml-1">pagu ditetapkan per Mata Anggaran, jadi di sini yang tampil <b className="text-slate-700">serapan</b> tiap kapal</span>}
+        </div>
+        {tampil === "kapal" ? (
+          <SerapanKapal data={perKapal.list} total={perKapal.total} />
+        ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className={TBL_HEAD}>
@@ -791,6 +807,8 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
             </tfoot>
           </table>
         </div>
+        )}
+        </>
       )}
 
       {/* daftar pengadaan rutin bulan ini */}
@@ -823,6 +841,71 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
         </div>
       )}
     </Card>
+  );
+}
+
+/* ---------- Serapan RUTIN per Kapal (rincian di dalam Kendali Rutin) ---------- */
+function SerapanKapal({ data, total }: { data: RealisasiKapal[]; total: number }) {
+  const [buka, setBuka] = useState<string | null>(null);
+  if (!data.length) return <p className="text-sm text-slate-500 py-3 text-center">Belum ada serapan rutin per kapal bulan ini.</p>;
+  const max = Math.max(1, ...data.map((k) => k.nilai));
+  return (
+    <div className="overflow-x-auto">
+      <table className="w-full text-sm">
+        <thead className={TBL_HEAD}>
+          <tr>
+            <th className="p-2 text-left">Kapal</th>
+            <th className="p-2 text-center w-24">Pengadaan</th>
+            <th className="p-2 text-right w-40">Terpakai</th>
+            <th className="p-2 text-right w-56">Porsi dari total bulan ini</th>
+          </tr>
+        </thead>
+        <tbody>
+          {data.map((k) => {
+            const pct = total ? Math.round((k.nilai / total) * 100) : 0;
+            const isOpen = buka === k.kapal;
+            return (
+              <Fragment key={k.kapal}>
+                <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-sky-50" : "even:bg-slate-50/60"}`} onClick={() => setBuka(isOpen ? null : k.kapal)}>
+                  <td className={TD_MA}>
+                    <span className="inline-flex items-center gap-1.5">
+                      <span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
+                      {k.kapal}
+                    </span>
+                  </td>
+                  <td className="p-2 text-center"><span className="text-[10px] font-bold text-sky-800 bg-sky-100 rounded-full px-2 py-0.5">{k.pengadaan.length}</span></td>
+                  <td className={TD_PAKAI}>{rupiah(Math.round(k.nilai))}</td>
+                  <td className="p-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2.5 rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 overflow-hidden">
+                        <div className="h-full rounded-full bg-gradient-to-r from-[#14b8c4] to-[#16357f]" style={{ width: `${Math.max(4, (k.nilai / max) * 100)}%` }} />
+                      </div>
+                      <span className="text-xs font-bold tabular-nums w-11 text-right text-slate-700">{pct}%</span>
+                    </div>
+                  </td>
+                </tr>
+                {isOpen && (
+                  <tr className="bg-sky-50/50">
+                    <td colSpan={4} className="px-3 py-2">
+                      <MaDetailList list={k.pengadaan} />
+                      <p className="text-[10px] text-slate-500 mt-1">Nilai pengadaan yang menyebut beberapa kapal dibagi rata ke kapal-kapal itu.</p>
+                    </td>
+                  </tr>
+                )}
+              </Fragment>
+            );
+          })}
+        </tbody>
+        <tfoot>
+          <tr className={TFOOT_ROW}>
+            <td className="p-2">TOTAL</td>
+            <td className="p-2"></td>
+            <td className="p-2 text-right tabular-nums">{rupiah(Math.round(total))}</td>
+            <td className="p-2 text-right tabular-nums">100%</td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
   );
 }
 

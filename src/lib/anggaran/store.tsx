@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { RKA, RREntry, PlafonRutin, PlafonDocking, maKey, namaKapalPenuh, jenisAnggaranOf } from "./types";
+import { pecahKapal } from "@/lib/kapal/nama";
 
 const LS_RKA = "anggaran_rka";
 const LS_RR = "anggaran_rr";
@@ -51,6 +52,43 @@ export function nilaiPerMA(p: { items?: any[]; mataAnggaran?: string[] }, filter
     if (v) out[ma] = (out[ma] || 0) + v;
   }
   return out;
+}
+
+// Pecah nilai pengadaan per KAPAL (dari kolom kapal tiap item).
+// Item yang menyebut >1 kapal dibagi RATA ke kapal2 itu (biar total tetap pas, tak dobel).
+export function nilaiPerKapal(p: { items?: any[] }, useFinal = true): Record<string, number> {
+  const arr = p.items || [];
+  const hasFinal = useFinal && arr.some((it) => (it.hargaSpbj || 0) > 0);
+  const out: Record<string, number> = {};
+  for (const it of arr) {
+    const v = (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
+    if (!v) continue;
+    const ks = pecahKapal(it.kapal || "");
+    if (!ks.length) { out[TANPA_KAPAL] = (out[TANPA_KAPAL] || 0) + v; continue; }
+    const bagi = v / ks.length;
+    for (const k of ks) out[k] = (out[k] || 0) + bagi;
+  }
+  return out;
+}
+export const TANPA_KAPAL = "(tanpa kapal)";
+
+export interface RealisasiKapal { kapal: string; nilai: number; pengadaan: RealisasiItem[] }
+/** Serapan RUTIN per KAPAL untuk 1 bulan ("YYYY-MM") — SPPBJ + Non PR PO. */
+export function realisasiRutinKapal(rows: PengadaanRow[], bulan: string) {
+  const per: Record<string, RealisasiKapal> = {};
+  for (const p of rows) {
+    if (p.jenis !== "rutin") continue;
+    if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
+    const maDefault = (p.mataAnggaran || [])[0] || "";
+    for (const [kapal, v] of Object.entries(nilaiPerKapal(p))) {
+      if (!per[kapal]) per[kapal] = { kapal, nilai: 0, pengadaan: [] };
+      per[kapal].nilai += v;
+      per[kapal].pengadaan.push({ id: p.id, nama: p.nama, ma: maDefault, nilai: v, key: kapal, sumber: p.sumber, tanggal: p.tanggal });
+    }
+  }
+  const list = Object.values(per).sort((a, b) => b.nilai - a.nilai);
+  list.forEach((k) => k.pengadaan.sort((a, b) => b.nilai - a.nilai));
+  return { list, total: list.reduce((s, k) => s + k.nilai, 0) };
 }
 
 export interface RealisasiItem { id: string; nama: string; ma: string; nilai: number; key: string; sumber: string; tanggal: string }

@@ -3,52 +3,9 @@
 // Kapal diambil dari item2 pengadaan (1 pengadaan bisa banyak kapal) -> chip unik + dropdown lihat semua.
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { namaKapalPenuh, KAPAL_ANGGARAN } from "@/lib/anggaran/types";
+import { pecahKapal, ringkasKapal } from "@/lib/kapal/nama";
 
-// nama inti tiap kapal ("KMP. PULAU SAGORI" -> "PULAU SAGORI") utk pencocokan di teks acak
-const INTI = KAPAL_ANGGARAN.map((k) => ({ penuh: k, inti: k.replace(/^KMP\.?\s*/i, "").toUpperCase() }));
-
-/**
- * Cari nama kapal yang DIKENAL di dalam teks, urut posisi kemunculan.
- * Tahan data rusak hasil salah ketik/tempel: "KKMP. MAMINGMP. TUNA" -> [MAMING, TUNA].
- */
-function cocokKapalDikenal(t: string): string[] {
-  const up = t.toUpperCase();
-  const hit: { i: number; penuh: string }[] = [];
-  for (const { penuh, inti } of INTI) {
-    let from = 0, i = up.indexOf(inti, from);
-    while (i !== -1) { hit.push({ i, penuh }); from = i + inti.length; i = up.indexOf(inti, from); }
-  }
-  hit.sort((a, b) => a.i - b.i);
-  const out: string[] = [];
-  for (const h of hit) if (!out.includes(h.penuh)) out.push(h.penuh);
-  return out;
-}
-
-
-/**
- * Pecah 1 sel kapal jadi beberapa nama.
- * Menangani: newline / koma / titik-koma / garis miring, DAN kasus nama nempel
- * hasil salin-tempel spt "KMP. TUNAKMP. ARIWANGAN" -> ["KMP. TUNA", "KMP. ARIWANGAN"].
- */
-export function pecahKapal(raw: string): string[] {
-  const t = (raw || "").replace(/\s+/g, " ").trim();
-  if (!t) return [];
-  // 1) utamakan nama kapal armada yang dikenal (paling tahan data rusak)
-  const dikenal = cocokKapalDikenal(t);
-  if (dikenal.length) return dikenal;
-  // 2) kapal di luar daftar (mis. kapal tamu / singkatan): pisah manual
-  return t
-    .split(/\s*[\n,;/|]+\s*/)
-    // potong tepat sebelum tiap "KMP" (nama yg nempel jadi terpisah lagi)
-    .flatMap((s) => s.split(/(?=KMP)/i))
-    .map((s) => {
-      let v = s.replace(/^[.\s]+|[.,;\s]+$/g, "").trim();
-      if (/^KMP/i.test(v)) v = v.replace(/^KMP\.?\s*/i, "KMP. ").trim(); // "KMP.TUNA" -> "KMP. TUNA"
-      return namaKapalPenuh(v);
-    })
-    .filter((s) => s && s.toUpperCase() !== "KMP" && s.toUpperCase() !== "KMP.");
-}
+export { pecahKapal };
 
 /** Kapal unik + jumlah item per kapal (urut kemunculan di tabel item). */
 export function kapalHitung(items: any[] = []): { kapal: string; n: number }[] {
@@ -68,8 +25,7 @@ export function kapalDariItems(items: any[] = []): string[] {
   return kapalHitung(items).map((x) => x.kapal);
 }
 
-// "KMP. ARIWANGAN" -> "ARIWANGAN" (hemat lebar kolom; prefix KMP. sama utk semua)
-const ringkas = (k: string) => k.replace(/^KMP\.?\s*/i, "");
+const ringkas = ringkasKapal;
 
 export default function KapalCell({ items, max = 2 }: { items: any[]; max?: number }) {
   const list = kapalHitung(items);
