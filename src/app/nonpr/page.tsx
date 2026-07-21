@@ -8,6 +8,7 @@ import { tanggalIndo, rupiah, bulanTahun } from "@/lib/format";
 import { nonprTotal } from "@/lib/nonpr/types";
 import { MAX_NILAI_NONPR } from "@/lib/nonpr/db";
 import { jenisAnggaranOf } from "@/lib/anggaran/types";
+import KapalCell from "@/components/KapalCell";
 
 export default function NonprList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useNonpr();
@@ -28,7 +29,7 @@ export default function NonprList() {
   const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
 
   return (
-    <main className="max-w-4xl mx-auto px-5 py-8">
+    <main className="max-w-6xl mx-auto px-5 py-8">
       <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
         <div className="glass hero-glow rounded-3xl px-7 py-6 flex items-center gap-4">
           <div className="bg-white rounded-2xl p-2 shadow-md shrink-0"><Image src="/logo-asdp.png" alt="ASDP" width={56} height={38} className="object-contain" /></div>
@@ -72,6 +73,7 @@ export default function NonprList() {
               <tr>
                 <th className="p-2 border-b text-center w-10">No</th>
                 <th className="p-2 border-b text-left">Nama Pengadaan</th>
+                <th className="p-2 border-b text-left w-44">Kapal</th>
                 <th className="p-2 border-b text-left w-28">No. SPPB</th>
                 <th className="p-2 border-b text-left w-28">Tanggal</th>
                 <th className="p-2 border-b text-right w-32">Total</th>
@@ -92,6 +94,7 @@ export default function NonprList() {
                         {r.nama_pengadaan || "(tanpa nama)"}
                       </span>
                     </td>
+                    <td className="p-2"><KapalCell items={r.payload?.items || []} /></td>
                     <td className="p-2 text-slate-600">{r.payload?.noSPPB || "-"}</td>
                     <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className={`p-2 text-right ${over ? "text-red-600 font-semibold" : "text-slate-600"}`}>{rupiah(total)}</td>

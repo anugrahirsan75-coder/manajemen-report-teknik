@@ -10,6 +10,7 @@ import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import { tanggalIndo, bulanTahun } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
+import KapalCell, { kapalDariItems } from "@/components/KapalCell";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
@@ -29,7 +30,7 @@ export default function SppbjList() {
     const items: any[] = r.payload?.items || [];
     const hay = [
       r.nama_pengadaan, r.payload?.noSPPBJ, r.payload?.noKontrak, r.payload?.status,
-      ...items.map((i) => i.kapal), ...items.map((i) => i.nama),
+      ...items.map((i) => i.kapal), ...items.map((i) => i.nama), ...kapalDariItems(items),
     ].filter(Boolean).join(" ").toLowerCase();
     return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
   };
@@ -107,7 +108,7 @@ export default function SppbjList() {
   };
 
   return (
-    <main className="max-w-4xl mx-auto px-5 py-8">
+    <main className="max-w-6xl mx-auto px-5 py-8">
       <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
         <div className="glass hero-glow rounded-3xl px-7 py-6 flex items-center gap-4">
           <div className="bg-white rounded-2xl p-2 shadow-md shrink-0"><Image src="/logo-asdp.png" alt="ASDP" width={56} height={38} className="object-contain" /></div>
@@ -174,6 +175,7 @@ export default function SppbjList() {
               <tr>
                 <th className="p-2 border-b text-center w-10">No</th>
                 <th className="p-2 border-b text-left">Judul SPPBJ</th>
+                <th className="p-2 border-b text-left w-44">Kapal</th>
                 <th className="p-2 border-b text-left w-40">Nomor</th>
                 <th className="p-2 border-b text-left w-32">Tanggal</th>
                 <th className="p-2 border-b text-left w-36">Status</th>
@@ -194,6 +196,7 @@ export default function SppbjList() {
                         {r.nama_pengadaan || "(tanpa nama)"}
                       </span>
                     </td>
+                    <td className="p-2"><KapalCell items={r.payload?.items || []} /></td>
                     <td className="p-2 text-slate-600">{nomor}</td>
                     <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className="p-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
