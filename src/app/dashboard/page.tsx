@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useCallback, Fragment } from "react";
-import { useAnggaran, PengadaanRow, realisasiRutin, realisasiDocking } from "@/lib/anggaran/store";
+import { useAnggaran, PengadaanRow, realisasiRutin, realisasiDocking, nilaiPerMA } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN,
   namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
@@ -25,9 +25,11 @@ export default function DashboardAnggaran() {
       const est = estPengadaan(r);
       const kat = kategoriPengadaan(r.mataAnggaran, r.nama);
       if (kat === "Investasi") investasi += est; else biaya += est;
-      // per mata anggaran (bagi rata bila >1 MA)
-      const codes = (r.mataAnggaran.length ? r.mataAnggaran.map(kodeMA).filter(Boolean) : [""]);
-      for (const c of codes) perMA[c] = (perMA[c] || 0) + est / codes.length;
+      // per mata anggaran — pakai MA tiap ITEM (kosong = ikut MA pertama pengadaan)
+      for (const [ma, v] of Object.entries(nilaiPerMA(r, undefined, false))) {
+        const c = kodeMA(ma);
+        perMA[c] = (perMA[c] || 0) + v;
+      }
       // per kapal (item-level)
       for (const it of r.items || []) {
         const kp = namaKapalPenuh(it.kapal || "");
@@ -47,10 +49,11 @@ export default function DashboardAnggaran() {
   const detailMA = useMemo(() => {
     const by: Record<string, { id: string; nama: string; nilai: number; sumber: string; tanggal: string }[]> = {};
     for (const r of data) {
-      const est = estPengadaan(r);
-      const codes = r.mataAnggaran.length ? r.mataAnggaran.map(kodeMA).filter(Boolean) : [];
-      if (!codes.length || est <= 0) continue;
-      for (const c of codes) (by[c] ||= []).push({ id: r.id, nama: r.nama, nilai: est / codes.length, sumber: r.sumber, tanggal: r.tanggal });
+      for (const [ma, v] of Object.entries(nilaiPerMA(r, undefined, false))) {
+        const c = kodeMA(ma);
+        if (!c || v <= 0) continue;
+        (by[c] ||= []).push({ id: r.id, nama: r.nama, nilai: v, sumber: r.sumber, tanggal: r.tanggal });
+      }
     }
     Object.values(by).forEach((l) => l.sort((x, y) => y.nilai - x.nilai));
     return by;

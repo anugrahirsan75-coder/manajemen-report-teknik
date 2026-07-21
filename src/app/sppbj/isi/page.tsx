@@ -26,6 +26,10 @@ export default function SppbjIsi() {
   const [browseKatalog, setBrowseKatalog] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [rekapBusy, setRekapBusy] = useState(false);
+  // kolom Mata Anggaran per item hanya perlu saat pengadaan mencentang >1 MA
+  const multiMA = (req.mataAnggaran || []).length > 1;
+  const nCol = multiMA ? 10 : 9;
+  const kodeSingkat = (m: string) => (m || "").match(/\d{6,}/)?.[0] || m;
 
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
   const { plafon, pengadaan } = useAnggaran();
@@ -231,16 +235,16 @@ export default function SppbjIsi() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">
-              <tr><th className="p-2 border w-8">No</th><th className="p-2 border">Kapal</th><th className="p-2 border">Jml</th><th className="p-2 border">Sat</th><th className="p-2 border text-left">Nama Barang/Jasa</th><th className="p-2 border text-left">Spesifikasi</th><th className="p-2 border">Harga Satuan</th><th className="p-2 border">Jumlah</th><th className="p-2 border"></th></tr>
+              <tr><th className="p-2 border w-8">No</th><th className="p-2 border">Kapal</th><th className="p-2 border">Jml</th><th className="p-2 border">Sat</th><th className="p-2 border text-left">Nama Barang/Jasa</th><th className="p-2 border text-left">Spesifikasi</th>{multiMA && <th className="p-2 border" title="Mata Anggaran item ini (kosong = ikut MA pertama)">M. Anggaran</th>}<th className="p-2 border">Harga Satuan</th><th className="p-2 border">Jumlah</th><th className="p-2 border"></th></tr>
             </thead>
             <tbody>
               {req.items.map((it, ri) => (
                 <Fragment key={it.id}>
                 {ri > 0 && it.kapal.trim() !== (req.items[ri - 1].kapal || "").trim() &&
-                  <tr aria-hidden><td colSpan={9} className="h-3 bg-slate-100/60"></td></tr>}
+                  <tr aria-hidden><td colSpan={nCol} className="h-3 bg-slate-100/60"></td></tr>}
                 {(it.keterangan || "") !== (ri > 0 ? req.items[ri - 1].keterangan || "" : "") &&
                   ketLines(it).map((kl, ki) => (
-                    <tr key={"kt" + ki}><td className="border p-1"></td><td colSpan={8} className="border p-1 font-bold text-slate-700 bg-amber-50">{kl}</td></tr>
+                    <tr key={"kt" + ki}><td className="border p-1"></td><td colSpan={nCol - 1} className="border p-1 font-bold text-slate-700 bg-amber-50">{kl}</td></tr>
                   ))}
                 <tr>
                   <td className="border p-1 text-center text-slate-400">{ri + 1}</td>
@@ -260,6 +264,15 @@ export default function SppbjIsi() {
                     )}
                   </td>
                   <td className="border p-1"><input className="w-36 px-1" value={it.spesifikasi} onChange={(e) => setItem(it.id, { spesifikasi: e.target.value })} onPaste={(e) => handlePaste(ri, 4, e)} /></td>
+                  {multiMA && (
+                    <td className="border p-1">
+                      <select value={it.mataAnggaran || ""} onChange={(e) => setItem(it.id, { mataAnggaran: e.target.value || undefined })}
+                        className="w-28 px-1 py-0.5 text-xs bg-white border rounded" title={it.mataAnggaran || `ikut ${req.mataAnggaran[0] || "-"}`}>
+                        <option value="">↳ {kodeSingkat(req.mataAnggaran[0] || "")}</option>
+                        {req.mataAnggaran.map((m) => <option key={m} value={m}>{kodeSingkat(m)}</option>)}
+                      </select>
+                    </td>
+                  )}
                   <td className="border p-1"><input type="number" className="w-28 px-1 text-right" value={it.harga} onChange={(e) => setItem(it.id, { harga: +e.target.value })} onPaste={(e) => handlePaste(ri, 5, e)} /></td>
                   <td className="border p-1 text-right text-slate-500 w-28">{rupiah(it.harga * it.jumlah)}</td>
                   <td className="border p-1 text-center whitespace-nowrap">
@@ -270,7 +283,7 @@ export default function SppbjIsi() {
                 {openBd[it.id] && (
                   <tr>
                     <td className="border p-1"></td>
-                    <td className="border p-1" colSpan={8}>
+                    <td className="border p-1" colSpan={nCol - 1}>
                       <p className="text-[11px] text-amber-700 mb-1 mt-1">Keterangan / header DI ATAS item (mis. <b>ME : YANMAR…</b> atau <b>CAT BAWAH GARIS AIR</b>). 1 baris = 1 header. Item dgn keterangan sama & berurutan dikelompokkan:</p>
                       <textarea rows={2} className="w-full text-xs border rounded p-1 bg-amber-50" placeholder={"CAT BAWAH GARIS AIR\nBOTTOM"}
                         value={it.keterangan || ""} onChange={(e) => setItem(it.id, { keterangan: e.target.value })} />
@@ -283,7 +296,7 @@ export default function SppbjIsi() {
                 )}
                 </Fragment>
               ))}
-              <tr className="bg-slate-50 font-semibold"><td colSpan={7} className="border p-1 text-right">Estimasi (sebelum PPN)</td><td className="border p-1 text-right">{rupiah(total)}</td><td className="border p-1"></td></tr>
+              <tr className="bg-slate-50 font-semibold"><td colSpan={nCol - 2} className="border p-1 text-right">Estimasi (sebelum PPN)</td><td className="border p-1 text-right">{rupiah(total)}</td><td className="border p-1"></td></tr>
             </tbody>
           </table>
         </div>

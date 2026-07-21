@@ -9,6 +9,9 @@ export interface SppbjItem {
   hargaSpbj?: number; // harga satuan FINAL dari SPBJ/PO (tabel Data SPBJ) -> BSTB/BAPP
   breakdown?: string[]; // rincian di bawah item (khusus jasa), tanpa harga
   keterangan?: string; // header/kategori di ATAS item (boleh multi-baris), grup >1 item
+  // Mata Anggaran khusus item ini (opsional). Kosong = ikut MA pertama pengadaan.
+  // Hanya dipakai saat pengadaan mencentang >1 MA — biar penyerapan per MA akurat.
+  mataAnggaran?: string;
   // --- metadata katalog HSPK (opsional, TIDAK dipakai fill.ts/template — output SPPBJ tetap) ---
   kodeKatalog?: string;   // kode item katalog RAB, mis. JS2-HL-002 (utk feedback harga riil)
   sumberHarga?: "Riil" | "Pasar"; // asal harga saat dipilih dari katalog
@@ -99,3 +102,7 @@ export function kapalUnik(items: SppbjItem[] = []): string[] {
 }
 
 export const sppbjTotal = (items: SppbjItem[] = []) => items.reduce((s, i) => s + i.harga * i.jumlah, 0);
+
+// Mata Anggaran efektif sebuah item: MA item bila diisi, else MA pertama pengadaan.
+export const maItem = (it: { mataAnggaran?: string } | undefined, maPengadaan: string[] = []): string =>
+  (it?.mataAnggaran || "").trim() || maPengadaan[0] || "";

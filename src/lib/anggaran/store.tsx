@@ -36,6 +36,23 @@ export function nilaiPengadaan(items: any[]): number {
   return arr.reduce((s, it) => s + (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0), 0);
 }
 
+// Pecah nilai pengadaan per Mata Anggaran ITEM (it.mataAnggaran; kosong = ikut MA pertama pengadaan).
+// filterKapal opsional: hanya item milik kapal itu (dipakai Kendali Docking).
+// useFinal=false -> pakai harga estimasi saja (dipakai KPI/penyerapan dashboard).
+export function nilaiPerMA(p: { items?: any[]; mataAnggaran?: string[] }, filterKapal?: string, useFinal = true): Record<string, number> {
+  const arr = p.items || [];
+  const hasFinal = useFinal && arr.some((it) => (it.hargaSpbj || 0) > 0);
+  const maDefault = (p.mataAnggaran || [])[0] || "";
+  const out: Record<string, number> = {};
+  for (const it of arr) {
+    if (filterKapal && namaKapalPenuh(it.kapal || "") !== filterKapal) continue;
+    const ma = (it.mataAnggaran || "").trim() || maDefault;
+    const v = (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
+    if (v) out[ma] = (out[ma] || 0) + v;
+  }
+  return out;
+}
+
 export interface RealisasiItem { id: string; nama: string; ma: string; nilai: number; key: string; sumber: string; tanggal: string }
 // realisasi RUTIN per kunci MA utk 1 bulan ("YYYY-MM") — SPPBJ + Non PR PO
 export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
@@ -45,12 +62,11 @@ export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
     // RUTIN = SPPBJ + Non PR PO ber-jenis rutin (docking dikecualikan). Anti-overlap: tepat 1 bucket.
     if (p.jenis !== "rutin") continue;
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
-    const nilai = nilaiPengadaan(p.items);
-    if (nilai <= 0) continue;
-    const ma = (p.mataAnggaran || [])[0] || "";
-    const key = maKey(ma);
-    perKey[key] = (perKey[key] || 0) + nilai;
-    list.push({ id: p.id, nama: p.nama, ma, nilai, key, sumber: p.sumber, tanggal: p.tanggal });
+    for (const [ma, v] of Object.entries(nilaiPerMA(p))) {
+      const key = maKey(ma);
+      perKey[key] = (perKey[key] || 0) + v;
+      list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal });
+    }
   }
   list.sort((a, b) => b.nilai - a.nilai);
   const total = Object.values(perKey).reduce((s, v) => s + v, 0);
@@ -65,17 +81,11 @@ export function realisasiDocking(rows: PengadaanRow[], kapal: string, tahun: num
   for (const p of rows) {
     if (p.jenis !== "docking") continue;
     if (parseInt((p.tanggal || "").slice(0, 4), 10) !== tahun) continue;
-    const hasFinal = (p.items || []).some((it: any) => (it.hargaSpbj || 0) > 0);
-    let nilai = 0;
-    for (const it of p.items || []) {
-      if (namaKapalPenuh(it.kapal || "") !== kapal) continue;
-      nilai += (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
+    for (const [ma, v] of Object.entries(nilaiPerMA(p, kapal))) {
+      const key = maKey(ma);
+      perKey[key] = (perKey[key] || 0) + v;
+      list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal });
     }
-    if (nilai <= 0) continue;
-    const ma = (p.mataAnggaran || [])[0] || "";
-    const key = maKey(ma);
-    perKey[key] = (perKey[key] || 0) + nilai;
-    list.push({ id: p.id, nama: p.nama, ma, nilai, key, sumber: p.sumber, tanggal: p.tanggal });
   }
   list.sort((a, b) => b.nilai - a.nilai);
   return { perKey, list, total: Object.values(perKey).reduce((s, v) => s + v, 0) };
