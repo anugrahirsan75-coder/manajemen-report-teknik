@@ -25,9 +25,11 @@ export function buildRekapRow(req: SppbjRequest): RekapRow {
   const year = parseInt(iso.slice(0, 4), 10) || 0;
   const hasFinal = items.some((it) => (it.hargaSpbj || 0) > 0);
   const nilaiSpbj = hasFinal ? items.reduce((s, it) => s + hargaSpbjOf(it) * it.jumlah, 0) : null;
-  const prsap = (req.noPRSAP || req.noDRP || "").trim();
+  // No. PR SAP = No. SPPB/J (nilainya sama). Isi noPRSAP hanya bila memang beda.
+  // JANGAN pakai noDRP sebagai cadangan — itu deskripsi/nomor DRP, bukan nomor PR.
+  const prsap = (req.noPRSAP || req.noSPPBJ || "").trim();
   return {
-    nomorSppbj: prsap || (req.noSPPBJ || "").trim(),
+    nomorSppbj: prsap,
     namaPekerjaan: req.namaPengadaan || "",
     ket: req.kategoriRekap || "",
     nomorPR: prsap,

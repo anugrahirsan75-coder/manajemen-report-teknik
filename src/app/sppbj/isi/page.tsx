@@ -234,7 +234,10 @@ export default function SppbjIsi() {
           <Field label="Tanggal (bulan & tahun dipakai)"><Input type="date" value={req.tanggal} onChange={(e) => update({ tanggal: e.target.value })} /></Field>
           <Field label="No. SPPB/J (kosong = isi manual)"><Input value={req.noSPPBJ} onChange={(e) => update({ noSPPBJ: e.target.value })} placeholder="biarkan kosong" /></Field>
           <Field label="No. DRP (cari deskripsi)"><DrpPicker value={req.noDRP} onChange={(v) => update({ noDRP: v })} /></Field>
-          <Field label="No. PR SAP (rekap: kolom B & F)"><Input value={req.noPRSAP || ""} onChange={(e) => update({ noPRSAP: e.target.value })} placeholder="2000xxxxxx" /></Field>
+          <Field label="No. PR SAP (kosong = ikut No. SPPB/J)">
+            <Input value={req.noPRSAP || ""} onChange={(e) => update({ noPRSAP: e.target.value })}
+              placeholder={(req.noSPPBJ || "").trim() ? `↳ ${req.noSPPBJ}` : "2000xxxxxx"} />
+          </Field>
           <Field label="Kategori Rekap (KET. di spreadsheet)">
             <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.kategoriRekap || ""}
               onChange={(e) => { const v = e.target.value; update({ kategoriRekap: v, jenisAnggaran: /docking/i.test(v) ? "Docking" : (v ? "Rutin" : req.jenisAnggaran) }); }}>
