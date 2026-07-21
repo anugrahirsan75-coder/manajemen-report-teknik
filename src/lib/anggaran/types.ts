@@ -51,6 +51,19 @@ export const namaKapalPenuh = (s: string): string => {
   return SINGKATAN_KAPAL[t.toUpperCase()] || SINGKATAN_KAPAL[t] || t;
 };
 
+// Mata Anggaran standar DOCKING (dari Persetujuan Pusat "Budget Control").
+// Kode dipilih agar cocok dgn yg bisa ditag di SPPBJ (biar realisasi nyambung).
+export const DOCKING_MA: { kode: string; label: string }[] = [
+  { kode: "5010403003", label: "Kapal Ro-Ro / Penyeberangan" },
+  { kode: "5010403009", label: "Akomodasi Kapal" },
+  { kode: "5010403100", label: "Permesinan & Kelistrikan" },
+  { kode: "5010303001", label: "Pelumas" },
+  { kode: "5010302004", label: "Mobilisasi Kapal" },
+  { kode: "5010318000", label: "Sertifikat Docking Kapal" },
+  { kode: "5010302006", label: "Fumigasi" },
+  { kode: "5010103004", label: "Insentif Operasional (Swakelola Docking)" },
+];
+
 // 3 mata anggaran Biaya untuk Rencana/Realisasi bulanan
 export const MA_RENCANA: { kode: string; label: string }[] = [
   { kode: "5010403003", label: "Kapal Ro-Ro" },

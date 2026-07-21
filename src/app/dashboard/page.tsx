@@ -4,7 +4,7 @@ import { useMemo, useState, useCallback, Fragment } from "react";
 import { useAnggaran, PengadaanRow, realisasiRutin, realisasiDocking } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN,
-  namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA,
+  namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
 } from "@/lib/anggaran/types";
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 
@@ -806,6 +806,16 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
 }
 
 /* ---------- Kendali Anggaran Docking (per kapal) ---------- */
+// seed draft dari daftar MA docking tetap (user tinggal isi nilai) + baris tambahan non-standar
+function seedDockingDraft(existing: PlafonRow[]): PlafonRow[] {
+  const byKey: Record<string, number> = {};
+  existing.forEach((r) => { byKey[maKey(r.ma)] = r.nilai; });
+  const base = DOCKING_MA.map((m) => ({ ma: `${m.kode} (${m.label})`, nilai: byKey[m.kode] || 0 }));
+  const dockKeys = new Set(DOCKING_MA.map((m) => m.kode));
+  const extras = existing.filter((r) => !dockKeys.has(maKey(r.ma)));
+  return [...base, ...extras];
+}
+
 function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDocking[]; pengadaan: PengadaanRow[]; onSave: (d: PlafonDocking[]) => Promise<void> }) {
   const thisYear = new Date().getFullYear();
   const [kapal, setKapal] = useState(KAPAL_ANGGARAN[0]);
@@ -833,7 +843,7 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   const sisa = totalPagu - totalPakai;
   const pctTot = totalPagu ? Math.round((totalPakai / totalPagu) * 100) : 0;
 
-  const startEdit = () => { setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]); setNoSurat(entry?.noSurat || ""); setEdit(true); };
+  const startEdit = () => { setDraft(seedDockingDraft(rows)); setNoSurat(entry?.noSurat || ""); setEdit(true); };
   const simpan = async () => {
     setBusy(true);
     try {
@@ -880,15 +890,17 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
             <span className="text-xs text-slate-500">Pagu docking <b className="text-[#16357f]">{kapal}</b> {tahun}:</span>
             <input value={noSurat} onChange={(e) => setNoSurat(e.target.value)} placeholder="No. Surat Persetujuan (opsional)" className="text-xs border rounded px-2 py-1 flex-1 max-w-xs" />
           </div>
-          <datalist id="maDockList">{MATA_ANGGARAN.map((m) => <option key={m.kode} value={fullMA(m.kode)} />)}</datalist>
-          {draft.map((r, i) => (
-            <div key={i} className="flex items-center gap-2 mb-1.5">
-              <input list="maDockList" value={r.ma} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, ma: e.target.value } : x))} placeholder="Mata Anggaran (mis. 5010403003 Kapal Ro-Ro)" className="flex-1 text-xs border rounded px-2 py-1.5" />
-              <input type="number" value={r.nilai || ""} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, nilai: +e.target.value } : x))} placeholder="pagu (Total Persetujuan)" className="w-40 text-xs border rounded px-2 py-1.5 text-right" />
-              <button onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button>
-            </div>
-          ))}
-          <button onClick={() => setDraft((d) => [...d, { ma: "", nilai: 0 }])} className="text-xs text-[#16357f] hover:underline mt-1">+ baris Mata Anggaran</button>
+          {draft.map((r, i) => {
+            const extra = i >= DOCKING_MA.length;
+            return (
+              <div key={i} className="flex items-center gap-2 mb-1.5">
+                <span className="flex-1 text-xs text-slate-700 bg-slate-50 rounded-lg px-3 py-2 truncate ring-1 ring-slate-100">{r.ma || "—"}</span>
+                <input type="number" value={r.nilai || ""} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, nilai: +e.target.value } : x))} placeholder="Total Persetujuan (Rp)" className="w-44 text-xs border rounded-lg px-3 py-2 text-right" />
+                {extra ? <button onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button> : <span className="w-4" />}
+              </div>
+            );
+          })}
+          <p className="text-[10px] text-slate-400 mt-1.5">Isi nilai <b>Total Persetujuan</b> tiap Mata Anggaran (kosongkan = tak dipakai). Daftar MA sudah tetap sesuai format Docking — tak perlu ketik. Baris tambahan dari "Tempel dari Excel" bisa dihapus.</p>
         </div>
       ) : merged.length === 0 ? (
         <p className="text-sm text-slate-400 py-3 text-center">Belum ada pagu/realisasi docking utk {kapal} {tahun}. Klik <b>Atur Pagu Docking</b> untuk isi dari Persetujuan Pusat.</p>
@@ -947,7 +959,7 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
             <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={8} className="w-full border rounded-lg p-2 text-xs font-mono" placeholder={"5010403003 Kapal Ro-Ro\t852446993\n5010303001 Pelumas\t35348770\n5010403100 Permesinan\t144546074"} />
             <div className="flex justify-end gap-2 mt-2">
               <button onClick={() => setPaste(null)} className="btn btn-ghost text-xs">Tutup</button>
-              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(p); setEdit(true); setPaste(null); } else alert("Tak terbaca."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
+              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(seedDockingDraft(p)); setEdit(true); setPaste(null); } else alert("Tak terbaca."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
             </div>
           </div>
         </div>
