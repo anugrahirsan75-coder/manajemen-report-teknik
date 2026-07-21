@@ -7,6 +7,7 @@ import { rupiah, tanggalIndo } from "@/lib/format";
 import { generateNonpr } from "@/lib/nonpr/generateClient";
 import { kapalUnikNonpr, nonprTotal } from "@/lib/nonpr/types";
 import { MAX_NILAI_NONPR } from "@/lib/nonpr/db";
+import PreviewPengadaan from "@/components/PreviewPengadaan";
 
 export default function NonprDetail() {
   const { req, saveRemote, saving } = useNonpr();
@@ -52,6 +53,28 @@ export default function NonprDetail() {
           <Link href="/nonpr/isi" className="text-sm border px-4 py-2 rounded-lg">✏️ Edit</Link>
           <button onClick={() => run(saveRemote, "s")} disabled={saving} className="text-sm border px-4 py-2 rounded-lg disabled:opacity-60">💾 Simpan</button>
         </div>
+      </div>
+
+      {/* Preview dokumen */}
+      <div className="mt-8 flex items-center gap-2 no-print">
+        <h2 className="font-bold text-slate-700">Preview Dokumen</h2>
+        <span className="text-[11px] text-slate-500">tampilan isi tabel · file resmi tetap dari tombol Excel/PDF di atas</span>
+        <button onClick={() => window.print()} className="btn btn-ghost text-xs ml-auto">🖨️ Cetak preview</button>
+      </div>
+      <div className="-mx-5">
+        <PreviewPengadaan
+          jenis="Non PR PO"
+          judul="Daftar Kebutuhan Pengadaan (Non PR PO)"
+          nomor={req.noSPPB}
+          tanggal={req.tanggal}
+          dasarPelimpahan={req.dasarPelimpahan}
+          namaPengadaan={req.namaPengadaan}
+          mataAnggaran={req.mataAnggaran ? [req.mataAnggaran] : []}
+          jenisAnggaran={req.jenisAnggaran}
+          vendor={req.vendor}
+          stafTeknik={req.stafTeknik}
+          items={req.items || []}
+        />
       </div>
     </main>
   );

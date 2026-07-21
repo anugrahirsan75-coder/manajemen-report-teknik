@@ -7,6 +7,8 @@ import { useSppbj } from "@/lib/sppbj/store";
 import { sppbjTotal, kapalUnik, STATUS_LABEL, STATUS_COLOR } from "@/lib/sppbj/types";
 import { rupiahRp, bulanTahun } from "@/lib/format";
 import { generateSppbjDoc, generateSppbjAll } from "@/lib/sppbj/generateClient";
+import PreviewPengadaan from "@/components/PreviewPengadaan";
+import { fullNoKontrak } from "@/lib/sppbj/types";
 
 export default function SppbjDetail() {
   const { req, update, saveRemote, saving, lastSaved } = useSppbj();
@@ -82,6 +84,30 @@ export default function SppbjDetail() {
             <button onClick={() => run(() => generateSppbjDoc("bapp", "pdf", req), "bpp")} disabled={!!busy} className="btn btn-rose text-xs disabled:opacity-50">📄 PDF</button>
           </div>
         </div>
+      </div>
+
+      {/* Preview dokumen */}
+      <div className="mt-8 flex items-center gap-2 no-print">
+        <h2 className="font-bold text-slate-700">Preview Dokumen</h2>
+        <span className="text-[11px] text-slate-500">tampilan isi tabel · file resmi tetap dari tombol Excel/PDF di atas</span>
+        <button onClick={() => window.print()} className="btn btn-ghost text-xs ml-auto">🖨️ Cetak preview</button>
+      </div>
+      <div className="-mx-5">
+        <PreviewPengadaan
+          jenis="SPPBJ"
+          judul="Daftar Kebutuhan Pengadaan Barang/Jasa"
+          nomor={req.noSPPBJ || fullNoKontrak(req) || ""}
+          tanggal={req.tanggal}
+          noDRP={req.noDRP}
+          dasarPelimpahan={req.dasarPelimpahan}
+          namaPengadaan={req.namaPengadaan}
+          mataAnggaran={req.mataAnggaran || []}
+          jenisAnggaran={req.jenisAnggaran}
+          vendor={req.vendor}
+          stafTeknik={req.stafTeknik}
+          deptHead={req.deptHead}
+          items={req.items || []}
+        />
       </div>
     </main>
   );
