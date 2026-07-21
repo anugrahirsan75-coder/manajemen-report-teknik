@@ -7,6 +7,7 @@ import {
   namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
 } from "@/lib/anggaran/types";
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
+import { ringkasKapal } from "@/lib/kapal/nama";
 
 const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) => s + (it.harga || 0) * (it.jumlah || 0), 0);
 
@@ -131,12 +132,52 @@ function Kpi({ label, value, sub, icon, tint }: { label: string; value: string; 
     </div>
   );
 }
-function Card({ title, icon, children }: { title: string; icon: string; children: React.ReactNode }) {
+/* Identitas warna kartu — biar Rutin (biru, bulanan) & Docking (amber, per kapal) tak tertukar */
+type Nada = "biru" | "amber";
+const NADA: Record<Nada, {
+  strip: string; ikon: string; judul: string; badge: string; kartu: string;
+  head: string; bar: string; pilihAktif: string; pilihPasif: string;
+}> = {
+  biru: {
+    strip: "bg-gradient-to-r from-[#14b8c4] via-[#1ca3dd] to-[#16357f]",
+    ikon: "asdp-gradient text-white",
+    judul: "text-[#16357f]",
+    badge: "bg-sky-100 text-sky-800 ring-1 ring-sky-300",
+    kartu: "bg-white ring-1 ring-slate-200",
+    head: "bg-sky-50 text-sky-900 border-sky-200",
+    bar: "bg-gradient-to-r from-[#14b8c4] to-[#16357f]",
+    pilihAktif: "bg-[#16357f] text-white border-[#16357f]",
+    pilihPasif: "bg-white border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f]",
+  },
+  amber: {
+    strip: "bg-gradient-to-r from-amber-400 via-orange-500 to-amber-700",
+    ikon: "bg-gradient-to-br from-amber-500 to-orange-700 text-white",
+    judul: "text-orange-900",
+    badge: "bg-amber-100 text-amber-900 ring-1 ring-amber-400",
+    kartu: "bg-amber-50 ring-1 ring-amber-200",
+    head: "bg-amber-100/70 text-amber-900 border-amber-300",
+    bar: "bg-gradient-to-r from-amber-500 to-orange-700",
+    pilihAktif: "bg-orange-700 text-white border-orange-700",
+    pilihPasif: "bg-white border-amber-300 text-amber-800 hover:border-orange-500 hover:text-orange-800",
+  },
+};
+
+function Card({ title, icon, children, tone = "biru", badge, sub }: {
+  title: string; icon: string; children: React.ReactNode; tone?: Nada; badge?: string; sub?: string;
+}) {
+  const n = NADA[tone];
   return (
-    <div className="mt-5 bg-white rounded-2xl elev-md ring-line p-5 anim-in">
-      <h3 className="font-bold text-slate-800 flex items-center gap-2 mb-4">
-        <span className="h-8 w-8 rounded-lg asdp-gradient text-white grid place-items-center text-sm">{icon}</span>
-        <span className="accent-bar">{title}</span>
+    <div className={`mt-5 rounded-2xl elev-md p-5 pt-4 anim-in overflow-hidden relative ${n.kartu}`}>
+      <span className={`absolute inset-x-0 top-0 h-1.5 ${n.strip}`} />
+      <h3 className="flex items-center gap-2.5 mb-4 mt-1.5">
+        <span className={`h-9 w-9 rounded-xl grid place-items-center text-base shrink-0 ${n.ikon}`}>{icon}</span>
+        <span className="min-w-0">
+          <span className="flex items-center gap-2 flex-wrap">
+            <span className={`font-extrabold ${n.judul}`}>{title}</span>
+            {badge && <span className={`text-[9px] font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full ${n.badge}`}>{badge}</span>}
+          </span>
+          {sub && <span className="block text-[11px] text-slate-500 font-medium">{sub}</span>}
+        </span>
       </h3>
       {children}
     </div>
@@ -565,6 +606,9 @@ const statusRutin = (pct: number) =>
 
 /* kelas tabel kendali anggaran (dipakai Rutin & Docking — sama persis) */
 const TBL_HEAD = "bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold border-b-2 border-slate-200";
+// kepala tabel versi Docking (amber) — beda warna biar tak tertukar dgn kartu Rutin
+const TBL_HEAD_AMBER = "bg-amber-100/70 text-[11px] uppercase tracking-wide text-amber-900 font-bold border-b-2 border-amber-300";
+const TFOOT_AMBER = "bg-amber-100/70 border-t-2 border-amber-300 font-extrabold text-amber-950";
 const TD_PAGU = "p-2 text-right tabular-nums text-slate-700";
 const TD_PAKAI = "p-2 text-right tabular-nums font-bold text-slate-900";
 const TD_MA = "p-2 font-semibold text-slate-800";
@@ -648,7 +692,8 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
   };
 
   return (
-    <Card title="Kendali Anggaran Rutin (Persetujuan Rutin per bulan)" icon="🧭">
+    <Card tone="biru" icon="🧭" badge="Bulanan" title="Kendali Anggaran Rutin"
+      sub="Persetujuan Rutin per BULAN · pagu per Mata Anggaran">
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <input type="month" value={bulan} onChange={(e) => setBulanSel(e.target.value)}
           className="text-xs border px-2.5 py-1.5 rounded-lg bg-white" title="Pilih bulan mana pun (termasuk bulan baru)" />
@@ -960,29 +1005,44 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   };
 
   return (
-    <Card title="Kendali Anggaran Docking (Persetujuan Pusat per kapal)" icon="🛠️">
-      <div className="flex flex-wrap items-center gap-2 mb-3">
-        <select value={kapal} onChange={(e) => setKapal(e.target.value)} className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
-          {KAPAL_ANGGARAN.map((k) => <option key={k} value={k}>{k}</option>)}
-        </select>
-        <input type="number" value={tahun} onChange={(e) => setTahun(+e.target.value)} className="text-xs border px-2 py-1.5 rounded-lg bg-white w-20" />
-        {entry?.noSurat && !edit && <span className="text-[11px] text-slate-500">No. {entry.noSurat}</span>}
-        <span className="text-[11px] text-slate-500">realisasi = SPPBJ/Non PR PO ber-<b>Jenis Anggaran: Docking</b> utk kapal ini, per Mata Anggaran</span>
-        <div className="ml-auto flex items-center gap-2">
-          {!edit ? (
-            <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
-          ) : (
-            <>
-              <button onClick={() => setPaste("")} className="btn btn-ghost text-xs">📋 Tempel dari Excel</button>
-              <button onClick={simpan} disabled={busy} className="btn btn-primary text-xs">{busy ? "…" : "💾 Simpan"}</button>
-              <button onClick={() => setEdit(false)} className="btn btn-ghost text-xs">Batal</button>
-            </>
-          )}
+    <Card tone="amber" icon="⚓" badge="Per Kapal · Tahunan" title="Kendali Anggaran Docking"
+      sub="Persetujuan Pusat per KAPAL · pagu per Mata Anggaran docking">
+      {/* pilih kapal: chip (bukan dropdown) — kapal adalah sumbu utama kartu ini */}
+      <div className="rounded-xl bg-white ring-1 ring-amber-200 p-2.5 mb-3">
+        <div className="flex items-center gap-2 mb-1.5">
+          <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800">Pilih kapal</span>
+          <input type="number" value={tahun} onChange={(e) => setTahun(+e.target.value)}
+            className="text-xs border border-amber-300 px-2 py-1 rounded-lg bg-white w-20 font-bold text-amber-900" title="Tahun docking" />
+          {entry?.noSurat && !edit && <span className="text-[11px] font-semibold text-amber-800">No. {entry.noSurat}</span>}
+          <div className="ml-auto flex items-center gap-2">
+            {!edit ? (
+              <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
+            ) : (
+              <>
+                <button onClick={() => setPaste("")} className="btn btn-ghost text-xs">📋 Tempel dari Excel</button>
+                <button onClick={simpan} disabled={busy} className="btn btn-primary text-xs">{busy ? "…" : "💾 Simpan"}</button>
+                <button onClick={() => setEdit(false)} className="btn btn-ghost text-xs">Batal</button>
+              </>
+            )}
+          </div>
         </div>
+        <div className="flex flex-wrap gap-1">
+          {KAPAL_ANGGARAN.map((k) => {
+            const adaPagu = docking.some((d) => d.kapal === k && d.tahun === tahun && (d.rows || []).some((r) => r.nilai > 0));
+            return (
+              <button key={k} onClick={() => setKapal(k)}
+                className={`text-[10px] font-bold px-2 py-1 rounded-lg border transition ${k === kapal ? NADA.amber.pilihAktif : NADA.amber.pilihPasif}`}>
+                {ringkasKapal(k)}
+                {adaPagu && <span className={`ml-1 ${k === kapal ? "text-amber-200" : "text-emerald-600"}`}>●</span>}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-slate-500 mt-1.5">● = pagu docking {tahun} sudah diisi · realisasi = SPPBJ/Non PR PO ber-<b>Jenis Anggaran: Docking</b> untuk kapal ini</p>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        <MiniStat label="Total Pagu Docking" val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-slate-400" />
+        <MiniStat label={`Pagu Docking ${ringkasKapal(kapal)}`} val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-amber-500" />
         <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-800" bar="bg-blue-600" />
         <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-700" : "text-emerald-800"} bar={sisa < 0 ? "bg-red-500" : "bg-emerald-500"} />
         <MiniStat label="Serapan" val={`${pctTot}%`} tint={tintPct(pctTot)} bar={barPct(pctTot)} />
@@ -1011,7 +1071,7 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className={TBL_HEAD}>
+            <thead className={TBL_HEAD_AMBER}>
               <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
             </thead>
             <tbody>
@@ -1023,8 +1083,8 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
                 const isOpen = openKey === m.key;
                 return (
                   <Fragment key={m.key}>
-                    <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-sky-50" : "even:bg-slate-50/60"}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
-                      <td className={TD_MA}><span className="inline-flex items-center gap-1.5"><span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>{m.ma}{rinci.length > 0 && <span className="text-[10px] font-bold text-sky-800 bg-sky-100 rounded-full px-1.5 py-px">{rinci.length}</span>}</span></td>
+                    <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-amber-100/60" : "even:bg-amber-50/40"}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
+                      <td className={TD_MA}><span className="inline-flex items-center gap-1.5"><span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>{m.ma}{rinci.length > 0 && <span className="text-[10px] font-bold text-amber-900 bg-amber-200 rounded-full px-1.5 py-px">{rinci.length}</span>}</span></td>
                       <td className={TD_PAGU}>{m.pagu ? rupiah(m.pagu) : <span className="text-slate-500 italic font-normal">tanpa pagu</span>}</td>
                       <td className={TD_PAKAI}>{rupiah(m.pakai)}</td>
                       <td className={tdSisa(sisaM)}>{rupiah(sisaM)}</td>
@@ -1039,13 +1099,13 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
                       </td>
                       <td className="p-2 text-center"><span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full ${m.pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{m.pagu ? s.t : "—"}</span></td>
                     </tr>
-                    {isOpen && <tr className="bg-sky-50/50"><td colSpan={6} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>}
+                    {isOpen && <tr className="bg-amber-50/60"><td colSpan={6} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>}
                   </Fragment>
                 );
               })}
             </tbody>
             <tfoot>
-              <tr className={TFOOT_ROW}>
+              <tr className={TFOOT_AMBER}>
                 <td className="p-2">TOTAL</td>
                 <td className="p-2 text-right tabular-nums">{rupiah(totalPagu)}</td>
                 <td className="p-2 text-right tabular-nums">{rupiah(totalPakai)}</td>
