@@ -79,7 +79,7 @@ export default function DashboardAnggaran() {
       {!ready ? (
         <p className="mt-5 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">Dashboard butuh Supabase (env) untuk membaca data pengadaan.</p>
       ) : loading ? (
-        <p className="mt-5 text-sm text-slate-400">Memuat…</p>
+        <p className="mt-5 text-sm text-slate-500">Memuat…</p>
       ) : (
         <>
           {/* KPI */}
@@ -123,11 +123,11 @@ function Kpi({ label, value, sub, icon, tint }: { label: string; value: string; 
   return (
     <div className="bg-white rounded-2xl ring-line elev-sm p-4 card-hover border border-transparent">
       <div className="flex items-center justify-between">
-        <p className="text-[10px] uppercase tracking-[0.12em] text-slate-400 font-bold">{label}</p>
+        <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-bold">{label}</p>
         <span className={`grid place-items-center h-7 w-7 rounded-lg text-sm ${T[tint]}`}>{icon}</span>
       </div>
-      <p className="text-lg font-extrabold text-slate-800 mt-1.5 leading-tight">{value}</p>
-      <p className="text-[10px] text-slate-400 mt-0.5">{sub}</p>
+      <p className="text-lg font-extrabold tabular-nums text-slate-900 mt-1.5 leading-tight">{value}</p>
+      <p className="text-[10px] text-slate-500 mt-0.5">{sub}</p>
     </div>
   );
 }
@@ -146,15 +146,15 @@ function Card({ title, icon, children }: { title: string; icon: string; children
 /* ---------- rincian pengadaan per MA (reusable) ---------- */
 type MaDetailItem = { id: string; nama: string; nilai: number; sumber: string; tanggal: string };
 function MaDetailList({ list }: { list: MaDetailItem[] }) {
-  if (!list || !list.length) return <p className="text-[11px] text-slate-400 py-1">Belum ada pengadaan pada Mata Anggaran ini.</p>;
+  if (!list || !list.length) return <p className="text-[11px] text-slate-500 py-1">Belum ada pengadaan pada Mata Anggaran ini.</p>;
   return (
     <table className="w-full text-[11px]"><tbody>
       {list.map((x) => (
-        <tr key={x.id} className="border-b border-slate-100 last:border-0">
-          <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-semibold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
-          <td className="py-1 pr-2 text-slate-700">{x.nama}</td>
-          <td className="py-1 pr-2 text-slate-400 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
-          <td className="py-1 text-right font-medium text-slate-700 whitespace-nowrap">{rupiah(x.nilai)}</td>
+        <tr key={x.id} className="border-b border-slate-200 last:border-0">
+          <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-bold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
+          <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
+          <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
+          <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(x.nilai)}</td>
         </tr>
       ))}
     </tbody></table>
@@ -189,7 +189,7 @@ function RkaSection({ rka, perMA, detail, onSave }: { rka: RKA; perMA: Record<st
       </div>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-[11px] uppercase tracking-wide text-slate-500 bg-slate-50">
+          <thead className="text-[11px] uppercase tracking-wide text-slate-600 font-bold bg-slate-100 border-b-2 border-slate-200">
             <tr>
               <th className="p-2 text-left">Mata Anggaran</th>
               <th className="p-2 text-center w-20">Kategori</th>
@@ -211,8 +211,8 @@ function RkaSection({ rka, perMA, detail, onSave }: { rka: RKA; perMA: Record<st
                   <tr className={`border-b row-hover ${!edit ? "cursor-pointer" : ""} ${isOpen ? "bg-sky-50/60" : ""}`} onClick={() => { if (!edit) setOpenKode(isOpen ? null : m.kode); }}>
                     <td className="p-2">
                       <span className="inline-flex items-center gap-1">
-                        {!edit && <span className={`text-slate-400 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>}
-                        <span className="font-mono text-xs text-slate-400">{m.kode}</span> {m.label}
+                        {!edit && <span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>}
+                        <span className="font-mono text-xs text-slate-500">{m.kode}</span> {m.label}
                         {!edit && rinci.length > 0 && <span className="text-[10px] text-sky-600">· {rinci.length}</span>}
                       </span>
                     </td>
@@ -221,7 +221,7 @@ function RkaSection({ rka, perMA, detail, onSave }: { rka: RKA; perMA: Record<st
                       {edit ? (
                         <input type="number" value={draft[m.kode] || ""} onChange={(e) => setDraft({ ...draft, [m.kode]: +e.target.value })}
                           className="w-32 text-right border rounded px-2 py-1 text-xs" placeholder="0" />
-                      ) : (rkaV ? rupiah(rkaV) : <span className="text-slate-300">—</span>)}
+                      ) : (rkaV ? rupiah(rkaV) : <span className="text-slate-500">—</span>)}
                     </td>
                     <td className="p-2 text-right text-slate-600">{rupiah(serap)}</td>
                     <td className="p-2 text-right">
@@ -230,7 +230,7 @@ function RkaSection({ rka, perMA, detail, onSave }: { rka: RKA; perMA: Record<st
                           <span className={sisa < 0 ? "text-red-600 font-semibold" : "text-slate-500"}>{rupiah(sisa)}</span>
                           <span className={`chip ${pct > 100 ? "bg-red-100 text-red-700" : pct >= 80 ? "bg-amber-100 text-amber-700" : "bg-green-100 text-green-700"}`}>{pct}%</span>
                         </div>
-                      ) : <span className="text-slate-300">—</span>}
+                      ) : <span className="text-slate-500">—</span>}
                     </td>
                   </tr>
                   {!edit && isOpen && (
@@ -252,7 +252,7 @@ function MaTable({ perMA, detail }: { perMA: Record<string, number>; detail: Rec
   const [openKode, setOpenKode] = useState<string | null>(null);
   const rows = MATA_ANGGARAN.map((m) => ({ ...m, nilai: Math.round(perMA[m.kode] || 0) })).filter((r) => r.nilai > 0).sort((x, y) => y.nilai - x.nilai);
   const max = Math.max(1, ...rows.map((r) => r.nilai));
-  if (!rows.length) return <p className="text-xs text-slate-400">Belum ada penyerapan.</p>;
+  if (!rows.length) return <p className="text-xs text-slate-500">Belum ada penyerapan.</p>;
   return (
     <div className="space-y-2.5">
       {rows.map((m) => {
@@ -263,14 +263,14 @@ function MaTable({ perMA, detail }: { perMA: Record<string, number>; detail: Rec
             <button onClick={() => setOpenKode(isOpen ? null : m.kode)} className="w-full text-left">
               <div className="flex items-center justify-between text-xs mb-1 gap-3">
                 <span className="text-slate-600 truncate">
-                  <span className={`text-slate-400 text-[10px] inline-block mr-0.5 transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
-                  <span className="font-mono text-slate-400">{m.kode}</span> {m.label}
+                  <span className={`text-slate-500 text-[10px] inline-block mr-0.5 transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
+                  <span className="font-mono text-slate-500">{m.kode}</span> {m.label}
                   <span className={`chip ml-2 ${m.kategori === "Investasi" ? "bg-indigo-100 text-indigo-700" : "bg-cyan-100 text-cyan-700"}`}>{m.kategori}</span>
                   {rinci.length > 0 && <span className="text-[10px] text-sky-600 ml-1">· {rinci.length}</span>}
                 </span>
                 <span className="text-slate-700 font-semibold shrink-0">{rupiah(m.nilai)}</span>
               </div>
-              <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+              <div className="h-2.5 rounded-full bg-slate-200 overflow-hidden">
                 <div className={`h-full rounded-full ${m.kategori === "Investasi" ? "bg-gradient-to-r from-indigo-500 to-blue-700" : "bg-gradient-to-r from-[#14b8c4] to-[#16357f]"}`} style={{ width: `${(m.nilai / max) * 100}%` }} />
               </div>
             </button>
@@ -286,12 +286,12 @@ function MaTable({ perMA, detail }: { perMA: Record<string, number>; detail: Rec
 function KapalTable({ perKapal }: { perKapal: Record<string, { Biaya: number; Investasi: number }> }) {
   const rows = Object.entries(perKapal).map(([k, v]) => ({ kapal: k, ...v, total: v.Biaya + v.Investasi }))
     .filter((r) => r.total > 0).sort((x, y) => y.total - x.total);
-  if (!rows.length) return <p className="text-xs text-slate-400">Belum ada penyerapan per kapal.</p>;
+  if (!rows.length) return <p className="text-xs text-slate-500">Belum ada penyerapan per kapal.</p>;
   const tB = rows.reduce((s, r) => s + r.Biaya, 0), tI = rows.reduce((s, r) => s + r.Investasi, 0);
   return (
     <div className="overflow-x-auto">
       <table className="w-full text-sm">
-        <thead className="text-[11px] uppercase tracking-wide text-slate-500 bg-slate-50">
+        <thead className="text-[11px] uppercase tracking-wide text-slate-600 font-bold bg-slate-100 border-b-2 border-slate-200">
           <tr><th className="p-2 text-left">Kapal</th><th className="p-2 text-right w-36">Biaya</th><th className="p-2 text-right w-36">Investasi</th><th className="p-2 text-right w-36">Total</th></tr>
         </thead>
         <tbody>
@@ -393,7 +393,7 @@ function ImportGdrive({ onImported }: { onImported: (nilai: Record<string, Recor
       <p className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1.5">
         <span>📁</span> Import dari Google Drive (CSV publik)
       </p>
-      <p className="text-[11px] text-slate-400 mb-2">
+      <p className="text-[11px] text-slate-500 mb-2">
         Buka Google Sheet → File → Bagikan → Publikasikan ke web → Pilih format CSV → Salin link, lalu tempel di sini.
       </p>
       <div className="flex items-stretch gap-2">
@@ -490,12 +490,12 @@ function RencanaRealisasi({ rr, onSave }: { rr: RREntry[]; onSave: (r: RREntry[]
           setShowImport(false);
         }} />
       )}
-      <p className="text-[11px] text-slate-400 mb-3">
+      <p className="text-[11px] text-slate-500 mb-3">
         {tipe === "rencana" ? "Rencana" : "Realisasi"} <b>{bulanTahun(bulan + "-01")}</b> · hanya mata anggaran <b>Biaya</b> (Kapal Ro-Ro, Akomodasi, Permesinan). Acuan: RKA.
       </p>
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
-          <thead className="text-[11px] uppercase tracking-wide text-slate-500 bg-slate-50">
+          <thead className="text-[11px] uppercase tracking-wide text-slate-600 font-bold bg-slate-100 border-b-2 border-slate-200">
             <tr>
               <th className="p-2 text-left">Kapal</th>
               {MA_RENCANA.map((m) => <th key={m.kode} className="p-2 text-right w-36">{m.label}</th>)}
@@ -555,7 +555,24 @@ function parsePlafonPaste(text: string): PlafonRow[] {
   }
   return out;
 }
-const statusRutin = (pct: number) => pct > 100 ? { c: "text-red-600 bg-red-50", t: "OVERBUDGET" } : pct >= 80 ? { c: "text-amber-600 bg-amber-50", t: "Waspada" } : { c: "text-emerald-600 bg-emerald-50", t: "Aman" };
+// status pagu -> warna badge (c), warna bar (bar), warna angka % (num). Kontras tinggi biar terbaca.
+const statusRutin = (pct: number) =>
+  pct > 100
+    ? { c: "bg-red-100 text-red-800 ring-1 ring-red-300", t: "OVERBUDGET", bar: "bg-red-500", num: "text-red-700" }
+    : pct >= 80
+    ? { c: "bg-amber-100 text-amber-800 ring-1 ring-amber-300", t: "Waspada", bar: "bg-amber-500", num: "text-amber-700" }
+    : { c: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300", t: "Aman", bar: "bg-emerald-500", num: "text-emerald-700" };
+
+/* kelas tabel kendali anggaran (dipakai Rutin & Docking — sama persis) */
+const TBL_HEAD = "bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold border-b-2 border-slate-200";
+const TD_PAGU = "p-2 text-right tabular-nums text-slate-700";
+const TD_PAKAI = "p-2 text-right tabular-nums font-bold text-slate-900";
+const TD_MA = "p-2 font-semibold text-slate-800";
+const tdSisa = (v: number) => `p-2 text-right tabular-nums font-bold ${v < 0 ? "text-red-700" : "text-emerald-700"}`;
+const TFOOT_ROW = "bg-slate-100 border-t-2 border-slate-300 font-extrabold text-slate-900";
+// warna aksen KPI mini mengikuti status serapan
+const barPct = (pct: number) => (pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500");
+const tintPct = (pct: number) => (pct > 100 ? "text-red-700" : pct >= 80 ? "text-amber-700" : "text-slate-900");
 
 function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonRutin[]) => Promise<void> }) {
   const bulanList = useMemo(() => {
@@ -635,16 +652,16 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
           className="text-xs border px-2.5 py-1.5 rounded-lg bg-white" title="Pilih bulan mana pun (termasuk bulan baru)" />
         {bulanList.length > 0 && (
           <div className="flex items-center gap-1">
-            <span className="text-[10px] text-slate-400">ada data:</span>
+            <span className="text-[10px] text-slate-500 font-semibold">ada data:</span>
             {bulanList.slice(0, 6).map((b) => (
               <button key={b} onClick={() => setBulanSel(b)}
-                className={`text-[10px] px-1.5 py-0.5 rounded-md border transition ${b === bulan ? "bg-[#16357f] text-white border-[#16357f]" : "border-slate-300 text-slate-500 hover:border-[#1ca3dd] hover:text-[#16357f]"}`}>
+                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md border transition ${b === bulan ? "bg-[#16357f] text-white border-[#16357f]" : "border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f]"}`}>
                 {bulanTahun(b + "-01")}
               </button>
             ))}
           </div>
         )}
-        <span className="text-[11px] text-slate-400">realisasi = SPPBJ + Non PR PO ber-<b>Jenis Anggaran: Rutin</b>, per Mata Anggaran (Docking terpisah, tak overlap)</span>
+        <span className="text-[11px] text-slate-500">realisasi = SPPBJ + Non PR PO ber-<b className="text-slate-700">Jenis Anggaran: Rutin</b>, per Mata Anggaran (Docking terpisah, tak overlap)</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
             <>
@@ -664,17 +681,17 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
 
       {/* KPI mini */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        <MiniStat label="Total Pagu" val={rupiah(totalPagu)} tint="text-slate-800" />
-        <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-700" />
-        <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-600" : "text-emerald-700"} />
-        <MiniStat label="Serapan" val={`${pctTot}%`} tint={pctTot > 100 ? "text-red-600" : "text-slate-800"} />
+        <MiniStat label="Total Pagu" val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-slate-400" />
+        <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-800" bar="bg-blue-600" />
+        <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-700" : "text-emerald-800"} bar={sisa < 0 ? "bg-red-500" : "bg-emerald-500"} />
+        <MiniStat label="Serapan" val={`${pctTot}%`} tint={tintPct(pctTot)} bar={barPct(pctTot)} />
       </div>
 
       {proj.active && totalPagu > 0 && (
-        <div className={`mb-3 rounded-xl px-3 py-2 text-xs flex flex-wrap items-center gap-x-2 gap-y-1 border ${proj.pct > 100 ? "bg-red-50 text-red-700 border-red-200" : proj.pct >= 80 ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-emerald-50 text-emerald-700 border-emerald-200"}`}>
+        <div className={`mb-3 rounded-xl px-3 py-2 text-xs flex flex-wrap items-center gap-x-2 gap-y-1 border ${proj.pct > 100 ? "bg-red-50 text-red-800 border-red-300" : proj.pct >= 80 ? "bg-amber-50 text-amber-800 border-amber-300" : "bg-emerald-50 text-emerald-800 border-emerald-300"}`}>
           <span>📈 Proyeksi akhir bulan (laju sampai hari ke-{proj.dayToday}/{proj.daysInMonth}):</span>
-          <b>~{rupiah(Math.round(proj.total))}</b>
-          <span>({proj.pct}% pagu)</span>
+          <b className="text-sm tabular-nums">~{rupiah(Math.round(proj.total))}</b>
+          <span className="font-semibold tabular-nums">({proj.pct}% pagu)</span>
           {proj.pct > 100 ? <b>— berpotensi OVERBUDGET ~{rupiah(Math.round(proj.total - totalPagu))}, rem pengeluaran</b> : proj.pct >= 80 ? <b>— mendekati pagu, pantau</b> : <span>— on-track</span>}
         </div>
       )}
@@ -693,11 +710,11 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
           <button onClick={() => setDraft((d) => [...d, { ma: "", nilai: 0 }])} className="text-xs text-[#16357f] hover:underline mt-1">+ baris Mata Anggaran</button>
         </div>
       ) : merged.length === 0 ? (
-        <p className="text-sm text-slate-400 py-3 text-center">Belum ada pagu/realisasi rutin bulan ini. Klik <b>Atur Pagu</b> untuk isi dari dokumen Persetujuan.</p>
+        <p className="text-sm text-slate-500 py-3 text-center">Belum ada pagu/realisasi rutin bulan ini. Klik <b>Atur Pagu</b> untuk isi dari dokumen Persetujuan.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+            <thead className={TBL_HEAD}>
               <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
             </thead>
             <tbody>
@@ -709,46 +726,47 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
                 const isOpen = openKey === m.key;
                 return (
                   <Fragment key={m.key}>
-                    <tr className={`border-b row-hover cursor-pointer ${isOpen ? "bg-sky-50/60" : ""}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
-                      <td className="p-2 text-slate-700">
-                        <span className="inline-flex items-center gap-1">
-                          <span className={`text-slate-400 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
+                    <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-sky-50" : "even:bg-slate-50/60"}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
+                      <td className={TD_MA}>
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
                           {m.ma}
-                          {rinci.length > 0 && <span className="text-[10px] text-sky-600">· {rinci.length}</span>}
+                          {rinci.length > 0 && <span className="text-[10px] font-bold text-sky-800 bg-sky-100 rounded-full px-1.5 py-px">{rinci.length}</span>}
                         </span>
                       </td>
-                      <td className="p-2 text-right text-slate-600">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-300">tanpa pagu</span>}</td>
-                      <td className="p-2 text-right font-medium text-slate-800">{rupiah(m.pakai)}</td>
-                      <td className={`p-2 text-right font-semibold ${sisaM < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisaM)}</td>
+                      <td className={TD_PAGU}>{m.pagu ? rupiah(m.pagu) : <span className="text-slate-500 italic font-normal">tanpa pagu</span>}</td>
+                      <td className={TD_PAKAI}>{rupiah(m.pakai)}</td>
+                      <td className={tdSisa(sisaM)}>{rupiah(sisaM)}</td>
                       <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden">
-                            <div className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(100, pct)}%` }} />
+                          <div className="flex-1 h-2.5 rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 overflow-hidden">
+                            <div className={`h-full rounded-full ${m.pagu ? s.bar : "bg-slate-400"}`}
+                              style={{ width: m.pagu ? `${Math.max(m.pakai > 0 ? 4 : 0, Math.min(100, pct))}%` : "0%" }} />
                           </div>
-                          <span className="text-[11px] text-slate-500 w-9 text-right">{m.pagu ? pct + "%" : "—"}</span>
+                          <span className={`text-xs font-bold tabular-nums w-11 text-right ${m.pagu ? s.num : "text-slate-500"}`}>{m.pagu ? pct + "%" : "—"}</span>
                         </div>
                       </td>
                       <td className="p-2 text-center">
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span>
+                        <span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full ${m.pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{m.pagu ? s.t : "—"}</span>
                         {proj.active && m.pagu > 0 && pct <= 100 && Math.round(m.pakai * proj.factor) > m.pagu && (
-                          <span className="block text-[9px] text-amber-600 mt-0.5">proyeksi lewat</span>
+                          <span className="block text-[9px] font-bold text-amber-700 mt-1">▲ proyeksi lewat</span>
                         )}
                       </td>
                     </tr>
                     {isOpen && (
-                      <tr className="bg-slate-50/70">
+                      <tr className="bg-sky-50/50">
                         <td colSpan={6} className="px-3 py-2">
                           {rinci.length === 0 ? (
-                            <p className="text-[11px] text-slate-400">Belum ada pengadaan pada Mata Anggaran ini bulan ini.</p>
+                            <p className="text-[11px] text-slate-500">Belum ada pengadaan pada Mata Anggaran ini bulan ini.</p>
                           ) : (
                             <table className="w-full text-[11px]">
                               <tbody>
                                 {rinci.map((x) => (
-                                  <tr key={x.id} className="border-b border-slate-100 last:border-0">
-                                    <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-semibold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
-                                    <td className="py-1 pr-2 text-slate-700">{x.nama}</td>
-                                    <td className="py-1 pr-2 text-slate-400 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
-                                    <td className="py-1 text-right font-medium text-slate-700 whitespace-nowrap">{rupiah(x.nilai)}</td>
+                                  <tr key={x.id} className="border-b border-slate-200 last:border-0">
+                                    <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-bold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
+                                    <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
+                                    <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
+                                    <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(x.nilai)}</td>
                                   </tr>
                                 ))}
                               </tbody>
@@ -762,12 +780,12 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
               })}
             </tbody>
             <tfoot>
-              <tr className="bg-slate-50 font-bold text-slate-700">
+              <tr className={TFOOT_ROW}>
                 <td className="p-2">TOTAL</td>
-                <td className="p-2 text-right">{rupiah(totalPagu)}</td>
-                <td className="p-2 text-right">{rupiah(totalPakai)}</td>
-                <td className={`p-2 text-right ${sisa < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
-                <td className="p-2 text-right">{pctTot}%</td>
+                <td className="p-2 text-right tabular-nums">{rupiah(totalPagu)}</td>
+                <td className="p-2 text-right tabular-nums">{rupiah(totalPakai)}</td>
+                <td className={`p-2 text-right tabular-nums ${sisa < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
+                <td className={`p-2 text-right tabular-nums ${tintPct(pctTot)}`}>{pctTot}%</td>
                 <td className="p-2"></td>
               </tr>
             </tfoot>
@@ -778,12 +796,12 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
       {/* daftar pengadaan rutin bulan ini */}
       {!edit && real.list.length > 0 && (
         <details className="mt-3 text-xs">
-          <summary className="cursor-pointer text-slate-500 hover:text-slate-700">Semua {real.list.length} pengadaan bulan ini (klik baris Mata Anggaran di atas utk rincian per pos)</summary>
+          <summary className="cursor-pointer text-slate-600 font-medium hover:text-slate-900">Semua {real.list.length} pengadaan bulan ini (klik baris Mata Anggaran di atas utk rincian per pos)</summary>
           <ul className="mt-2 space-y-1">
             {real.list.map((x) => (
-              <li key={x.id} className="flex justify-between gap-3 border-b border-slate-100 pb-1">
-                <span className="text-slate-600 truncate"><span className={`text-[9px] font-semibold px-1 rounded mr-1 ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-700" : "bg-sky-100 text-sky-700"}`}>{x.sumber === "Non PR PO" ? "NonPR" : "SPPBJ"}</span>{x.nama} <span className="text-slate-300">· {x.ma || "tanpa MA"}</span></span>
-                <span className="font-medium text-slate-700 whitespace-nowrap">{rupiah(x.nilai)}</span>
+              <li key={x.id} className="flex justify-between gap-3 border-b border-slate-200 pb-1">
+                <span className="text-slate-800 truncate"><span className={`text-[9px] font-bold px-1 rounded mr-1 ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>{x.sumber === "Non PR PO" ? "NonPR" : "SPPBJ"}</span>{x.nama} <span className="text-slate-500">· {x.ma || "tanpa MA"}</span></span>
+                <span className="font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(x.nilai)}</span>
               </li>
             ))}
           </ul>
@@ -865,8 +883,8 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
           {KAPAL_ANGGARAN.map((k) => <option key={k} value={k}>{k}</option>)}
         </select>
         <input type="number" value={tahun} onChange={(e) => setTahun(+e.target.value)} className="text-xs border px-2 py-1.5 rounded-lg bg-white w-20" />
-        {entry?.noSurat && !edit && <span className="text-[11px] text-slate-400">No. {entry.noSurat}</span>}
-        <span className="text-[11px] text-slate-400">realisasi = SPPBJ/Non PR PO ber-<b>Jenis Anggaran: Docking</b> utk kapal ini, per Mata Anggaran</span>
+        {entry?.noSurat && !edit && <span className="text-[11px] text-slate-500">No. {entry.noSurat}</span>}
+        <span className="text-[11px] text-slate-500">realisasi = SPPBJ/Non PR PO ber-<b>Jenis Anggaran: Docking</b> utk kapal ini, per Mata Anggaran</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
             <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
@@ -881,10 +899,10 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        <MiniStat label="Total Pagu Docking" val={rupiah(totalPagu)} tint="text-slate-800" />
-        <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-700" />
-        <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-600" : "text-emerald-700"} />
-        <MiniStat label="Serapan" val={`${pctTot}%`} tint={pctTot > 100 ? "text-red-600" : "text-slate-800"} />
+        <MiniStat label="Total Pagu Docking" val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-slate-400" />
+        <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-800" bar="bg-blue-600" />
+        <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-700" : "text-emerald-800"} bar={sisa < 0 ? "bg-red-500" : "bg-emerald-500"} />
+        <MiniStat label="Serapan" val={`${pctTot}%`} tint={tintPct(pctTot)} bar={barPct(pctTot)} />
       </div>
 
       {edit ? (
@@ -903,14 +921,14 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
               </div>
             );
           })}
-          <p className="text-[10px] text-slate-400 mt-1.5">Isi nilai <b>Total Persetujuan</b> tiap Mata Anggaran (kosongkan = tak dipakai). Daftar MA sudah tetap sesuai format Docking — tak perlu ketik. Baris tambahan dari "Tempel dari Excel" bisa dihapus.</p>
+          <p className="text-[10px] text-slate-500 mt-1.5">Isi nilai <b>Total Persetujuan</b> tiap Mata Anggaran (kosongkan = tak dipakai). Daftar MA sudah tetap sesuai format Docking — tak perlu ketik. Baris tambahan dari "Tempel dari Excel" bisa dihapus.</p>
         </div>
       ) : merged.length === 0 ? (
-        <p className="text-sm text-slate-400 py-3 text-center">Belum ada pagu/realisasi docking utk {kapal} {tahun}. Klik <b>Atur Pagu Docking</b> untuk isi dari Persetujuan Pusat.</p>
+        <p className="text-sm text-slate-500 py-3 text-center">Belum ada pagu/realisasi docking utk {kapal} {tahun}. Klik <b>Atur Pagu Docking</b> untuk isi dari Persetujuan Pusat.</p>
       ) : (
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-slate-50 text-[11px] uppercase tracking-wide text-slate-500">
+            <thead className={TBL_HEAD}>
               <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
             </thead>
             <tbody>
@@ -922,31 +940,34 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
                 const isOpen = openKey === m.key;
                 return (
                   <Fragment key={m.key}>
-                    <tr className={`border-b row-hover cursor-pointer ${isOpen ? "bg-sky-50/60" : ""}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
-                      <td className="p-2 text-slate-700"><span className="inline-flex items-center gap-1"><span className={`text-slate-400 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>{m.ma}{rinci.length > 0 && <span className="text-[10px] text-sky-600">· {rinci.length}</span>}</span></td>
-                      <td className="p-2 text-right text-slate-600">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-300">tanpa pagu</span>}</td>
-                      <td className="p-2 text-right font-medium text-slate-800">{rupiah(m.pakai)}</td>
-                      <td className={`p-2 text-right font-semibold ${sisaM < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisaM)}</td>
+                    <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-sky-50" : "even:bg-slate-50/60"}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
+                      <td className={TD_MA}><span className="inline-flex items-center gap-1.5"><span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>{m.ma}{rinci.length > 0 && <span className="text-[10px] font-bold text-sky-800 bg-sky-100 rounded-full px-1.5 py-px">{rinci.length}</span>}</span></td>
+                      <td className={TD_PAGU}>{m.pagu ? rupiah(m.pagu) : <span className="text-slate-500 italic font-normal">tanpa pagu</span>}</td>
+                      <td className={TD_PAKAI}>{rupiah(m.pakai)}</td>
+                      <td className={tdSisa(sisaM)}>{rupiah(sisaM)}</td>
                       <td className="p-2">
                         <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 rounded-full bg-slate-100 overflow-hidden"><div className={`h-full rounded-full ${pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500"}`} style={{ width: `${Math.min(100, pct)}%` }} /></div>
-                          <span className="text-[11px] text-slate-500 w-9 text-right">{m.pagu ? pct + "%" : "—"}</span>
+                          <div className="flex-1 h-2.5 rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 overflow-hidden">
+                            <div className={`h-full rounded-full ${m.pagu ? s.bar : "bg-slate-400"}`}
+                              style={{ width: m.pagu ? `${Math.max(m.pakai > 0 ? 4 : 0, Math.min(100, pct))}%` : "0%" }} />
+                          </div>
+                          <span className={`text-xs font-bold tabular-nums w-11 text-right ${m.pagu ? s.num : "text-slate-500"}`}>{m.pagu ? pct + "%" : "—"}</span>
                         </div>
                       </td>
-                      <td className="p-2 text-center"><span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${s.c}`}>{m.pagu ? s.t : "—"}</span></td>
+                      <td className="p-2 text-center"><span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full ${m.pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{m.pagu ? s.t : "—"}</span></td>
                     </tr>
-                    {isOpen && <tr className="bg-slate-50/70"><td colSpan={6} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>}
+                    {isOpen && <tr className="bg-sky-50/50"><td colSpan={6} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>}
                   </Fragment>
                 );
               })}
             </tbody>
             <tfoot>
-              <tr className="bg-slate-50 font-bold text-slate-700">
+              <tr className={TFOOT_ROW}>
                 <td className="p-2">TOTAL</td>
-                <td className="p-2 text-right">{rupiah(totalPagu)}</td>
-                <td className="p-2 text-right">{rupiah(totalPakai)}</td>
-                <td className={`p-2 text-right ${sisa < 0 ? "text-red-600" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
-                <td className="p-2 text-right">{pctTot}%</td>
+                <td className="p-2 text-right tabular-nums">{rupiah(totalPagu)}</td>
+                <td className="p-2 text-right tabular-nums">{rupiah(totalPakai)}</td>
+                <td className={`p-2 text-right tabular-nums ${sisa < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
+                <td className={`p-2 text-right tabular-nums ${tintPct(pctTot)}`}>{pctTot}%</td>
                 <td className="p-2"></td>
               </tr>
             </tfoot>
@@ -971,11 +992,12 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   );
 }
 
-function MiniStat({ label, val, tint }: { label: string; val: string; tint: string }) {
+function MiniStat({ label, val, tint, bar = "bg-slate-400" }: { label: string; val: string; tint: string; bar?: string }) {
   return (
-    <div className="bg-slate-50 rounded-xl p-3">
-      <p className="text-[10px] uppercase tracking-wide text-slate-400 font-semibold">{label}</p>
-      <p className={`text-lg font-extrabold ${tint}`}>{val}</p>
+    <div className="relative bg-white rounded-xl ring-1 ring-slate-200 elev-sm pl-4 pr-3 py-2.5 overflow-hidden">
+      <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${bar}`} />
+      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-bold">{label}</p>
+      <p className={`text-xl font-extrabold tabular-nums leading-tight ${tint}`}>{val}</p>
     </div>
   );
 }
