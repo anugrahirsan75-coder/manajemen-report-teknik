@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { NonprRequest, NonprItem, emptyNonprItem, newNonprDraft } from "./types";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
+import { catatBackup } from "@/lib/backup/local";
 
 const LS_KEY = "nonpr_request";
 
@@ -50,6 +51,7 @@ export function NonprProvider({ children }: { children: React.ReactNode }) {
         .select().single();
       if (error) throw error;
       if (row?.id) update({ id: row.id });
+      catatBackup("nonpr", row?.id ?? req.id, payload, req.namaPengadaan);
       setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
     } catch (e: any) {
       alert("Gagal simpan: " + e.message + "\nData tersimpan lokal.");

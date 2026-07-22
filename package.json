@@ -6,7 +6,9 @@
     "dev": "next dev -p 3001",
     "build": "next build",
     "start": "next start -p 3001",
-    "lint": "next lint"
+    "lint": "next lint",
+    "backup": "node scripts/backup-supabase.cjs",
+    "restore": "node scripts/restore-supabase.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",

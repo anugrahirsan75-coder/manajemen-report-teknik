@@ -3,6 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import { ServisItem } from "./types";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
+import { catatBackup } from "@/lib/backup/local";
 
 const LS_KEY = "servis_items";
 
@@ -57,6 +58,7 @@ export function ServisProvider({ children }: { children: React.ReactNode }) {
       tahun: parseInt((item.tanggalKirim || "").slice(0, 4)) || null, payload,
     });
     if (error) { alert("Gagal simpan: " + error.message); return; }
+    catatBackup("servis", item.id, payload, item.namaBarang);
     await refresh();
   };
 

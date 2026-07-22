@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { Ship, SHIP_SEED, slugKapal } from "./types";
+import { catatBackup } from "@/lib/backup/local";
 
 const LS_KEY = "ship_db";
 
@@ -53,6 +54,7 @@ export function useKapalDb() {
         const { data: ins } = await supabase.from("projects").insert({ nama_kapal: "SHIP DATABASE (meta)", tahun: new Date().getFullYear(), payload }).select("id").single();
         if (ins?.id) setRowId(ins.id);
       }
+      catatBackup("kapal", rowId || undefined, payload, "SHIP DATABASE (meta)");
       setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
     } catch (e: any) {
       setLastSaved("Lokal (gagal sync)");

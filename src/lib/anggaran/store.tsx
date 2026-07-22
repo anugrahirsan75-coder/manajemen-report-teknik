@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { RKA, RREntry, PlafonRutin, PlafonDocking, maKey, namaKapalPenuh, jenisAnggaranOf } from "./types";
 import { pecahKapal } from "@/lib/kapal/nama";
+import { catatBackup } from "@/lib/backup/local";
 
 const LS_RKA = "anggaran_rka";
 const LS_RR = "anggaran_rr";
@@ -178,6 +179,7 @@ export function useAnggaran() {
     const payload = { kind: "anggaran", rka: nextRka, rr: nextRr, plafon: nextPlafon, docking: nextDocking };
     if (ex && ex[0]) await supabase.from("projects").update({ payload }).eq("id", ex[0].id);
     else await supabase.from("projects").insert({ nama_kapal: "ANGGARAN (meta)", tahun: nextRka.tahun, payload });
+    catatBackup("anggaran", ex?.[0]?.id, payload, "ANGGARAN (meta)");
   }, []);
 
   const saveRka = useCallback(async (next: RKA) => { setRka(next); await persist(next, rr, plafon, docking); }, [rr, plafon, docking, persist]);

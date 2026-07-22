@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { SppbjRequest, SppbjItem, emptySppbjItem } from "./types";
 import { DEPT_HEAD, STAF_TEKNIK } from "./db";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
+import { catatBackup } from "@/lib/backup/local";
 
 const LS_KEY = "sppbj_request";
 
@@ -71,6 +72,7 @@ export function SppbjProvider({ children }: { children: React.ReactNode }) {
         .select().single();
       if (error) throw error;
       if (row?.id) update({ id: row.id });
+      catatBackup("sppbj", row?.id ?? req.id, payload, req.namaPengadaan);
       setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
     } catch (e: any) {
       alert("Gagal simpan: " + e.message + "\nData tersimpan lokal.");

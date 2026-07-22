@@ -135,6 +135,9 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <Tool active={nonprActive} href="/nonpr" icon="🧾" label="SPPBJ Non PR PO" sub={NONPR_SUB} onNavigate={onNavigate} path={path} />
         <div className="h-1" />
         <Tool active={servisActive} href="/servis" icon="🔧" label="Monitoring Servis" sub={SERVIS_SUB} onNavigate={onNavigate} path={path} />
+
+        <SectionLabel>Pengaman Data</SectionLabel>
+        <NavLink href="/backup" icon="🛡️" label="Backup Data" desc="Salinan otomatis ke laptop" active={path.startsWith("/backup")} onNavigate={onNavigate} />
       </nav>
 
       <div className="px-3 pt-2 border-t border-white/10 space-y-1">
