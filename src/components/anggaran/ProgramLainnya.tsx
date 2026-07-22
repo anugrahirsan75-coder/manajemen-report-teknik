@@ -67,6 +67,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
   const [busy, setBusy] = useState(false);
   const [paste, setPaste] = useState<string | null>(null);
   const [buka, setBuka] = useState<string | null>(null);
+  const [tampil, setTampil] = useState<"kapal" | "ma">("kapal");
 
   const real = useMemo(() => realisasiProgram(pengadaan, aktifId), [pengadaan, aktifId]);
 
@@ -91,7 +92,22 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
     return Object.values(by).sort((a, b) => (a.inv === b.inv ? a.kapal.localeCompare(b.kapal) : a.inv ? 1 : -1));
   }, [aktif, real]);
 
+  // rekap lintas kapal: 1 baris per Mata Anggaran
+  const perMA = useMemo(() => {
+    const by: Record<string, { kunci: string; ma: string; pagu: number; add: number; pakai: number; inv: boolean; kapal: { kapal: string; pagu: number; pakai: number }[] }> = {};
+    for (const b of baris) {
+      const k = maKey(b.ma) || b.ma;
+      if (!by[k]) by[k] = { kunci: k, ma: b.ma, pagu: 0, add: 0, pakai: 0, inv: b.inv, kapal: [] };
+      by[k].pagu += b.pagu; by[k].add += b.add; by[k].pakai += b.pakai;
+      by[k].kapal.push({ kapal: b.kapal, pagu: b.pagu + b.add, pakai: b.pakai });
+    }
+    return Object.values(by)
+      .map((x) => ({ ...x, kapal: x.kapal.sort((a, b) => b.pagu - a.pagu) }))
+      .sort((a, b) => (a.inv === b.inv ? (b.pagu + b.add) - (a.pagu + a.add) : a.inv ? 1 : -1));
+  }, [baris]);
+
   const grup = { biaya: baris.filter((b) => !b.inv), investasi: baris.filter((b) => b.inv) };
+  const grupMA = { biaya: perMA.filter((b) => !b.inv), investasi: perMA.filter((b) => b.inv) };
   const jml = (arr: typeof baris) => ({
     pagu: arr.reduce((s, x) => s + x.pagu + x.add, 0),
     pakai: arr.reduce((s, x) => s + x.pakai, 0),
@@ -221,6 +237,109 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
             <Mini label="Serapan" val={`${pctTot}%`} tint={pctTot > 100 ? "text-red-700" : "text-slate-900"} bar={pctTot > 100 ? "bg-red-500" : pctTot >= 80 ? "bg-amber-500" : "bg-emerald-500"} />
           </div>
 
+          <div className="flex items-center gap-1 mb-2">
+            {([["kapal", "Per Kapal"], ["ma", `Per Mata Anggaran (${perMA.length})`]] as const).map(([v, t]) => (
+              <button key={v} onClick={() => { setTampil(v); setBuka(null); }}
+                className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${tampil === v ? "bg-indigo-700 text-white border-indigo-700" : "bg-white border-indigo-300 text-indigo-800 hover:border-indigo-500"}`}>{t}</button>
+            ))}
+            <span className="text-[10px] text-slate-500 ml-1">{tampil === "ma" ? "total tiap Mata Anggaran digabung dari semua kapal — klik baris utk rincian per kapal" : "pagu per kapal seperti tertulis di surat"}</span>
+          </div>
+
+          {tampil === "ma" ? (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-indigo-100/70 text-[11px] uppercase tracking-wide text-indigo-900 font-bold border-b-2 border-indigo-300">
+                <tr>
+                  <th className="p-2 text-left">Mata Anggaran</th>
+                  <th className="p-2 text-center w-20">Kapal</th>
+                  <th className="p-2 text-right w-28">Pagu</th>
+                  <th className="p-2 text-right w-24 text-violet-800">Addendum</th>
+                  <th className="p-2 text-right w-28">Pagu Total</th>
+                  <th className="p-2 text-right w-28">Terpakai</th>
+                  <th className="p-2 text-right w-28">Sisa</th>
+                  <th className="p-2 text-right w-24">Serapan</th>
+                  <th className="p-2 text-center w-24">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {([["Biaya", grupMA.biaya], ["Investasi", grupMA.investasi]] as const).flatMap(([judul, arr]) => arr.length === 0 ? [] : [
+                  <tr key={"hm" + judul} className={judul === "Biaya" ? "bg-indigo-200/50" : "bg-violet-100"}>
+                    <td colSpan={9} className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">
+                      {judul === "Biaya" ? "Biaya" : "Investasi (belanja modal)"}
+                      <span className="ml-2 font-bold normal-case tracking-normal tabular-nums">pagu {rupiah(arr.reduce((t, x) => t + x.pagu + x.add, 0))} · terpakai {rupiah(Math.round(arr.reduce((t, x) => t + x.pakai, 0)))}</span>
+                    </td>
+                  </tr>,
+                  ...arr.map((m) => {
+                    const pagu = m.pagu + m.add;
+                    const pct = pagu ? Math.round((m.pakai / pagu) * 100) : (m.pakai ? 999 : 0);
+                    const st = STATUS(pct);
+                    const isOpen = buka === "ma:" + m.kunci;
+                    return (
+                      <Fragment key={m.kunci}>
+                        <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-indigo-50" : "even:bg-indigo-50/30"}`} onClick={() => setBuka(isOpen ? null : "ma:" + m.kunci)}>
+                          <td className="p-2 font-semibold text-slate-800">
+                            <span className="inline-flex items-center gap-1.5">
+                              <span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
+                              <span className="block truncate max-w-[22rem]" title={m.ma}>{m.ma}</span>
+                            </span>
+                          </td>
+                          <td className="p-2 text-center"><span className="text-[10px] font-bold text-indigo-900 bg-indigo-100 rounded-full px-2 py-0.5">{m.kapal.length}</span></td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap text-slate-700">{rupiah(m.pagu)}</td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap font-bold text-violet-800">{m.add ? "+" + rupiah(m.add) : <span className="text-slate-400 font-normal">—</span>}</td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap font-semibold text-slate-800">{rupiah(pagu)}</td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap font-bold text-slate-900">{rupiah(Math.round(m.pakai))}</td>
+                          <td className={`p-2 text-right tabular-nums whitespace-nowrap font-bold ${pagu - m.pakai < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(Math.round(pagu - m.pakai))}</td>
+                          <td className="p-2">
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <div className="w-10 h-2 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                                <div className={`h-full rounded-full ${pagu ? st.bar : "bg-slate-400"}`} style={{ width: pagu ? `${Math.max(m.pakai > 0 ? 6 : 0, Math.min(100, pct))}%` : "0%" }} />
+                              </div>
+                              <span className={`text-xs font-bold tabular-nums w-9 text-right ${pagu ? st.num : "text-slate-400"}`}>{pagu ? pct + "%" : "—"}</span>
+                            </div>
+                          </td>
+                          <td className="p-2 text-center"><span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full whitespace-nowrap ${pagu ? st.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{pagu ? st.t : "—"}</span></td>
+                        </tr>
+                        {isOpen && (
+                          <tr className="bg-indigo-50/50">
+                            <td colSpan={9} className="px-3 py-2">
+                              <table className="w-full text-[11px]">
+                                <thead className="text-[9px] uppercase tracking-wide text-slate-500">
+                                  <tr><th className="text-left py-1">Kapal</th><th className="text-right py-1 w-32">Pagu</th><th className="text-right py-1 w-32">Terpakai</th><th className="text-right py-1 w-32">Sisa</th></tr>
+                                </thead>
+                                <tbody>
+                                  {m.kapal.map((k) => (
+                                    <tr key={k.kapal} className="border-b border-slate-200 last:border-0">
+                                      <td className="py-1 pr-2 font-semibold text-slate-800">{ringkasKapal(k.kapal)}</td>
+                                      <td className="py-1 pr-2 text-right tabular-nums text-slate-700">{rupiah(k.pagu)}</td>
+                                      <td className="py-1 pr-2 text-right tabular-nums font-bold text-slate-900">{rupiah(Math.round(k.pakai))}</td>
+                                      <td className="py-1 text-right tabular-nums font-bold text-emerald-700">{rupiah(Math.round(k.pagu - k.pakai))}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </td>
+                          </tr>
+                        )}
+                      </Fragment>
+                    );
+                  }),
+                ])}
+              </tbody>
+              <tfoot>
+                <tr className="bg-indigo-100/70 border-t-2 border-indigo-300 font-extrabold text-indigo-950">
+                  <td className="p-2" colSpan={2}>TOTAL</td>
+                  <td className="p-2 text-right tabular-nums">{rupiah(perMA.reduce((t, x) => t + x.pagu, 0))}</td>
+                  <td className="p-2 text-right tabular-nums text-violet-800">{perMA.some((x) => x.add) ? "+" + rupiah(perMA.reduce((t, x) => t + x.add, 0)) : "—"}</td>
+                  <td className="p-2 text-right tabular-nums">{rupiah(totalPagu)}</td>
+                  <td className="p-2 text-right tabular-nums">{rupiah(Math.round(totalPakai))}</td>
+                  <td className={`p-2 text-right tabular-nums ${sisa < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(Math.round(sisa))}</td>
+                  <td className="p-2 text-right tabular-nums">{pctTot}%</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm min-w-[62rem]">
               <thead className="bg-indigo-100/70 text-[11px] uppercase tracking-wide text-indigo-900 font-bold border-b-2 border-indigo-300">
@@ -323,6 +442,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
               </tfoot>
             </table>
           </div>
+          )}
           <p className="text-[10px] text-slate-500 mt-2">
             Realisasi diambil dari SPPBJ / Non PR PO yang <b>ditautkan ke persetujuan ini</b> (di form: Jenis Anggaran → <b>Lainnya</b>, lalu pilih persetujuannya). Docking & Rutin tetap terpisah, tak dobel hitung.
           </p>
