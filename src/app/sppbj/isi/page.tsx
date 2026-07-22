@@ -17,10 +17,14 @@ import { ParsedItem } from "@/lib/sppbj/ocrTable";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import { useAnggaran, realisasiRutin, nilaiPengadaan } from "@/lib/anggaran/store";
 import { maKey, jenisAnggaranOf } from "@/lib/anggaran/types";
-import { useMemo } from "react";
+import PaguProgram from "@/components/anggaran/PaguProgram";
+import { posProgram, cekPemakaian } from "@/lib/anggaran/program";
+import { tanggalIndo } from "@/lib/format";
+import { useMemo, useEffect, useRef, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 
-export default function SppbjIsi() {
-  const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving } = useSppbj();
+function SppbjIsiInner() {
+  const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving, newDraft } = useSppbj();
   const total = sppbjTotal(req.items);
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
   const [browseKatalog, setBrowseKatalog] = useState(false);
@@ -90,6 +94,26 @@ export default function SppbjIsi() {
     setItems(req.items.map((it, i) => (i >= rDari - 1 && i <= rSampai - 1 ? { ...it, kapal: k } : it)));
   };
 
+  // Prefill dari Dashboard: /sppbj/isi?program=<id>&kapal=..&ma=..
+  const qs = useSearchParams();
+  const sudahPrefill = useRef(false);
+  useEffect(() => {
+    if (sudahPrefill.current) return;
+    const pid = qs.get("program");
+    if (!pid) return;
+    sudahPrefill.current = true;
+    const kapalQ = qs.get("kapal") || "";
+    const maQ = qs.get("ma") || "";
+    const isiDraf = req.items.length > 0 || (req.namaPengadaan || "").trim();
+    if (isiDraf && !confirm("Draf SPPBJ saat ini akan diganti dengan pengadaan baru dari pos persetujuan. Lanjut?")) return;
+    newDraft();
+    setTimeout(() => {
+      update({ programId: pid, jenisAnggaran: "Lainnya", mataAnggaran: maQ ? [maQ] : [] });
+      if (maQ || kapalQ) setItems([{ ...emptySppbjItem(kapalQ), satuan: "Ls", mataAnggaran: maQ || undefined }]);
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qs]);
+
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
   const { plafon, pengadaan, program } = useAnggaran();
   const rutinInfo = useMemo(() => {
@@ -106,7 +130,23 @@ export default function SppbjIsi() {
     return { ma, bulan, pagu, sisa, nilaiIni, hasPagu: pagu > 0, over: pagu > 0 && nilaiIni > sisa };
   }, [req.jenisAnggaran, req.kategoriRekap, req.mataAnggaran, req.tanggal, req.items, req.id, plafon, pengadaan]);
 
+  // guardrail pagu Persetujuan Biaya Lainnya
+  const progInfo = useMemo(() => {
+    if (!req.programId) return null;
+    const pr = program.find((x) => x.id === req.programId);
+    if (!pr) return null;
+    const pos = posProgram(pr, pengadaan, req.id);
+    return { pr, ...cekPemakaian(pos, req) };
+  }, [req.programId, req.items, req.mataAnggaran, req.id, program, pengadaan]);
+
   const lolosGuard = (): boolean => {
+    if (progInfo && (progInfo.over.length || progInfo.tanpaPos.length)) {
+      const pesan = [
+        ...progInfo.over.map((o) => `• ${o.kapal} · ${o.ma} lebih ${rupiah(Math.round(o.lebih))}`),
+        ...progInfo.tanpaPos.map((o) => `• ${o.kapal} · ${o.ma} tak ada di surat ini`),
+      ].join("\n");
+      if (!confirm(`⚠ Pemakaian tak cocok dgn pagu surat "${progInfo.pr.nama}":\n${pesan}\n\nTetap lanjut?`)) return false;
+    }
     if (rutinInfo?.over) return confirm(`⚠ OVERBUDGET pagu RUTIN.\nPengadaan ini ${rupiah(rutinInfo.nilaiIni)} melebihi sisa pagu ${rupiah(rutinInfo.sisa)} (lewat ${rupiah(rutinInfo.nilaiIni - rutinInfo.sisa)}).\nTetap lanjut?`);
     return true;
   };
@@ -253,16 +293,6 @@ export default function SppbjIsi() {
               <option value="Lainnya">Lainnya (Persetujuan Biaya Lainnya)</option>
             </select>
           </Field>
-          {(req.jenisAnggaran === "Lainnya" || req.programId) && (
-            <Field label="Persetujuan Biaya Lainnya (sumber pagu)">
-              <select className="w-full rounded-lg border border-indigo-300 bg-indigo-50/40 px-3 py-2 text-sm" value={req.programId || ""}
-                onChange={(e) => update({ programId: e.target.value || undefined, jenisAnggaran: e.target.value ? "Lainnya" : req.jenisAnggaran })}>
-                <option value="">— pilih surat persetujuan —</option>
-                {program.map((pr) => <option key={pr.id} value={pr.id}>{pr.nama} ({pr.tahun}){pr.noSurat ? ` — ${pr.noSurat}` : ""}</option>)}
-              </select>
-              {program.length === 0 && <p className="text-[11px] text-amber-700 mt-1">Belum ada persetujuan. Buat dulu di Dashboard Anggaran → Persetujuan Biaya Lainnya.</p>}
-            </Field>
-          )}
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} /></Field>
           <Field label="Dasar Pelimpahan (= KAK poin A)"><Input value={req.dasarPelimpahan} onChange={(e) => update({ dasarPelimpahan: e.target.value })} /></Field>
           <Field label="Staf Teknik (TTD)">
@@ -296,6 +326,34 @@ export default function SppbjIsi() {
           </div>
         </div>
       </Section>
+
+      {(req.jenisAnggaran === "Lainnya" || req.programId) && (
+        <div className="mb-4">
+          <PaguProgram
+            program={program} pengadaan={pengadaan} programId={req.programId} reqId={req.id}
+            items={req.items} mataAnggaran={req.mataAnggaran} namaPengadaan={req.namaPengadaan}
+            onPilih={(id, pr) => {
+              if (!id || !pr) { update({ programId: undefined }); return; }
+              // sekali pilih surat: Mata Anggaran, nama, dasar pelimpahan, kategori rekap ikut terisi
+              const maSurat = Array.from(new Set((pr.rows || []).map((r) => r.ma).filter(Boolean)));
+              const adaInv = (pr.rows || []).some((r) => maKey(r.ma).startsWith("10206"));
+              update({
+                programId: id, jenisAnggaran: "Lainnya",
+                mataAnggaran: (req.mataAnggaran || []).length ? req.mataAnggaran : maSurat,
+                namaPengadaan: req.namaPengadaan || pr.nama,
+                dasarPelimpahan: req.dasarPelimpahan || (pr.noSurat ? `Surat Persetujuan Pusat No. ${pr.noSurat}${pr.tanggal ? ` tanggal ${tanggalIndo(pr.tanggal)}` : ""}` : pr.nama),
+                kategoriRekap: req.kategoriRekap || (adaInv ? "INVESTASI DILUAR DOCKING" : req.kategoriRekap),
+              });
+            }}
+            onTarik={(pos) => { snapshot(); setItems([...req.items, { ...emptySppbjItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls", mataAnggaran: pos.ma }]); }}
+            onTarikSemua={(list) => {
+              if (!list.length) { alert("Semua pos di surat ini sudah habis terpakai."); return; }
+              snapshot();
+              setItems([...req.items, ...list.map((pos) => ({ ...emptySppbjItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls", mataAnggaran: pos.ma }))]);
+            }}
+          />
+        </div>
+      )}
 
       <Section title={`Item SPPBJ (${req.items.length}) — multi kapal · harga ESTIMASI`} icon="🛠️">
         <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-3 text-sm text-slate-700">
@@ -505,5 +563,13 @@ export default function SppbjIsi() {
         <Link href="/sppbj/detail" className="asdp-gradient text-white text-sm font-semibold px-5 py-2.5 rounded-xl shadow">Selesai → Generate Dokumen</Link>
       </div>
     </main>
+  );
+}
+
+export default function SppbjIsi() {
+  return (
+    <Suspense fallback={<p className="p-8 text-sm text-slate-500">Memuat formulir…</p>}>
+      <SppbjIsiInner />
+    </Suspense>
   );
 }

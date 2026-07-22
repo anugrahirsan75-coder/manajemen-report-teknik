@@ -10,9 +10,10 @@ import { MATA_ANGGARAN_NONPR, VENDOR_NONPR, KAPAL_LIST_NONPR, MAX_NILAI_NONPR } 
 import { NonprItem, emptyNonprItem, kapalUnikNonpr, nonprTotal, ketLines } from "@/lib/nonpr/types";
 import FotoUploader from "@/components/FotoUploader";
 import { useAnggaran } from "@/lib/anggaran/store";
+import PaguProgram from "@/components/anggaran/PaguProgram";
 
 export default function NonprIsi() {
-  const { program } = useAnggaran();
+  const { program, pengadaan } = useAnggaran();
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving, lastSaved, supabaseReady } = useNonpr();
   const router = useRouter();
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
@@ -66,6 +67,30 @@ export default function NonprIsi() {
 
       {over && <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-xl p-3 mb-5">⚠️ Total <b>{rupiah(total)}</b> melebihi batas <b>Rp {rupiah(MAX_NILAI_NONPR)}</b> per file Non PR PO. Pecah jadi beberapa pengadaan.</div>}
 
+      {(req.jenisAnggaran === "Lainnya" || req.programId) && (
+        <div className="mb-4">
+          <PaguProgram
+            program={program} pengadaan={pengadaan} programId={req.programId} reqId={req.id}
+            items={req.items} mataAnggaran={req.mataAnggaran} namaPengadaan={req.namaPengadaan}
+            onPilih={(id, pr) => {
+              if (!id || !pr) { update({ programId: undefined }); return; }
+              const maSurat = Array.from(new Set((pr.rows || []).map((r) => r.ma).filter(Boolean)));
+              update({
+                programId: id, jenisAnggaran: "Lainnya",
+                mataAnggaran: req.mataAnggaran || maSurat[0] || "",
+                namaPengadaan: req.namaPengadaan || pr.nama,
+                dasarPelimpahan: req.dasarPelimpahan || (pr.noSurat ? `Surat Persetujuan Pusat No. ${pr.noSurat}` : pr.nama),
+              });
+            }}
+            onTarik={(pos) => { setItems([...req.items, { ...emptyNonprItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls" }]); if (!req.mataAnggaran) update({ mataAnggaran: pos.ma }); }}
+            onTarikSemua={(list) => {
+              if (!list.length) { alert("Semua pos di surat ini sudah habis terpakai."); return; }
+              setItems([...req.items, ...list.map((pos) => ({ ...emptyNonprItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls" }))]);
+            }}
+          />
+        </div>
+      )}
+
       <Section title="Data Pengadaan" icon="🧾">
         <div className="grid sm:grid-cols-3 gap-4">
           <Field label="Tanggal SPPB"><Input type="date" value={req.tanggal} onChange={(e) => update({ tanggal: e.target.value })} /></Field>
@@ -82,15 +107,6 @@ export default function NonprIsi() {
               <option value="Lainnya">Lainnya (Persetujuan Biaya Lainnya)</option>
             </select>
           </Field>
-          {(req.jenisAnggaran === "Lainnya" || req.programId) && (
-            <Field label="Persetujuan Biaya Lainnya (sumber pagu)">
-              <select className="w-full rounded-lg border border-indigo-300 bg-indigo-50/40 px-3 py-2 text-sm" value={req.programId || ""}
-                onChange={(e) => update({ programId: e.target.value || undefined, jenisAnggaran: e.target.value ? "Lainnya" : req.jenisAnggaran })}>
-                <option value="">— pilih surat persetujuan —</option>
-                {program.map((pr) => <option key={pr.id} value={pr.id}>{pr.nama} ({pr.tahun}){pr.noSurat ? ` — ${pr.noSurat}` : ""}</option>)}
-              </select>
-            </Field>
-          )}
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} placeholder="Jasa Perbaikan ... KMP ... Bulan 2026" /></Field>
           <Field label="Dasar Pelimpahan (jika ada)"><Input value={req.dasarPelimpahan} onChange={(e) => update({ dasarPelimpahan: e.target.value })} /></Field>
           <Field label="Vendor (Surat Pernyataan Harga)">

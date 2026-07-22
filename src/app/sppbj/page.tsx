@@ -192,7 +192,7 @@ export default function SppbjList() {
                     <td className="p-2 text-center text-slate-400">{i + 1}</td>
                     <td className="p-2 font-medium text-slate-800">
                       <span className="flex items-center gap-2">
-                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${jenis === "docking" ? "bg-amber-100 text-amber-700" : "bg-emerald-100 text-emerald-700"}`}>{jenis === "docking" ? "Docking" : "Rutin"}</span>
+                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${jenis === "docking" ? "bg-amber-100 text-amber-700" : jenis === "lainnya" ? "bg-indigo-100 text-indigo-800" : "bg-emerald-100 text-emerald-700"}`} title={jenis === "lainnya" ? "Persetujuan Biaya Lainnya" : undefined}>{jenis === "docking" ? "Docking" : jenis === "lainnya" ? "Lainnya" : "Rutin"}</span>
                         {r.nama_pengadaan || "(tanpa nama)"}
                       </span>
                     </td>

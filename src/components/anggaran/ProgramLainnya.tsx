@@ -264,7 +264,13 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
                               <span className={`text-xs font-bold tabular-nums w-11 text-right ${pagu ? s.num : "text-slate-400"}`}>{pagu ? pct + "%" : "—"}</span>
                             </div>
                           </td>
-                          <td className="p-2 text-center"><span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full ${pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{pagu ? s.t : "—"}</span></td>
+                          <td className="p-2 text-center">
+                            <span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full ${pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{pagu ? s.t : "—"}</span>
+                            {pagu - b.pakai > 0 && (
+                              <a href={`/sppbj/isi?program=${encodeURIComponent(aktifId)}&kapal=${encodeURIComponent(b.kapal === "(umum)" ? "" : b.kapal)}&ma=${encodeURIComponent(b.ma)}`}
+                                onClick={(e) => e.stopPropagation()} className="block text-[9px] font-bold text-indigo-700 hover:underline mt-1">＋ buat SPPBJ</a>
+                            )}
+                          </td>
                         </tr>
                         {isOpen && (
                           <tr className="bg-indigo-50/50">
