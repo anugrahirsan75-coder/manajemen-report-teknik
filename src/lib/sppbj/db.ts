@@ -4,6 +4,7 @@ export const KATEGORI_REKAP: string[] = [
   "DOCKING (INVESTASI)",
   "RUTIN",
   "INVESTASI DILUAR DOCKING",
+  "BIAYA DILUAR DOCKING",
 ];
 
 // Mata Anggaran (dari sheet DATABASE) — bisa pilih >1

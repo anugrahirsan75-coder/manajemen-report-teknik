@@ -179,7 +179,8 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
             <L label="No. surat"><input value={draft.noSurat || ""} onChange={(e) => setDraft({ ...draft, noSurat: e.target.value })} placeholder="TN.205/01044/II/ASDP-2026" className="w-full text-xs border rounded-lg px-2 py-1.5" /></L>
             <L label="Tanggal surat"><input type="date" value={draft.tanggal || ""} onChange={(e) => setDraft({ ...draft, tanggal: e.target.value, tahun: parseInt(e.target.value.slice(0, 4), 10) || draft.tahun })} className="w-full text-xs border rounded-lg px-2 py-1.5" /></L>
             <L label="Tahun anggaran"><input type="number" value={draft.tahun} onChange={(e) => setDraft({ ...draft, tahun: +e.target.value })} className="w-full text-xs border rounded-lg px-2 py-1.5" /></L>
-            <div className="sm:col-span-4"><L label="Perihal (opsional)"><input value={draft.perihal || ""} onChange={(e) => setDraft({ ...draft, perihal: e.target.value })} placeholder="Persetujuan Investasi Sarana Hiburan Di Atas Kapal Cabang Ternate Tahun 2026" className="w-full text-xs border rounded-lg px-2 py-1.5" /></L></div>
+            <L label="KET. di REKAP (opsional)"><input value={draft.ketRekap || ""} onChange={(e) => setDraft({ ...draft, ketRekap: e.target.value })} placeholder={draft.nama || "ikut nama persetujuan"} className="w-full text-xs border rounded-lg px-2 py-1.5" /></L>
+            <div className="sm:col-span-3"><L label="Perihal (opsional)"><input value={draft.perihal || ""} onChange={(e) => setDraft({ ...draft, perihal: e.target.value })} placeholder="Persetujuan Investasi Sarana Hiburan Di Atas Kapal Cabang Ternate Tahun 2026" className="w-full text-xs border rounded-lg px-2 py-1.5" /></L></div>
           </div>
 
           <div className="flex items-center gap-2 mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">

@@ -279,11 +279,42 @@ function SppbjIsiInner() {
               placeholder={(req.noSPPBJ || "").trim() ? `↳ ${req.noSPPBJ}` : "2000xxxxxx"} />
           </Field>
           <Field label="Kategori Rekap (KET. di spreadsheet)">
-            <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.kategoriRekap || ""}
-              onChange={(e) => { const v = e.target.value; update({ kategoriRekap: v, jenisAnggaran: /docking/i.test(v) ? "Docking" : (v ? "Rutin" : req.jenisAnggaran) }); }}>
+            {/* daftar bawah = surat Persetujuan Biaya Lainnya yang sudah dibuat di Dashboard.
+                Memilihnya sekaligus menautkan pengadaan ke surat itu (pagu + KET. rekap). */}
+            <select className={`w-full rounded-lg border px-3 py-2 text-sm ${req.programId ? "border-indigo-300 bg-indigo-50/40" : "border-slate-300 bg-white"}`}
+              value={req.programId ? "prog:" + req.programId : req.kategoriRekap || ""}
+              onChange={(e) => {
+                const v = e.target.value;
+                if (v.startsWith("prog:")) {
+                  const pr = program.find((x) => x.id === v.slice(5));
+                  if (!pr) return;
+                  const maSurat = Array.from(new Set((pr.rows || []).map((r) => r.ma).filter(Boolean)));
+                  update({
+                    programId: pr.id, jenisAnggaran: "Lainnya",
+                    kategoriRekap: (pr.ketRekap || pr.nama || "").trim(),
+                    mataAnggaran: (req.mataAnggaran || []).length ? req.mataAnggaran : maSurat,
+                    namaPengadaan: req.namaPengadaan || pr.nama,
+                    dasarPelimpahan: req.dasarPelimpahan || (pr.noSurat ? `Surat Persetujuan Pusat No. ${pr.noSurat}${pr.tanggal ? ` tanggal ${tanggalIndo(pr.tanggal)}` : ""}` : pr.nama),
+                  });
+                  return;
+                }
+                update({ kategoriRekap: v, programId: undefined, jenisAnggaran: /docking/i.test(v) ? "Docking" : (v ? "Rutin" : req.jenisAnggaran) });
+              }}>
               <option value="">— pilih —</option>
               {KATEGORI_REKAP.map((k) => <option key={k} value={k}>{k}</option>)}
+              {program.length > 0 && (
+                <optgroup label="Persetujuan Biaya Lainnya (dari Dashboard)">
+                  {program.map((pr) => (
+                    <option key={pr.id} value={"prog:" + pr.id}>{(pr.ketRekap || pr.nama)}{pr.noSurat ? ` — ${pr.noSurat}` : ""}</option>
+                  ))}
+                </optgroup>
+              )}
             </select>
+            {req.programId && (
+              <p className="text-[11px] text-indigo-800 mt-1">
+                Tertaut ke surat persetujuan — KET. rekap: <b>{req.kategoriRekap || "(kosong)"}</b>. Pagu &amp; sisanya ada di panel Sumber Pagu di bawah.
+              </p>
+            )}
           </Field>
           <Field label="Jenis Anggaran (Dashboard)">
             <select className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm bg-white" value={req.jenisAnggaran || ""} onChange={(e) => update({ jenisAnggaran: (e.target.value || undefined) as any })}>
@@ -342,7 +373,7 @@ function SppbjIsiInner() {
                 mataAnggaran: (req.mataAnggaran || []).length ? req.mataAnggaran : maSurat,
                 namaPengadaan: req.namaPengadaan || pr.nama,
                 dasarPelimpahan: req.dasarPelimpahan || (pr.noSurat ? `Surat Persetujuan Pusat No. ${pr.noSurat}${pr.tanggal ? ` tanggal ${tanggalIndo(pr.tanggal)}` : ""}` : pr.nama),
-                kategoriRekap: req.kategoriRekap || (adaInv ? "INVESTASI DILUAR DOCKING" : req.kategoriRekap),
+                kategoriRekap: (pr.ketRekap || pr.nama || "").trim() || req.kategoriRekap || (adaInv ? "INVESTASI DILUAR DOCKING" : req.kategoriRekap),
               });
             }}
             onTarik={(pos) => { snapshot(); setItems([...req.items, { ...emptySppbjItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls", mataAnggaran: pos.ma }]); }}

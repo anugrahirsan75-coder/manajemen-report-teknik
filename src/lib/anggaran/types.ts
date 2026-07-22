@@ -139,6 +139,7 @@ export interface PlafonProgram {
   tanggal?: string;   // ISO tanggal surat
   tahun: number;
   perihal?: string;
+  ketRekap?: string;   // label kolom KET. di spreadsheet REKAP (default: nama)
   rows: ProgramRow[];
 }
 export const paguProgram = (p: PlafonProgram) => (p.rows || []).reduce((s, r) => s + (r.nilai || 0) + (r.addendum || 0), 0);
