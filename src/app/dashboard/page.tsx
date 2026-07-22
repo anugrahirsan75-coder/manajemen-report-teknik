@@ -683,7 +683,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
   const simpan = async () => {
     setBusy(true);
     try {
-      const clean = draft.filter((r) => r.ma.trim() && r.nilai);
+      const clean = draft.filter((r) => r.ma.trim()); // baris bernilai 0 tetap disimpan biar tetap tampil
       const next = plafon.filter((p) => p.bulan !== bulan);
       if (clean.length) next.push({ bulan, rows: clean });
       await onSave(next);
@@ -984,23 +984,30 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   const [busy, setBusy] = useState(false);
   const [paste, setPaste] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
+  const [semuaMA, setSemuaMA] = useState(true); // tampilkan MA baku walau pagunya 0
 
   const entry = docking.find((d) => d.kapal === kapal && d.tahun === tahun);
   const rows = entry?.rows || [];
   const real = useMemo(() => realisasiDocking(pengadaan, kapal, tahun), [pengadaan, kapal, tahun]);
 
   // pagu awal + addendum per MA, digabung realisasi. kelompok: Biaya vs Investasi.
+  // semuaMA = tampilkan seluruh MA baku docking walau pagunya 0 (biar daftarnya selalu lengkap).
   const merged = useMemo(() => {
-    const by: Record<string, { key: string; ma: string; awal: number; add: number; pakai: number }> = {};
+    const by: Record<string, { key: string; ma: string; awal: number; add: number; pakai: number; baku: boolean }> = {};
+    if (semuaMA) {
+      [...DOCKING_MA, ...DOCKING_MA_INVESTASI].forEach((m) => {
+        by[m.kode] = { key: m.kode, ma: `${m.kode} (${m.label})`, awal: 0, add: 0, pakai: 0, baku: true };
+      });
+    }
     rows.forEach((r) => {
       const k = maKey(r.ma);
-      by[k] = { key: k, ma: r.ma, awal: (by[k]?.awal || 0) + (r.nilai || 0), add: (by[k]?.add || 0) + (r.addendum || 0), pakai: by[k]?.pakai || 0 };
+      by[k] = { key: k, ma: by[k]?.ma || r.ma, awal: (by[k]?.awal || 0) + (r.nilai || 0), add: (by[k]?.add || 0) + (r.addendum || 0), pakai: by[k]?.pakai || 0, baku: true };
     });
-    Object.entries(real.perKey).forEach(([k, v]) => { if (by[k]) by[k].pakai = v; else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { key: k, ma: lbl, awal: 0, add: 0, pakai: v }; } });
+    Object.entries(real.perKey).forEach(([k, v]) => { if (by[k]) by[k].pakai = v; else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { key: k, ma: lbl, awal: 0, add: 0, pakai: v, baku: false }; } });
     return Object.values(by)
       .map((x) => ({ ...x, pagu: x.awal + x.add, inv: isMaInvestasi(x.key) }))
       .sort((x, y) => (x.inv === y.inv ? (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)) : x.inv ? 1 : -1));
-  }, [rows, real]);
+  }, [rows, real, semuaMA]);
 
   const grup = useMemo(() => ({
     biaya: merged.filter((m) => !m.inv),
@@ -1024,7 +1031,8 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   const simpan = async () => {
     setBusy(true);
     try {
-      const clean = draft.filter((r) => r.ma.trim() && (r.nilai || r.addendum));
+      // simpan juga baris bernilai 0 — MA baku docking harus tetap tampil di tabel
+      const clean = draft.filter((r) => r.ma.trim());
       const next = docking.filter((d) => !(d.kapal === kapal && d.tahun === tahun));
       if (clean.length) next.push({ kapal, tahun, noSurat: noSurat.trim() || undefined, noSuratAddendum: noAdd.trim() || undefined, rows: clean });
       await onSave(next);
@@ -1116,6 +1124,13 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
         <p className="text-sm text-slate-500 py-3 text-center">Belum ada pagu/realisasi docking utk {kapal} {tahun}. Klik <b>Atur Pagu Docking</b> untuk isi dari Persetujuan Pusat.</p>
       ) : (
         <div className="overflow-x-auto">
+          <div className="flex items-center gap-2 mb-2">
+            <button onClick={() => setSemuaMA((v) => !v)}
+              className={`text-[11px] font-semibold px-2.5 py-1 rounded-lg border transition ${semuaMA ? NADA.amber.pilihAktif : NADA.amber.pilihPasif}`}>
+              {semuaMA ? "☑ Tampilkan MA tanpa pagu" : "☐ Tampilkan MA tanpa pagu"}
+            </button>
+            <span className="text-[10px] text-slate-500">semua Mata Anggaran docking tetap terlihat walau nilainya 0</span>
+          </div>
           <table className="w-full text-sm">
             <thead className={TBL_HEAD_AMBER}>
               <tr>
@@ -1149,9 +1164,9 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
                   <Fragment key={m.key}>
                     <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-amber-100/60" : "even:bg-amber-50/40"}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
                       <td className={TD_MA}><span className="inline-flex items-center gap-1.5"><span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>{m.ma}{rinci.length > 0 && <span className="text-[10px] font-bold text-amber-900 bg-amber-200 rounded-full px-1.5 py-px">{rinci.length}</span>}</span></td>
-                      <td className={TD_PAGU}>{m.awal ? rupiah(m.awal) : <span className="text-slate-500 italic font-normal">—</span>}</td>
+                      <td className={TD_PAGU}>{m.awal ? rupiah(m.awal) : <span className={m.baku ? "text-slate-400" : "text-slate-500 italic font-normal"}>{m.baku ? "0" : "—"}</span>}</td>
                       <td className="p-2 text-right tabular-nums font-bold text-violet-800">{m.add ? "+" + rupiah(m.add) : <span className="text-slate-400 font-normal">—</span>}</td>
-                      <td className="p-2 text-right tabular-nums font-semibold text-slate-800">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-500 italic font-normal">tanpa pagu</span>}</td>
+                      <td className="p-2 text-right tabular-nums font-semibold text-slate-800">{m.pagu ? rupiah(m.pagu) : <span className={m.baku ? "text-slate-400 font-normal" : "text-slate-500 italic font-normal"}>{m.baku ? "0" : "tanpa pagu"}</span>}</td>
                       <td className={TD_PAKAI}>{rupiah(m.pakai)}</td>
                       <td className={tdSisa(sisaM)}>{rupiah(sisaM)}</td>
                       <td className="p-2">
