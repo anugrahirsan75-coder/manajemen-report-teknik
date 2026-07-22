@@ -7,9 +7,10 @@ import { useNonpr } from "@/lib/nonpr/store";
 import { tanggalIndo, rupiah, bulanTahun } from "@/lib/format";
 import { nonprTotal } from "@/lib/nonpr/types";
 import { MAX_NILAI_NONPR } from "@/lib/nonpr/db";
-import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import KapalCell from "@/components/KapalCell";
 import PreviewModal from "@/components/PreviewModal";
+import JenisBadge from "@/components/JenisBadge";
+import { useAnggaran } from "@/lib/anggaran/store";
 
 export default function NonprList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useNonpr();
@@ -18,6 +19,7 @@ export default function NonprList() {
   const [loading, setLoading] = useState(false);
   const [bulan, setBulan] = useState("");
   const [preview, setPreview] = useState<any | null>(null);
+  const { program, pengadaan } = useAnggaran();
 
   const refresh = async () => { setLoading(true); setRows(await listRemote()); setLoading(false); };
   useEffect(() => { if (supabaseReady) refresh(); /* eslint-disable-next-line */ }, [supabaseReady]);
@@ -86,13 +88,12 @@ export default function NonprList() {
               {filtered.map((r, i) => {
                 const total = nonprTotal(r.payload?.items || []);
                 const over = total > MAX_NILAI_NONPR;
-                const jenis = jenisAnggaranOf(r.payload || {});
                 return (
                   <tr key={r.id} className="border-b last:border-0 row-hover cursor-pointer" onClick={() => buka(r)}>
                     <td className="p-2 text-center text-slate-400">{i + 1}</td>
                     <td className="p-2 font-medium text-slate-800">
                       <span className="flex items-center gap-2">
-                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${jenis === "docking" ? "bg-amber-100 text-amber-700" : jenis === "lainnya" ? "bg-indigo-100 text-indigo-800" : "bg-emerald-100 text-emerald-700"}`} title={jenis === "lainnya" ? "Persetujuan Biaya Lainnya" : undefined}>{jenis === "docking" ? "Docking" : jenis === "lainnya" ? "Lainnya" : "Rutin"}</span>
+                        <JenisBadge payload={r.payload || {}} program={program} pengadaan={pengadaan} />
                         {r.nama_pengadaan || "(tanpa nama)"}
                       </span>
                     </td>

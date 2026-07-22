@@ -6,12 +6,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
 import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak } from "@/lib/sppbj/types";
-import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import { tanggalIndo, bulanTahun } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import KapalCell, { kapalDariItems } from "@/components/KapalCell";
 import PreviewModal from "@/components/PreviewModal";
+import JenisBadge from "@/components/JenisBadge";
+import { useAnggaran } from "@/lib/anggaran/store";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
@@ -21,6 +22,7 @@ export default function SppbjList() {
   const [bulan, setBulan] = useState(""); // "" = semua bulan, else "YYYY-MM"
   const [query, setQuery] = useState("");
   const [preview, setPreview] = useState<any | null>(null); // baris yang sedang dilihat
+  const { program, pengadaan } = useAnggaran(); // utk isi popover badge jenis anggaran
 
   // daftar bulan unik dari tanggal SPPBJ (desc)
   const ym = (r: any): string => (r.payload?.tanggal || "").slice(0, 7);
@@ -188,13 +190,12 @@ export default function SppbjList() {
               {filtered.map((r, i) => {
                 const st = (r.status as SppbjStatus) || "menunggu_spbj";
                 const nomor = r.payload?.noSPPBJ || r.payload?.noKontrak || "-";
-                const jenis = jenisAnggaranOf(r.payload || {});
                 return (
                   <tr key={r.id} className="border-b last:border-0 row-hover cursor-pointer" onClick={() => buka(r)}>
                     <td className="p-2 text-center text-slate-400">{i + 1}</td>
                     <td className="p-2 font-medium text-slate-800">
                       <span className="flex items-center gap-2">
-                        <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${jenis === "docking" ? "bg-amber-100 text-amber-700" : jenis === "lainnya" ? "bg-indigo-100 text-indigo-800" : "bg-emerald-100 text-emerald-700"}`} title={jenis === "lainnya" ? "Persetujuan Biaya Lainnya" : undefined}>{jenis === "docking" ? "Docking" : jenis === "lainnya" ? "Lainnya" : "Rutin"}</span>
+                        <JenisBadge payload={r.payload || {}} program={program} pengadaan={pengadaan} />
                         {r.nama_pengadaan || "(tanpa nama)"}
                       </span>
                     </td>
