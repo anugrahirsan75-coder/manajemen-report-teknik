@@ -123,13 +123,11 @@ export interface PlafonDocking {
 
 // ====== Persetujuan Biaya Lainnya (di luar Rutin & Docking) ======
 // 1 surat Persetujuan Pusat = 1 program. Isinya baris per KAPAL x Mata Anggaran,
-// meniru tabel surat: RKA | Usulan Cabang | Evaluasi Pusat (= pagu yang dipakai).
+// baris per KAPAL x Mata Anggaran dgn nilai Persetujuan Pusat (pagu) + Addendum.
 export interface ProgramRow {
   kapal: string;      // nama kapal penuh, atau "" untuk baris umum/cabang
   ma: string;         // "5010403009 (Akomodasi Kapal)" / label bebas
-  rka?: number;       // kolom RKA (informasi)
-  usulan?: number;    // kolom Usulan Cabang (informasi)
-  nilai: number;      // kolom Evaluasi Pusat = PAGU yang disetujui
+  nilai: number;      // PAGU yang disetujui pusat
   addendum?: number;  // persetujuan tambahan menyusul
 }
 export interface PlafonProgram {

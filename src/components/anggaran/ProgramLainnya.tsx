@@ -2,8 +2,8 @@
 /**
  * Kendali "Persetujuan Biaya Lainnya" — persetujuan pusat di LUAR Docking & Rutin.
  * 1 surat = 1 program (mis. Investasi Sarana Hiburan, Pemenuhan Uji Petik & SMC).
- * Isi program meniru tabel surat: baris per KAPAL x Mata Anggaran, kolom
- * RKA | Usulan Cabang | Evaluasi Pusat (= pagu yang dipakai) + Addendum.
+ * Isi program: baris per KAPAL x Mata Anggaran dgn nilai Persetujuan Pusat (pagu)
+ * + Addendum bila ada persetujuan tambahan.
  */
 import { Fragment, useMemo, useState } from "react";
 import { PengadaanRow, realisasiProgram, RealisasiItem } from "@/lib/anggaran/store";
@@ -14,8 +14,8 @@ import { rupiah, tanggalIndo } from "@/lib/format";
 const idBaru = () => globalThis.crypto?.randomUUID?.() ?? String(Math.random()).slice(2);
 
 /**
- * Tempel dari tabel surat/Excel. Tiap baris: teks (kapal &/ mata anggaran) + 1..3 angka.
- * Angka TERAKHIR dianggap Evaluasi Pusat (pagu). Kalau ada 3 angka -> RKA, Usulan, Evaluasi.
+ * Tempel dari tabel surat/Excel. Tiap baris: teks (kapal &/ mata anggaran) + angka.
+ * Angka PALING KANAN diambil sebagai nilai persetujuan pusat (pagu) — kolom RKA/usulan diabaikan.
  * Baris tanpa angka dipakai sebagai KAPAL berjalan (mis. "KMP. Ngafi" sebagai judul kelompok).
  */
 export function parseProgramPaste(teks: string): ProgramRow[] {
@@ -27,7 +27,7 @@ export function parseProgramPaste(teks: string): ProgramRow[] {
     if (/^(grand\s*)?total|^jumlah|^no\b|^uraian|^mata anggaran|^keterangan/i.test(b)) continue;
     // buang nomor urut di awal baris ("1  KMP. Ngafi", "10\tKMP. Lema") biar tak terbaca sebagai nilai
     b = b.replace(/^\s*\d{1,3}\s*[.)\]]?\s*(?=[A-Za-z(])/, "").replace(/^\s*[IVXLC]+\s+(?=[A-Za-z])/, "").trim();
-    // angka: "-" dan "0" dihitung NOL (kolom Evaluasi Pusat sering 0 / bergaris)
+    // angka: "-" dan "0" dihitung NOL (di surat sering ditulis bergaris)
     const token = b.match(/(?:Rp\s*)?(?:-|\d[\d.,]*)/g) || [];
     const angka = token
       .map((x) => (/^-+$/.test(x.replace(/Rp\s*/i, "").trim()) ? 0 : parseInt(x.replace(/[^\d]/g, ""), 10)))
@@ -41,13 +41,8 @@ export function parseProgramPaste(teks: string): ProgramRow[] {
     if (kapalBaris) ma = ma.replace(new RegExp(ringkasKapal(kapalBaris).replace(/[.*+?^${}()|[\]\\]/g, "\\$&"), "i"), "").replace(/^kmp\.?\s*/i, "").trim();
     ma = ma.replace(/^[|.\s]+|[|.\s]+$/g, "").trim();
     if (!ma && !kapalAktif) continue;
-    // 3 angka = RKA | Usulan | Evaluasi Pusat. Angka TERAKHIR selalu pagu.
-    const n = angka.length;
-    const row: ProgramRow = n >= 3
-      ? { kapal: kapalAktif, ma: ma || "(tanpa MA)", rka: angka[n - 3], usulan: angka[n - 2], nilai: angka[n - 1] }
-      : n === 2
-        ? { kapal: kapalAktif, ma: ma || "(tanpa MA)", rka: angka[0], nilai: angka[1] }
-        : { kapal: kapalAktif, ma: ma || "(tanpa MA)", nilai: angka[0] };
+    // Angka TERAKHIR tiap baris = nilai yang disetujui pusat (kolom paling kanan di surat).
+    const row: ProgramRow = { kapal: kapalAktif, ma: ma || "(tanpa MA)", nilai: angka[angka.length - 1] };
     // baris tanpa keterangan MA dan tanpa nilai -> lewati (biasanya sisa header)
     if (!ma && !row.nilai) continue;
     out.push(row);
@@ -196,18 +191,16 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
           </div>
 
           <div className="flex items-center gap-2 mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
-            <span className="w-36">Kapal</span><span className="flex-1">Mata Anggaran</span>
-            <span className="w-28 text-right">RKA</span><span className="w-28 text-right">Usulan</span>
-            <span className="w-32 text-right text-indigo-700">Evaluasi Pusat</span><span className="w-28 text-right text-violet-700">Addendum</span><span className="w-4" />
+            <span className="w-40">Kapal</span><span className="flex-1">Mata Anggaran</span>
+            <span className="w-44 text-right text-indigo-700">Persetujuan Pusat (Pagu)</span>
+            <span className="w-32 text-right text-violet-700">Addendum</span><span className="w-4" />
           </div>
           {draft.rows.map((r, i) => (
             <div key={i} className="flex items-center gap-2 mb-1.5">
-              <input list="kapalProgram" value={r.kapal} onChange={(e) => setDraftRow(i, { kapal: e.target.value })} placeholder="semua/umum" className="w-36 text-xs border rounded-lg px-2 py-1.5" />
+              <input list="kapalProgram" value={r.kapal} onChange={(e) => setDraftRow(i, { kapal: e.target.value })} placeholder="semua/umum" className="w-40 text-xs border rounded-lg px-2 py-1.5" />
               <input list="maProgram" value={r.ma} onChange={(e) => setDraftRow(i, { ma: e.target.value })} placeholder="Mata Anggaran" className="flex-1 text-xs border rounded-lg px-2 py-1.5" />
-              <input type="number" value={r.rka || ""} onChange={(e) => setDraftRow(i, { rka: +e.target.value })} placeholder="0" className="w-28 text-xs border rounded-lg px-2 py-1.5 text-right" />
-              <input type="number" value={r.usulan || ""} onChange={(e) => setDraftRow(i, { usulan: +e.target.value })} placeholder="0" className="w-28 text-xs border rounded-lg px-2 py-1.5 text-right" />
-              <input type="number" value={r.nilai || ""} onChange={(e) => setDraftRow(i, { nilai: +e.target.value })} placeholder="0" className="w-32 text-xs border border-indigo-300 bg-indigo-50/40 rounded-lg px-2 py-1.5 text-right font-semibold" />
-              <input type="number" value={r.addendum || ""} onChange={(e) => setDraftRow(i, { addendum: +e.target.value })} placeholder="0" className="w-28 text-xs border border-violet-300 bg-violet-50/40 rounded-lg px-2 py-1.5 text-right" />
+              <input type="number" value={r.nilai || ""} onChange={(e) => setDraftRow(i, { nilai: +e.target.value })} placeholder="0" className="w-44 text-xs border border-indigo-300 bg-indigo-50/40 rounded-lg px-2 py-1.5 text-right font-semibold" />
+              <input type="number" value={r.addendum || ""} onChange={(e) => setDraftRow(i, { addendum: +e.target.value })} placeholder="0" className="w-32 text-xs border border-violet-300 bg-violet-50/40 rounded-lg px-2 py-1.5 text-right" />
               <button onClick={() => setDraft({ ...draft, rows: draft.rows.filter((_, j) => j !== i) })} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button>
             </div>
           ))}
@@ -216,7 +209,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
           <div className="flex items-center gap-2 mt-1">
             <button onClick={() => setDraft({ ...draft, rows: [...draft.rows, { kapal: "", ma: "", nilai: 0 }] })} className="text-xs text-indigo-700 font-semibold hover:underline">+ baris</button>
             <button onClick={() => setDraft({ ...draft, rows: [...draft.rows, ...KAPAL_ANGGARAN.map((k) => ({ kapal: k, ma: draft.rows[0]?.ma || "", nilai: 0 }))] })} className="text-xs text-indigo-700 font-semibold hover:underline">+ 13 kapal sekaligus</button>
-            <span className="text-[10px] text-slate-500 ml-auto">Evaluasi Pusat = pagu yang dipakai untuk kendali. RKA & Usulan hanya catatan.</span>
+            <span className="text-[10px] text-slate-500 ml-auto">Isi nilai yang <b>disetujui pusat</b>. Addendum = persetujuan tambahan menyusul.</span>
           </div>
         </div>
       ) : !aktif ? null : (
@@ -235,6 +228,8 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
                   <th className="p-2 text-left w-40">Kapal</th>
                   <th className="p-2 text-left">Mata Anggaran</th>
                   <th className="p-2 text-right">Pagu</th>
+                  <th className="p-2 text-right text-violet-800">Addendum</th>
+                  <th className="p-2 text-right">Pagu Total</th>
                   <th className="p-2 text-right">Terpakai</th>
                   <th className="p-2 text-right">Sisa</th>
                   <th className="p-2 text-right w-36">Serapan</th>
@@ -244,7 +239,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
               <tbody>
                 {([["Biaya", grup.biaya], ["Investasi", grup.investasi]] as const).flatMap(([judul, arr]) => arr.length === 0 ? [] : [
                   <tr key={"h" + judul} className={judul === "Biaya" ? "bg-indigo-200/50" : "bg-violet-100"}>
-                    <td colSpan={7} className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">
+                    <td colSpan={9} className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">
                       {judul === "Biaya" ? "Biaya" : "Investasi (belanja modal)"}
                       <span className="ml-2 font-bold normal-case tracking-normal tabular-nums">pagu {rupiah(jml(arr as any).pagu)} · terpakai {rupiah(Math.round(jml(arr as any).pakai))}</span>
                     </td>
@@ -265,8 +260,10 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
                               {rinci.length > 0 && <span className="text-[10px] font-bold text-indigo-900 bg-indigo-200 rounded-full px-1.5 py-px">{rinci.length}</span>}
                             </span>
                           </td>
-                          <td className="p-2 text-slate-700">{b.ma}{b.add > 0 && <span className="ml-1 text-[10px] font-bold text-violet-800">+add {rupiah(b.add)}</span>}</td>
-                          <td className="p-2 text-right tabular-nums text-slate-700">{pagu ? rupiah(pagu) : <span className="text-slate-400">0</span>}</td>
+                          <td className="p-2 text-slate-700">{b.ma}</td>
+                          <td className="p-2 text-right tabular-nums text-slate-700">{b.pagu ? rupiah(b.pagu) : <span className="text-slate-400">0</span>}</td>
+                          <td className="p-2 text-right tabular-nums font-bold text-violet-800">{b.add ? "+" + rupiah(b.add) : <span className="text-slate-400 font-normal">—</span>}</td>
+                          <td className="p-2 text-right tabular-nums font-semibold text-slate-800">{pagu ? rupiah(pagu) : <span className="text-slate-400 font-normal">0</span>}</td>
                           <td className="p-2 text-right tabular-nums font-bold text-slate-900">{rupiah(Math.round(b.pakai))}</td>
                           <td className={`p-2 text-right tabular-nums font-bold ${pagu - b.pakai < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(Math.round(pagu - b.pakai))}</td>
                           <td className="p-2">
@@ -287,7 +284,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
                         </tr>
                         {isOpen && (
                           <tr className="bg-indigo-50/50">
-                            <td colSpan={7} className="px-3 py-2">
+                            <td colSpan={9} className="px-3 py-2">
                               {rinci.length === 0 ? <p className="text-[11px] text-slate-500">Belum ada pengadaan yang ditautkan ke pos ini.</p> : (
                                 <table className="w-full text-[11px]"><tbody>
                                   {rinci.map((x, i) => (
@@ -311,6 +308,8 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
               <tfoot>
                 <tr className="bg-indigo-100/70 border-t-2 border-indigo-300 font-extrabold text-indigo-950">
                   <td className="p-2" colSpan={2}>TOTAL</td>
+                  <td className="p-2 text-right tabular-nums">{rupiah(baris.reduce((s2, x) => s2 + x.pagu, 0))}</td>
+                  <td className="p-2 text-right tabular-nums text-violet-800">{baris.some((x) => x.add) ? "+" + rupiah(baris.reduce((s2, x) => s2 + x.add, 0)) : "—"}</td>
                   <td className="p-2 text-right tabular-nums">{rupiah(totalPagu)}</td>
                   <td className="p-2 text-right tabular-nums">{rupiah(Math.round(totalPakai))}</td>
                   <td className={`p-2 text-right tabular-nums ${sisa < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(Math.round(sisa))}</td>
@@ -331,7 +330,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-3 bg-black/40" onMouseDown={() => setPaste(null)}>
           <div className="bg-white w-full max-w-2xl rounded-2xl shadow-2xl p-5" onMouseDown={(e) => e.stopPropagation()}>
             <h4 className="font-bold text-slate-800 mb-1">Tempel tabel dari Surat Persetujuan / Excel</h4>
-            <p className="text-[11px] text-slate-500 mb-2">Salin baris tabelnya apa adanya. Angka <b>terakhir</b> tiap baris dianggap <b>Evaluasi Pusat</b> (pagu). Baris judul kapal ikut terbaca sebagai pengelompokan.</p>
+            <p className="text-[11px] text-slate-500 mb-2">Salin baris tabelnya apa adanya. Angka <b>paling kanan</b> tiap baris diambil sebagai <b>nilai persetujuan pusat</b> (pagu). Baris judul kapal ikut terbaca sebagai pengelompokan.</p>
             <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={10} className="w-full border rounded-lg p-2 text-xs font-mono"
               placeholder={"KMP. Ngafi\nM.A Biaya Akomodasi\t19.100.000\t0\t19.092.000\nKMP. Lema\nM.A Biaya Akomodasi\t78.000.000\t80.641.500\t77.644.500"} />
             <div className="flex items-center justify-end gap-2 mt-2">
