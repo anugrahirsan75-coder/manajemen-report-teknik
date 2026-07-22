@@ -11,6 +11,7 @@ import { tanggalIndo, bulanTahun } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import KapalCell, { kapalDariItems } from "@/components/KapalCell";
+import PreviewModal from "@/components/PreviewModal";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
@@ -19,6 +20,7 @@ export default function SppbjList() {
   const [loading, setLoading] = useState(false);
   const [bulan, setBulan] = useState(""); // "" = semua bulan, else "YYYY-MM"
   const [query, setQuery] = useState("");
+  const [preview, setPreview] = useState<any | null>(null); // baris yang sedang dilihat
 
   // daftar bulan unik dari tanggal SPPBJ (desc)
   const ym = (r: any): string => (r.payload?.tanggal || "").slice(0, 7);
@@ -201,6 +203,7 @@ export default function SppbjList() {
                     <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className="p-2"><span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
                     <td className="p-2 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => setPreview(r)} className="btn btn-ghost text-[11px] px-2.5 py-1 mr-1" title="Lihat isi dokumen tanpa membuka halaman">👁 Preview</button>
                       <button onClick={() => buka(r)} className="btn btn-primary text-[11px] px-2.5 py-1 mr-1">Buka</button>
                       <button onClick={() => hapus(r.id, r.nama_pengadaan)} className="btn btn-danger-soft text-[11px] px-2.5 py-1">Hapus</button>
                     </td>
@@ -210,6 +213,10 @@ export default function SppbjList() {
             </tbody>
           </table>
         </div>
+      )}
+      {preview && (
+        <PreviewModal jenis="SPPBJ" payload={preview.payload} onTutup={() => setPreview(null)}
+          onBuka={() => { const r = preview; setPreview(null); buka(r); }} />
       )}
     </main>
   );

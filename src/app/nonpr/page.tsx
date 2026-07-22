@@ -9,6 +9,7 @@ import { nonprTotal } from "@/lib/nonpr/types";
 import { MAX_NILAI_NONPR } from "@/lib/nonpr/db";
 import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import KapalCell from "@/components/KapalCell";
+import PreviewModal from "@/components/PreviewModal";
 
 export default function NonprList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useNonpr();
@@ -16,6 +17,7 @@ export default function NonprList() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [bulan, setBulan] = useState("");
+  const [preview, setPreview] = useState<any | null>(null);
 
   const refresh = async () => { setLoading(true); setRows(await listRemote()); setLoading(false); };
   useEffect(() => { if (supabaseReady) refresh(); /* eslint-disable-next-line */ }, [supabaseReady]);
@@ -99,6 +101,7 @@ export default function NonprList() {
                     <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className={`p-2 text-right ${over ? "text-red-600 font-semibold" : "text-slate-600"}`}>{rupiah(total)}</td>
                     <td className="p-2 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => setPreview(r)} className="btn btn-ghost text-[11px] px-2.5 py-1 mr-1" title="Lihat isi dokumen tanpa membuka halaman">👁 Preview</button>
                       <button onClick={() => buka(r)} className="btn btn-primary text-[11px] px-2.5 py-1 mr-1">Buka</button>
                       <button onClick={() => hapus(r.id, r.nama_pengadaan)} className="btn btn-danger-soft text-[11px] px-2.5 py-1">Hapus</button>
                     </td>
@@ -108,6 +111,10 @@ export default function NonprList() {
             </tbody>
           </table>
         </div>
+      )}
+      {preview && (
+        <PreviewModal jenis="Non PR PO" payload={preview.payload} onTutup={() => setPreview(null)}
+          onBuka={() => { const r = preview; setPreview(null); buka(r); }} />
       )}
     </main>
   );
