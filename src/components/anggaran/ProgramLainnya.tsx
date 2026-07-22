@@ -124,7 +124,19 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
     } finally { setBusy(false); }
   };
   const hapus = async () => {
-    if (!aktif || !confirm(`Hapus program "${aktif.nama}"? Pagu-nya ikut hilang (pengadaan tetap ada).`)) return;
+    if (!aktif) return;
+    const tertaut = pengadaan.filter((x) => x.programId === aktif.id);
+    const pesan = [
+      `Hapus persetujuan "${aktif.nama}"?`,
+      `${(aktif.rows || []).length} baris pagu, total ${rupiah(totalPagu)}.`,
+      "",
+      "Pengadaan/SPPBJ TIDAK ikut terhapus — hanya pagunya.",
+      tertaut.length
+        ? `⚠ ${tertaut.length} pengadaan masih tertaut ke surat ini dan akan kehilangan kendali pagunya:\n` +
+          tertaut.slice(0, 5).map((x) => `  • ${x.nama}`).join("\n") + (tertaut.length > 5 ? `\n  • …(${tertaut.length - 5} lagi)` : "")
+        : "",
+    ].filter(Boolean).join("\n");
+    if (!confirm(pesan)) return;
     await onSave(program.filter((p) => p.id !== aktif.id));
     setPilih("");
   };

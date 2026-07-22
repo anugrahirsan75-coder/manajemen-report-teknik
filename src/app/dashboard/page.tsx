@@ -697,6 +697,17 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
     setEdit(true);
   };
   const salin = () => { const pe = plafon.find((p) => p.bulan === prevMonth(bulan)); if (pe?.rows?.length) setDraft(pe.rows.map((r) => ({ ...r }))); else alert("Pagu bulan sebelumnya belum ada."); };
+  // hapus SELURUH pagu bulan ini (pengadaan tidak ikut terhapus)
+  const hapusPagu = async () => {
+    if (!entry) return;
+    const nilai = rows.reduce((s, r) => s + (r.nilai || 0), 0);
+    if (!confirm(`Hapus pagu RUTIN ${bulanTahun(bulan + "-01")}?
+${rows.length} Mata Anggaran, total ${rupiah(nilai)}.
+
+Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
+    setBusy(true);
+    try { await onSave(plafon.filter((p) => p.bulan !== bulan)); setEdit(false); } finally { setBusy(false); }
+  };
   const simpan = async () => {
     setBusy(true);
     try {
@@ -732,6 +743,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
               <a href={`/dashboard/cetak?jenis=rutin&bulan=${bulan}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
               <button onClick={bulanLain} className="btn btn-ghost text-xs" title={`Siapkan pagu ${bulanTahun(nextMonth(bulan) + "-01")} (disalin dari bulan ini)`}>➕ Pagu Bulan Lain</button>
               <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>
+              {entry && <button onClick={hapusPagu} disabled={busy} className="btn btn-ghost text-xs text-red-600 disabled:opacity-50" title="Hapus pagu bulan ini (pengadaan tetap ada)">🗑️ Hapus Pagu</button>}
             </>
           ) : (
             <>
@@ -1046,6 +1058,16 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   const pctTot = totalPagu ? Math.round((totalPakai / totalPagu) * 100) : 0;
 
   const startEdit = () => { setDraft(seedDockingDraft(rows)); setNoSurat(entry?.noSurat || ""); setNoAdd(entry?.noSuratAddendum || ""); setEdit(true); };
+  // hapus pagu docking kapal+tahun ini (pengadaan tidak ikut terhapus)
+  const hapusPagu = async () => {
+    if (!entry) return;
+    if (!confirm(`Hapus pagu DOCKING ${kapal} ${tahun}?
+${rows.length} Mata Anggaran, pagu total ${rupiah(totalPagu)}.
+
+Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
+    setBusy(true);
+    try { await onSave(docking.filter((d) => !(d.kapal === kapal && d.tahun === tahun))); setEdit(false); } finally { setBusy(false); }
+  };
   const simpan = async () => {
     setBusy(true);
     try {
@@ -1073,6 +1095,7 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
               <>
                 <a href={`/dashboard/cetak?jenis=docking&kapal=${encodeURIComponent(kapal)}&tahun=${tahun}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
                 <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
+                {entry && <button onClick={hapusPagu} disabled={busy} className="btn btn-ghost text-xs text-red-600 disabled:opacity-50" title="Hapus pagu docking kapal ini (pengadaan tetap ada)">🗑️ Hapus Pagu</button>}
               </>
             ) : (
               <>
