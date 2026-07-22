@@ -91,7 +91,7 @@ export default function SppbjIsi() {
   };
 
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
-  const { plafon, pengadaan } = useAnggaran();
+  const { plafon, pengadaan, program } = useAnggaran();
   const rutinInfo = useMemo(() => {
     if (jenisAnggaranOf(req) !== "rutin") return null;
     const ma = (req.mataAnggaran || [])[0] || "";
@@ -250,8 +250,19 @@ export default function SppbjIsi() {
               <option value="">— otomatis dari Kategori —</option>
               <option value="Rutin">Rutin (Persetujuan Rutin bulanan)</option>
               <option value="Docking">Docking (Persetujuan Pusat)</option>
+              <option value="Lainnya">Lainnya (Persetujuan Biaya Lainnya)</option>
             </select>
           </Field>
+          {(req.jenisAnggaran === "Lainnya" || req.programId) && (
+            <Field label="Persetujuan Biaya Lainnya (sumber pagu)">
+              <select className="w-full rounded-lg border border-indigo-300 bg-indigo-50/40 px-3 py-2 text-sm" value={req.programId || ""}
+                onChange={(e) => update({ programId: e.target.value || undefined, jenisAnggaran: e.target.value ? "Lainnya" : req.jenisAnggaran })}>
+                <option value="">— pilih surat persetujuan —</option>
+                {program.map((pr) => <option key={pr.id} value={pr.id}>{pr.nama} ({pr.tahun}){pr.noSurat ? ` — ${pr.noSurat}` : ""}</option>)}
+              </select>
+              {program.length === 0 && <p className="text-[11px] text-amber-700 mt-1">Belum ada persetujuan. Buat dulu di Dashboard Anggaran → Persetujuan Biaya Lainnya.</p>}
+            </Field>
+          )}
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} /></Field>
           <Field label="Dasar Pelimpahan (= KAK poin A)"><Input value={req.dasarPelimpahan} onChange={(e) => update({ dasarPelimpahan: e.target.value })} /></Field>
           <Field label="Staf Teknik (TTD)">

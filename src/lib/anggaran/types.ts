@@ -24,9 +24,11 @@ export const labelMA = (kode: string) => MATA_ANGGARAN.find((m) => m.kode === ko
 export const fullMA = (kode: string) => (kode ? `${kode} (${labelMA(kode)})` : "(Tanpa Mata Anggaran)");
 
 // klasifikasi Rutin vs Docking (anti-overlap): field eksplisit, else turunkan dari kategoriRekap.
-export function jenisAnggaranOf(p: { jenisAnggaran?: string; kategoriRekap?: string }): "rutin" | "docking" {
+export type JenisAnggaran = "rutin" | "docking" | "lainnya";
+export function jenisAnggaranOf(p: { jenisAnggaran?: string; kategoriRekap?: string; programId?: string }): JenisAnggaran {
   const j = (p.jenisAnggaran || "").toLowerCase();
-  if (j === "rutin" || j === "docking") return j as "rutin" | "docking";
+  if (j === "rutin" || j === "docking" || j === "lainnya") return j as JenisAnggaran;
+  if (p.programId) return "lainnya"; // sudah ditautkan ke Persetujuan Biaya Lainnya
   return /docking/i.test(p.kategoriRekap || "") ? "docking" : "rutin";
 }
 
@@ -117,6 +119,29 @@ export interface PlafonDocking {
   noSuratAddendum?: string;  // no. surat persetujuan tambahan (addendum)
   rows: PlafonRow[];
 }
+
+
+// ====== Persetujuan Biaya Lainnya (di luar Rutin & Docking) ======
+// 1 surat Persetujuan Pusat = 1 program. Isinya baris per KAPAL x Mata Anggaran,
+// meniru tabel surat: RKA | Usulan Cabang | Evaluasi Pusat (= pagu yang dipakai).
+export interface ProgramRow {
+  kapal: string;      // nama kapal penuh, atau "" untuk baris umum/cabang
+  ma: string;         // "5010403009 (Akomodasi Kapal)" / label bebas
+  rka?: number;       // kolom RKA (informasi)
+  usulan?: number;    // kolom Usulan Cabang (informasi)
+  nilai: number;      // kolom Evaluasi Pusat = PAGU yang disetujui
+  addendum?: number;  // persetujuan tambahan menyusul
+}
+export interface PlafonProgram {
+  id: string;         // dipakai untuk menautkan pengadaan (payload.programId)
+  nama: string;       // mis. "Investasi Sarana Hiburan Kapal 2026"
+  noSurat?: string;   // TN.205/01044/II/ASDP-2026
+  tanggal?: string;   // ISO tanggal surat
+  tahun: number;
+  perihal?: string;
+  rows: ProgramRow[];
+}
+export const paguProgram = (p: PlafonProgram) => (p.rows || []).reduce((s, r) => s + (r.nilai || 0) + (r.addendum || 0), 0);
 
 // kunci pencocokan pagu <-> realisasi.
 // 1) kalau ada kode 6+ digit -> pakai kode. 2) kalau label bebas ("Pelumas", "Akomodasi Kapal")

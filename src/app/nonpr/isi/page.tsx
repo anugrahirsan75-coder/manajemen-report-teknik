@@ -9,8 +9,10 @@ import { rupiah } from "@/lib/format";
 import { MATA_ANGGARAN_NONPR, VENDOR_NONPR, KAPAL_LIST_NONPR, MAX_NILAI_NONPR } from "@/lib/nonpr/db";
 import { NonprItem, emptyNonprItem, kapalUnikNonpr, nonprTotal, ketLines } from "@/lib/nonpr/types";
 import FotoUploader from "@/components/FotoUploader";
+import { useAnggaran } from "@/lib/anggaran/store";
 
 export default function NonprIsi() {
+  const { program } = useAnggaran();
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving, lastSaved, supabaseReady } = useNonpr();
   const router = useRouter();
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
@@ -77,8 +79,18 @@ export default function NonprIsi() {
               <option value="">— pilih —</option>
               <option value="Rutin">Rutin (Persetujuan Rutin bulanan)</option>
               <option value="Docking">Docking (Persetujuan Pusat)</option>
+              <option value="Lainnya">Lainnya (Persetujuan Biaya Lainnya)</option>
             </select>
           </Field>
+          {(req.jenisAnggaran === "Lainnya" || req.programId) && (
+            <Field label="Persetujuan Biaya Lainnya (sumber pagu)">
+              <select className="w-full rounded-lg border border-indigo-300 bg-indigo-50/40 px-3 py-2 text-sm" value={req.programId || ""}
+                onChange={(e) => update({ programId: e.target.value || undefined, jenisAnggaran: e.target.value ? "Lainnya" : req.jenisAnggaran })}>
+                <option value="">— pilih surat persetujuan —</option>
+                {program.map((pr) => <option key={pr.id} value={pr.id}>{pr.nama} ({pr.tahun}){pr.noSurat ? ` — ${pr.noSurat}` : ""}</option>)}
+              </select>
+            </Field>
+          )}
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} placeholder="Jasa Perbaikan ... KMP ... Bulan 2026" /></Field>
           <Field label="Dasar Pelimpahan (jika ada)"><Input value={req.dasarPelimpahan} onChange={(e) => update({ dasarPelimpahan: e.target.value })} /></Field>
           <Field label="Vendor (Surat Pernyataan Harga)">

@@ -8,11 +8,12 @@ import {
 } from "@/lib/anggaran/types";
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
+import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
 
 const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) => s + (it.harga || 0) * (it.jumlah || 0), 0);
 
 export default function DashboardAnggaran() {
-  const { ready, loading, pengadaan, rka, rr, plafon, docking, reload, saveRka, saveRr, savePlafon, saveDocking } = useAnggaran();
+  const { ready, loading, pengadaan, rka, rr, plafon, docking, program, reload, saveRka, saveRr, savePlafon, saveDocking, saveProgram } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
 
   const tahunList = useMemo(() => Array.from(new Set(pengadaan.map((r) => (r.tanggal || "").slice(0, 4)).filter(Boolean))).sort().reverse(), [pengadaan]);
@@ -97,6 +98,11 @@ export default function DashboardAnggaran() {
           {/* Kendali Anggaran Docking per kapal (pagu Persetujuan Pusat vs realisasi DOCKING) */}
           <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} />
 
+          <Card tone="indigo" icon="📜" badge="Di luar Docking & Rutin" title="Persetujuan Biaya Lainnya"
+            sub="Persetujuan Pusat per SURAT — investasi/pekerjaan khusus, pagu per kapal & Mata Anggaran">
+            <ProgramLainnya program={program} pengadaan={pengadaan} onSave={saveProgram} />
+          </Card>
+
           {/* RKA vs penyerapan */}
           <RkaSection rka={rka} perMA={a.perMA} detail={detailMA} onSave={saveRka} />
 
@@ -133,7 +139,7 @@ function Kpi({ label, value, sub, icon, tint }: { label: string; value: string; 
   );
 }
 /* Identitas warna kartu — biar Rutin (biru, bulanan) & Docking (amber, per kapal) tak tertukar */
-type Nada = "biru" | "amber";
+type Nada = "biru" | "amber" | "indigo";
 const NADA: Record<Nada, {
   strip: string; ikon: string; judul: string; badge: string; kartu: string;
   head: string; bar: string; pilihAktif: string; pilihPasif: string;
@@ -159,6 +165,17 @@ const NADA: Record<Nada, {
     bar: "bg-gradient-to-r from-amber-500 to-orange-700",
     pilihAktif: "bg-orange-700 text-white border-orange-700",
     pilihPasif: "bg-white border-amber-300 text-amber-800 hover:border-orange-500 hover:text-orange-800",
+  },
+  indigo: {
+    strip: "bg-gradient-to-r from-indigo-400 via-indigo-600 to-violet-800",
+    ikon: "bg-gradient-to-br from-indigo-500 to-violet-700 text-white",
+    judul: "text-indigo-900",
+    badge: "bg-indigo-100 text-indigo-900 ring-1 ring-indigo-400",
+    kartu: "bg-indigo-50/70 ring-1 ring-indigo-200",
+    head: "bg-indigo-100/70 text-indigo-900 border-indigo-300",
+    bar: "bg-gradient-to-r from-indigo-500 to-violet-700",
+    pilihAktif: "bg-indigo-700 text-white border-indigo-700",
+    pilihPasif: "bg-white border-indigo-300 text-indigo-800 hover:border-indigo-500",
   },
 };
 
@@ -712,6 +729,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; p
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
             <>
+              <a href={`/dashboard/cetak?jenis=rutin&bulan=${bulan}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
               <button onClick={bulanLain} className="btn btn-ghost text-xs" title={`Siapkan pagu ${bulanTahun(nextMonth(bulan) + "-01")} (disalin dari bulan ini)`}>➕ Pagu Bulan Lain</button>
               <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>
             </>
@@ -1052,7 +1070,10 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
           {entry?.noSurat && !edit && <span className="text-[11px] font-semibold text-amber-800">No. {entry.noSurat}</span>}
           <div className="ml-auto flex items-center gap-2">
             {!edit ? (
-              <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
+              <>
+                <a href={`/dashboard/cetak?jenis=docking&kapal=${encodeURIComponent(kapal)}&tahun=${tahun}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
+                <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
+              </>
             ) : (
               <>
                 <button onClick={() => setPaste("")} className="btn btn-ghost text-xs">📋 Tempel dari Excel</button>
