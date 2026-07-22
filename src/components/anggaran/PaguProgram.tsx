@@ -37,7 +37,7 @@ export default function PaguProgram(p: PaguProgramProps) {
   const sisaSetelah = totalSisa - cek.totalDipakai;
 
   return (
-    <div className="rounded-xl ring-1 ring-indigo-300 bg-indigo-50/60 p-3">
+    <div className="rounded-xl ring-1 ring-indigo-300 bg-indigo-50 p-3 elev-sm">
       <div className="flex flex-wrap items-center gap-2">
         <span className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">📜 Sumber pagu — Persetujuan Biaya Lainnya</span>
         <select value={p.programId || ""} onChange={(e) => p.onPilih(e.target.value || undefined, p.program.find((x) => x.id === e.target.value))}

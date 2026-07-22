@@ -222,24 +222,25 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+            <table className="w-full text-sm min-w-[62rem]">
               <thead className="bg-indigo-100/70 text-[11px] uppercase tracking-wide text-indigo-900 font-bold border-b-2 border-indigo-300">
                 <tr>
-                  <th className="p-2 text-left w-40">Kapal</th>
+                  <th className="p-2 text-left w-32">Kapal</th>
                   <th className="p-2 text-left">Mata Anggaran</th>
-                  <th className="p-2 text-right">Pagu</th>
-                  <th className="p-2 text-right text-violet-800">Addendum</th>
-                  <th className="p-2 text-right">Pagu Total</th>
-                  <th className="p-2 text-right">Terpakai</th>
-                  <th className="p-2 text-right">Sisa</th>
-                  <th className="p-2 text-right w-36">Serapan</th>
-                  <th className="p-2 text-center">Status</th>
+                  <th className="p-2 text-right w-28">Pagu</th>
+                  <th className="p-2 text-right w-24 text-violet-800">Addendum</th>
+                  <th className="p-2 text-right w-28">Pagu Total</th>
+                  <th className="p-2 text-right w-24">Terpakai</th>
+                  <th className="p-2 text-right w-28">Sisa</th>
+                  <th className="p-2 text-right w-24">Serapan</th>
+                  <th className="p-2 text-center w-24">Status</th>
+                  <th className="p-2 text-center w-20">Aksi</th>
                 </tr>
               </thead>
               <tbody>
                 {([["Biaya", grup.biaya], ["Investasi", grup.investasi]] as const).flatMap(([judul, arr]) => arr.length === 0 ? [] : [
                   <tr key={"h" + judul} className={judul === "Biaya" ? "bg-indigo-200/50" : "bg-violet-100"}>
-                    <td colSpan={9} className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">
+                    <td colSpan={10} className="px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider text-indigo-900">
                       {judul === "Biaya" ? "Biaya" : "Investasi (belanja modal)"}
                       <span className="ml-2 font-bold normal-case tracking-normal tabular-nums">pagu {rupiah(jml(arr as any).pagu)} · terpakai {rupiah(Math.round(jml(arr as any).pakai))}</span>
                     </td>
@@ -253,38 +254,41 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
                     return (
                       <Fragment key={b.kunci}>
                         <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-indigo-50" : "even:bg-indigo-50/30"}`} onClick={() => setBuka(isOpen ? null : b.kunci)}>
-                          <td className="p-2 font-semibold text-slate-800">
+                          <td className="p-2 font-semibold text-slate-800 whitespace-nowrap">
                             <span className="inline-flex items-center gap-1.5">
                               <span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>
                               {ringkasKapal(b.kapal)}
                               {rinci.length > 0 && <span className="text-[10px] font-bold text-indigo-900 bg-indigo-200 rounded-full px-1.5 py-px">{rinci.length}</span>}
                             </span>
                           </td>
-                          <td className="p-2 text-slate-700">{b.ma}</td>
-                          <td className="p-2 text-right tabular-nums text-slate-700">{b.pagu ? rupiah(b.pagu) : <span className="text-slate-400">0</span>}</td>
-                          <td className="p-2 text-right tabular-nums font-bold text-violet-800">{b.add ? "+" + rupiah(b.add) : <span className="text-slate-400 font-normal">—</span>}</td>
-                          <td className="p-2 text-right tabular-nums font-semibold text-slate-800">{pagu ? rupiah(pagu) : <span className="text-slate-400 font-normal">0</span>}</td>
-                          <td className="p-2 text-right tabular-nums font-bold text-slate-900">{rupiah(Math.round(b.pakai))}</td>
+                          <td className="p-2 text-slate-700"><span className="block truncate max-w-[13rem]" title={b.ma}>{b.ma}</span></td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap text-slate-700">{b.pagu ? rupiah(b.pagu) : <span className="text-slate-400">0</span>}</td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap font-bold text-violet-800">{b.add ? "+" + rupiah(b.add) : <span className="text-slate-400 font-normal">—</span>}</td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap font-semibold text-slate-800">{pagu ? rupiah(pagu) : <span className="text-slate-400 font-normal">0</span>}</td>
+                          <td className="p-2 text-right tabular-nums whitespace-nowrap font-bold text-slate-900">{rupiah(Math.round(b.pakai))}</td>
                           <td className={`p-2 text-right tabular-nums font-bold ${pagu - b.pakai < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(Math.round(pagu - b.pakai))}</td>
                           <td className="p-2">
-                            <div className="flex items-center gap-2">
-                              <div className="flex-1 h-2.5 rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 overflow-hidden">
-                                <div className={`h-full rounded-full ${pagu ? s.bar : "bg-slate-400"}`} style={{ width: pagu ? `${Math.max(b.pakai > 0 ? 4 : 0, Math.min(100, pct))}%` : "0%" }} />
+                            <div className="flex items-center gap-1.5 justify-end">
+                              <div className="w-10 h-2 rounded-full bg-slate-200 overflow-hidden shrink-0">
+                                <div className={`h-full rounded-full ${pagu ? s.bar : "bg-slate-400"}`} style={{ width: pagu ? `${Math.max(b.pakai > 0 ? 6 : 0, Math.min(100, pct))}%` : "0%" }} />
                               </div>
-                              <span className={`text-xs font-bold tabular-nums w-11 text-right ${pagu ? s.num : "text-slate-400"}`}>{pagu ? pct + "%" : "—"}</span>
+                              <span className={`text-xs font-bold tabular-nums w-9 text-right ${pagu ? s.num : "text-slate-400"}`}>{pagu ? pct + "%" : "—"}</span>
                             </div>
                           </td>
                           <td className="p-2 text-center">
-                            <span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full ${pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{pagu ? s.t : "—"}</span>
+                            <span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full whitespace-nowrap ${pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{pagu ? s.t : "—"}</span>
+                          </td>
+                          <td className="p-2 text-center">
                             {pagu - b.pakai > 0 && (
                               <a href={`/sppbj/isi?program=${encodeURIComponent(aktifId)}&kapal=${encodeURIComponent(b.kapal === "(umum)" ? "" : b.kapal)}&ma=${encodeURIComponent(b.ma)}`}
-                                onClick={(e) => e.stopPropagation()} className="block text-[9px] font-bold text-indigo-700 hover:underline mt-1">＋ buat SPPBJ</a>
+                                onClick={(e) => e.stopPropagation()} title="Buat SPPBJ untuk pos ini"
+                                className="inline-block text-[10px] font-bold text-indigo-700 hover:underline whitespace-nowrap">＋ SPPBJ</a>
                             )}
                           </td>
                         </tr>
                         {isOpen && (
                           <tr className="bg-indigo-50/50">
-                            <td colSpan={9} className="px-3 py-2">
+                            <td colSpan={10} className="px-3 py-2">
                               {rinci.length === 0 ? <p className="text-[11px] text-slate-500">Belum ada pengadaan yang ditautkan ke pos ini.</p> : (
                                 <table className="w-full text-[11px]"><tbody>
                                   {rinci.map((x, i) => (
@@ -314,7 +318,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
                   <td className="p-2 text-right tabular-nums">{rupiah(Math.round(totalPakai))}</td>
                   <td className={`p-2 text-right tabular-nums ${sisa < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(Math.round(sisa))}</td>
                   <td className="p-2 text-right tabular-nums">{pctTot}%</td>
-                  <td />
+                  <td /><td />
                 </tr>
               </tfoot>
             </table>

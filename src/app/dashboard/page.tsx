@@ -171,7 +171,7 @@ const NADA: Record<Nada, {
     ikon: "bg-gradient-to-br from-indigo-500 to-violet-700 text-white",
     judul: "text-indigo-900",
     badge: "bg-indigo-100 text-indigo-900 ring-1 ring-indigo-400",
-    kartu: "bg-indigo-50/70 ring-1 ring-indigo-200",
+    kartu: "bg-indigo-50 ring-1 ring-indigo-200",
     head: "bg-indigo-100/70 text-indigo-900 border-indigo-300",
     bar: "bg-gradient-to-r from-indigo-500 to-violet-700",
     pilihAktif: "bg-indigo-700 text-white border-indigo-700",
