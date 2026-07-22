@@ -71,6 +71,15 @@ export const DOCKING_MA: { kode: string; label: string }[] = [
   { kode: "5010103004", label: "Insentif Operasional (Swakelola Docking)" },
 ];
 
+// Mata Anggaran INVESTASI yang bisa muncul di docking (belanja modal, bukan biaya).
+// Dipisah dari DOCKING_MA supaya pagu Biaya vs Investasi tak tercampur.
+export const DOCKING_MA_INVESTASI: { kode: string; label: string }[] = [
+  { kode: "1020604003", label: "Investasi Kapal Ro-Ro" },
+  { kode: "1020604009", label: "Investasi Akomodasi, Peralatan & Perlengkapan" },
+  { kode: "1020604010", label: "Investasi Permesinan dan Kelistrikan" },
+];
+export const isMaInvestasi = (key: string) => key.startsWith("10206") || DOCKING_MA_INVESTASI.some((m) => m.kode === key);
+
 // 3 mata anggaran Biaya untuk Rencana/Realisasi bulanan
 export const MA_RENCANA: { kode: string; label: string }[] = [
   { kode: "5010403003", label: "Kapal Ro-Ro" },
@@ -96,10 +105,18 @@ export interface RREntry {
 
 // ====== Plafon Rutin bulanan (Persetujuan Rutin Kapal) ======
 // Baris pagu BEBAS per Mata Anggaran (tak terkunci 9 master). Key cocok realisasi = kodeMA / slug label.
-export interface PlafonRow { ma: string; nilai: number }
+// nilai   = pagu awal (Persetujuan Pusat pertama)
+// addendum = tambahan biaya yang disetujui saat/sesudah docking (pekerjaan tambah)
+export interface PlafonRow { ma: string; nilai: number; addendum?: number }
+export const paguTotal = (r: PlafonRow) => (r.nilai || 0) + (r.addendum || 0);
 export interface PlafonRutin { bulan: string; rows: PlafonRow[]; catatan?: string }
 // Pagu DOCKING per kapal + tahun (dari Persetujuan Pusat "Budget Control" — Total Persetujuan per MA)
-export interface PlafonDocking { kapal: string; tahun: number; noSurat?: string; rows: PlafonRow[] }
+export interface PlafonDocking {
+  kapal: string; tahun: number;
+  noSurat?: string;          // no. surat persetujuan awal
+  noSuratAddendum?: string;  // no. surat persetujuan tambahan (addendum)
+  rows: PlafonRow[];
+}
 
 // kunci pencocokan pagu <-> realisasi.
 // 1) kalau ada kode 6+ digit -> pakai kode. 2) kalau label bebas ("Pelumas", "Akomodasi Kapal")

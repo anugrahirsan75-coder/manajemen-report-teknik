@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, Fragment } from "react";
 import { useAnggaran, PengadaanRow, realisasiRutin, realisasiRutinKapal, realisasiDocking, nilaiPerMA, type RealisasiKapal } from "@/lib/anggaran/store";
 import {
-  MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN,
+  MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN, DOCKING_MA_INVESTASI, isMaInvestasi, rupiahShort,
   namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
 } from "@/lib/anggaran/types";
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
@@ -957,13 +957,21 @@ function SerapanKapal({ data, total }: { data: RealisasiKapal[]; total: number }
 /* ---------- Kendali Anggaran Docking (per kapal) ---------- */
 // seed draft dari daftar MA docking tetap (user tinggal isi nilai) + baris tambahan non-standar
 function seedDockingDraft(existing: PlafonRow[]): PlafonRow[] {
-  const byKey: Record<string, number> = {};
-  existing.forEach((r) => { byKey[maKey(r.ma)] = r.nilai; });
-  const base = DOCKING_MA.map((m) => ({ ma: `${m.kode} (${m.label})`, nilai: byKey[m.kode] || 0 }));
-  const dockKeys = new Set(DOCKING_MA.map((m) => m.kode));
+  const byKey: Record<string, PlafonRow> = {};
+  existing.forEach((r) => { byKey[maKey(r.ma)] = r; });
+  const isi = (m: { kode: string; label: string }) => ({
+    ma: `${m.kode} (${m.label})`,
+    nilai: byKey[m.kode]?.nilai || 0,
+    addendum: byKey[m.kode]?.addendum || 0,
+  });
+  const base = [...DOCKING_MA.map(isi), ...DOCKING_MA_INVESTASI.map(isi)];
+  const dockKeys = new Set([...DOCKING_MA, ...DOCKING_MA_INVESTASI].map((m) => m.kode));
   const extras = existing.filter((r) => !dockKeys.has(maKey(r.ma)));
   return [...base, ...extras];
 }
+// jumlah baris MA Biaya di draft (sisanya Investasi lalu baris tambahan)
+const N_BIAYA = DOCKING_MA.length;
+const N_DOCK = DOCKING_MA.length + DOCKING_MA_INVESTASI.length;
 
 function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDocking[]; pengadaan: PengadaanRow[]; onSave: (d: PlafonDocking[]) => Promise<void> }) {
   const thisYear = new Date().getFullYear();
@@ -972,6 +980,7 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState<PlafonRow[]>([]);
   const [noSurat, setNoSurat] = useState("");
+  const [noAdd, setNoAdd] = useState("");
   const [busy, setBusy] = useState(false);
   const [paste, setPaste] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -980,25 +989,44 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
   const rows = entry?.rows || [];
   const real = useMemo(() => realisasiDocking(pengadaan, kapal, tahun), [pengadaan, kapal, tahun]);
 
+  // pagu awal + addendum per MA, digabung realisasi. kelompok: Biaya vs Investasi.
   const merged = useMemo(() => {
-    const by: Record<string, { key: string; ma: string; pagu: number; pakai: number }> = {};
-    rows.forEach((r) => { const k = maKey(r.ma); by[k] = { key: k, ma: r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), pakai: by[k]?.pakai || 0 }; });
-    Object.entries(real.perKey).forEach(([k, v]) => { if (by[k]) by[k].pakai = v; else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { key: k, ma: lbl, pagu: 0, pakai: v }; } });
-    return Object.values(by).sort((x, y) => (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)));
+    const by: Record<string, { key: string; ma: string; awal: number; add: number; pakai: number }> = {};
+    rows.forEach((r) => {
+      const k = maKey(r.ma);
+      by[k] = { key: k, ma: r.ma, awal: (by[k]?.awal || 0) + (r.nilai || 0), add: (by[k]?.add || 0) + (r.addendum || 0), pakai: by[k]?.pakai || 0 };
+    });
+    Object.entries(real.perKey).forEach(([k, v]) => { if (by[k]) by[k].pakai = v; else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { key: k, ma: lbl, awal: 0, add: 0, pakai: v }; } });
+    return Object.values(by)
+      .map((x) => ({ ...x, pagu: x.awal + x.add, inv: isMaInvestasi(x.key) }))
+      .sort((x, y) => (x.inv === y.inv ? (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)) : x.inv ? 1 : -1));
   }, [rows, real]);
 
-  const totalPagu = rows.reduce((s, r) => s + (r.nilai || 0), 0);
+  const grup = useMemo(() => ({
+    biaya: merged.filter((m) => !m.inv),
+    investasi: merged.filter((m) => m.inv),
+  }), [merged]);
+  const jumlahkan = (arr: typeof merged) => ({
+    awal: arr.reduce((s, m) => s + m.awal, 0),
+    add: arr.reduce((s, m) => s + m.add, 0),
+    pagu: arr.reduce((s, m) => s + m.pagu, 0),
+    pakai: arr.reduce((s, m) => s + m.pakai, 0),
+  });
+
+  const totalAwal = rows.reduce((s, r) => s + (r.nilai || 0), 0);
+  const totalAdd = rows.reduce((s, r) => s + (r.addendum || 0), 0);
+  const totalPagu = totalAwal + totalAdd;
   const totalPakai = real.total;
   const sisa = totalPagu - totalPakai;
   const pctTot = totalPagu ? Math.round((totalPakai / totalPagu) * 100) : 0;
 
-  const startEdit = () => { setDraft(seedDockingDraft(rows)); setNoSurat(entry?.noSurat || ""); setEdit(true); };
+  const startEdit = () => { setDraft(seedDockingDraft(rows)); setNoSurat(entry?.noSurat || ""); setNoAdd(entry?.noSuratAddendum || ""); setEdit(true); };
   const simpan = async () => {
     setBusy(true);
     try {
-      const clean = draft.filter((r) => r.ma.trim() && r.nilai);
+      const clean = draft.filter((r) => r.ma.trim() && (r.nilai || r.addendum));
       const next = docking.filter((d) => !(d.kapal === kapal && d.tahun === tahun));
-      if (clean.length) next.push({ kapal, tahun, noSurat: noSurat.trim() || undefined, rows: clean });
+      if (clean.length) next.push({ kapal, tahun, noSurat: noSurat.trim() || undefined, noSuratAddendum: noAdd.trim() || undefined, rows: clean });
       await onSave(next);
       setEdit(false);
     } finally { setBusy(false); }
@@ -1041,30 +1069,48 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
         <p className="text-[10px] text-slate-500 mt-1.5">● = pagu docking {tahun} sudah diisi · realisasi = SPPBJ/Non PR PO ber-<b>Jenis Anggaran: Docking</b> untuk kapal ini</p>
       </div>
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
-        <MiniStat label={`Pagu Docking ${ringkasKapal(kapal)}`} val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-amber-500" />
+      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-3">
+        <MiniStat label={`Pagu Awal ${ringkasKapal(kapal)}`} val={rupiah(totalAwal)} tint="text-slate-900" bar="bg-amber-500" />
+        <MiniStat label="Addendum" val={totalAdd ? "+" + rupiah(totalAdd) : "—"} tint={totalAdd ? "text-violet-800" : "text-slate-400"} bar={totalAdd ? "bg-violet-600" : "bg-slate-300"} />
+        <MiniStat label="Pagu Total" val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-orange-700" />
         <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-800" bar="bg-blue-600" />
-        <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-700" : "text-emerald-800"} bar={sisa < 0 ? "bg-red-500" : "bg-emerald-500"} />
-        <MiniStat label="Serapan" val={`${pctTot}%`} tint={tintPct(pctTot)} bar={barPct(pctTot)} />
+        <MiniStat label="Sisa · Serapan" val={`${rupiahShort(sisa)} · ${pctTot}%`} tint={sisa < 0 ? "text-red-700" : tintPct(pctTot)} bar={barPct(pctTot)} />
       </div>
 
       {edit ? (
-        <div className="rounded-xl ring-1 ring-slate-200 p-3">
-          <div className="flex items-center gap-2 mb-2">
-            <span className="text-xs text-slate-500">Pagu docking <b className="text-[#16357f]">{kapal}</b> {tahun}:</span>
-            <input value={noSurat} onChange={(e) => setNoSurat(e.target.value)} placeholder="No. Surat Persetujuan (opsional)" className="text-xs border rounded px-2 py-1 flex-1 max-w-xs" />
+        <div className="rounded-xl bg-white ring-1 ring-amber-200 p-3">
+          <div className="flex flex-wrap items-center gap-2 mb-2">
+            <span className="text-xs text-slate-600">Pagu docking <b className="text-orange-800">{kapal}</b> {tahun}:</span>
+            <input value={noSurat} onChange={(e) => setNoSurat(e.target.value)} placeholder="No. Surat Persetujuan awal" className="text-xs border rounded px-2 py-1 flex-1 min-w-[10rem] max-w-xs" />
+            <input value={noAdd} onChange={(e) => setNoAdd(e.target.value)} placeholder="No. Surat Addendum (kalau ada)" className="text-xs border border-violet-300 rounded px-2 py-1 flex-1 min-w-[10rem] max-w-xs" />
+          </div>
+          <div className="flex items-center gap-2 mb-1 text-[10px] font-bold uppercase tracking-wide text-slate-500">
+            <span className="flex-1">Mata Anggaran</span>
+            <span className="w-40 text-right">Pagu awal (Rp)</span>
+            <span className="w-40 text-right text-violet-700">Addendum (Rp)</span>
+            <span className="w-4" />
           </div>
           {draft.map((r, i) => {
-            const extra = i >= DOCKING_MA.length;
+            const extra = i >= N_DOCK;
+            const total = (r.nilai || 0) + (r.addendum || 0);
             return (
-              <div key={i} className="flex items-center gap-2 mb-1.5">
-                <span className="flex-1 text-xs text-slate-700 bg-slate-50 rounded-lg px-3 py-2 truncate ring-1 ring-slate-100">{r.ma || "—"}</span>
-                <input type="number" value={r.nilai || ""} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, nilai: +e.target.value } : x))} placeholder="Total Persetujuan (Rp)" className="w-44 text-xs border rounded-lg px-3 py-2 text-right" />
-                {extra ? <button onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button> : <span className="w-4" />}
-              </div>
+              <Fragment key={i}>
+                {i === 0 && <p className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 mt-1 mb-1">Biaya</p>}
+                {i === N_BIAYA && <p className="text-[10px] font-extrabold uppercase tracking-wider text-indigo-800 mt-3 mb-1">Investasi (belanja modal)</p>}
+                {i === N_DOCK && <p className="text-[10px] font-extrabold uppercase tracking-wider text-slate-600 mt-3 mb-1">Mata Anggaran tambahan</p>}
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="flex-1 text-xs text-slate-700 bg-slate-50 rounded-lg px-3 py-2 truncate ring-1 ring-slate-100">
+                    {r.ma || "—"}
+                    {total > 0 && <b className="ml-2 text-slate-500 font-semibold">= {rupiah(total)}</b>}
+                  </span>
+                  <input type="number" value={r.nilai || ""} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, nilai: +e.target.value } : x))} placeholder="0" className="w-40 text-xs border rounded-lg px-3 py-2 text-right" />
+                  <input type="number" value={r.addendum || ""} onChange={(e) => setDraft((d) => d.map((x, j) => j === i ? { ...x, addendum: +e.target.value } : x))} placeholder="0" className="w-40 text-xs border border-violet-300 bg-violet-50/40 rounded-lg px-3 py-2 text-right" />
+                  {extra ? <button onClick={() => setDraft((d) => d.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-sm px-1">✕</button> : <span className="w-4" />}
+                </div>
+              </Fragment>
             );
           })}
-          <p className="text-[10px] text-slate-500 mt-1.5">Isi nilai <b>Total Persetujuan</b> tiap Mata Anggaran (kosongkan = tak dipakai). Daftar MA sudah tetap sesuai format Docking — tak perlu ketik. Baris tambahan dari "Tempel dari Excel" bisa dihapus.</p>
+          <p className="text-[10px] text-slate-500 mt-1.5"><b>Pagu awal</b> = Total Persetujuan Pusat pertama. <b className="text-violet-700">Addendum</b> = persetujuan biaya tambahan saat/sesudah docking — cukup isi selisihnya, sistem menjumlahkan sendiri. Daftar MA sudah tetap, tak perlu ketik.</p>
         </div>
       ) : merged.length === 0 ? (
         <p className="text-sm text-slate-500 py-3 text-center">Belum ada pagu/realisasi docking utk {kapal} {tahun}. Klik <b>Atur Pagu Docking</b> untuk isi dari Persetujuan Pusat.</p>
@@ -1072,10 +1118,28 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className={TBL_HEAD_AMBER}>
-              <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
+              <tr>
+                <th className="p-2 text-left">Mata Anggaran</th>
+                <th className="p-2 text-right">Pagu Awal</th>
+                <th className="p-2 text-right text-violet-800">Addendum</th>
+                <th className="p-2 text-right">Pagu Total</th>
+                <th className="p-2 text-right">Terpakai</th>
+                <th className="p-2 text-right">Sisa</th>
+                <th className="p-2 text-right w-36">Serapan</th>
+                <th className="p-2 text-center">Status</th>
+              </tr>
             </thead>
             <tbody>
-              {merged.map((m) => {
+              {([["Biaya", grup.biaya], ["Investasi", grup.investasi]] as const).flatMap(([judul, arr]) => arr.length === 0 ? [] : [
+                <tr key={"h" + judul} className={judul === "Biaya" ? "bg-amber-200/60" : "bg-indigo-100"}>
+                  <td colSpan={8} className={`px-2 py-1 text-[10px] font-extrabold uppercase tracking-wider ${judul === "Biaya" ? "text-amber-900" : "text-indigo-900"}`}>
+                    {judul === "Biaya" ? "Biaya Docking" : "Investasi (belanja modal)"}
+                    <span className="ml-2 font-bold normal-case tracking-normal tabular-nums">
+                      pagu {rupiah(jumlahkan(arr as any).pagu)} · terpakai {rupiah(jumlahkan(arr as any).pakai)}
+                    </span>
+                  </td>
+                </tr>,
+                ...(arr as any).map((m: any) => {
                 const pct = m.pagu ? Math.round((m.pakai / m.pagu) * 100) : (m.pakai ? 999 : 0);
                 const s = statusRutin(pct);
                 const sisaM = m.pagu - m.pakai;
@@ -1085,7 +1149,9 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
                   <Fragment key={m.key}>
                     <tr className={`border-b border-slate-200 row-hover cursor-pointer ${isOpen ? "bg-amber-100/60" : "even:bg-amber-50/40"}`} onClick={() => setOpenKey(isOpen ? null : m.key)}>
                       <td className={TD_MA}><span className="inline-flex items-center gap-1.5"><span className={`text-slate-500 text-[10px] transition-transform ${isOpen ? "rotate-90" : ""}`}>▶</span>{m.ma}{rinci.length > 0 && <span className="text-[10px] font-bold text-amber-900 bg-amber-200 rounded-full px-1.5 py-px">{rinci.length}</span>}</span></td>
-                      <td className={TD_PAGU}>{m.pagu ? rupiah(m.pagu) : <span className="text-slate-500 italic font-normal">tanpa pagu</span>}</td>
+                      <td className={TD_PAGU}>{m.awal ? rupiah(m.awal) : <span className="text-slate-500 italic font-normal">—</span>}</td>
+                      <td className="p-2 text-right tabular-nums font-bold text-violet-800">{m.add ? "+" + rupiah(m.add) : <span className="text-slate-400 font-normal">—</span>}</td>
+                      <td className="p-2 text-right tabular-nums font-semibold text-slate-800">{m.pagu ? rupiah(m.pagu) : <span className="text-slate-500 italic font-normal">tanpa pagu</span>}</td>
                       <td className={TD_PAKAI}>{rupiah(m.pakai)}</td>
                       <td className={tdSisa(sisaM)}>{rupiah(sisaM)}</td>
                       <td className="p-2">
@@ -1099,14 +1165,17 @@ function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDockin
                       </td>
                       <td className="p-2 text-center"><span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full ${m.pagu ? s.c : "bg-slate-100 text-slate-500 ring-1 ring-slate-300"}`}>{m.pagu ? s.t : "—"}</span></td>
                     </tr>
-                    {isOpen && <tr className="bg-amber-50/60"><td colSpan={6} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>}
+                    {isOpen && <tr className="bg-amber-50/60"><td colSpan={8} className="px-3 py-2"><MaDetailList list={rinci} /></td></tr>}
                   </Fragment>
                 );
-              })}
+              }),
+              ])}
             </tbody>
             <tfoot>
               <tr className={TFOOT_AMBER}>
                 <td className="p-2">TOTAL</td>
+                <td className="p-2 text-right tabular-nums">{rupiah(totalAwal)}</td>
+                <td className="p-2 text-right tabular-nums text-violet-800">{totalAdd ? "+" + rupiah(totalAdd) : "—"}</td>
                 <td className="p-2 text-right tabular-nums">{rupiah(totalPagu)}</td>
                 <td className="p-2 text-right tabular-nums">{rupiah(totalPakai)}</td>
                 <td className={`p-2 text-right tabular-nums ${sisa < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
