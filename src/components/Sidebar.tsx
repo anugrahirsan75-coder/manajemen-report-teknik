@@ -137,6 +137,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <Tool active={servisActive} href="/servis" icon="🔧" label="Monitoring Servis" sub={SERVIS_SUB} onNavigate={onNavigate} path={path} />
 
         <SectionLabel>Pengaman Data</SectionLabel>
+        <NavLink href="/admin" icon="🧮" label="Panel Admin" desc="Total data & kuota Supabase" active={path.startsWith("/admin")} onNavigate={onNavigate} />
         <NavLink href="/backup" icon="🛡️" label="Backup Data" desc="Salinan otomatis ke laptop" active={path.startsWith("/backup")} onNavigate={onNavigate} />
       </nav>
 
