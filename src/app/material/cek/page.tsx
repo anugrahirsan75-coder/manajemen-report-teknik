@@ -19,6 +19,48 @@ export default function CekKodeMaterial() {
   const [syncing, setSyncing] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [meta, setMeta] = useState<{ count: number; source: string; lastSync: number | null; error?: string | null } | null>(null);
+  const [tersalin, setTersalin] = useState<string>(""); // nama kolom yg baru disalin (utk umpan balik)
+
+  /** Nilai 1 kolom untuk SEMUA baris terisi — dipakai tombol salin di kepala kolom. */
+  const nilaiKolom = (kolom: string): string[] => {
+    return rows
+      .filter((r) => r.nama.trim() || r.partNumber.trim())
+      .map((r, i) => {
+        const x = res[r.id];
+        const cand = x?.candidates;
+        const sel = cand?.length ? cand[Math.min(pick[r.id] ?? 0, cand.length - 1)] : undefined;
+        switch (kolom) {
+          case "no": return String(i + 1);
+          case "nama": return r.nama;
+          case "part": return r.partNumber;
+          case "kategori": return x?.kategori || (r.partNumber.trim() ? "SC" : "UMUM");
+          case "kode": return sel ? sel.kode : x?.kode || "";
+          case "desc": return sel ? sel.desc : x?.desc || "";
+          case "po": return sel ? sel.po : x?.po || "";
+          case "status": return x?.status || "";
+          case "lainnya": return x?.kode2 ? `${x.kode2} — ${x.desc2 || ""}` : "";
+          default: return "";
+        }
+      });
+  };
+
+  const salinKolom = async (kolom: string, judul: string) => {
+    const isi = nilaiKolom(kolom);
+    if (!isi.length) { alert("Belum ada item."); return; }
+    const teks = isi.join("\n"); // 1 nilai per baris -> tempel langsung ke kolom Excel
+    try {
+      await navigator.clipboard.writeText(teks);
+    } catch {
+      const ta = document.createElement("textarea");
+      ta.value = teks; ta.style.position = "fixed"; ta.style.opacity = "0";
+      document.body.appendChild(ta); ta.select();
+      try { document.execCommand("copy"); } catch {}
+      document.body.removeChild(ta);
+    }
+    setTersalin(judul);
+    setTimeout(() => setTersalin((t) => (t === judul ? "" : t)), 1800);
+  };
+
 
   // baris export sesuai tabel (ikut kandidat terpilih)
   const exportExcel = async () => {
@@ -115,7 +157,7 @@ export default function CekKodeMaterial() {
   };
 
   const syncLabel = meta
-    ? `DB: ${meta.count.toLocaleString("id-ID")} kode · ${meta.source === "live" ? "live spreadsheet" : "bundled (offline)"}${meta.lastSync ? " · sync " + new Date(meta.lastSync).toLocaleTimeString("id-ID") : ""}`
+    ? `DB: ${meta.count.toLocaleString("id-ID")} kode · ${meta.source === "live" ? "live spreadsheet" : meta.source === "cadangan" ? "salinan cadangan (Google tak terjangkau)" : "bundled (offline)"}${meta.lastSync ? " · sync " + new Date(meta.lastSync).toLocaleTimeString("id-ID") : ""}`
     : "DB: DATABASE KODE MATERIAL (auto-sync dari spreadsheet tiap 30 menit)";
   // DB dianggap tak sehat bila jauh lebih sedikit dari isi spreadsheet -> hasil "tidak ada" bisa menyesatkan
   const dbBermasalah = !!meta && (meta.count < 3000 || !!meta.error);
@@ -164,14 +206,14 @@ export default function CekKodeMaterial() {
             <thead className="bg-slate-50 text-xs">
               <tr>
                 <th className="p-2 border w-8">#</th>
-                <th className="p-2 border text-left">Nama Barang</th>
-                <th className="p-2 border">Part Number</th>
+                <Th judul="Nama Barang" kolom="nama" kiri onSalin={salinKolom} aktif={tersalin === "Nama Barang"} />
+                <Th judul="Part Number" kolom="part" onSalin={salinKolom} aktif={tersalin === "Part Number"} />
                 <th className="p-2 border">Kategori</th>
-                <th className="p-2 border">Kode Material</th>
-                <th className="p-2 border text-left">Material Description</th>
-                <th className="p-2 border text-left">Purchase Order Text</th>
+                <Th judul="Kode Material" kolom="kode" onSalin={salinKolom} aktif={tersalin === "Kode Material"} />
+                <Th judul="Material Description" kolom="desc" kiri onSalin={salinKolom} aktif={tersalin === "Material Description"} />
+                <Th judul="Purchase Order Text" kolom="po" kiri onSalin={salinKolom} aktif={tersalin === "Purchase Order Text"} />
                 <th className="p-2 border">Status</th>
-                <th className="p-2 border text-left">Kode/Deskripsi Lainnya <span className="text-[9px] text-slate-400">(SC)</span></th>
+                <Th judul="Kode/Deskripsi Lainnya" kolom="lainnya" kiri onSalin={salinKolom} aktif={tersalin === "Kode/Deskripsi Lainnya"} catatan="(SC)" />
                 <th className="p-2 border"></th>
               </tr>
             </thead>
@@ -255,5 +297,24 @@ export default function CekKodeMaterial() {
         <p className="text-xs text-slate-400 mt-3">{syncLabel}. <b>Barang umum</b> fuzzy → status <b>cek</b> = ada kandidat mirip, pilih di tombol rincian. <b>Suku cadang</b> cocok part number (abaikan pemisah); &gt;1 kode → kolom <i>Lainnya</i> / tombol rincian. Update spreadsheet → server auto-refresh; klik <b>Sinkron DB</b> untuk tarik langsung.</p>
       </Section>
     </main>
+  );
+}
+
+/** Kepala kolom + tombol salin 1 kolom (semua baris) ke papan klip. */
+function Th({ judul, kolom, kiri, onSalin, aktif, catatan }: {
+  judul: string; kolom: string; kiri?: boolean; aktif?: boolean; catatan?: string;
+  onSalin: (kolom: string, judul: string) => void;
+}) {
+  return (
+    <th className={`p-2 border ${kiri ? "text-left" : ""}`}>
+      <span className="inline-flex items-center gap-1.5">
+        <span>{judul}{catatan && <span className="text-[9px] text-slate-400 ml-1">{catatan}</span>}</span>
+        <button type="button" onClick={() => onSalin(kolom, judul)}
+          title={`Salin seluruh kolom ${judul} (1 baris per item, siap tempel ke Excel)`}
+          className={`shrink-0 text-[10px] px-1.5 py-0.5 rounded border transition ${aktif ? "bg-emerald-600 text-white border-emerald-600" : "border-slate-300 text-slate-500 hover:border-sky-400 hover:text-sky-700"}`}>
+          {aktif ? "✓ tersalin" : "⧉ salin"}
+        </button>
+      </span>
+    </th>
   );
 }

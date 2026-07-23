@@ -7,6 +7,7 @@
 // SUMBER DB: live dari Google Sheet (CSV export) dengan cache TTL — user update sheet,
 // server auto-refresh tanpa rebuild. Fallback ke kodeMaterialDb.json (bundled) bila gagal fetch.
 import seed from "./kodeMaterialDb.json";
+import { supabase } from "@/lib/supabase";
 
 export interface KodeRow { m: string; d: string; p: string; g: string; po: string } // material, description, part(old mat number), group, purchase order text
 
@@ -95,6 +96,45 @@ function daftarUrl(): string[] {
   return Array.from(new Set(list.filter(Boolean)));
 }
 
+
+// ====== Cadangan lintas-server (Supabase) ======
+// Spreadsheet terus bertambah. Kalau Google tak bisa diakses (rate-limit / blokir /
+// jaringan), tanpa ini aplikasi mundur ke data bawaan yang makin usang.
+// Solusinya: setiap kali tarik live BERHASIL, salinannya disimpan ke Supabase;
+// kalau live gagal, salinan terakhir itu yang dipakai — bukan data bawaan.
+const CACHE_KIND = "material_db";
+let cacheDicoba = false;   // hanya sekali per instance server
+let cacheTsTerakhir = 0;   // waktu salinan yang sedang dipakai
+
+async function muatCacheSupabase(): Promise<{ rows: KodeRow[]; ts: number } | null> {
+  if (!supabase) return null;
+  try {
+    const { data } = await supabase.from("projects").select("payload").filter("payload->>kind", "eq", CACHE_KIND).limit(1);
+    const p = (data || [])[0]?.payload;
+    if (p && Array.isArray(p.rows) && p.rows.length > 100) return { rows: p.rows as KodeRow[], ts: p.ts || 0 };
+  } catch { /* diamkan — cadangan bersifat pilihan */ }
+  return null;
+}
+
+async function simpanCacheSupabase(data: KodeRow[]) {
+  if (!supabase || data.length < 100) return;
+  try {
+    const payload = { kind: CACHE_KIND, ts: Date.now(), count: data.length, rows: data };
+    const { data: ada } = await supabase.from("projects").select("id,payload").filter("payload->>kind", "eq", CACHE_KIND).limit(1);
+    const lama = (ada || [])[0];
+    // tulis hanya bila isi berubah atau salinan sudah lewat 12 jam (hemat kuota)
+    if (lama) {
+      const bedaJumlah = (lama.payload?.count || 0) !== data.length;
+      const usang = Date.now() - (lama.payload?.ts || 0) > 12 * 3600 * 1000;
+      if (!bedaJumlah && !usang) return;
+      await supabase.from("projects").update({ payload }).eq("id", lama.id);
+    } else {
+      await supabase.from("projects").insert({ nama_kapal: "DB KODE MATERIAL (cadangan)", tahun: new Date().getFullYear(), payload });
+    }
+    cacheTsTerakhir = payload.ts;
+  } catch { /* diamkan */ }
+}
+
 let lastError: string | null = null; // sebab kegagalan terakhir (ditampilkan di UI)
 
 async function refresh(force = false) {
@@ -120,8 +160,18 @@ async function refresh(force = false) {
     const minimal = Math.floor((seed as KodeRow[]).length * 0.5);
     if (terbaik && terbaik.length >= minimal) {
       rows = terbaik; built = false; lastOk = Date.now(); lastError = null;
+      simpanCacheSupabase(terbaik); // simpan salinan sehat (tak ditunggu)
     } else {
-      if (terbaik) sebab.push(`hasil live hanya ${terbaik.length} baris (minimal ${minimal}) — ditolak, pakai data terakhir yang sehat`);
+      if (terbaik) sebab.push(`hasil live hanya ${terbaik.length} baris (minimal ${minimal}) — ditolak`);
+      // live gagal -> pakai salinan sehat terakhir dari Supabase (lebih baru dari data bawaan)
+      if (!cacheDicoba) {
+        cacheDicoba = true;
+        const c = await muatCacheSupabase();
+        if (c && c.rows.length > rows.length) {
+          rows = c.rows; built = false; cacheTsTerakhir = c.ts;
+          sebab.push(`memakai salinan cadangan ${c.rows.length} kode`);
+        }
+      }
       lastError = sebab.join("; ") || "gagal mengambil data";
     }
     lastFetch = Date.now();
@@ -181,9 +231,10 @@ async function ensureDb(force = false) {
   if (!built) buildIndexes();
 }
 
-export interface DbMeta { count: number; source: "live" | "seed"; lastSync: number | null; error?: string | null }
+export interface DbMeta { count: number; source: "live" | "cadangan" | "seed"; lastSync: number | null; error?: string | null }
 export function dbMeta(): DbMeta {
-  return { count: rows.length, source: lastOk ? "live" : "seed", lastSync: lastOk || null, error: lastError };
+  const source: DbMeta["source"] = lastOk ? "live" : cacheTsTerakhir ? "cadangan" : "seed";
+  return { count: rows.length, source, lastSync: lastOk || cacheTsTerakhir || null, error: lastError };
 }
 
 // ---------- skor fuzzy (barang umum) ----------
