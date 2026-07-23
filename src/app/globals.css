@@ -219,3 +219,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
   .float-hover { transition: transform 0.25s ease, box-shadow 0.25s ease; }
   .float-hover:hover { animation: mf-bob 3s ease-in-out infinite; }
 }
+
+
+/* potong teks maksimal 2 baris (judul pengadaan di tabel riwayat) */
+.klip-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}

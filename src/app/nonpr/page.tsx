@@ -72,16 +72,16 @@ export default function NonprList() {
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto bg-white rounded-2xl elev-md ring-line anim-in">
-          <table className="w-full text-sm">
-            <thead className="bg-gradient-to-r from-slate-50 to-slate-100/60 text-[11px] uppercase tracking-wide text-slate-500">
-              <tr>
-                <th className="p-2 border-b text-center w-10">No</th>
-                <th className="p-2 border-b text-left">Nama Pengadaan</th>
-                <th className="p-2 border-b text-left w-44">Kapal</th>
-                <th className="p-2 border-b text-left w-28">No. SPPB</th>
-                <th className="p-2 border-b text-left w-28">Tanggal</th>
-                <th className="p-2 border-b text-right w-32">Total</th>
-                <th className="p-2 border-b text-center w-32">Aksi</th>
+          <table className="w-full text-sm min-w-[70rem]">
+            <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold">
+              <tr className="border-b-2 border-slate-200">
+                <th className="px-2 py-2.5 text-center w-10">No</th>
+                <th className="px-2 py-2.5 text-left min-w-[17rem]">Nama Pengadaan</th>
+                <th className="px-2 py-2.5 text-left w-40">Kapal</th>
+                <th className="px-2 py-2.5 text-left w-28">No. SPPB</th>
+                <th className="px-2 py-2.5 text-left w-28">Tanggal</th>
+                <th className="px-2 py-2.5 text-right w-32">Total</th>
+                <th className="px-2 py-2.5 text-center w-44">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -89,22 +89,24 @@ export default function NonprList() {
                 const total = nonprTotal(r.payload?.items || []);
                 const over = total > MAX_NILAI_NONPR;
                 return (
-                  <tr key={r.id} className="border-b last:border-0 row-hover cursor-pointer" onClick={() => buka(r)}>
-                    <td className="p-2 text-center text-slate-400">{i + 1}</td>
-                    <td className="p-2 font-medium text-slate-800">
-                      <span className="flex items-center gap-2">
+                  <tr key={r.id} className="border-b border-slate-200 last:border-0 row-hover cursor-pointer align-middle even:bg-slate-50/50" onClick={() => buka(r)}>
+                    <td className="px-2 py-2.5 text-center text-xs text-slate-400 tabular-nums">{i + 1}</td>
+                    <td className="px-2 py-2.5">
+                      <div className="flex items-start gap-2">
                         <JenisBadge payload={r.payload || {}} program={program} pengadaan={pengadaan} />
-                        {r.nama_pengadaan || "(tanpa nama)"}
-                      </span>
+                        <span className="font-medium text-slate-800 leading-snug klip-2" title={r.nama_pengadaan || ""}>{r.nama_pengadaan || "(tanpa nama)"}</span>
+                      </div>
                     </td>
-                    <td className="p-2"><KapalCell items={r.payload?.items || []} /></td>
-                    <td className="p-2 text-slate-600">{r.payload?.noSPPB || "-"}</td>
-                    <td className="p-2 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
-                    <td className={`p-2 text-right ${over ? "text-red-600 font-semibold" : "text-slate-600"}`}>{rupiah(total)}</td>
-                    <td className="p-2 text-center whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
-                      <button onClick={() => setPreview(r)} className="btn btn-ghost text-[11px] px-2.5 py-1 mr-1" title="Lihat isi dokumen tanpa membuka halaman">👁 Preview</button>
-                      <button onClick={() => buka(r)} className="btn btn-primary text-[11px] px-2.5 py-1 mr-1">Buka</button>
-                      <button onClick={() => hapus(r.id, r.nama_pengadaan)} className="btn btn-danger-soft text-[11px] px-2.5 py-1">Hapus</button>
+                    <td className="px-2 py-2.5"><KapalCell items={r.payload?.items || []} /></td>
+                    <td className="px-2 py-2.5 text-slate-600 tabular-nums whitespace-nowrap">{r.payload?.noSPPB || "-"}</td>
+                    <td className="px-2 py-2.5 text-slate-600 whitespace-nowrap">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
+                    <td className={`px-2 py-2.5 text-right tabular-nums whitespace-nowrap ${over ? "text-red-700 font-bold" : "text-slate-700 font-semibold"}`}>{rupiah(total)}</td>
+                    <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-1">
+                        <button onClick={() => setPreview(r)} className="btn btn-ghost text-[11px] px-2 py-1" title="Lihat isi dokumen">👁</button>
+                        <button onClick={() => buka(r)} className="btn btn-primary text-[11px] px-3 py-1">Buka</button>
+                        <button onClick={() => hapus(r.id, r.nama_pengadaan)} className="btn btn-danger-soft text-[11px] px-2 py-1" title="Hapus">🗑</button>
+                      </div>
                     </td>
                   </tr>
                 );
