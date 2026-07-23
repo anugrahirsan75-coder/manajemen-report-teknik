@@ -57,9 +57,10 @@ export default function JenisBadge({ payload, program = [], pengadaan = [] }: {
     setBuka((v) => !v);
   };
 
+  // lebar TETAP -> judul pengadaan di semua baris mulai sejajar
   const badge = (
-    <span className={`text-[9px] font-bold uppercase px-1.5 py-0.5 rounded shrink-0 ${GAYA[jenis]}`}>
-      {TEKS[jenis]}{bisaKlik && <span className="ml-0.5 opacity-70">▾</span>}
+    <span className={`inline-flex items-center justify-center gap-0.5 w-[4.75rem] text-[9px] font-bold uppercase px-1 py-0.5 rounded shrink-0 ${GAYA[jenis]}`}>
+      {TEKS[jenis]}{bisaKlik && <span className="opacity-70">▾</span>}
     </span>
   );
   if (!bisaKlik) return badge;
@@ -120,7 +121,7 @@ export default function JenisBadge({ payload, program = [], pengadaan = [] }: {
     <>
       <button ref={btnRef} type="button" onClick={toggle} onMouseDown={(e) => e.stopPropagation()}
         title={jenis === "lainnya" ? (prog ? `Persetujuan: ${prog.nama}` : "Surat persetujuan tak ditemukan") : "Lihat kendali anggarannya"}
-        className="shrink-0 rounded hover:brightness-95 transition">
+        className="shrink-0 rounded hover:brightness-95 transition mt-[1px]">
         {badge}
       </button>
       {buka && siap && createPortal(panel, document.body)}
