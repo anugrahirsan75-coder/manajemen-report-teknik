@@ -1,6 +1,8 @@
 "use client";
 
-import { useMemo, useState, useCallback, Fragment } from "react";
+import { useMemo, useState, useCallback, Fragment, Suspense } from "react";
+import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useAnggaran, PengadaanRow, realisasiRutin, realisasiRutinKapal, realisasiDocking, nilaiPerMA, type RealisasiKapal } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN, DOCKING_MA_INVESTASI, isMaInvestasi, rupiahShort,
@@ -9,10 +11,32 @@ import {
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
 import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
+import Ringkasan from "@/components/anggaran/Ringkasan";
+
+const JUDUL: Record<string, string> = {
+  ringkas: "Dashboard Anggaran", rutin: "Kendali Anggaran Rutin", docking: "Kendali Anggaran Docking",
+  lainnya: "Persetujuan Biaya Lainnya", rincian: "Rincian & RKA",
+};
+const SUB: Record<string, string> = {
+  ringkas: "Ringkasan seluruh sumber anggaran — klik kartu untuk masuk ke detailnya",
+  rutin: "Persetujuan Rutin per BULAN · pagu per Mata Anggaran",
+  docking: "Persetujuan Pusat per KAPAL · pagu per Mata Anggaran docking",
+  lainnya: "Persetujuan Pusat per SURAT — di luar Rutin & Docking",
+  rincian: "Penyerapan per Mata Anggaran & kapal, RKA, Rencana vs Realisasi",
+};
+const NAV = [
+  { v: "ringkas", label: "Ringkasan", ikon: "📊", aktif: "bg-[#16357f] text-white border-[#16357f]" },
+  { v: "rutin", label: "Rutin", ikon: "🧭", aktif: "bg-[#16357f] text-white border-[#16357f]" },
+  { v: "docking", label: "Docking", ikon: "⚓", aktif: "bg-orange-700 text-white border-orange-700" },
+  { v: "lainnya", label: "Lainnya", ikon: "📜", aktif: "bg-indigo-700 text-white border-indigo-700" },
+  { v: "rincian", label: "Rincian & RKA", ikon: "🏷️", aktif: "bg-slate-800 text-white border-slate-800" },
+];
 
 const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) => s + (it.harga || 0) * (it.jumlah || 0), 0);
 
-export default function DashboardAnggaran() {
+function DashboardInner() {
+  const qs = useSearchParams();
+  const v = (qs.get("v") || "ringkas") as "ringkas" | "rutin" | "docking" | "lainnya" | "rincian";
   const { ready, loading, pengadaan, rka, rr, plafon, docking, program, reload, saveRka, saveRr, savePlafon, saveDocking, saveProgram } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
 
@@ -67,8 +91,8 @@ export default function DashboardAnggaran() {
         <div className="glass hero-glow rounded-3xl px-7 py-6 flex flex-wrap items-center gap-4">
           <div className="h-12 w-12 rounded-2xl asdp-gradient grid place-items-center text-2xl text-white shadow-md shrink-0">📊</div>
           <div className="flex-1 min-w-0">
-            <h1 className="text-2xl font-extrabold asdp-text-gradient tracking-tight">Dashboard Anggaran</h1>
-            <p className="text-slate-500 text-sm">Resume penyerapan anggaran — gabungan SPPBJ Pengadaan &amp; SPPBJ Non PR PO</p>
+            <h1 className="text-2xl font-extrabold asdp-text-gradient tracking-tight">{JUDUL[v]}</h1>
+            <p className="text-slate-500 text-sm">{SUB[v]}</p>
           </div>
           <select value={tahun} onChange={(e) => setTahun(e.target.value)} className="text-xs border px-2.5 py-1.5 rounded-lg bg-white">
             <option value="">Semua tahun</option>
@@ -78,49 +102,64 @@ export default function DashboardAnggaran() {
         </div>
       </div>
 
+      {/* navigasi antar tampilan */}
+      <nav className="mt-4 flex flex-wrap items-center gap-1.5">
+        {NAV.map((n) => (
+          <Link key={n.v} href={n.v === "ringkas" ? "/dashboard" : `/dashboard?v=${n.v}`}
+            className={`text-xs font-semibold px-3 py-1.5 rounded-lg border transition ${v === n.v ? n.aktif : "bg-white border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f]"}`}>
+            {n.ikon} {n.label}
+          </Link>
+        ))}
+      </nav>
+
       {!ready ? (
         <p className="mt-5 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">Dashboard butuh Supabase (env) untuk membaca data pengadaan.</p>
       ) : loading ? (
         <p className="mt-5 text-sm text-slate-500">Memuat…</p>
       ) : (
         <>
-          {/* KPI */}
-          <section className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
-            <Kpi label="Total Penyerapan" value={rupiah(a.total)} sub={`${a.n} pengadaan`} icon="💰" tint="blue" />
-            <Kpi label="Penyerapan Biaya" value={rupiah(a.biaya)} sub="mata anggaran 501x" icon="🛠️" tint="teal" />
-            <Kpi label="Penyerapan Investasi" value={rupiah(a.investasi)} sub="mata anggaran 10206x" icon="📈" tint="indigo" />
-            <Kpi label="RKA (acuan)" value={rupiah(rkaTotal)} sub={rkaTotal ? `terserap ${serapPct}%` : "belum diisi"} icon="🎯" tint="green" />
-          </section>
+          {v === "ringkas" && <Ringkasan plafon={plafon} docking={docking} program={program} pengadaan={pengadaan} />}
 
-          {/* Kendali Anggaran Rutin bulanan (pagu vs realisasi RUTIN) */}
-          <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} />
+          {v === "rutin" && <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} />}
 
-          {/* Kendali Anggaran Docking per kapal (pagu Persetujuan Pusat vs realisasi DOCKING) */}
-          <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} />
+          {v === "docking" && <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} />}
 
-          <Card tone="indigo" icon="📜" badge="Di luar Docking & Rutin" title="Persetujuan Biaya Lainnya"
-            sub="Persetujuan Pusat per SURAT — investasi/pekerjaan khusus, pagu per kapal & Mata Anggaran">
-            <ProgramLainnya program={program} pengadaan={pengadaan} onSave={saveProgram} />
-          </Card>
+          {v === "lainnya" && (
+            <Card tone="indigo" icon="📜" badge="Di luar Docking & Rutin" title="Persetujuan Biaya Lainnya"
+              sub="Persetujuan Pusat per SURAT — investasi/pekerjaan khusus, pagu per kapal & Mata Anggaran">
+              <ProgramLainnya program={program} pengadaan={pengadaan} onSave={saveProgram} />
+            </Card>
+          )}
 
-          {/* RKA vs penyerapan */}
-          <RkaSection rka={rka} perMA={a.perMA} detail={detailMA} onSave={saveRka} />
-
-          {/* Penyerapan per mata anggaran */}
-          <Card title="Penyerapan per Mata Anggaran (Biaya & Investasi)" icon="🏷️">
-            <MaTable perMA={a.perMA} detail={detailMA} />
-          </Card>
-
-          {/* Penyerapan per kapal */}
-          <Card title="Penyerapan per Kapal" icon="🚢">
-            <KapalTable perKapal={a.perKapal} />
-          </Card>
-
-          {/* Rencana & Realisasi */}
-          <RencanaRealisasi rr={rr} onSave={saveRr} />
+          {v === "rincian" && (
+            <>
+              <section className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3 stagger">
+                <Kpi label="Total Penyerapan" value={rupiah(a.total)} sub={`${a.n} pengadaan`} icon="💰" tint="blue" />
+                <Kpi label="Penyerapan Biaya" value={rupiah(a.biaya)} sub="mata anggaran 501x" icon="🛠️" tint="teal" />
+                <Kpi label="Penyerapan Investasi" value={rupiah(a.investasi)} sub="mata anggaran 10206x" icon="📈" tint="indigo" />
+                <Kpi label="RKA (acuan)" value={rupiah(rkaTotal)} sub={rkaTotal ? `terserap ${serapPct}%` : "belum diisi"} icon="🎯" tint="green" />
+              </section>
+              <RkaSection rka={rka} perMA={a.perMA} detail={detailMA} onSave={saveRka} />
+              <Card title="Penyerapan per Mata Anggaran (Biaya & Investasi)" icon="🏷️">
+                <MaTable perMA={a.perMA} detail={detailMA} />
+              </Card>
+              <Card title="Penyerapan per Kapal" icon="🚢">
+                <KapalTable perKapal={a.perKapal} />
+              </Card>
+              <RencanaRealisasi rr={rr} onSave={saveRr} />
+            </>
+          )}
         </>
       )}
     </main>
+  );
+}
+
+export default function DashboardAnggaran() {
+  return (
+    <Suspense fallback={<p className="p-8 text-sm text-slate-500">Memuat dashboard…</p>}>
+      <DashboardInner />
+    </Suspense>
   );
 }
 
