@@ -116,8 +116,15 @@ async function muatCacheSupabase(): Promise<{ rows: KodeRow[]; ts: number } | nu
   return null;
 }
 
+let sedangSimpan = false; // cegah dua penyimpanan bersamaan -> baris cadangan ganda
 async function simpanCacheSupabase(data: KodeRow[]) {
-  if (!supabase || data.length < 100) return;
+  if (!supabase || data.length < 100 || sedangSimpan) return;
+  sedangSimpan = true;
+  try { await tulisCache(data); } finally { sedangSimpan = false; }
+}
+async function tulisCache(data: KodeRow[]) {
+  if (!supabase) return;
+  // catatan: dipanggil ber-await dari syncDb, fire-and-forget dari refresh otomatis
   try {
     const payload = { kind: CACHE_KIND, ts: Date.now(), count: data.length, rows: data };
     const { data: ada } = await supabase.from("projects").select("id,payload").filter("payload->>kind", "eq", CACHE_KIND).limit(1);
@@ -321,5 +328,7 @@ export async function cekKode(items: CekInput[], opts?: { refresh?: boolean }): 
 // refresh manual (tombol Sinkron) -> kembalikan meta terbaru
 export async function syncDb(): Promise<DbMeta> {
   await ensureDb(true);
+  // tombol Sinkron DB: tunggu salinan cadangan benar-benar tersimpan
+  if (lastOk) await simpanCacheSupabase(rows);
   return dbMeta();
 }
