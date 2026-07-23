@@ -18,7 +18,7 @@ export default function CekKodeMaterial() {
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [meta, setMeta] = useState<{ count: number; source: string; lastSync: number | null } | null>(null);
+  const [meta, setMeta] = useState<{ count: number; source: string; lastSync: number | null; error?: string | null } | null>(null);
 
   // baris export sesuai tabel (ikut kandidat terpilih)
   const exportExcel = async () => {
@@ -117,6 +117,8 @@ export default function CekKodeMaterial() {
   const syncLabel = meta
     ? `DB: ${meta.count.toLocaleString("id-ID")} kode · ${meta.source === "live" ? "live spreadsheet" : "bundled (offline)"}${meta.lastSync ? " · sync " + new Date(meta.lastSync).toLocaleTimeString("id-ID") : ""}`
     : "DB: DATABASE KODE MATERIAL (auto-sync dari spreadsheet tiap 30 menit)";
+  // DB dianggap tak sehat bila jauh lebih sedikit dari isi spreadsheet -> hasil "tidak ada" bisa menyesatkan
+  const dbBermasalah = !!meta && (meta.count < 3000 || !!meta.error);
 
   const isi = rows.filter((r) => r.nama.trim() || r.partNumber.trim());
   const hasil = isi.map((r) => res[r.id]).filter(Boolean) as CekResult[];
@@ -243,6 +245,13 @@ export default function CekKodeMaterial() {
             </tbody>
           </table>
         </div>
+        {dbBermasalah && (
+          <div className="mt-3 rounded-xl bg-red-50 ring-1 ring-red-300 px-3 py-2 text-xs text-red-800">
+            <b>⚠ Database kode material belum lengkap terbaca</b> — baru {meta?.count.toLocaleString("id-ID")} kode.
+            Hasil &quot;tidak ada&quot; belum tentu benar. Klik <b>Sinkron DB</b> untuk menarik ulang.
+            {meta?.error && <span className="block mt-0.5 text-red-700/80">Sebab: {meta.error}</span>}
+          </div>
+        )}
         <p className="text-xs text-slate-400 mt-3">{syncLabel}. <b>Barang umum</b> fuzzy → status <b>cek</b> = ada kandidat mirip, pilih di tombol rincian. <b>Suku cadang</b> cocok part number (abaikan pemisah); &gt;1 kode → kolom <i>Lainnya</i> / tombol rincian. Update spreadsheet → server auto-refresh; klik <b>Sinkron DB</b> untuk tarik langsung.</p>
       </Section>
     </main>

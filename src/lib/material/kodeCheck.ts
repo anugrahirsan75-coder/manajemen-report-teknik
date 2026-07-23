@@ -11,7 +11,7 @@ import seed from "./kodeMaterialDb.json";
 export interface KodeRow { m: string; d: string; p: string; g: string; po: string } // material, description, part(old mat number), group, purchase order text
 
 const SHEET_ID = "14WA01qxI5kwVfTKcnaVuCEqMZQFPo3ASdPrXcmxIths";
-const GID = "1216282764";
+const GID = "1455146923"; // tab DATABASE KODE MATERIAL (gid lama 1216282764 sudah 400 di endpoint export)
 // pakai endpoint gviz (export?format=csv dgn gid lama → HTTP 400 setelah sheet berubah; gviz tetap jalan)
 const CSV_URL = process.env.MATERIAL_DB_CSV_URL ||
   `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${GID}`;
@@ -59,23 +59,73 @@ function parseCsv(text: string): KodeRow[] {
   return out;
 }
 
+/**
+ * Validasi respons SEBELUM dipakai. Google kadang membalas halaman HTML (consent/login/
+ * rate-limit) alih-alih CSV — kalau ditelan mentah, HTML itu ikut ter-"parse" jadi ratusan
+ * baris sampah dan DB seolah menyusut (pernah terjadi: 6.780 -> 438 baris, semua item
+ * dilaporkan "tidak ada").
+ */
+function validasiCsv(teks: string): { ok: true; rows: KodeRow[] } | { ok: false; alasan: string } {
+  const awal = teks.slice(0, 400).toLowerCase();
+  if (/<!doctype html|<html|<head|<script/.test(awal)) return { ok: false, alasan: "balasan berupa halaman HTML (butuh izin akses / rate-limit), bukan CSV" };
+  const grid = parseCsvGrid(teks);
+  if (grid.length < 2) return { ok: false, alasan: "isi kosong" };
+  // header wajib memuat kolom kunci -> memastikan sheet & urutan kolom masih benar
+  const header = (grid[0] || []).map((h) => (h || "").toLowerCase().trim());
+  if (!header.some((h) => h.startsWith("material")) || !header.some((h) => h.includes("material description")))
+    return { ok: false, alasan: `header tak dikenal (kolom: ${header.slice(0, 5).join(", ") || "-"})` };
+  const parsed = parseCsv(teks);
+  // kode Material di sheet ini berformat angka 10 digit — pastikan mayoritas memang begitu
+  const cek = parsed.slice(0, 200);
+  const rapi = cek.filter((r) => /^\d{6,}$/.test(r.m)).length;
+  if (cek.length && rapi / cek.length < 0.8) return { ok: false, alasan: "kolom Material tak berisi kode angka (kolom bergeser?)" };
+  if (parsed.length < 100) return { ok: false, alasan: `hanya ${parsed.length} baris terbaca` };
+  return { ok: true, rows: parsed };
+}
+
+// Sumber CSV: dicoba berurutan, yang pertama LOLOS VALIDASI dipakai.
+// Dua endpoint berbeda supaya kalau satu diblokir/berubah, yang lain masih jalan.
+function daftarUrl(): string[] {
+  const g = (gid: string) => [
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&gid=${gid}`,
+    `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${gid}`,
+  ];
+  // gid utama + gid lama sebagai cadangan (kalau tab dipindah/di-rename, salah satu tetap jalan)
+  const list = [CSV_URL, ...g(GID), ...g("1216282764")];
+  return Array.from(new Set(list.filter(Boolean)));
+}
+
+let lastError: string | null = null; // sebab kegagalan terakhir (ditampilkan di UI)
+
 async function refresh(force = false) {
   const now = Date.now();
   if (!force && lastFetch && now - lastFetch < TTL_MS) return; // cache masih segar
   if (loading) return loading;                                 // hindari fetch paralel
   loading = (async () => {
-    try {
-      const res = await fetch(CSV_URL, { cache: "no-store", redirect: "follow" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const parsed = parseCsv(await res.text());
-      if (parsed.length > 100) { rows = parsed; built = false; lastOk = Date.now(); } // sanity guard
-      lastFetch = Date.now();
-    } catch {
-      // gagal fetch (offline/akses) -> pertahankan rows yg ada (seed atau fetch sukses terakhir)
-      lastFetch = Date.now(); // jangan spam retry; tunggu TTL berikut
-    } finally {
-      loading = null;
+    const sebab: string[] = [];
+    let terbaik: KodeRow[] | null = null;
+    for (const url of daftarUrl()) {
+      try {
+        const res = await fetch(url, { cache: "no-store", redirect: "follow" });
+        if (!res.ok) { sebab.push(`HTTP ${res.status}`); continue; }
+        const v = validasiCsv(await res.text());
+        if (!v.ok) { sebab.push(v.alasan); continue; }
+        // ambil sumber dgn baris terbanyak (kalau endpoint pertama tak lengkap)
+        if (!terbaik || v.rows.length > terbaik.length) terbaik = v.rows;
+      } catch (e: any) {
+        sebab.push(e?.message || String(e));
+      }
     }
+    // Guard terakhir: jangan ganti DB dengan data yang jauh lebih sedikit dari bekal bawaan.
+    const minimal = Math.floor((seed as KodeRow[]).length * 0.5);
+    if (terbaik && terbaik.length >= minimal) {
+      rows = terbaik; built = false; lastOk = Date.now(); lastError = null;
+    } else {
+      if (terbaik) sebab.push(`hasil live hanya ${terbaik.length} baris (minimal ${minimal}) — ditolak, pakai data terakhir yang sehat`);
+      lastError = sebab.join("; ") || "gagal mengambil data";
+    }
+    lastFetch = Date.now();
+    loading = null;
   })();
   return loading;
 }
@@ -100,7 +150,7 @@ function partKeys(raw: string): string[] {
 let partIdx: Map<string, string[]> = new Map();
 let matDesc: Map<string, string> = new Map();
 let matPO: Map<string, string> = new Map();
-let descList: { nd: string; kode: string; desc: string; toks: string[]; po: string }[] = [];
+let descList: { nd: string; kode: string; desc: string; toks: string[]; po: string; npo: string; poToks: string[] }[] = [];
 
 function buildIndexes() {
   partIdx = new Map();
@@ -117,7 +167,11 @@ function buildIndexes() {
       }
     }
     const nd = normDesc(r.d);
-    if (nd && !seenDesc.has(nd)) { seenDesc.add(nd); descList.push({ nd, kode: r.m, desc: r.d, toks: tokenize(nd), po: r.po || "" }); }
+    if (nd && !seenDesc.has(nd)) {
+      seenDesc.add(nd);
+      const npo = normDesc(r.po || "");
+      descList.push({ nd, kode: r.m, desc: r.d, toks: tokenize(nd), po: r.po || "", npo, poToks: tokenize(npo) });
+    }
   }
   built = true;
 }
@@ -127,20 +181,27 @@ async function ensureDb(force = false) {
   if (!built) buildIndexes();
 }
 
-export interface DbMeta { count: number; source: "live" | "seed"; lastSync: number | null }
+export interface DbMeta { count: number; source: "live" | "seed"; lastSync: number | null; error?: string | null }
 export function dbMeta(): DbMeta {
-  return { count: rows.length, source: lastOk ? "live" : "seed", lastSync: lastOk || null };
+  return { count: rows.length, source: lastOk ? "live" : "seed", lastSync: lastOk || null, error: lastError };
 }
 
 // ---------- skor fuzzy (barang umum) ----------
-function score(qNorm: string, qToks: string[], c: { nd: string; toks: string[] }): number {
+function score(qNorm: string, qToks: string[], c: { nd: string; toks: string[]; npo?: string; poToks?: string[] }): number {
   if (c.nd === qNorm) return 1000;
+  if (c.npo && c.npo === qNorm) return 900;         // sama persis dgn Purchase Order Text
   let s = 0;
   if (c.nd.includes(qNorm) || qNorm.includes(c.nd)) s += 50;
+  else if (c.npo && (c.npo.includes(qNorm) || qNorm.includes(c.npo))) s += 30;
+  let cocok = 0;
   for (const qt of qToks) {
-    if (c.toks.includes(qt)) s += 10;
+    if (c.toks.includes(qt)) { s += 10; cocok++; }
+    else if (c.nd.includes(qt)) { s += 8; cocok++; }               // bagian dari kata (mis. "wire" di "WIREROPE")
+    else if (c.poToks?.includes(qt)) { s += 6; cocok++; }          // ketemu di PO Text
     else if (c.toks.some((t) => t.startsWith(qt) || qt.startsWith(t))) s += 3;
   }
+  // SEMUA kata yang diketik ketemu -> jauh lebih relevan daripada cocok sebagian
+  if (qToks.length && cocok === qToks.length) s += 40 + qToks.length * 5;
   return s;
 }
 
@@ -197,7 +258,7 @@ export async function cekKode(items: CekInput[], opts?: { refresh?: boolean }): 
     const scored = descList
       .map((c) => ({ c, s: score(qNorm, qToks, c) }))
       .filter((x) => x.s > 0)
-      .sort((a, b) => b.s - a.s)
+      .sort((a, b) => (b.s - a.s) || (a.c.nd.length - b.c.nd.length)) // skor sama -> nama lebih ringkas dulu
       .slice(0, MAX_CAND);
     if (!scored.length) return { id: it.id, kategori: "UMUM", kode: "", desc: "", po: "", status: "tidak ada" };
     const candidates: Cand[] = scored.map(({ c }) => ({ kode: c.kode, desc: c.desc, po: c.po }));
