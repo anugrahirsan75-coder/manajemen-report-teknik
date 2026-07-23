@@ -41,6 +41,7 @@ export default function Ringkasan(p: RingkasanProps) {
   const bulan = bulanIni();
   const tahun = new Date().getFullYear();
   const [tabTren, setTabTren] = useState<"rutin" | "semua">("rutin");
+  const [tabRinci, setTabRinci] = useState<"docking" | "lainnya" | "rutin">("docking");
 
   const sumber: Sumber[] = useMemo(() => {
     // ---- RUTIN (bulan berjalan) ----
@@ -138,6 +139,59 @@ export default function Ringkasan(p: RingkasanProps) {
     }
     return { biaya, inv, total: biaya + inv };
   }, [p.pengadaan, tahun]);
+
+
+  // ---- rincian: Docking per kapal, Lainnya per surat, Rutin per Mata Anggaran ----
+  interface Rinci { label: string; pendek?: string; sub?: string; pagu: number; add: number; pakai: number }
+
+  const perKapalDocking: Rinci[] = useMemo(() => {
+    const out: Rinci[] = [];
+    for (const kapal of KAPAL_ANGGARAN) {
+      const e = p.docking.find((d) => d.kapal === kapal && d.tahun === tahun);
+      if (!e) continue;
+      const real = realisasiDocking(p.pengadaan, kapal, tahun);
+      let pagu = 0, add = 0, pakai = 0;
+      for (const r of e.rows || []) {
+        pagu += r.nilai || 0; add += r.addendum || 0;
+        pakai += real.perKey[maKey(r.ma)] || 0;
+      }
+      if (pagu + add > 0 || pakai > 0)
+        out.push({ label: kapal, pendek: ringkasKapal(kapal), sub: e.noSuratAddendum ? `addendum ${e.noSuratAddendum}` : e.noSurat ? `No. ${e.noSurat}` : undefined, pagu, add, pakai });
+    }
+    return out.sort((a, b) => (b.pagu + b.add) - (a.pagu + a.add));
+  }, [p.docking, p.pengadaan, tahun]);
+
+  const perSurat: Rinci[] = useMemo(() =>
+    p.program.map((pr) => {
+      const pos = posProgram(pr, p.pengadaan);
+      return {
+        label: pr.nama || "(tanpa nama)",
+        pendek: (pr.nama || "").split(" ").slice(0, 2).join(" "),
+        sub: pr.noSurat ? `No. ${pr.noSurat}` : undefined,
+        pagu: (pr.rows || []).reduce((t, r) => t + (r.nilai || 0), 0),
+        add: (pr.rows || []).reduce((t, r) => t + (r.addendum || 0), 0),
+        pakai: pos.reduce((t, x) => t + x.pakai, 0),
+      };
+    }).sort((a, b) => (b.pagu + b.add) - (a.pagu + a.add)),
+  [p.program, p.pengadaan]);
+
+  const perMaRutin: Rinci[] = useMemo(() => {
+    const e = p.plafon.find((x) => x.bulan === bulan);
+    const real = realisasiRutin(p.pengadaan, bulan);
+    return (e?.rows || []).map((r) => ({
+      label: r.ma,
+      pendek: (r.ma.match(/\(([^)]+)\)/)?.[1] || r.ma).slice(0, 18),
+      pagu: r.nilai || 0, add: r.addendum || 0, pakai: real.perKey[maKey(r.ma)] || 0,
+    })).sort((a, b) => (b.pagu + b.add) - (a.pagu + a.add));
+  }, [p.plafon, p.pengadaan, bulan]);
+
+  const daftarRinci = tabRinci === "docking" ? perKapalDocking : tabRinci === "lainnya" ? perSurat : perMaRutin;
+  const jmlRinci = {
+    pagu: daftarRinci.reduce((s2, d) => s2 + d.pagu, 0),
+    add: daftarRinci.reduce((s2, d) => s2 + d.add, 0),
+    pakai: daftarRinci.reduce((s2, d) => s2 + d.pakai, 0),
+  };
+  const maksRinci = Math.max(1, ...daftarRinci.map((d) => d.pagu + d.add));
 
   const semuaPerhatian = sumber.flatMap((s) =>
     s.perhatian.map((x) => ({ ...x, sumber: s.judul, href: s.href, teks: s.teks, pct: pct(x.pakai, x.pagu) }))
@@ -267,6 +321,111 @@ export default function Ringkasan(p: RingkasanProps) {
             })}
           </div>
         </div>
+      </section>
+
+      {/* ===== rincian per kapal (Docking) & per surat (Lainnya) ===== */}
+      <section className="mt-4 bg-white rounded-2xl elev-md ring-line p-5">
+        <div className="flex flex-wrap items-center gap-2 mb-1">
+          <h3 className="font-bold text-slate-800">Rincian anggaran</h3>
+          <div className="flex gap-1 ml-auto">
+            {([["docking", `⚓ Docking per kapal (${perKapalDocking.length})`], ["lainnya", `📜 Persetujuan Lainnya (${perSurat.length})`], ["rutin", "🧭 Rutin per Mata Anggaran"]] as const).map(([v, t]) => (
+              <button key={v} onClick={() => setTabRinci(v)}
+                className={`text-[11px] font-semibold px-2.5 py-1.5 rounded-lg border transition ${tabRinci === v ? "bg-slate-800 text-white border-slate-800" : "bg-white border-slate-300 text-slate-600 hover:border-slate-500"}`}>{t}</button>
+            ))}
+          </div>
+        </div>
+        <p className="text-[11px] text-slate-500 mb-3">
+          {tabRinci === "docking" ? `Pagu Persetujuan Pusat per kapal tahun ${tahun} — batang menunjukkan porsi terpakai`
+            : tabRinci === "lainnya" ? "Tiap surat persetujuan di luar Rutin & Docking"
+            : `Pagu Rutin ${bulanTahun(bulan + "-01")} per Mata Anggaran`}
+        </p>
+
+        {daftarRinci.length === 0 ? (
+          <p className="text-sm text-slate-500 py-3 text-center">Belum ada pagu pada bagian ini.</p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold border-b-2 border-slate-200">
+                <tr>
+                  <th className="p-2 text-left">{tabRinci === "docking" ? "Kapal" : tabRinci === "lainnya" ? "Surat Persetujuan" : "Mata Anggaran"}</th>
+                  <th className="p-2 text-right w-32">Pagu</th>
+                  <th className="p-2 text-right w-24 text-violet-800">Addendum</th>
+                  <th className="p-2 text-right w-32">Pagu Total</th>
+                  <th className="p-2 text-right w-32">Terpakai</th>
+                  <th className="p-2 text-right w-32">Sisa</th>
+                  <th className="p-2 text-right w-40">Serapan</th>
+                  <th className="p-2 text-center w-24">Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {daftarRinci.map((d) => {
+                  const total = d.pagu + d.add;
+                  const ps = pct(d.pakai, total);
+                  const st = ps > 100 ? "OVERBUDGET" : ps >= 80 ? "Waspada" : "Aman";
+                  const stC = ps > 100 ? "bg-red-100 text-red-800 ring-1 ring-red-300" : ps >= 80 ? "bg-amber-100 text-amber-800 ring-1 ring-amber-300" : "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300";
+                  return (
+                    <tr key={d.label} className="border-b border-slate-200 even:bg-slate-50/60 row-hover">
+                      <td className="p-2 font-semibold text-slate-800">
+                        <span className="block truncate max-w-[20rem]" title={d.label}>{d.label}</span>
+                        {d.sub && <span className="block text-[10px] text-slate-500 font-normal">{d.sub}</span>}
+                      </td>
+                      <td className="p-2 text-right tabular-nums whitespace-nowrap text-slate-700">{rupiah(d.pagu)}</td>
+                      <td className="p-2 text-right tabular-nums whitespace-nowrap font-bold text-violet-800">{d.add ? "+" + rupiahShort(d.add) : <span className="text-slate-400 font-normal">—</span>}</td>
+                      <td className="p-2 text-right tabular-nums whitespace-nowrap font-semibold text-slate-800">{rupiah(total)}</td>
+                      <td className="p-2 text-right tabular-nums whitespace-nowrap font-bold text-slate-900">{rupiah(Math.round(d.pakai))}</td>
+                      <td className={`p-2 text-right tabular-nums whitespace-nowrap font-bold ${total - d.pakai < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(Math.round(total - d.pakai))}</td>
+                      <td className="p-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex-1 h-2.5 rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 overflow-hidden">
+                            <div className={`h-full rounded-full ${warnaPct(ps)}`} style={{ width: `${Math.max(d.pakai > 0 ? 4 : 0, Math.min(100, ps))}%` }} />
+                          </div>
+                          <span className={`text-xs font-bold tabular-nums w-9 text-right ${tintPct(ps)}`}>{ps}%</span>
+                        </div>
+                      </td>
+                      <td className="p-2 text-center"><span className={`inline-block text-[10px] font-extrabold tracking-wide px-2.5 py-1 rounded-full whitespace-nowrap ${stC}`}>{st}</span></td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+              <tfoot>
+                <tr className="bg-slate-100 border-t-2 border-slate-300 font-extrabold text-slate-900">
+                  <td className="p-2">TOTAL</td>
+                  <td className="p-2 text-right tabular-nums">{rupiah(jmlRinci.pagu)}</td>
+                  <td className="p-2 text-right tabular-nums text-violet-800">{jmlRinci.add ? "+" + rupiahShort(jmlRinci.add) : "—"}</td>
+                  <td className="p-2 text-right tabular-nums">{rupiah(jmlRinci.pagu + jmlRinci.add)}</td>
+                  <td className="p-2 text-right tabular-nums">{rupiah(Math.round(jmlRinci.pakai))}</td>
+                  <td className="p-2 text-right tabular-nums text-emerald-700">{rupiah(Math.round(jmlRinci.pagu + jmlRinci.add - jmlRinci.pakai))}</td>
+                  <td className="p-2 text-right tabular-nums">{pct(jmlRinci.pakai, jmlRinci.pagu + jmlRinci.add)}%</td>
+                  <td />
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        )}
+
+        {/* grafik batang perbandingan */}
+        {daftarRinci.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-slate-200">
+            <p className="text-[11px] font-semibold text-slate-600 mb-2">Perbandingan pagu (abu) vs terpakai (warna)</p>
+            <div className="space-y-2">
+              {daftarRinci.map((d) => {
+                const total = d.pagu + d.add;
+                const ps = pct(d.pakai, total);
+                return (
+                  <div key={"g" + d.label} className="flex items-center gap-2">
+                    <span className="w-28 shrink-0 text-[11px] font-semibold text-slate-700 truncate" title={d.label}>{d.pendek || d.label}</span>
+                    <div className="relative flex-1 h-4 rounded-md bg-slate-100 ring-1 ring-inset ring-slate-200 overflow-hidden">
+                      <div className="absolute inset-y-0 left-0 bg-slate-300" style={{ width: `${(total / maksRinci) * 100}%` }} />
+                      <div className={`absolute inset-y-0 left-0 ${warnaPct(ps)}`} style={{ width: `${(d.pakai / maksRinci) * 100}%` }} />
+                    </div>
+                    <span className="w-24 shrink-0 text-[10px] tabular-nums text-slate-600 text-right">{rupiahShort(total)}</span>
+                    <span className={`w-10 shrink-0 text-[11px] font-bold tabular-nums text-right ${tintPct(ps)}`}>{ps}%</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
       </section>
 
       {/* ===== perlu perhatian ===== */}
