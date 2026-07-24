@@ -5,6 +5,7 @@
  * Isi program: baris per KAPAL x Mata Anggaran dgn nilai Persetujuan Pusat (pagu)
  * + Addendum bila ada persetujuan tambahan.
  */
+import Link from "next/link";
 import { Fragment, useMemo, useState } from "react";
 import { PengadaanRow, realisasiProgram, RealisasiItem } from "@/lib/anggaran/store";
 import { PlafonProgram, ProgramRow, KAPAL_ANGGARAN, MATA_ANGGARAN, fullMA, maKey, namaKapalPenuh, isMaInvestasi } from "@/lib/anggaran/types";
@@ -423,6 +424,11 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
                                       <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
                                       <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
                                       <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(Math.round(x.nilai))}</td>
+                                      <td className="py-1 pl-3 text-right w-16">
+                                        <Link href={`${x.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${x.id}`}
+                                          className="text-blue-700 font-bold hover:underline whitespace-nowrap"
+                                          title={`Buka ${x.sumber} ini untuk dilihat / diedit`}>buka →</Link>
+                                      </td>
                                     </tr>
                                   ))}
                                 </tbody></table>

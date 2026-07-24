@@ -45,6 +45,20 @@ export default function SppbjList() {
 
   const mulai = () => { newDraft(); router.push("/sppbj/isi"); };
   const buka = (r: any) => { loadById(r); router.push("/sppbj/detail"); };
+
+  // Dibuka langsung dari Dashboard Anggaran: /sppbj?buka=<id> -> muat lalu lompat ke detailnya.
+  // Query dibaca dari window (bukan useSearchParams) supaya halaman ini tak perlu Suspense.
+  const [bukaId, setBukaId] = useState<string | null>(null);
+  const [bukaGagal, setBukaGagal] = useState("");
+  useEffect(() => { setBukaId(new URLSearchParams(window.location.search).get("buka")); }, []);
+  useEffect(() => {
+    if (!bukaId || loading || !rows.length) return;
+    const r = rows.find((x) => x.id === bukaId);
+    setBukaId(null);
+    if (r) buka(r);
+    else setBukaGagal("Pengadaan yang dituju tak ditemukan — mungkin sudah dihapus.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bukaId, rows, loading]);
   const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
 
   // Sync ke spreadsheet REKAP PJK (semua pengadaan di filter -> tab bulan masing-masing)
@@ -123,6 +137,9 @@ export default function SppbjList() {
           <button onClick={mulai} className="btn btn-primary px-5 py-2.5 text-sm">＋ Mulai Pengadaan</button>
         </div>
       </div>
+
+      {bukaId && <p className="mt-4 text-sm text-slate-600">Membuka pengadaan dari Dashboard…</p>}
+      {bukaGagal && <p className="mt-4 text-sm text-rose-800 bg-rose-50 ring-1 ring-rose-200 rounded-xl px-3 py-2">{bukaGagal}</p>}
 
       {/* Rekap */}
       <section className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3">

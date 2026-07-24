@@ -285,6 +285,12 @@ function MaDetailList({ list }: { list: MaDetailItem[] }) {
           <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
           <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
           <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(x.nilai)}</td>
+          {/* langsung ke dokumennya — mis. utk membetulkan Mata Anggaran / Jenis Anggaran yang salah tag */}
+          <td className="py-1 pl-3 text-right w-16">
+            <Link href={`${x.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${x.id}`}
+              className="text-blue-700 font-bold hover:underline whitespace-nowrap"
+              title={`Buka ${x.sumber} ini untuk dilihat / diedit`}>buka →</Link>
+          </td>
         </tr>
       ))}
     </tbody></table>
@@ -708,22 +714,7 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
                     {isOpen && (
                       <tr className="bg-sky-50/50">
                         <td colSpan={6} className="px-3 py-2">
-                          {rinci.length === 0 ? (
-                            <p className="text-[11px] text-slate-500">Belum ada pengadaan pada Mata Anggaran ini bulan ini.</p>
-                          ) : (
-                            <table className="w-full text-[11px]">
-                              <tbody>
-                                {rinci.map((x) => (
-                                  <tr key={x.id} className="border-b border-slate-200 last:border-0">
-                                    <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-bold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
-                                    <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
-                                    <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
-                                    <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(x.nilai)}</td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                            </table>
-                          )}
+                          <MaDetailList list={rinci} />
                         </td>
                       </tr>
                     )}
@@ -755,7 +746,11 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
             {real.list.map((x) => (
               <li key={x.id} className="flex justify-between gap-3 border-b border-slate-200 pb-1">
                 <span className="text-slate-800 truncate"><span className={`text-[9px] font-bold px-1 rounded mr-1 ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>{x.sumber === "Non PR PO" ? "NonPR" : "SPPBJ"}</span>{x.nama} <span className="text-slate-500">· {x.ma || "tanpa MA"}</span></span>
-                <span className="font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(x.nilai)}</span>
+                <span className="flex items-center gap-3 whitespace-nowrap">
+                  <span className="font-bold tabular-nums text-slate-900">{rupiah(x.nilai)}</span>
+                  <Link href={`${x.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${x.id}`}
+                    className="text-blue-700 font-bold hover:underline" title={`Buka ${x.sumber} ini untuk dilihat / diedit`}>buka →</Link>
+                </span>
               </li>
             ))}
           </ul>

@@ -30,6 +30,19 @@ export default function NonprList() {
 
   const mulai = () => { newDraft(); router.push("/nonpr/isi"); };
   const buka = (r: any) => { loadById(r); router.push("/nonpr/detail"); };
+
+  // Dibuka langsung dari Dashboard Anggaran: /nonpr?buka=<id> -> muat lalu lompat ke detailnya.
+  const [bukaId, setBukaId] = useState<string | null>(null);
+  const [bukaGagal, setBukaGagal] = useState("");
+  useEffect(() => { setBukaId(new URLSearchParams(window.location.search).get("buka")); }, []);
+  useEffect(() => {
+    if (!bukaId || loading || !rows.length) return;
+    const r = rows.find((x) => x.id === bukaId);
+    setBukaId(null);
+    if (r) buka(r);
+    else setBukaGagal("Pengadaan yang dituju tak ditemukan — mungkin sudah dihapus.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bukaId, rows, loading]);
   const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
 
   return (
@@ -40,6 +53,8 @@ export default function NonprList() {
           <div className="flex-1">
             <h1 className="text-2xl font-extrabold asdp-text-gradient">SPPBJ Non PR PO</h1>
             <p className="text-slate-500 text-sm">Formulir Persetujuan Pengadaan Non Purchase Order — maks Rp {rupiah(MAX_NILAI_NONPR)}/file</p>
+            {bukaId && <p className="text-xs text-slate-500 mt-1">Membuka pengadaan dari Dashboard…</p>}
+            {bukaGagal && <p className="text-xs text-rose-700 mt-1">{bukaGagal}</p>}
           </div>
           <button onClick={mulai} className="btn btn-primary px-5 py-2.5 text-sm">＋ Mulai Pengadaan</button>
         </div>
