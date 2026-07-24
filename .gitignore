@@ -13,3 +13,6 @@ RAB_MASTER*.xlsx
 
 # output generator (file live katalog dll — artifact, jangan commit)
 output/
+
+# Arsip dokumen pengadaan (data operasional, bukan kode)
+/SPBJ/

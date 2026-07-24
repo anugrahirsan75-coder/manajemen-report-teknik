@@ -6,6 +6,7 @@
  * + Addendum bila ada persetujuan tambahan.
  */
 import Link from "next/link";
+import PreviewModal from "@/components/PreviewModal";
 import { Fragment, useMemo, useState } from "react";
 import { PengadaanRow, realisasiProgram, RealisasiItem } from "@/lib/anggaran/store";
 import { PlafonProgram, ProgramRow, KAPAL_ANGGARAN, MATA_ANGGARAN, fullMA, maKey, namaKapalPenuh, isMaInvestasi } from "@/lib/anggaran/types";
@@ -61,6 +62,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
   onExcel?: () => void; xlsBusy?: boolean;
 }) {
   const [pilih, setPilih] = useState<string>("");
+  const [lihat, setLihat] = useState<RealisasiItem | null>(null);   // preview dokumen
   const aktifId = pilih || program[0]?.id || "";
   const aktif = program.find((p) => p.id === aktifId);
 
@@ -159,6 +161,11 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
 
   return (
     <div>
+      {lihat?.raw && (
+        <PreviewModal jenis={lihat.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"} payload={lihat.raw}
+          onTutup={() => setLihat(null)}
+          onBuka={() => { window.location.href = `${lihat.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${lihat.id}`; }} />
+      )}
       {/* pilih program */}
       <div className="rounded-xl bg-white ring-1 ring-indigo-200 p-2.5 mb-3">
         <div className="flex flex-wrap items-center gap-2 mb-1.5">
@@ -424,6 +431,12 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
                                       <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
                                       <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
                                       <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(Math.round(x.nilai))}</td>
+                                      <td className="py-1 pl-3 text-right w-14">
+                                        {x.raw ? (
+                                          <button onClick={() => setLihat(x)} className="text-slate-600 font-bold hover:text-slate-900 hover:underline whitespace-nowrap"
+                                            title={`Lihat isi ${x.sumber} ini (tanpa meninggalkan halaman)`}>👁 preview</button>
+                                        ) : <span className="text-slate-300">—</span>}
+                                      </td>
                                       <td className="py-1 pl-3 text-right w-16">
                                         <Link href={`${x.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${x.id}`}
                                           className="text-blue-700 font-bold hover:underline whitespace-nowrap"

@@ -86,7 +86,7 @@ export function realisasiRutinKapal(rows: PengadaanRow[], bulan: string) {
     for (const [kapal, v] of Object.entries(nilaiPerKapal(p))) {
       if (!per[kapal]) per[kapal] = { kapal, nilai: 0, pengadaan: [] };
       per[kapal].nilai += v;
-      per[kapal].pengadaan.push({ id: p.id, nama: p.nama, ma: maDefault, nilai: v, key: kapal, sumber: p.sumber, tanggal: p.tanggal });
+      per[kapal].pengadaan.push({ id: p.id, nama: p.nama, ma: maDefault, nilai: v, key: kapal, sumber: p.sumber, tanggal: p.tanggal, raw: p.raw });
     }
   }
   const list = Object.values(per).sort((a, b) => b.nilai - a.nilai);
@@ -94,7 +94,7 @@ export function realisasiRutinKapal(rows: PengadaanRow[], bulan: string) {
   return { list, total: list.reduce((s, k) => s + k.nilai, 0) };
 }
 
-export interface RealisasiItem { id: string; nama: string; ma: string; nilai: number; key: string; sumber: string; tanggal: string }
+export interface RealisasiItem { id: string; nama: string; ma: string; nilai: number; key: string; sumber: string; tanggal: string; raw?: any }
 // realisasi RUTIN per kunci MA utk 1 bulan ("YYYY-MM") — SPPBJ + Non PR PO
 export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
   const perKey: Record<string, number> = {};
@@ -106,7 +106,7 @@ export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
     for (const [ma, v] of Object.entries(nilaiPerMA(p))) {
       const key = maKey(ma);
       perKey[key] = (perKey[key] || 0) + v;
-      list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal });
+      list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal, raw: p.raw });
     }
   }
   list.sort((a, b) => b.nilai - a.nilai);
@@ -125,7 +125,7 @@ export function realisasiDocking(rows: PengadaanRow[], kapal: string, tahun: num
     for (const [ma, v] of Object.entries(nilaiPerMA(p, kapal))) {
       const key = maKey(ma);
       perKey[key] = (perKey[key] || 0) + v;
-      list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal });
+      list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal, raw: p.raw });
     }
   }
   list.sort((a, b) => b.nilai - a.nilai);
@@ -151,7 +151,7 @@ export function realisasiProgram(rows: PengadaanRow[], programId: string) {
       for (const k of (ks.length ? ks : [TANPA_KAPAL])) {
         const kunci = `${k}|${maKey(ma)}`;
         perKunci[kunci] = (perKunci[kunci] || 0) + bagi;
-        list.push({ id: p.id, nama: p.nama, ma, nilai: bagi, key: kunci, sumber: p.sumber, tanggal: p.tanggal });
+        list.push({ id: p.id, nama: p.nama, ma, nilai: bagi, key: kunci, sumber: p.sumber, tanggal: p.tanggal, raw: p.raw });
       }
     }
   }

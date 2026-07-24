@@ -13,6 +13,7 @@ import { ringkasKapal } from "@/lib/kapal/nama";
 import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
 import Ringkasan from "@/components/anggaran/Ringkasan";
 import { exportTipeExcel } from "@/lib/anggaran/exportTipe";
+import PreviewModal from "@/components/PreviewModal";
 
 const JUDUL: Record<string, string> = {
   ringkas: "Dashboard Anggaran", rutin: "Kendali Anggaran Rutin", docking: "Kendali Anggaran Docking",
@@ -87,12 +88,12 @@ function DashboardInner() {
 
   // rincian pengadaan per kode Mata Anggaran (utk klik-baris di RKA & Penyerapan per MA)
   const detailMA = useMemo(() => {
-    const by: Record<string, { id: string; nama: string; nilai: number; sumber: string; tanggal: string }[]> = {};
+    const by: Record<string, { id: string; nama: string; nilai: number; sumber: string; tanggal: string; raw?: any }[]> = {};
     for (const r of data) {
       for (const [ma, v] of Object.entries(nilaiPerMA(r, undefined, false))) {
         const c = kodeMA(ma);
         if (!c || v <= 0) continue;
-        (by[c] ||= []).push({ id: r.id, nama: r.nama, nilai: v, sumber: r.sumber, tanggal: r.tanggal });
+        (by[c] ||= []).push({ id: r.id, nama: r.nama, nilai: v, sumber: r.sumber, tanggal: r.tanggal, raw: r.raw });
       }
     }
     Object.values(by).forEach((l) => l.sort((x, y) => y.nilai - x.nilai));
@@ -274,10 +275,18 @@ function Card({ title, icon, children, tone = "biru", badge, sub }: {
 }
 
 /* ---------- rincian pengadaan per MA (reusable) ---------- */
-type MaDetailItem = { id: string; nama: string; nilai: number; sumber: string; tanggal: string };
+type MaDetailItem = { id: string; nama: string; nilai: number; sumber: string; tanggal: string; raw?: any };
 function MaDetailList({ list }: { list: MaDetailItem[] }) {
+  // dokumen yang sedang dilihat sekilas (tanpa meninggalkan halaman ini)
+  const [lihat, setLihat] = useState<MaDetailItem | null>(null);
   if (!list || !list.length) return <p className="text-[11px] text-slate-500 py-1">Belum ada pengadaan pada Mata Anggaran ini.</p>;
   return (
+    <>
+    {lihat?.raw && (
+      <PreviewModal jenis={lihat.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"} payload={lihat.raw}
+        onTutup={() => setLihat(null)}
+        onBuka={() => { window.location.href = `${lihat.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${lihat.id}`; }} />
+    )}
     <table className="w-full text-[11px]"><tbody>
       {list.map((x) => (
         <tr key={x.id} className="border-b border-slate-200 last:border-0">
@@ -285,6 +294,13 @@ function MaDetailList({ list }: { list: MaDetailItem[] }) {
           <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
           <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
           <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(x.nilai)}</td>
+          {/* lihat isinya sekilas tanpa pindah halaman */}
+          <td className="py-1 pl-3 text-right w-14">
+            {x.raw ? (
+              <button onClick={() => setLihat(x)} className="text-slate-600 font-bold hover:text-slate-900 hover:underline whitespace-nowrap"
+                title={`Lihat isi ${x.sumber} ini (tanpa meninggalkan halaman)`}>👁 preview</button>
+            ) : <span className="text-slate-300">—</span>}
+          </td>
           {/* langsung ke dokumennya — mis. utk membetulkan Mata Anggaran / Jenis Anggaran yang salah tag */}
           <td className="py-1 pl-3 text-right w-16">
             <Link href={`${x.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${x.id}`}
@@ -294,6 +310,7 @@ function MaDetailList({ list }: { list: MaDetailItem[] }) {
         </tr>
       ))}
     </tbody></table>
+    </>
   );
 }
 
