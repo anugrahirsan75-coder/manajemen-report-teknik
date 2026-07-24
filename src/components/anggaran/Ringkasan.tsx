@@ -11,6 +11,7 @@ import { posProgram } from "@/lib/anggaran/program";
 import { PlafonRutin, PlafonDocking, PlafonProgram, KAPAL_ANGGARAN, maKey, isMaInvestasi, rupiahShort } from "@/lib/anggaran/types";
 import { ringkasKapal } from "@/lib/kapal/nama";
 import { rupiah, bulanTahun } from "@/lib/format";
+import PengingatRR from "@/components/rr/PengingatRR";
 
 const bulanIni = () => new Date().toISOString().slice(0, 7);
 const mundurBulan = (ym: string, n: number) => {
@@ -199,6 +200,9 @@ export default function Ringkasan(p: RingkasanProps) {
 
   return (
     <>
+      {/* pengingat tenggat Rencana/Realisasi — hanya muncul bila memang perlu ditindak */}
+      <PengingatRR />
+
       {/* ===== angka besar ===== */}
       <section className="mt-5 grid grid-cols-2 lg:grid-cols-4 gap-3">
         <Besar label="Total Pagu Disetujui" nilai={rupiah(totPagu)} sub="Rutin + Docking + Lainnya" bar="bg-slate-500" />
