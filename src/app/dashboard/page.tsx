@@ -12,7 +12,7 @@ import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
 import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
 import Ringkasan from "@/components/anggaran/Ringkasan";
-import { exportAnggaranExcel } from "@/lib/anggaran/exportClient";
+import { exportTipeExcel } from "@/lib/anggaran/exportTipe";
 
 const JUDUL: Record<string, string> = {
   ringkas: "Dashboard Anggaran", rutin: "Kendali Anggaran Rutin", docking: "Kendali Anggaran Docking",
@@ -41,14 +41,14 @@ function DashboardInner() {
   const { ready, loading, pengadaan, rka, rr, plafon, docking, program, reload, saveRka, saveRr, savePlafon, saveDocking, saveProgram } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
   const [xlsBusy, setXlsBusy] = useState(false);
-  const unduhExcel = async (hanya?: "rutin" | "docking" | "lainnya") => {
+  // Export Excel PER TIPE (berjenjang + tautan antar sheet)
+  const unduhExcel = async (tipe: "rutin" | "docking" | "lainnya") => {
     setXlsBusy(true);
     try {
-      await exportAnggaranExcel({
-        plafon, docking, program, pengadaan,
+      await exportTipeExcel({
+        tipe, plafon, docking, program, pengadaan,
         bulan: new Date().toISOString().slice(0, 7),
         tahun: parseInt(tahun || String(new Date().getFullYear()), 10),
-        hanya,
       });
     } catch (e: any) { alert("Gagal export: " + (e?.message ?? e)); }
     finally { setXlsBusy(false); }
@@ -112,10 +112,22 @@ function DashboardInner() {
             <option value="">Semua tahun</option>
             {tahunList.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
-          <button onClick={() => unduhExcel(v === "ringkas" || v === "rincian" ? undefined : v)} disabled={xlsBusy}
-            className="btn btn-success text-xs disabled:opacity-50" title="Unduh Excel berwarna dgn rumus hidup">
-            {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
-          </button>
+          {v === "ringkas" || v === "rincian" ? (
+            <div className="flex items-center gap-1">
+              <span className="text-[10px] text-slate-500 font-semibold">Export Excel:</span>
+              {([["rutin", "Rutin"], ["docking", "Docking"], ["lainnya", "Lainnya"]] as const).map(([t, l]) => (
+                <button key={t} onClick={() => unduhExcel(t)} disabled={xlsBusy}
+                  className="btn btn-ghost text-xs disabled:opacity-50" title={`Unduh Excel ${l} — berjenjang sampai item pengadaan`}>
+                  📊 {l}
+                </button>
+              ))}
+            </div>
+          ) : (
+            <button onClick={() => unduhExcel(v as "rutin" | "docking" | "lainnya")} disabled={xlsBusy}
+              className="btn btn-success text-xs disabled:opacity-50" title="Unduh Excel berjenjang: ringkasan → per Mata Anggaran → per item pengadaan">
+              {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
+            </button>
+          )}
           <button onClick={reload} className="btn btn-ghost text-xs">↻ Muat ulang</button>
         </div>
       </div>
