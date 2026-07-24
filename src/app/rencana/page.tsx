@@ -13,7 +13,9 @@
  *  - AKUNTABEL. Total dihitung dari item (jumlah x harga satuan), bukan diketik.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
-import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
+import { KAPAL_ANGGARAN, maKey, namaKapalPenuh } from "@/lib/anggaran/types";
+import { useAnggaran } from "@/lib/anggaran/store";
+import { pecahKapal } from "@/lib/kapal/nama";
 import { useRR, idDoc } from "@/lib/rr/store";
 import {
   KELOMPOK_RR, MA_RR, kunciKelompok, RrDoc, RrItem, TipeRR,
@@ -45,6 +47,7 @@ const WARNA_TENGGAT: Record<string, string> = {
 
 export default function RencanaPage() {
   const { ready, loading, dok, simpan, hapus, reload, simpanErr } = useRR();
+  const { pengadaan } = useAnggaran();   // untuk menarik realisasi dari SPPBJ/Non PR PO
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => { setNow(new Date()); }, []);   // hindari beda server/klien
 
@@ -125,6 +128,56 @@ export default function RencanaPage() {
     if (!kerja) return;
     if (!confirm("Buka kunci untuk revisi?\n\nDokumen ini sudah ditandai terkirim ke pusat. Perubahan setelah ini perlu dilaporkan ulang.")) return;
     await simpanDoc({ ...kerja, status: "draf" });
+  };
+
+  /**
+   * Tarik realisasi dari pengadaan yang SUDAH tercatat (SPPBJ + Non PR PO ber-jenis Rutin)
+   * pada bulan & kapal ini. Item multi-kapal dibagi rata supaya totalnya tetap pas.
+   * Item Akomodasi/Permesinan masuk ke kelompok "Lain-Lain" karena sub-kelompoknya tak bisa
+   * ditebak dari dokumen — tinggal dipindahkan lewat tombol ⇄ pada barisnya.
+   */
+  const tarikDariPengadaan = () => {
+    const sasaran = (kode: string) => {
+      const sub = KELOMPOK_RR.filter((k) => k.kode === kode);
+      if (!sub.length) return "";
+      const lain = sub.find((k) => /lain/i.test(k.judul));
+      return kunciKelompok(lain || sub[0]);
+    };
+    const kumpul: Record<string, RrItem[]> = {};
+    let n = 0, diabaikan = 0;
+    for (const p of pengadaan) {
+      if (p.jenis !== "rutin") continue;
+      if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
+      const arr: any[] = p.items || [];
+      const adaFinal = arr.some((it) => (it.hargaSpbj || 0) > 0);
+      const maDefault = (p.mataAnggaran || [])[0] || "";
+      for (const it of arr) {
+        const kapals = pecahKapal(it.kapal || "").map(namaKapalPenuh);
+        if (!kapals.includes(kapal)) continue;
+        const bagi = kapals.length || 1;
+        const harga = (adaFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) / bagi;
+        if (!harga) continue;
+        const kode = maKey((it.mataAnggaran || "").trim() || maDefault);
+        const kunci = sasaran(kode);
+        if (!kunci) { diabaikan++; continue; }
+        (kumpul[kunci] ||= []).push({
+          id: uid(), deskripsi: it.nama || "(tanpa nama)",
+          spesifikasi: [it.spesifikasi, `${p.sumber} ${p.nama}`].filter(Boolean).join(" · "),
+          jumlah: it.jumlah || 0, satuan: it.satuan || "", harga: Math.round(harga),
+        });
+        n++;
+      }
+    }
+    if (!n) { setPesan(`Tidak ada pengadaan Rutin ${namaBulan(bulan)} untuk ${kapal}.`); setTimeout(() => setPesan(""), 4000); return; }
+    ubah((d) => {
+      for (const [kunci, items] of Object.entries(kumpul)) {
+        const g = d.kelompok.find((x) => x.kunci === kunci);
+        if (g) g.items = [...g.items.filter((i) => i.deskripsi || i.harga), ...items];
+        else d.kelompok.push({ kunci, items });
+      }
+    });
+    setPesan(`${n} item ditarik dari SPPBJ / Non PR PO${diabaikan ? ` · ${diabaikan} item Mata Anggarannya di luar daftar Lampiran 3` : ""}. Periksa penempatan kelompoknya, lalu simpan.`);
+    setTimeout(() => setPesan(""), 9000);
   };
 
   /** salin isi dari dokumen lain (bulan lalu / rencana bulan yang sama) */
@@ -274,10 +327,16 @@ export default function RencanaPage() {
                     ⧉ Salin bulan lalu
                   </button>
                   {tipe === "realisasi" && (
-                    <button onClick={() => salinDari(dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === kapal))}
-                      className="btn btn-ghost text-xs" title="Salin dari rencana bulan ini, lalu sesuaikan yang benar-benar terpakai">
-                      ⧉ Salin dari rencana
-                    </button>
+                    <>
+                      <button onClick={() => salinDari(dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === kapal))}
+                        className="btn btn-ghost text-xs" title="Salin dari rencana bulan ini, lalu sesuaikan yang benar-benar terpakai">
+                        ⧉ Salin dari rencana
+                      </button>
+                      <button onClick={tarikDariPengadaan} className="btn btn-ghost text-xs"
+                        title="Isi otomatis dari SPPBJ & Non PR PO Rutin bulan ini untuk kapal ini — angkanya dari dokumen yang benar-benar ada">
+                        ⚡ Tarik dari SPPBJ / Non PR PO
+                      </button>
+                    </>
                   )}
                   <button onClick={() => simpanDoc()} disabled={sibuk || (!berubah && !!tersimpan)} className="btn btn-primary text-xs disabled:opacity-50">
                     {sibuk ? "…" : !tersimpan ? "💾 Simpan" : berubah ? "💾 Simpan perubahan" : "✓ Tersimpan"}
@@ -325,6 +384,16 @@ export default function RencanaPage() {
                     {kelompokMA.map((k) => (
                       <Kelompok key={kunciKelompok(k)} judul={k.judul} terkunci={terkunci}
                         items={kerja.kelompok.find((x) => x.kunci === kunciKelompok(k))?.items || []}
+                        tetangga={kelompokMA.filter((x) => x.judul !== k.judul).map((x) => ({ kunci: kunciKelompok(x), judul: x.judul }))}
+                        onPindah={(itemId, tujuan) => ubah((d) => {
+                          const asal = d.kelompok.find((x) => x.kunci === kunciKelompok(k));
+                          const it = asal?.items.find((i) => i.id === itemId);
+                          if (!asal || !it) return;
+                          asal.items = asal.items.filter((i) => i.id !== itemId);
+                          const g = d.kelompok.find((x) => x.kunci === tujuan);
+                          if (g) g.items.push(it);
+                          else d.kelompok.push({ kunci: tujuan, items: [it] });
+                        })}
                         onUbah={(items) => ubah((d) => {
                           const g = d.kelompok.find((x) => x.kunci === kunciKelompok(k));
                           if (g) g.items = items;
@@ -388,8 +457,10 @@ function PapanTenggat({ judul, sub, status, aktif, onKlik }: {
 }
 
 /* ---------------- satu kelompok kebutuhan ---------------- */
-function Kelompok({ judul, items, terkunci, onUbah }: {
+function Kelompok({ judul, items, terkunci, onUbah, tetangga = [], onPindah }: {
   judul: string; items: RrItem[]; terkunci: boolean; onUbah: (i: RrItem[]) => void;
+  tetangga?: { kunci: string; judul: string }[];
+  onPindah?: (itemId: string, tujuan: string) => void;
 }) {
   // null = ikuti isinya (kelompok berisi otomatis terbuka, termasuk saat data baru tiba)
   const [bukaManual, setBukaManual] = useState<boolean | null>(null);
@@ -473,7 +544,15 @@ function Kelompok({ judul, items, terkunci, onUbah }: {
                           className="w-full text-right border border-slate-200 rounded px-1.5 py-1" />
                       </td>
                       <td className="p-1 text-right font-bold text-slate-700 tabular-nums">{nilaiItem(i) ? rupiah(nilaiItem(i)) : "—"}</td>
-                      <td className="p-1 text-center">
+                      <td className="p-1 text-center whitespace-nowrap">
+                        {!terkunci && tetangga.length > 0 && onPindah && (
+                          <select value="" onChange={(e) => { if (e.target.value) onPindah(i.id, e.target.value); }}
+                            title="Pindahkan baris ini ke kelompok lain dalam Mata Anggaran yang sama"
+                            className="text-[10px] border border-slate-200 rounded w-6 mr-0.5 text-slate-500">
+                            <option value="">⇄</option>
+                            {tetangga.map((t) => <option key={t.kunci} value={t.kunci}>{t.judul}</option>)}
+                          </select>
+                        )}
                         {!terkunci && <button onClick={() => buang(i.id)} className="text-rose-500 hover:text-rose-700" title="Hapus baris">✕</button>}
                       </td>
                     </tr>
