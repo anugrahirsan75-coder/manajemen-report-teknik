@@ -6,7 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { useAnggaran, PengadaanRow, realisasiRutin, realisasiRutinKapal, realisasiDocking, nilaiPerMA, type RealisasiKapal } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN, DOCKING_MA_INVESTASI, isMaInvestasi, rupiahShort,
-  namaKapalPenuh, MA_RENCANA, RKA, RREntry, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
+  namaKapalPenuh, RKA, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
 } from "@/lib/anggaran/types";
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
@@ -38,7 +38,7 @@ const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) =>
 function DashboardInner() {
   const qs = useSearchParams();
   const v = (qs.get("v") || "ringkas") as "ringkas" | "rutin" | "docking" | "lainnya" | "rincian";
-  const { ready, loading, pengadaan, rka, rr, plafon, docking, program, reload, saveRka, saveRr, savePlafon, saveDocking, saveProgram } = useAnggaran();
+  const { ready, loading, pengadaan, rka, plafon, docking, program, reload, saveRka, savePlafon, saveDocking, saveProgram } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
   const [xlsBusy, setXlsBusy] = useState(false);
   // Export Excel PER TIPE (berjenjang + tautan antar sheet)
@@ -172,7 +172,14 @@ function DashboardInner() {
               <Card title="Penyerapan per Kapal" icon="🚢">
                 <KapalTable perKapal={a.perKapal} />
               </Card>
-              <RencanaRealisasi rr={rr} onSave={saveRr} />
+              <Card title="Rencana &amp; Realisasi Perawatan (Lampiran 3)" icon="📆">
+                <p className="text-sm text-slate-600">
+                  Pengisian rencana &amp; realisasi bulanan kini punya halaman sendiri — bentuknya mengikuti
+                  Lampiran 3 (per kapal, per Mata Anggaran, sampai item) lengkap dengan pengingat tenggat
+                  (rencana batas tanggal 22, realisasi batas tanggal 1 bulan berikutnya).
+                </p>
+                <a href="/rencana" className="btn btn-primary text-xs mt-3">Buka Rencana &amp; Realisasi →</a>
+              </Card>
             </>
           )}
         </>
@@ -434,223 +441,6 @@ function KapalTable({ perKapal }: { perKapal: Record<string, { Biaya: number; In
           </tr>
         </tfoot>
       </table>
-    </div>
-  );
-}
-
-/* ---------- CSV parser ---------- */
-function parseCSV(text: string): string[][] {
-  const rows: string[][] = [];
-  let cur: string[] = []; let field = ""; let q = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i], n = text[i + 1];
-    if (q) { if (c === '"' && n === '"') { field += '"'; i++; } else if (c === '"') q = false; else field += c; }
-    else {
-      if (c === '"') q = true;
-      else if (c === ",") { cur.push(field.trim()); field = ""; }
-      else if (c === "\n" || (c === "\r" && n === "\n")) {
-        if (c === "\r") i++;
-        cur.push(field.trim()); field = "";
-        if (cur.some(Boolean)) rows.push(cur);
-        cur = [];
-      } else if (c === "\r") { cur.push(field.trim()); field = ""; if (cur.some(Boolean)) rows.push(cur); cur = []; }
-      else field += c;
-    }
-  }
-  cur.push(field.trim()); if (cur.some(Boolean)) rows.push(cur);
-  return rows;
-}
-
-/* ---------- Import dari Google Drive ---------- */
-function ImportGdrive({ onImported }: { onImported: (nilai: Record<string, Record<string, number>>) => void }) {
-  const [url, setUrl] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [preview, setPreview] = useState<{ kapal: string; values: Record<string, number> }[] | null>(null);
-
-  const detectCols = (headers: string[]) => {
-    const h = headers.map((s) => s.trim().toLowerCase().replace(/[^a-z0-9]/g, " ").replace(/\s+/g, " ").trim());
-    const kapalIdx = h.findIndex((s) => /^(kapal|nama|kapal|ship|nama kapal)$/.test(s));
-    const cols: { kode: string; idx: number }[] = [];
-    for (const ma of MA_RENCANA) {
-      const lbl = ma.label.toLowerCase().replace(/[^a-z0-9]/g, " ").trim();
-      const idx = h.findIndex((s) => s.includes(lbl) || s.includes(ma.kode));
-      if (idx >= 0) cols.push({ kode: ma.kode, idx });
-    }
-    return { kapalIdx, cols };
-  };
-
-  const fetchAndPreview = useCallback(async () => {
-    setError(""); setPreview(null); setLoading(true);
-    try {
-      const res = await fetch(url);
-      if (!res.ok) throw new Error("Gagal mengambil data. Pastikan URL CSV publik sudah benar.");
-      const text = await res.text();
-      const rows = parseCSV(text);
-      if (rows.length < 2) throw new Error("CSV tidak memiliki data.");
-      const { kapalIdx, cols } = detectCols(rows[0]);
-      if (kapalIdx < 0) throw new Error("Kolom 'Kapal' tidak ditemukan di header CSV.");
-      if (!cols.length) throw new Error("Tidak ada kolom mata anggaran yang dikenali. Header harus mengandung: Kapal Ro-Ro, Akomodasi, Permesinan");
-      const data = rows.slice(1).map((row) => {
-        const kapal = namaKapalPenuh(row[kapalIdx] || "");
-        const values: Record<string, number> = {};
-        for (const c of cols) values[c.kode] = parseInt(row[c.idx]?.replace(/[^\d\-]/g, "") || "0", 10) || 0;
-        return { kapal, values };
-      }).filter((d) => d.kapal && KAPAL_ANGGARAN.includes(d.kapal) && Object.values(d.values).some((v) => v > 0));
-      if (!data.length) throw new Error("Tidak ada data kapal yang cocok. Pastikan nama kapal sesuai (KMP. ...)");
-      setPreview(data);
-    } catch (e: any) { setError(e.message || "Gagal parsing CSV."); }
-    finally { setLoading(false); }
-  }, [url]);
-
-  const terapkan = () => {
-    if (!preview) return;
-    const nilai: Record<string, Record<string, number>> = {};
-    for (const d of preview) nilai[d.kapal] = d.values;
-    onImported(nilai);
-    setPreview(null); setUrl("");
-  };
-
-  return (
-    <div className="border border-dashed border-slate-300 rounded-xl p-4 bg-slate-50/50 mb-4">
-      <p className="text-xs font-semibold text-slate-600 mb-2 flex items-center gap-1.5">
-        <span>📁</span> Import dari Google Drive (CSV publik)
-      </p>
-      <p className="text-[11px] text-slate-500 mb-2">
-        Buka Google Sheet → File → Bagikan → Publikasikan ke web → Pilih format CSV → Salin link, lalu tempel di sini.
-      </p>
-      <div className="flex items-stretch gap-2">
-        <input type="url" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://docs.google.com/spreadsheets/d/.../export?format=csv"
-          className="flex-1 text-xs border rounded-lg px-3 py-2 bg-white" />
-        <button onClick={fetchAndPreview} disabled={loading || !url.trim()} className="btn btn-primary text-xs shrink-0">
-          {loading ? "Memuat…" : "🔍 Lihat"}
-        </button>
-      </div>
-      {error && <p className="text-xs text-red-600 mt-2">{error}</p>}
-      {preview && (
-        <div className="mt-3">
-          <p className="text-[11px] text-green-700 font-medium mb-1.5">{preview.length} kapal ditemukan</p>
-          <div className="overflow-x-auto max-h-36 overflow-y-auto rounded-lg border text-xs">
-            <table className="w-full">
-              <thead><tr className="bg-slate-100">{["Kapal", ...MA_RENCANA.map((m) => m.label)].map((h) => <th key={h} className="p-1.5 text-left">{h}</th>)}</tr></thead>
-              <tbody>
-                {preview.slice(0, 13).map((d) => (
-                  <tr key={d.kapal} className="border-t">
-                    <td className="p-1.5 font-medium text-slate-700">{d.kapal}</td>
-                    {MA_RENCANA.map((m) => <td key={m.kode} className="p-1.5 text-right">{rupiah(d.values[m.kode] || 0)}</td>)}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="flex gap-2 mt-2">
-            <button onClick={() => { setPreview(null); setUrl(""); }} className="btn btn-ghost text-xs">Batal</button>
-            <button onClick={terapkan} className="btn btn-primary text-xs">✅ Terapkan ke Grid</button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-/* ---------- Rencana & Realisasi ---------- */
-function RencanaRealisasi({ rr, onSave }: { rr: RREntry[]; onSave: (r: RREntry[]) => Promise<void> }) {
-  const now = new Date();
-  const [bulan, setBulan] = useState(now.toISOString().slice(0, 7));
-  const [tipe, setTipe] = useState<"rencana" | "realisasi">("rencana");
-  const [busy, setBusy] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-
-  const entry = rr.find((e) => e.bulan === bulan && e.tipe === tipe);
-  const [grid, setGrid] = useState<Record<string, Record<string, number>>>({});
-  // sinkron grid saat ganti bulan/tipe
-  const key = bulan + tipe;
-  const [lastKey, setLastKey] = useState("");
-  if (key !== lastKey) { setLastKey(key); setGrid(entry?.nilai || {}); }
-
-  const setCell = (kapal: string, kode: string, v: number) =>
-    setGrid((g) => ({ ...g, [kapal]: { ...(g[kapal] || {}), [kode]: v } }));
-
-  const simpan = async () => {
-    setBusy(true);
-    try {
-      const next = rr.filter((e) => !(e.bulan === bulan && e.tipe === tipe));
-      next.push({ bulan, tipe, nilai: grid });
-      await onSave(next);
-    } finally { setBusy(false); }
-  };
-
-  const totalKode = (kode: string) => KAPAL_ANGGARAN.reduce((s, k) => s + (grid[k]?.[kode] || 0), 0);
-  const totalAll = MA_RENCANA.reduce((s, m) => s + totalKode(m.kode), 0);
-
-  return (
-    <div className="mt-5 bg-white rounded-2xl elev-md ring-line p-5 anim-in">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-        <h3 className="font-bold text-slate-800 flex items-center gap-2">
-          <span className="h-8 w-8 rounded-lg asdp-gradient text-white grid place-items-center text-sm">📆</span>
-          <span className="accent-bar">Rencana &amp; Realisasi Bulanan (Biaya)</span>
-        </h3>
-        <div className="flex items-center gap-2">
-          <div className="flex rounded-lg overflow-hidden ring-1 ring-slate-200">
-            {(["rencana", "realisasi"] as const).map((t) => (
-              <button key={t} onClick={() => setTipe(t)} className={`text-xs px-3 py-1.5 capitalize ${tipe === t ? "asdp-gradient text-white" : "bg-white text-slate-600"}`}>{t}</button>
-            ))}
-          </div>
-          <input type="month" value={bulan} onChange={(e) => setBulan(e.target.value)} className="text-xs border rounded-lg px-2 py-1.5" />
-          <button onClick={() => setShowImport(!showImport)} className={`btn text-xs ${showImport ? "btn-ghost" : "btn-ghost"}`}>📁 GDrive</button>
-          <button onClick={simpan} disabled={busy} className="btn btn-primary text-xs">{busy ? "Menyimpan…" : "💾 Simpan"}</button>
-        </div>
-      </div>
-      {showImport && (
-        <ImportGdrive onImported={(nilai) => {
-          setGrid((g) => {
-            const next = { ...g };
-            for (const [kapal, vals] of Object.entries(nilai)) {
-              next[kapal] = { ...(next[kapal] || {}), ...vals };
-            }
-            return next;
-          });
-          setShowImport(false);
-        }} />
-      )}
-      <p className="text-[11px] text-slate-500 mb-3">
-        {tipe === "rencana" ? "Rencana" : "Realisasi"} <b>{bulanTahun(bulan + "-01")}</b> · hanya mata anggaran <b>Biaya</b> (Kapal Ro-Ro, Akomodasi, Permesinan). Acuan: RKA.
-      </p>
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-[11px] uppercase tracking-wide text-slate-600 font-bold bg-slate-100 border-b-2 border-slate-200">
-            <tr>
-              <th className="p-2 text-left">Kapal</th>
-              {MA_RENCANA.map((m) => <th key={m.kode} className="p-2 text-right w-36">{m.label}</th>)}
-              <th className="p-2 text-right w-36">Total</th>
-            </tr>
-          </thead>
-          <tbody>
-            {KAPAL_ANGGARAN.map((k) => {
-              const rowTot = MA_RENCANA.reduce((s, m) => s + (grid[k]?.[m.kode] || 0), 0);
-              return (
-                <tr key={k} className="border-b last:border-0">
-                  <td className="p-2 font-medium text-slate-700">{k}</td>
-                  {MA_RENCANA.map((m) => (
-                    <td key={m.kode} className="p-1 text-right">
-                      <input type="number" value={grid[k]?.[m.kode] || ""} onChange={(e) => setCell(k, m.kode, +e.target.value)}
-                        className="w-28 text-right border rounded px-2 py-1 text-xs" placeholder="0" />
-                    </td>
-                  ))}
-                  <td className="p-2 text-right font-semibold text-slate-700">{rowTot ? rupiah(rowTot) : "—"}</td>
-                </tr>
-              );
-            })}
-          </tbody>
-          <tfoot>
-            <tr className="bg-slate-50 font-bold text-slate-700">
-              <td className="p-2">TOTAL</td>
-              {MA_RENCANA.map((m) => <td key={m.kode} className="p-2 text-right">{rupiah(totalKode(m.kode))}</td>)}
-              <td className="p-2 text-right">{rupiah(totalAll)}</td>
-            </tr>
-          </tfoot>
-        </table>
-      </div>
     </div>
   );
 }

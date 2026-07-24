@@ -82,13 +82,6 @@ export const DOCKING_MA_INVESTASI: { kode: string; label: string }[] = [
 ];
 export const isMaInvestasi = (key: string) => key.startsWith("10206") || DOCKING_MA_INVESTASI.some((m) => m.kode === key);
 
-// 3 mata anggaran Biaya untuk Rencana/Realisasi bulanan
-export const MA_RENCANA: { kode: string; label: string }[] = [
-  { kode: "5010403003", label: "Kapal Ro-Ro" },
-  { kode: "5010403009", label: "Akomodasi" },
-  { kode: "5010403100", label: "Permesinan" },
-];
-
 // ====== RKA (acuan biaya disetujui pusat) ======
 // nilai per kode mata anggaran
 export interface RKA {
@@ -97,13 +90,7 @@ export interface RKA {
   catatan?: string;
 }
 
-// ====== Rencana & Realisasi bulanan (3 MA biaya, per kapal) ======
-// key bulan "YYYY-MM"; nilai[kapal][kodeMA]
-export interface RREntry {
-  bulan: string;           // YYYY-MM
-  tipe: "rencana" | "realisasi";
-  nilai: Record<string, Record<string, number>>; // kapal -> { kodeMA: nilai }
-}
+// Rencana & Realisasi bulanan kini punya modulnya sendiri: src/lib/rr (format Lampiran 3).
 
 // ====== Plafon Rutin bulanan (Persetujuan Rutin Kapal) ======
 // Baris pagu BEBAS per Mata Anggaran (tak terkunci 9 master). Key cocok realisasi = kodeMA / slug label.

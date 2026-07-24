@@ -2,12 +2,11 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
-import { RKA, RREntry, PlafonRutin, PlafonDocking, PlafonProgram, maKey, namaKapalPenuh, jenisAnggaranOf } from "./types";
+import { RKA, PlafonRutin, PlafonDocking, PlafonProgram, maKey, namaKapalPenuh, jenisAnggaranOf } from "./types";
 import { pecahKapal } from "@/lib/kapal/nama";
 import { catatBackup } from "@/lib/backup/local";
 
 const LS_RKA = "anggaran_rka";
-const LS_RR = "anggaran_rr";
 const LS_PLAFON = "anggaran_plafon";
 const LS_DOCK = "anggaran_docking";
 const LS_PROG = "anggaran_program";
@@ -164,7 +163,6 @@ export function useAnggaran() {
   const ready = isSupabaseReady;
   const [pengadaan, setPengadaan] = useState<PengadaanRow[]>([]);
   const [rka, setRka] = useState<RKA>({ tahun: new Date().getFullYear(), nilai: {} });
-  const [rr, setRr] = useState<RREntry[]>([]);
   const [plafon, setPlafon] = useState<PlafonRutin[]>([]);
   const [docking, setDocking] = useState<PlafonDocking[]>([]);
   const [program, setProgram] = useState<PlafonProgram[]>([]);
@@ -173,7 +171,6 @@ export function useAnggaran() {
   // muat lokal dulu (offline-ready)
   useEffect(() => {
     try { const a = localStorage.getItem(LS_RKA); if (a) setRka(JSON.parse(a)); } catch {}
-    try { const b = localStorage.getItem(LS_RR); if (b) setRr(JSON.parse(b)); } catch {}
     try { const c = localStorage.getItem(LS_PLAFON); if (c) setPlafon(JSON.parse(c)); } catch {}
     try { const e = localStorage.getItem(LS_DOCK); if (e) setDocking(JSON.parse(e)); } catch {}
     try { const f = localStorage.getItem(LS_PROG); if (f) setProgram(JSON.parse(f)); } catch {}
@@ -190,7 +187,6 @@ export function useAnggaran() {
       const { data: meta } = await supabase.from("projects").select("id,payload").filter("payload->>kind", "eq", "anggaran");
       const m = (meta || [])[0]?.payload;
       if (m?.rka) setRka(m.rka);
-      if (Array.isArray(m?.rr)) setRr(m.rr);
       if (Array.isArray(m?.plafon)) setPlafon(m.plafon);
       if (Array.isArray(m?.docking)) setDocking(m.docking);
       if (Array.isArray(m?.program)) setProgram(m.program);
@@ -200,27 +196,25 @@ export function useAnggaran() {
   useEffect(() => { if (ready) load(); }, [ready, load]);
 
   // simpan RKA + RR + Plafon (lokal + supabase 1 row kind=anggaran)
-  const persist = useCallback(async (nextRka: RKA, nextRr: RREntry[], nextPlafon: PlafonRutin[], nextDocking: PlafonDocking[], nextProgram: PlafonProgram[]) => {
+  const persist = useCallback(async (nextRka: RKA, nextPlafon: PlafonRutin[], nextDocking: PlafonDocking[], nextProgram: PlafonProgram[]) => {
     try {
       localStorage.setItem(LS_RKA, JSON.stringify(nextRka));
-      localStorage.setItem(LS_RR, JSON.stringify(nextRr));
       localStorage.setItem(LS_PLAFON, JSON.stringify(nextPlafon));
       localStorage.setItem(LS_DOCK, JSON.stringify(nextDocking));
       localStorage.setItem(LS_PROG, JSON.stringify(nextProgram));
     } catch {}
     if (!supabase) return;
     const { data: ex } = await supabase.from("projects").select("id").filter("payload->>kind", "eq", "anggaran").limit(1);
-    const payload = { kind: "anggaran", rka: nextRka, rr: nextRr, plafon: nextPlafon, docking: nextDocking, program: nextProgram };
+    const payload = { kind: "anggaran", rka: nextRka, plafon: nextPlafon, docking: nextDocking, program: nextProgram };
     if (ex && ex[0]) await supabase.from("projects").update({ payload }).eq("id", ex[0].id);
     else await supabase.from("projects").insert({ nama_kapal: "ANGGARAN (meta)", tahun: nextRka.tahun, payload });
     catatBackup("anggaran", ex?.[0]?.id, payload, "ANGGARAN (meta)");
   }, []);
 
-  const saveRka = useCallback(async (next: RKA) => { setRka(next); await persist(next, rr, plafon, docking, program); }, [rr, plafon, docking, program, persist]);
-  const saveRr = useCallback(async (next: RREntry[]) => { setRr(next); await persist(rka, next, plafon, docking, program); }, [rka, plafon, docking, program, persist]);
-  const savePlafon = useCallback(async (next: PlafonRutin[]) => { setPlafon(next); await persist(rka, rr, next, docking, program); }, [rka, rr, docking, program, persist]);
-  const saveDocking = useCallback(async (next: PlafonDocking[]) => { setDocking(next); await persist(rka, rr, plafon, next, program); }, [rka, rr, plafon, program, persist]);
-  const saveProgram = useCallback(async (next: PlafonProgram[]) => { setProgram(next); await persist(rka, rr, plafon, docking, next); }, [rka, rr, plafon, docking, persist]);
+  const saveRka = useCallback(async (next: RKA) => { setRka(next); await persist(next, plafon, docking, program); }, [plafon, docking, program, persist]);
+  const savePlafon = useCallback(async (next: PlafonRutin[]) => { setPlafon(next); await persist(rka, next, docking, program); }, [rka, docking, program, persist]);
+  const saveDocking = useCallback(async (next: PlafonDocking[]) => { setDocking(next); await persist(rka, plafon, next, program); }, [rka, plafon, program, persist]);
+  const saveProgram = useCallback(async (next: PlafonProgram[]) => { setProgram(next); await persist(rka, plafon, docking, next); }, [rka, plafon, docking, persist]);
 
-  return { ready, loading, pengadaan, rka, rr, plafon, docking, program, reload: load, saveRka, saveRr, savePlafon, saveDocking, saveProgram };
+  return { ready, loading, pengadaan, rka, plafon, docking, program, reload: load, saveRka, savePlafon, saveDocking, saveProgram };
 }
