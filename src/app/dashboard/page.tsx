@@ -12,6 +12,7 @@ import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
 import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
 import Ringkasan from "@/components/anggaran/Ringkasan";
+import { exportAnggaranExcel } from "@/lib/anggaran/exportClient";
 
 const JUDUL: Record<string, string> = {
   ringkas: "Dashboard Anggaran", rutin: "Kendali Anggaran Rutin", docking: "Kendali Anggaran Docking",
@@ -39,6 +40,19 @@ function DashboardInner() {
   const v = (qs.get("v") || "ringkas") as "ringkas" | "rutin" | "docking" | "lainnya" | "rincian";
   const { ready, loading, pengadaan, rka, rr, plafon, docking, program, reload, saveRka, saveRr, savePlafon, saveDocking, saveProgram } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
+  const [xlsBusy, setXlsBusy] = useState(false);
+  const unduhExcel = async (hanya?: "rutin" | "docking" | "lainnya") => {
+    setXlsBusy(true);
+    try {
+      await exportAnggaranExcel({
+        plafon, docking, program, pengadaan,
+        bulan: new Date().toISOString().slice(0, 7),
+        tahun: parseInt(tahun || String(new Date().getFullYear()), 10),
+        hanya,
+      });
+    } catch (e: any) { alert("Gagal export: " + (e?.message ?? e)); }
+    finally { setXlsBusy(false); }
+  };
 
   const tahunList = useMemo(() => Array.from(new Set(pengadaan.map((r) => (r.tanggal || "").slice(0, 4)).filter(Boolean))).sort().reverse(), [pengadaan]);
   const data = useMemo(() => (tahun ? pengadaan.filter((r) => (r.tanggal || "").startsWith(tahun)) : pengadaan), [pengadaan, tahun]);
@@ -98,6 +112,10 @@ function DashboardInner() {
             <option value="">Semua tahun</option>
             {tahunList.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
+          <button onClick={() => unduhExcel(v === "ringkas" || v === "rincian" ? undefined : v)} disabled={xlsBusy}
+            className="btn btn-success text-xs disabled:opacity-50" title="Unduh Excel berwarna dgn rumus hidup">
+            {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
+          </button>
           <button onClick={reload} className="btn btn-ghost text-xs">↻ Muat ulang</button>
         </div>
       </div>
