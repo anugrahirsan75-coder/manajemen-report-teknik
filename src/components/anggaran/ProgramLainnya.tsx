@@ -55,8 +55,9 @@ const STATUS = (pct: number) =>
     : pct >= 80 ? { c: "bg-amber-100 text-amber-800 ring-1 ring-amber-300", t: "Waspada", bar: "bg-amber-500", num: "text-amber-700" }
       : { c: "bg-emerald-100 text-emerald-800 ring-1 ring-emerald-300", t: "Aman", bar: "bg-emerald-500", num: "text-emerald-700" };
 
-export default function ProgramLainnya({ program, pengadaan, onSave }: {
+export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xlsBusy }: {
   program: PlafonProgram[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonProgram[]) => Promise<void>;
+  onExcel?: () => void; xlsBusy?: boolean;
 }) {
   const [pilih, setPilih] = useState<string>("");
   const aktifId = pilih || program[0]?.id || "";
@@ -167,6 +168,12 @@ export default function ProgramLainnya({ program, pengadaan, onSave }: {
             {!edit ? (
               <>
                 <button onClick={mulaiBaru} className="btn btn-ghost text-xs">➕ Persetujuan Baru</button>
+                {onExcel && (
+                  <button onClick={onExcel} disabled={xlsBusy} className="btn btn-success text-xs disabled:opacity-50"
+                    title="Unduh Excel berjenjang: ringkasan per surat → per Mata Anggaran → per item pengadaan (bertaut)">
+                    {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
+                  </button>
+                )}
                 {aktif && <a href={`/dashboard/cetak?jenis=lainnya&program=${encodeURIComponent(aktif.id)}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs">🖨️ Export PDF</a>}
                 {aktif && <button onClick={mulaiEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>}
                 {aktif && <button onClick={hapus} className="btn btn-ghost text-xs text-red-600">🗑️ Hapus</button>}

@@ -112,9 +112,10 @@ function DashboardInner() {
             <option value="">Semua tahun</option>
             {tahunList.map((t) => <option key={t} value={t}>{t}</option>)}
           </select>
-          {v === "ringkas" || v === "rincian" ? (
+          {/* Di tampilan Rutin/Docking/Lainnya tombolnya ada di dalam kartu masing-masing (dekat Export PDF) */}
+          {(v === "ringkas" || v === "rincian") && (
             <div className="flex items-center gap-1">
-              <span className="text-[10px] text-slate-500 font-semibold">Export Excel:</span>
+              <span className="text-[10px] text-slate-500 font-semibold">{xlsBusy ? "menyiapkan…" : "Export Excel:"}</span>
               {([["rutin", "Rutin"], ["docking", "Docking"], ["lainnya", "Lainnya"]] as const).map(([t, l]) => (
                 <button key={t} onClick={() => unduhExcel(t)} disabled={xlsBusy}
                   className="btn btn-ghost text-xs disabled:opacity-50" title={`Unduh Excel ${l} — berjenjang sampai item pengadaan`}>
@@ -122,11 +123,6 @@ function DashboardInner() {
                 </button>
               ))}
             </div>
-          ) : (
-            <button onClick={() => unduhExcel(v as "rutin" | "docking" | "lainnya")} disabled={xlsBusy}
-              className="btn btn-success text-xs disabled:opacity-50" title="Unduh Excel berjenjang: ringkasan → per Mata Anggaran → per item pengadaan">
-              {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
-            </button>
           )}
           <button onClick={reload} className="btn btn-ghost text-xs">↻ Muat ulang</button>
         </div>
@@ -150,14 +146,14 @@ function DashboardInner() {
         <>
           {v === "ringkas" && <Ringkasan plafon={plafon} docking={docking} program={program} pengadaan={pengadaan} />}
 
-          {v === "rutin" && <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} />}
+          {v === "rutin" && <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} onExcel={() => unduhExcel("rutin")} xlsBusy={xlsBusy} />}
 
-          {v === "docking" && <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} />}
+          {v === "docking" && <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} onExcel={() => unduhExcel("docking")} xlsBusy={xlsBusy} />}
 
           {v === "lainnya" && (
             <Card tone="indigo" icon="📜" badge="Di luar Docking & Rutin" title="Persetujuan Biaya Lainnya"
               sub="Persetujuan Pusat per SURAT — investasi/pekerjaan khusus, pagu per kapal & Mata Anggaran">
-              <ProgramLainnya program={program} pengadaan={pengadaan} onSave={saveProgram} />
+              <ProgramLainnya program={program} pengadaan={pengadaan} onSave={saveProgram} onExcel={() => unduhExcel("lainnya")} xlsBusy={xlsBusy} />
             </Card>
           )}
 
@@ -704,7 +700,7 @@ const TFOOT_ROW = "bg-slate-100 border-t-2 border-slate-300 font-extrabold text-
 const barPct = (pct: number) => (pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500");
 const tintPct = (pct: number) => (pct > 100 ? "text-red-700" : pct >= 80 ? "text-amber-700" : "text-slate-900");
 
-function AnggaranRutin({ plafon, pengadaan, onSave }: { plafon: PlafonRutin[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonRutin[]) => Promise<void> }) {
+function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon: PlafonRutin[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonRutin[]) => Promise<void>; onExcel?: () => void; xlsBusy?: boolean }) {
   const bulanList = useMemo(() => {
     const s = new Set<string>();
     plafon.forEach((p) => p.bulan && s.add(p.bulan));
@@ -809,6 +805,12 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
             <>
+              {onExcel && (
+                <button onClick={onExcel} disabled={xlsBusy} className="btn btn-success text-xs disabled:opacity-50"
+                  title="Unduh Excel berjenjang: ringkasan → per Mata Anggaran → per item pengadaan (bertaut)">
+                  {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
+                </button>
+              )}
               <a href={`/dashboard/cetak?jenis=rutin&bulan=${bulan}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
               <button onClick={bulanLain} className="btn btn-ghost text-xs" title={`Siapkan pagu ${bulanTahun(nextMonth(bulan) + "-01")} (disalin dari bulan ini)`}>➕ Pagu Bulan Lain</button>
               <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>
@@ -1072,7 +1074,7 @@ function seedDockingDraft(existing: PlafonRow[]): PlafonRow[] {
 const N_BIAYA = DOCKING_MA.length;
 const N_DOCK = DOCKING_MA.length + DOCKING_MA_INVESTASI.length;
 
-function AnggaranDocking({ docking, pengadaan, onSave }: { docking: PlafonDocking[]; pengadaan: PengadaanRow[]; onSave: (d: PlafonDocking[]) => Promise<void> }) {
+function AnggaranDocking({ docking, pengadaan, onSave, onExcel, xlsBusy }: { docking: PlafonDocking[]; pengadaan: PengadaanRow[]; onSave: (d: PlafonDocking[]) => Promise<void>; onExcel?: () => void; xlsBusy?: boolean }) {
   const thisYear = new Date().getFullYear();
   const [kapal, setKapal] = useState(KAPAL_ANGGARAN[0]);
   const [tahun, setTahun] = useState(thisYear);
@@ -1162,6 +1164,12 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
           <div className="ml-auto flex items-center gap-2">
             {!edit ? (
               <>
+                {onExcel && (
+                  <button onClick={onExcel} disabled={xlsBusy} className="btn btn-success text-xs disabled:opacity-50"
+                    title="Unduh Excel berjenjang: ringkasan per kapal → per Mata Anggaran → per item pengadaan (bertaut)">
+                    {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
+                  </button>
+                )}
                 <a href={`/dashboard/cetak?jenis=docking&kapal=${encodeURIComponent(kapal)}&tahun=${tahun}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
                 <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu Docking</button>
                 {entry && <button onClick={hapusPagu} disabled={busy} className="btn btn-ghost text-xs text-red-600 disabled:opacity-50" title="Hapus pagu docking kapal ini (pengadaan tetap ada)">🗑️ Hapus Pagu</button>}

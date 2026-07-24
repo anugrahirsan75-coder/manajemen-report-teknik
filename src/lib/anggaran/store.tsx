@@ -22,6 +22,7 @@ export interface PengadaanRow {
   jenis: "rutin" | "docking" | "lainnya"; // klasifikasi anti-overlap
   programId?: string;     // tautan ke Persetujuan Biaya Lainnya
   items: any[];           // {kapal,jumlah,harga,hargaSpbj?}
+  raw?: any;              // payload utuh (nomor, dasar pelimpahan, vendor, ttd) utk export dokumen
 }
 
 function rowsFromProjects(data: any[]): PengadaanRow[] {
@@ -29,7 +30,7 @@ function rowsFromProjects(data: any[]): PengadaanRow[] {
     const p = r.payload || {};
     const sumber = p.kind === "nonpr" ? "Non PR PO" : "SPPBJ";
     const ma = Array.isArray(p.mataAnggaran) ? p.mataAnggaran : p.mataAnggaran ? [p.mataAnggaran] : [];
-    return { id: r.id, sumber, nama: r.nama_kapal || p.namaPengadaan || "(tanpa nama)", tanggal: p.tanggal || "", mataAnggaran: ma, kategoriRekap: p.kategoriRekap || "", jenis: jenisAnggaranOf(p), programId: p.programId || undefined, items: p.items || [] } as PengadaanRow;
+    return { id: r.id, sumber, nama: r.nama_kapal || p.namaPengadaan || "(tanpa nama)", tanggal: p.tanggal || "", mataAnggaran: ma, kategoriRekap: p.kategoriRekap || "", jenis: jenisAnggaranOf(p), programId: p.programId || undefined, items: p.items || [], raw: p } as PengadaanRow;
   });
 }
 

@@ -1,25 +1,30 @@
 "use client";
 /**
- * Kumpulkan data 1 TIPE anggaran (Rutin / Docking / Lainnya) sampai tingkat ITEM,
+ * Kumpulkan data 1 TIPE anggaran (Rutin / Docking / Lainnya) sampai tingkat DOKUMEN,
  * lalu kirim ke API pembuat Excel berjenjang.
  *
+ * Tiap SPPBJ / Non PR PO dikirim utuh (kop, dasar pelimpahan, grup per kapal, item,
+ * keterangan, rincian "-", tanda tangan) supaya di Excel bisa ditulis persis seperti
+ * dokumen aslinya — bukan sekadar baris tabel.
+ *
  * Kunci penautan: label Mata Anggaran pada sheet grup HARUS sama persis dengan
- * kolom "Mata Anggaran" di sheet RINCIAN — karena SUMIFS mencocokkan teksnya.
+ * kolom bantu di sheet RINCIAN — karena SUMIFS mencocokkan teksnya.
  */
 import { saveAs } from "file-saver";
-import { PengadaanRow, realisasiDocking } from "./store";
+import { PengadaanRow } from "./store";
 import { posProgram } from "./program";
 import {
   PlafonRutin, PlafonDocking, PlafonProgram, KAPAL_ANGGARAN, MATA_ANGGARAN, maKey, fullMA,
   namaKapalPenuh, jenisAnggaranOf,
 } from "./types";
 import { ringkasKapal, pecahKapal } from "@/lib/kapal/nama";
+import { fullNoKontrak } from "@/lib/sppbj/types";
 import { tanggalIndo, bulanTahun } from "@/lib/format";
 
 const WARNA = { rutin: "FF16357F", docking: "FFC2410C", lainnya: "FF4338CA" } as const;
 
 /**
- * Label Mata Anggaran yang dipakai SERAGAM di sheet grup & RINCIAN (kunci SUMIFS).
+ * Label Mata Anggaran yang dipakai SERAGAM di sheet grup & kolom bantu RINCIAN.
  * Pakai nama resmi dari master; kalau kodenya tak ada di master, pertahankan teks aslinya
  * (jangan sampai jadi "5010103004 (5010103004)").
  */
@@ -28,9 +33,7 @@ function labelMA(teks: string): string {
   if (!kode) return (teks || "").trim() || "(tanpa Mata Anggaran)";
   const dikenal = MATA_ANGGARAN.some((m) => m.kode === kode);
   if (dikenal) return fullMA(kode);
-  // kode di luar master (mis. 5010103004 Insentif) -> pertahankan keterangan aslinya
   let asli = (teks || "").replace(kode, "").trim();
-  // buang sepasang kurung terluar bila ada, jangan sentuh kurung di dalam teks
   if (asli.startsWith("(") && asli.endsWith(")")) asli = asli.slice(1, -1);
   asli = asli.trim();
   return asli ? `${kode} (${asli})` : kode;
@@ -46,51 +49,91 @@ export interface OpsiExportTipe {
   tahun: number;  // (Docking)
 }
 
-/** pecah 1 pengadaan jadi baris item; item multi-kapal dibagi rata */
-function itemPengadaan(p: PengadaanRow) {
-  const maDefault = (p.mataAnggaran || [])[0] || "";
-  const arr = p.items || [];
-  const adaFinal = arr.some((it: any) => (it.hargaSpbj || 0) > 0);
-  const out: {
-    kapal: string; maLabel: string; kodeMa: string;
-    item: string; spesifikasi: string; jumlah: number; satuan: string; harga: number; nilai: number;
-  }[] = [];
-  for (const it of arr as any[]) {
-    const harga = adaFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0);
-    const nilai = harga * (it.jumlah || 0);
-    if (!nilai) continue;
-    const maTeks = (it.mataAnggaran || "").trim() || maDefault;
-    const kode = maKey(maTeks);
-    const kapals = pecahKapal(it.kapal || "");
-    const bagi = kapals.length > 1 ? kapals.length : 1;
-    for (const k of kapals.length ? kapals : [""]) {
-      out.push({
-        kapal: namaKapalPenuh(k),
-        maLabel: labelMA(maTeks),
-        kodeMa: kode,
-        item: it.nama || "",
-        spesifikasi: it.spesifikasi || "",
-        jumlah: bagi > 1 ? 0 : (it.jumlah || 0),   // dibagi -> jumlah tak bermakna, biar nilai yg dipakai
-        satuan: bagi > 1 ? "" : (it.satuan || ""),
-        harga: bagi > 1 ? 0 : harga,
-        nilai: nilai / bagi,
-      });
-    }
-  }
+interface PosItem { grup: string; ma: string; nilai: number }
+interface DokItem {
+  jumlah: number; satuan: string; nama: string; spesifikasi: string;
+  harga: number; nilai: number; keterangan?: string; rincian?: string[]; pos: PosItem[];
+}
+
+/** kelompokkan item per kapal, urut kemunculan (sama dgn preview & template Excel) */
+function grupKapal(items: DokItem[], kapalItem: string[]) {
+  const out: { kapal: string; items: DokItem[] }[] = [];
+  items.forEach((it, i) => {
+    const k = (kapalItem[i] || "").trim() || "(tanpa kapal)";
+    const g = out.find((x) => x.kapal === k);
+    if (g) g.items.push(it); else out.push({ kapal: k, items: [it] });
+  });
   return out;
+}
+
+/**
+ * Susun 1 pengadaan jadi DOKUMEN.
+ * `posDari(kapalTeks, maTeks, nilai)` menentukan ke pos anggaran mana nilai item dibebankan
+ * (dikembalikan kosong bila item itu di luar cakupan tipe/grup yang diexport).
+ */
+function dokumenDari(p: PengadaanRow, posDari: (kapal: string, ma: string, nilai: number) => PosItem[]) {
+  const raw = p.raw || {};
+  const arr: any[] = p.items || [];
+  const adaFinal = arr.some((it) => (it.hargaSpbj || 0) > 0);
+  const maDefault = (p.mataAnggaran || [])[0] || "";
+
+  const dokItems: DokItem[] = [];
+  const kapalItem: string[] = [];
+  let total = 0;
+  const semuaPos: PosItem[] = [];
+
+  for (const it of arr) {
+    const harga = adaFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0);
+    const jumlah = it.jumlah || 0;
+    const nilai = harga * jumlah;
+    const pos = posDari((it.kapal || "").trim(), (it.mataAnggaran || "").trim() || maDefault, nilai);
+    dokItems.push({
+      jumlah, satuan: it.satuan || "", nama: it.nama || "", spesifikasi: it.spesifikasi || "",
+      harga, nilai, keterangan: it.keterangan || "", rincian: it.breakdown || [], pos,
+    });
+    kapalItem.push(it.kapal || "");
+    total += nilai;
+    semuaPos.push(...pos);
+  }
+  if (!semuaPos.length) return null;   // tak menyentuh anggaran tipe ini
+
+  // grup utama = yang paling besar nilainya (dipakai utk indeks & urutan sheet)
+  const perGrup: Record<string, number> = {};
+  semuaPos.forEach((x) => (perGrup[x.grup] = (perGrup[x.grup] || 0) + x.nilai));
+  const grupUtama = Object.entries(perGrup).sort((a, b) => b[1] - a[1])[0][0];
+
+  const sppbj = p.sumber === "SPPBJ";
+  return {
+    grup: grupUtama,
+    sumber: p.sumber,
+    judul: sppbj ? "Daftar Kebutuhan Pengadaan Barang/Jasa" : "Daftar Kebutuhan Pengadaan (Non PR PO)",
+    nomor: (sppbj ? raw.noSPPBJ || fullNoKontrak(raw) : raw.noSPPB) || "",
+    tanggal: p.tanggal ? tanggalIndo(p.tanggal) : "",
+    kotaTanggal: `Ternate, ${p.tanggal ? bulanTahun(p.tanggal) : "—"}`,
+    noDRP: raw.noDRP || "",
+    dasar: raw.dasarPelimpahan || "",
+    nama: p.nama,
+    mataAnggaran: (p.mataAnggaran || []).filter(Boolean),
+    vendor: raw.vendor || "",
+    jenisAnggaran: raw.jenisAnggaran || "",
+    stafTeknik: raw.stafTeknik || "",
+    deptHead: raw.deptHead || "",
+    blok: grupKapal(dokItems, kapalItem),
+    total,
+    dibebankan: semuaPos.reduce((s, x) => s + x.nilai, 0),
+    _pos: semuaPos,
+  };
 }
 
 export async function exportTipeExcel(o: OpsiExportTipe) {
   const grup: any[] = [];
-  const rincian: any[] = [];
+  const dokumen: any[] = [];
   let judul = "", periode = "", labelGrup = "";
-
-  const dasar = (p: PengadaanRow) => ({
-    tanggal: p.tanggal ? tanggalIndo(p.tanggal) : "–",
-    sumber: p.sumber,
-    nomor: (p as any).noSPPBJ || "",
-    pengadaan: p.nama,
-  });
+  /** pos yang muncul di dokumen tapi belum ada di daftar pagu -> tetap ditampilkan (pagu 0) */
+  const tambahPos = (namaGrup: string, ma: string) => {
+    const g = grup.find((x) => x.nama === namaGrup);
+    if (g && !g.pos.some((q: any) => q.ma === ma)) g.pos.push({ ma, pagu: 0, addendum: 0 });
+  };
 
   // ================= DOCKING: grup = kapal, pos = Mata Anggaran =================
   if (o.tipe === "docking") {
@@ -99,27 +142,31 @@ export async function exportTipeExcel(o: OpsiExportTipe) {
     labelGrup = "Kapal";
 
     for (const kapal of KAPAL_ANGGARAN) {
-      const e = o.docking.find((d) => d.kapal === kapal && d.tahun === o.tahun);
+      const e = o.docking.find((x) => x.kapal === kapal && x.tahun === o.tahun);
       if (!e) continue;
-      const real = realisasiDocking(o.pengadaan, kapal, o.tahun);
-      const pos = (e.rows || []).map((r) => ({
-        ma: labelMA(r.ma),
-        pagu: r.nilai || 0,
-        addendum: r.addendum || 0,
-      }));
-      // Mata Anggaran yang ada realisasinya tapi tak punya pagu -> tetap dimunculkan
-      Object.keys(real.perKey).forEach((k) => {
-        if (!pos.some((x) => maKey(x.ma) === k)) pos.push({ ma: labelMA(k), pagu: 0, addendum: 0 });
+      grup.push({
+        nama: kapal, pendek: ringkasKapal(kapal), noSurat: e.noSurat, noSuratAddendum: e.noSuratAddendum,
+        pos: (e.rows || []).map((x) => ({ ma: labelMA(x.ma), pagu: x.nilai || 0, addendum: x.addendum || 0 })),
       });
-      grup.push({ nama: kapal, pendek: ringkasKapal(kapal), noSurat: e.noSurat, noSuratAddendum: e.noSuratAddendum, pos });
     }
-    const namaGrup = new Set(grup.map((g) => g.nama));
+    const dikenal = new Set(grup.map((g) => g.nama));
+
     for (const p of o.pengadaan) {
       if (jenisAnggaranOf(p as any) !== "docking") continue;
       if ((p.tanggal || "").slice(0, 4) !== String(o.tahun)) continue;
-      for (const x of itemPengadaan(p)) {
-        if (!namaGrup.has(x.kapal)) continue;
-        rincian.push({ grup: x.kapal, ma: x.maLabel, ...dasar(p), item: x.item, spesifikasi: x.spesifikasi, jumlah: x.jumlah, satuan: x.satuan, harga: x.harga, nilai: x.nilai });
+      const dok = dokumenDari(p, (kapalTeks, maTeks, nilai) => {
+        if (!nilai) return [];
+        const kapals = pecahKapal(kapalTeks);
+        const bagi = kapals.length || 1;
+        const ma = labelMA(maTeks);
+        return (kapals.length ? kapals : [""])
+          .map((k) => namaKapalPenuh(k))
+          .filter((k) => dikenal.has(k))
+          .map((k) => ({ grup: k, ma, nilai: nilai / bagi }));
+      });
+      if (dok) {
+        dok._pos.forEach((x: PosItem) => tambahPos(x.grup, x.ma));
+        dokumen.push(dok);
       }
     }
   }
@@ -130,22 +177,21 @@ export async function exportTipeExcel(o: OpsiExportTipe) {
     periode = bulanTahun(o.bulan + "-01");
     labelGrup = "Periode";
     const e = o.plafon.find((x) => x.bulan === o.bulan);
-    const pos = (e?.rows || []).map((r) => ({ ma: labelMA(r.ma), pagu: r.nilai || 0, addendum: r.addendum || 0 }));
-    const namaGrup = periode;
+    grup.push({
+      nama: periode, pendek: periode,
+      pos: (e?.rows || []).map((x) => ({ ma: labelMA(x.ma), pagu: x.nilai || 0, addendum: x.addendum || 0 })),
+    });
 
     for (const p of o.pengadaan) {
       if (jenisAnggaranOf(p as any) !== "rutin") continue;
       if ((p.tanggal || "").slice(0, 7) !== o.bulan) continue;
-      for (const x of itemPengadaan(p)) {
-        if (!pos.some((q) => maKey(q.ma) === x.kodeMa)) pos.push({ ma: x.maLabel, pagu: 0, addendum: 0 });
-        rincian.push({
-          grup: namaGrup, ma: x.maLabel, ...dasar(p),
-          item: `${x.item}${x.kapal ? ` — ${ringkasKapal(x.kapal)}` : ""}`,
-          spesifikasi: x.spesifikasi, jumlah: x.jumlah, satuan: x.satuan, harga: x.harga, nilai: x.nilai,
-        });
+      const dok = dokumenDari(p, (_kapal, maTeks, nilai) =>
+        nilai ? [{ grup: periode, ma: labelMA(maTeks), nilai }] : []);
+      if (dok) {
+        dok._pos.forEach((x: PosItem) => tambahPos(x.grup, x.ma));
+        dokumen.push(dok);
       }
     }
-    grup.push({ nama: namaGrup, pendek: periode.replace(/\s+/g, " "), pos });
   }
 
   // ============ LAINNYA: grup = surat, pos = "KAPAL — Mata Anggaran" ============
@@ -155,28 +201,39 @@ export async function exportTipeExcel(o: OpsiExportTipe) {
     labelGrup = "Surat Persetujuan";
 
     for (const pr of o.program) {
-      const posPagu = posProgram(pr, o.pengadaan);
-      const pos = posPagu.map((x) => ({
-        ma: `${ringkasKapal(x.kapal)} — ${labelMA(x.ma)}`,
-        pagu: x.pagu, addendum: 0,
-      }));
-      grup.push({ nama: pr.nama || "(tanpa nama)", pendek: (pr.nama || "surat").slice(0, 28), noSurat: pr.noSurat, pos });
+      const nama = pr.nama || "(tanpa nama)";
+      grup.push({
+        nama, pendek: (pr.nama || "surat").slice(0, 28), noSurat: pr.noSurat,
+        pos: posProgram(pr, o.pengadaan).map((x) => ({
+          ma: `${ringkasKapal(x.kapal)} — ${labelMA(x.ma)}`, pagu: x.pagu, addendum: 0,
+        })),
+      });
 
       for (const p of o.pengadaan) {
         if (p.programId !== pr.id) continue;
-        for (const x of itemPengadaan(p)) {
-          const label = `${ringkasKapal(x.kapal || "(umum)")} — ${x.maLabel}`;
-          if (!pos.some((q) => q.ma === label)) pos.push({ ma: label, pagu: 0, addendum: 0 });
-          rincian.push({ grup: pr.nama || "(tanpa nama)", ma: label, ...dasar(p), item: x.item, spesifikasi: x.spesifikasi, jumlah: x.jumlah, satuan: x.satuan, harga: x.harga, nilai: x.nilai });
+        const dok = dokumenDari(p, (kapalTeks, maTeks, nilai) => {
+          if (!nilai) return [];
+          const kapals = pecahKapal(kapalTeks);
+          const bagi = kapals.length || 1;
+          const ma = labelMA(maTeks);
+          return (kapals.length ? kapals : ["(umum)"]).map((k) => ({
+            grup: nama, ma: `${ringkasKapal(namaKapalPenuh(k))} — ${ma}`, nilai: nilai / bagi,
+          }));
+        });
+        if (dok) {
+          dok._pos.forEach((x: PosItem) => tambahPos(x.grup, x.ma));
+          dokumen.push(dok);
         }
       }
     }
   }
 
+  dokumen.forEach((x) => delete x._pos);
+
   const body = {
     tipe: o.tipe, judul, periode, labelGrup, warna: WARNA[o.tipe],
     dicetak: tanggalIndo(new Date().toISOString().slice(0, 10)),
-    grup, rincian,
+    grup, dokumen,
   };
   const res = await fetch("/api/anggaran/export-tipe", {
     method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
