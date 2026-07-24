@@ -1,24 +1,20 @@
 /**
  * Export Excel PER TIPE anggaran (Rutin / Docking / Persetujuan Lainnya).
  *
- * Susunan berjenjang supaya angka bisa ditelusuri sampai akarnya:
+ * Satu pengadaan = SATU SHEET (tidak digabung), dan tiap tingkat ditarik dgn RUMUS:
  *
- *   RINGKASAN            per grup (kapal / surat)      --klik--> sheet grup
- *     └ sheet per grup   per Mata Anggaran             --klik--> dokumen di RINCIAN
- *         └ DAFTAR       indeks semua SPPBJ/Non PR PO  --klik--> dokumen di RINCIAN
- *             └ RINCIAN  tiap SPPBJ ditulis sebagai DOKUMEN utuh (gaya Lampiran 2):
- *                        kop nomor/tanggal, dasar pelimpahan, tabel NO/JML/SAT/
- *                        NAMA BARANG/SPESIFIKASI/HARGA SATUAN/JUMLAH, TOTAL, ttd.
+ *   RINGKASAN              per grup (kapal/surat)      --klik--> sheet grup
+ *     └ sheet grup         BUDGET CONTROL gaya Lampiran 2:
+ *                          Mata Anggaran (Persetujuan Awal + Addendum = Total Persetujuan)
+ *                          lalu baris PEKERJAAN = tiap pengadaan yang membebaninya
+ *                                                  --klik--> sheet dokumennya
+ *     └ DAFTAR             indeks semua dokumen        --klik--> sheet dokumennya
+ *     └ PEMBEBANAN         buku pembebanan: dokumen x kapal x Mata Anggaran (dasar angka)
+ *     └ sheet per dokumen  SPPBJ/Non PR PO ditulis utuh spt dokumen aslinya
  *
- * Tiap tingkat memakai RUMUS, bukan angka mati:
- *   - Realisasi di sheet grup = SUMIFS ke kolom bantu sheet RINCIAN
- *   - Ringkasan = menunjuk baris TOTAL sheet grup
- *   Jadi angka di puncak selalu bisa dibuktikan oleh dokumen di bawahnya.
- *
- * Kolom bantu H/I/J di RINCIAN (Grup, Mata Anggaran, Nilai) sengaja disembunyikan —
- * itulah yang dibaca SUMIFS. Item yang dipakai bersama beberapa kapal tidak diberi
- * kolom bantu di barisnya, melainkan dibagi di tabel "PEMBAGIAN" paling bawah,
- * supaya tidak terhitung dua kali.
+ * Rantai angka: item di sheet dokumen -> PEMBEBANAN (SUMIFS ke sheet dokumen itu)
+ *               -> baris Pekerjaan di sheet grup -> TOTAL MA -> RINGKASAN.
+ * Ubah satu harga di sheet dokumen, seluruh tingkat ikut menyesuaikan.
  */
 import ExcelJS from "exceljs";
 
@@ -39,8 +35,8 @@ const PCT = "0%";
 
 export interface PosMA {
   ma: string;            // "5010403003 (Kapal Ro-Ro / Penyeberangan)"
-  pagu: number;          // Persetujuan Pusat
-  addendum: number;
+  pagu: number;          // Persetujuan Awal (Persetujuan Pusat pertama)
+  addendum: number;      // tambahan yang disetujui
 }
 export interface GrupAnggaran {
   nama: string;          // "KMP. BARONANG" / nama surat / "Juli 2026"
@@ -62,7 +58,7 @@ export interface BlokKapal { kapal: string; items: DokItem[] }
 export interface Dokumen {
   grup: string;          // grup utama (utk indeks & urutan)
   sumber: string;        // SPPBJ / Non PR PO
-  judul: string;         // "DAFTAR KEBUTUHAN PENGADAAN BARANG/JASA"
+  judul: string;
   nomor: string;
   tanggal: string;       // sudah diformat "16 Juli 2026"
   kotaTanggal: string;   // "Ternate, Juli 2026"
@@ -76,20 +72,20 @@ export interface Dokumen {
   deptHead?: string;
   blok: BlokKapal[];
   total: number;         // nilai dokumen utuh
-  dibebankan: number;    // bagian yang masuk anggaran tipe ini (bisa < total)
+  dibebankan: number;    // bagian yang masuk anggaran tipe ini
 }
 export interface DataTipe {
   tipe: "rutin" | "docking" | "lainnya";
-  judul: string;         // "Anggaran Docking"
-  periode: string;       // "Tahun 2026"
+  judul: string;
+  periode: string;
   labelGrup: string;     // "Kapal" / "Surat Persetujuan" / "Periode"
-  warna: string;         // ARGB
+  warna: string;
   dicetak: string;
   grup: GrupAnggaran[];
   dokumen: Dokumen[];
 }
 
-const amanSheet = (s: string) => (s || "Sheet").replace(/[\\/*?:\[\]]/g, "-").slice(0, 31);
+const amanSheet = (s: string) => (s || "Sheet").replace(/[\\/*?:\[\]']/g, "-").slice(0, 31).trim();
 const qq = (s: string) => (s || "").replace(/"/g, '""');
 
 function kop(ws: ExcelJS.Worksheet, judul: string, sub: string, lebar: number, warna: string) {
@@ -140,7 +136,7 @@ const gayaTautan = (cell: ExcelJS.Cell, teks: string, tujuan: string, ukuran = 9
   cell.font = { name: "Calibri", size: ukuran, bold: true, color: { argb: BIRU_LINK }, underline: true };
 };
 
-/** warna status & serapan otomatis (dipakai di sheet grup & ringkasan) */
+/** warna status & serapan otomatis */
 function warnaStatus(ws: ExcelJS.Worksheet, kolServapan: string, kolStatus: string, r1: number, r2: number, mulaiPrio = 10) {
   if (r2 < r1) return;
   ws.addConditionalFormatting({
@@ -166,67 +162,62 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
   wb.creator = "Manajemen Report Teknik ASDP Ternate";
   wb.created = new Date();
 
-  const namaSheet = new Map<string, string>();   // nama grup -> nama sheet
-  d.grup.forEach((g) => {
-    let n = amanSheet(g.pendek || g.nama);
+  const dipakai = new Set<string>();
+  const namaUnik = (usul: string) => {
+    let n = amanSheet(usul) || "Sheet";
     let k = 2;
-    while (Array.from(namaSheet.values()).includes(n)) n = amanSheet(`${g.pendek} ${k++}`);
-    namaSheet.set(g.nama, n);
-  });
-  const refSheet = (grup: string) => {
+    while (dipakai.has(n.toLowerCase())) n = amanSheet(`${usul.slice(0, 27)} ${k++}`);
+    dipakai.add(n.toLowerCase());
+    return n;
+  };
+
+  const namaSheet = new Map<string, string>();   // nama grup -> nama sheet
+  d.grup.forEach((g) => namaSheet.set(g.nama, namaUnik(g.pendek || g.nama)));
+  ["RINGKASAN", "DAFTAR", "PEMBEBANAN"].forEach((x) => dipakai.add(x.toLowerCase()));
+  const refGrup = (grup: string) => {
     const sn = namaSheet.get(grup);
     return sn ? `#'${sn}'!A6` : "#RINGKASAN!A6";
   };
 
-  // =========================================================================
-  // 1) SHEET RINCIAN — tiap SPPBJ/Non PR PO sebagai DOKUMEN utuh (gaya Lampiran 2)
-  //    Dibuat DULU supaya nomor barisnya bisa ditautkan dari sheet lain.
-  // =========================================================================
-  const wr = wb.addWorksheet("RINCIAN", {
-    pageSetup: {
-      paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
-      margins: { left: 0.5, right: 0.4, top: 0.5, bottom: 0.4, header: 0.2, footer: 0.2 },
-    },
-  });
-  wr.columns = [
-    { width: 5.5 },   // A NO.
-    { width: 7 },     // B JML
-    { width: 8 },     // C SAT.
-    { width: 44 },    // D NAMA BARANG / JASA
-    { width: 32 },    // E SPESIFIKASI
-    { width: 16 },    // F HARGA SATUAN
-    { width: 18 },    // G JUMLAH
-    { width: 24 },    // H (bantu) Grup
-    { width: 38 },    // I (bantu) Mata Anggaran
-    { width: 16 },    // J (bantu) Nilai
-  ];
-  [8, 9, 10].forEach((c) => (wr.getColumn(c).hidden = true));
-
-  kop(wr, `Rincian ${d.judul}`, `${d.periode} · dicetak ${d.dicetak} · tiap SPPBJ / Non PR PO ditulis utuh seperti dokumen aslinya. Inilah dasar angka Realisasi di sheet lain.`, 7, TEAL);
-
   const dokumen = [...d.dokumen].sort((a, b) =>
     a.grup.localeCompare(b.grup) || a.tanggal.localeCompare(b.tanggal) || a.nomor.localeCompare(b.nomor));
 
-  const barisDok: number[] = [];                 // baris awal tiap dokumen
-  const barisPos = new Map<string, number>();    // `${grup}|${ma}` -> baris dokumen pertama yg memuatnya
-  const pembagian: PosItem[] = [];               // item dipakai bersama -> dibagi di bawah
+  // nama sheet tiap dokumen: "01. Cleaning Tank Deck Mesin"
+  const sheetDok = dokumen.map((dok, i) => {
+    const inti = (dok.nama || dok.nomor || "Pengadaan")
+      .replace(/^(Kebutuhan|Pengadaan|Jasa)\s+/i, "")
+      .replace(/\s+(Tahun\s+)?20\d\d$/i, "");
+    return namaUnik(`${String(i + 1).padStart(2, "0")}. ${inti}`);
+  });
 
-  let r = 5;
+  // =========================================================================
+  // 1) SHEET PER DOKUMEN — SPPBJ/Non PR PO ditulis utuh (gaya dokumen asli)
+  //    Kolom bantu H/I/J (Grup, Mata Anggaran, Nilai) disembunyikan: dasar SUMIFS.
+  // =========================================================================
   dokumen.forEach((dok, di) => {
-    const rs = r;
-    barisDok.push(rs);
-    if (di > 0) wr.getRow(rs).addPageBreak();
+    const wr = wb.addWorksheet(sheetDok[di], {
+      pageSetup: {
+        paperSize: 9, orientation: "portrait", fitToPage: true, fitToWidth: 1, fitToHeight: 0,
+        margins: { left: 0.5, right: 0.4, top: 0.5, bottom: 0.4, header: 0.2, footer: 0.2 },
+      },
+    });
+    wr.columns = [
+      { width: 5.5 }, { width: 7 }, { width: 8 }, { width: 44 }, { width: 32 }, { width: 16 }, { width: 18 },
+      { width: 24 }, { width: 38 }, { width: 16 },
+    ];
+    [8, 9, 10].forEach((c) => (wr.getColumn(c).hidden = true));
 
-    // ---- baris navigasi (bukan bagian dokumen resmi, memudahkan lompat balik)
+    let r = 1;
+    // ---- baris navigasi
     const nav = wr.getRow(r);
     gayaTautan(nav.getCell(1), "‹ RINGKASAN", "#RINGKASAN!A6");
-    gayaTautan(nav.getCell(4), `‹ ${d.labelGrup}: ${dok.grup}`, refSheet(dok.grup));
+    gayaTautan(nav.getCell(4), `‹ ${d.labelGrup}: ${dok.grup}`, refGrup(dok.grup));
     gayaTautan(nav.getCell(6), "‹ DAFTAR PENGADAAN", `#DAFTAR!A${7 + di}`);
     nav.getCell(7).value = `Dokumen ${di + 1} dari ${dokumen.length}`;
     nav.getCell(7).font = { name: "Calibri", size: 8, italic: true, color: { argb: "FF94A3B8" } };
     nav.getCell(7).alignment = { horizontal: "right" };
     nav.height = 16;
-    r++;
+    r += 2;
 
     // ---- kop dokumen
     const tulisKiri = (teks: string, tebal = false) => {
@@ -251,10 +242,9 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
     tulisKanan(r, [dok.sumber, dok.jenisAnggaran].filter(Boolean).join(" · "), true);
     r++;
     tulisKiri(`No. DRP: ${dok.noDRP || "Tanpa DRP"}`);
-    r++;
+    r += 2;
 
     // ---- judul dokumen
-    r++;
     wr.mergeCells(r, 1, r, 7);
     const j1 = wr.getCell(r, 1);
     j1.value = dok.judul.toUpperCase();
@@ -291,7 +281,6 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
     r++;
 
     // ---- tabel item
-    const rHead = r;
     const kepala = ["NO.", "JML", "SAT.", "NAMA BARANG / JASA", "SPESIFIKASI", "HARGA SATUAN", "JUMLAH"];
     const hr = wr.getRow(r);
     kepala.forEach((t, i) => {
@@ -303,18 +292,19 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
       c.border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "thin" }, right: { style: "thin" } };
     });
     hr.height = 26;
+    wr.views = [{ state: "frozen", ySplit: r }];
     r++;
 
     const rItem1 = r;
     let no = 0;
-    const kotak = (baris: number, sampai = 7) => {
-      for (let c = 1; c <= sampai; c++) {
+    const kotak = (baris: number) => {
+      for (let c = 1; c <= 7; c++) {
         wr.getCell(baris, c).border = { top: { style: "hair", color: { argb: GARIS } }, left: { style: "thin" }, bottom: { style: "hair", color: { argb: GARIS } }, right: { style: "thin" } };
       }
     };
+    const pembagianDok: { grup: string; ma: string; baris: number; porsi: number }[] = [];
 
     for (const blok of dok.blok) {
-      // sub-judul kapal
       wr.mergeCells(r, 1, r, 7);
       const k = wr.getCell(r, 1);
       k.value = blok.kapal;
@@ -355,12 +345,9 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
         gayaAngka(row.getCell(7));
         row.font = { name: "Calibri", size: 10 };
         kotak(r);
-        // tinggi mengikuti teks terpanjang supaya nama barang/spesifikasi tak terpotong
         const barisTeks = Math.max(1, Math.ceil((it.nama || "").length / 48), Math.ceil((it.spesifikasi || "").length / 36));
         row.height = 15 * Math.min(barisTeks, 6) + 2;
-        // kolom bantu: hanya bila item ini jatuh ke SATU pos (dipakai bersama -> tabel PEMBAGIAN).
-        // Nilainya tetap rumus terhadap kolom JUMLAH; bila item dibagi dgn kapal lain yang
-        // di luar berkas ini, yang dibebankan hanya porsinya — bukan nilai penuh.
+
         const porsi = (p: PosItem) => (it.nilai ? p.nilai / it.nilai : 1);
         if (it.pos.length === 1) {
           const f = porsi(it.pos[0]);
@@ -368,7 +355,7 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
           row.getCell(9).value = it.pos[0].ma;
           row.getCell(10).value = { formula: Math.abs(f - 1) < 1e-9 ? `G${r}` : `G${r}*${f.toFixed(8)}` };
         } else if (it.pos.length > 1) {
-          it.pos.forEach((p) => pembagian.push({ ...p, baris: r, porsi: porsi(p) } as any));
+          it.pos.forEach((p) => pembagianDok.push({ grup: p.grup, ma: p.ma, baris: r, porsi: porsi(p) }));
         }
         r++;
 
@@ -401,10 +388,9 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
       wr.getCell(rTot, c).border = { top: { style: "thin" }, left: { style: "thin" }, bottom: { style: "double" }, right: { style: "thin" } };
     }
     wr.getRow(rTot).height = 20;
-    r++;
+    r += 2;
 
-    // ---- tanda tangan (seperti dokumen asli)
-    r++;
+    // ---- tanda tangan
     const ttdBaris = (kiri: string, kanan: string, tebal = false, garisBawah = false) => {
       wr.mergeCells(r, 1, r, 3);
       wr.mergeCells(r, 5, r, 7);
@@ -422,73 +408,111 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
     wr.getRow(r).height = 34; r++;
     ttdBaris(dok.stafTeknik || "—", dok.deptHead || "—", true, true);
     r += 2;
-  });
 
-  // ---- tabel PEMBAGIAN (item lintas kapal) — supaya tidak terhitung dua kali
-  if (pembagian.length) {
-    r++;
-    wr.mergeCells(r, 1, r, 7);
-    const h = wr.getCell(r, 1);
-    h.value = "PEMBAGIAN NILAI ITEM YANG DIPAKAI BERSAMA BEBERAPA KAPAL";
-    h.font = { name: "Calibri", size: 10, bold: true, color: { argb: "FFFFFFFF" } };
-    h.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TEAL } };
-    h.alignment = { horizontal: "center", vertical: "middle" };
-    wr.getRow(r).height = 20;
-    r++;
-    const hd = wr.getRow(r);
-    ["Kapal / Grup", "", "", "Mata Anggaran", "", "", "Nilai dibebankan"].forEach((t, i) => {
-      const c = hd.getCell(i + 1);
-      c.value = t;
-      c.font = { name: "Calibri", size: 9, bold: true };
-      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LANGIT } };
-    });
-    wr.mergeCells(r, 1, r, 3);
-    wr.mergeCells(r, 4, r, 6);
-    r++;
-    for (const p of pembagian as any[]) {
-      wr.mergeCells(r, 1, r, 3);
-      wr.mergeCells(r, 4, r, 6);
-      wr.getCell(r, 1).value = p.grup;
-      wr.getCell(r, 4).value = p.ma;
-      // tetap rumus ke baris itemnya, jadi kalau harga item diubah pembagiannya ikut
-      wr.getCell(r, 7).value = p.baris ? { formula: `G${p.baris}*${(p.porsi ?? 1).toFixed(8)}` } : Math.round(p.nilai);
-      gayaAngka(wr.getCell(r, 7));
-      [1, 4].forEach((c) => (wr.getCell(r, c).font = { name: "Calibri", size: 9 }));
-      wr.getCell(r, 8).value = p.grup;
-      wr.getCell(r, 9).value = p.ma;
-      wr.getCell(r, 10).value = { formula: `G${r}` };
+    // ---- item yang dipakai bersama beberapa kapal: dibagi di sini, sekali saja
+    if (pembagianDok.length) {
+      wr.mergeCells(r, 1, r, 7);
+      const h = wr.getCell(r, 1);
+      h.value = "PEMBAGIAN ITEM YANG DIPAKAI BERSAMA BEBERAPA KAPAL";
+      h.font = { name: "Calibri", size: 9, bold: true, color: { argb: "FFFFFFFF" } };
+      h.fill = { type: "pattern", pattern: "solid", fgColor: { argb: TEAL } };
+      h.alignment = { horizontal: "center", vertical: "middle" };
+      wr.getRow(r).height = 18;
       r++;
-    }
-  }
-  const rAkhir = Math.max(r, 6);
-
-  if (!dokumen.length) {
-    wr.getCell(5, 1).value = "Belum ada pengadaan tercatat pada tipe anggaran ini.";
-    wr.getCell(5, 1).font = { italic: true, color: { argb: "FF64748B" } };
-  }
-
-  // baris dokumen pertama yang memuat tiap pos (utk tautan dari sheet grup)
-  dokumen.forEach((dok, di) => {
-    for (const blok of dok.blok) {
-      for (const it of blok.items) {
-        for (const p of it.pos) {
-          const kunci = `${p.grup}|${p.ma}`;
-          if (!barisPos.has(kunci)) barisPos.set(kunci, barisDok[di]);
-        }
+      for (const p of pembagianDok) {
+        wr.mergeCells(r, 1, r, 3);
+        wr.mergeCells(r, 4, r, 6);
+        wr.getCell(r, 1).value = p.grup;
+        wr.getCell(r, 4).value = p.ma;
+        wr.getCell(r, 7).value = { formula: `G${p.baris}*${p.porsi.toFixed(8)}` };
+        gayaAngka(wr.getCell(r, 7));
+        [1, 4].forEach((c) => (wr.getCell(r, c).font = { name: "Calibri", size: 9 }));
+        wr.getCell(r, 8).value = p.grup;
+        wr.getCell(r, 9).value = p.ma;
+        wr.getCell(r, 10).value = { formula: `G${r}` };
+        r++;
       }
     }
+    (wr as any).__akhir = r;
   });
 
+  const akhirDok = (i: number) => ((wb.getWorksheet(sheetDok[i]) as any)?.__akhir ?? 200) as number;
+
   // =========================================================================
-  // 2) SHEET DAFTAR — indeks semua dokumen, tiap baris melompat ke dokumennya
+  // 2) PEMBEBANAN — 1 baris per (dokumen x grup x Mata Anggaran); dasar semua angka
+  // =========================================================================
+  const wp = wb.addWorksheet("PEMBEBANAN", {
+    views: [{ state: "frozen", ySplit: 6 }],
+    pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.4, header: 0.2, footer: 0.2 } },
+  });
+  wp.columns = [{ width: 5 }, { width: 26 }, { width: 40 }, { width: 40 }, { width: 16 }, { width: 18 }, { width: 14 }];
+  kop(wp, "Buku Pembebanan Anggaran", `${d.judul} · ${d.periode} · setiap baris = bagian satu dokumen yang membebani satu Mata Anggaran. Nilainya dihitung langsung dari sheet dokumennya (SUMIFS), bukan diketik ulang.`, 7, TEAL);
+  judulKolom(wp, 6, ["No", d.labelGrup, "Mata Anggaran", "Pengadaan (dokumen)", "Nomor", "Nilai Dibebankan", "Dokumen"], TEAL, 2);
+
+  interface BarisBeban { grup: string; ma: string; di: number; baris: number }
+  const beban: BarisBeban[] = [];
+  {
+    let rp = 7;
+    let n = 0;
+    dokumen.forEach((dok, di) => {
+      // pasangan grup|ma yang disentuh dokumen ini
+      const pasang = new Map<string, { grup: string; ma: string }>();
+      dok.blok.forEach((b) => b.items.forEach((it) => it.pos.forEach((p) => pasang.set(`${p.grup}|${p.ma}`, { grup: p.grup, ma: p.ma }))));
+      for (const { grup, ma } of Array.from(pasang.values())) {
+        const sn = sheetDok[di];
+        const row = wp.getRow(rp);
+        row.getCell(1).value = ++n;
+        row.getCell(2).value = grup;
+        row.getCell(3).value = ma;
+        row.getCell(4).value = dok.nama;
+        row.getCell(5).value = dok.nomor || "–";
+        row.getCell(6).value = {
+          formula: `SUMIFS('${sn}'!$J$1:$J$${akhirDok(di)},'${sn}'!$H$1:$H$${akhirDok(di)},$B${rp},'${sn}'!$I$1:$I$${akhirDok(di)},$C${rp})`,
+        };
+        gayaAngka(row.getCell(6), true);
+        gayaTautan(row.getCell(7), "buka →", `#'${sn}'!A1`);
+        row.getCell(7).alignment = { horizontal: "center", vertical: "middle" };
+        row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+        [2, 3, 4].forEach((c) => (row.getCell(c).alignment = { vertical: "middle", wrapText: true }));
+        row.font = { name: "Calibri", size: 9 };
+        row.height = 20;
+        for (let c = 1; c <= 7; c++) {
+          const cell = row.getCell(c);
+          if (n % 2 === 0) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ABU } };
+          cell.border = { bottom: { style: "hair", color: { argb: GARIS } } };
+        }
+        beban.push({ grup, ma, di, baris: rp });
+        rp++;
+      }
+    });
+    if (n) {
+      const t = wp.getRow(rp);
+      t.getCell(5).value = "TOTAL";
+      t.getCell(5).alignment = { horizontal: "right" };
+      t.getCell(6).value = { formula: `SUM(F7:F${rp - 1})` };
+      gayaAngka(t.getCell(6), true);
+      for (let c = 1; c <= 7; c++) {
+        t.getCell(c).font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
+        t.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: TEAL } };
+      }
+      t.height = 22;
+      wp.autoFilter = { from: { row: 6, column: 1 }, to: { row: rp - 1, column: 7 } };
+    } else {
+      wp.getCell(7, 2).value = "Belum ada pengadaan tercatat pada tipe anggaran ini.";
+      wp.getCell(7, 2).font = { italic: true, color: { argb: "FF64748B" } };
+    }
+  }
+
+  // =========================================================================
+  // 3) SHEET DAFTAR — indeks dokumen
   // =========================================================================
   const wd = wb.addWorksheet("DAFTAR", {
     views: [{ state: "frozen", ySplit: 6 }],
     pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.4, header: 0.2, footer: 0.2 } },
   });
-  wd.columns = [{ width: 5 }, { width: 13 }, { width: 11 }, { width: 16 }, { width: 42 }, { width: 20 }, { width: 30 }, { width: 16 }, { width: 17 }, { width: 13 }];
-  kop(wd, `Daftar Pengadaan — ${d.judul}`, `${d.periode} · ${dokumen.length} dokumen · klik "buka →" untuk melihat SPPBJ/Non PR PO itu utuh di sheet RINCIAN`, 10, TEAL);
-  judulKolom(wd, 6, ["No", "Tanggal", "Sumber", "Nomor", "Nama Pengadaan", d.labelGrup, "Mata Anggaran", "Nilai Dokumen", `Dibebankan ke ${d.judul}`, "Dokumen"], TEAL, 1);
+  wd.columns = [{ width: 5 }, { width: 13 }, { width: 11 }, { width: 16 }, { width: 42 }, { width: 20 }, { width: 30 }, { width: 16 }, { width: 17 }, { width: 15 }];
+  kop(wd, `Daftar Pengadaan — ${d.judul}`, `${d.periode} · ${dokumen.length} dokumen · tiap pengadaan punya SHEET SENDIRI; klik "buka sheet →"`, 10, TEAL);
+  judulKolom(wd, 6, ["No", "Tanggal", "Sumber", "Nomor", "Nama Pengadaan", d.labelGrup, "Mata Anggaran", "Nilai Dokumen", `Dibebankan ke ${d.judul}`, "Sheet"], TEAL, 1);
 
   dokumen.forEach((dok, i) => {
     const rr = 7 + i;
@@ -498,18 +522,18 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
     row.getCell(3).value = dok.sumber;
     row.getCell(4).value = dok.nomor || "–";
     row.getCell(5).value = dok.nama;
-    gayaTautan(row.getCell(6), dok.grup, refSheet(dok.grup), 10);
+    gayaTautan(row.getCell(6), dok.grup, refGrup(dok.grup), 10);
     row.getCell(7).value = dok.mataAnggaran.filter(Boolean).join(", ") || "–";
     row.getCell(8).value = Math.round(dok.total);
-    row.getCell(9).value = Math.round(dok.dibebankan);
+    const barisBeban = beban.filter((b) => b.di === i).map((b) => `PEMBEBANAN!F${b.baris}`);
+    row.getCell(9).value = barisBeban.length ? { formula: barisBeban.join("+") } : Math.round(dok.dibebankan);
     gayaAngka(row.getCell(8));
     gayaAngka(row.getCell(9), true);
-    // dokumen yang tak seluruhnya masuk anggaran ini -> ditandai, bukan disembunyikan
     if (Math.round(dok.dibebankan) !== Math.round(dok.total)) {
       row.getCell(9).font = { name: "Calibri", size: 10, bold: true, color: { argb: KUNING } };
       row.getCell(9).note = "Sebagian item dokumen ini di luar anggaran yang diexport (kapal/pos lain), jadi yang dihitung hanya bagian ini.";
     }
-    gayaTautan(row.getCell(10), "buka →", `#RINCIAN!A${barisDok[i]}`);
+    gayaTautan(row.getCell(10), "buka sheet →", `#'${sheetDok[i]}'!A1`);
     row.getCell(10).alignment = { horizontal: "center", vertical: "middle" };
     [1, 2, 3, 4].forEach((c) => (row.getCell(c).alignment = { horizontal: "center", vertical: "middle" }));
     [5, 7].forEach((c) => (row.getCell(c).alignment = { vertical: "middle", wrapText: true }));
@@ -538,14 +562,13 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
     t.height = 22;
     wd.autoFilter = { from: { row: 6, column: 1 }, to: { row: rt - 1, column: 10 } };
 
-    // pengingat: angka yang harus sama dengan RINGKASAN adalah kolom "Dibebankan"
     const rc = rt + 2;
     wd.mergeCells(rc, 1, rc + 1, 10);
     const ck = wd.getCell(rc, 1);
     ck.value =
-      `Kolom "Nilai Dokumen" = nilai SPPBJ/Non PR PO seutuhnya. Kolom "Dibebankan ke ${d.judul}" = bagian yang masuk pagu yang diexport di berkas ini — ` +
-      `dokumen yang juga memuat item kapal/pos lain nilainya lebih besar dari yang dibebankan (ditandai kuning).\n` +
-      `TOTAL kolom "Dibebankan" inilah yang harus sama dengan Realisasi di sheet RINGKASAN.`;
+      `Kolom "Nilai Dokumen" = nilai SPPBJ/Non PR PO seutuhnya. Kolom "Dibebankan ke ${d.judul}" = bagian yang masuk pagu berkas ini — ` +
+      `dokumen yang juga memuat kapal/pos lain nilainya lebih besar dari yang dibebankan (ditandai kuning).\n` +
+      `TOTAL kolom "Dibebankan" = Realisasi di sheet RINGKASAN = TOTAL sheet PEMBEBANAN.`;
     ck.font = { name: "Calibri", size: 9, color: { argb: "FF1E3A8A" } };
     ck.alignment = { wrapText: true, vertical: "top" };
     ck.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LANGIT } };
@@ -554,7 +577,9 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
   }
 
   // =========================================================================
-  // 3) SHEET PER GRUP — per Mata Anggaran, Realisasi = SUMIFS ke RINCIAN
+  // 4) SHEET PER GRUP — BUDGET CONTROL gaya Lampiran 2
+  //    Mata Anggaran (Persetujuan Awal + Addendum = Total Persetujuan)
+  //    lalu baris PEKERJAAN = dokumen yang membebani pos itu
   // =========================================================================
   const ringkasGrup: { nama: string; sheet: string; barisTotal: number }[] = [];
 
@@ -564,100 +589,131 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
       views: [{ state: "frozen", ySplit: 6 }],
       pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.4, header: 0.2, footer: 0.2 } },
     });
-    ws.columns = [{ width: 46 }, { width: 18 }, { width: 15 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 11 }, { width: 13 }, { width: 14 }];
+    ws.columns = [{ width: 4.5 }, { width: 44 }, { width: 17 }, { width: 15 }, { width: 18 }, { width: 18 }, { width: 17 }, { width: 10 }, { width: 12 }, { width: 14 }];
 
     const infoSurat = [g.noSurat ? `No. Surat ${g.noSurat}` : "", g.noSuratAddendum ? `Addendum ${g.noSuratAddendum}` : ""].filter(Boolean).join(" · ");
-    kop(ws, g.nama, `${d.judul} · ${d.periode}${infoSurat ? " · " + infoSurat : ""} · Realisasi diambil otomatis (SUMIFS) dari dokumen di sheet RINCIAN`, 9, d.warna);
+    kop(ws, `Budget Control — ${g.nama}`, `${d.judul} · ${d.periode}${infoSurat ? " · " + infoSurat : ""} · baris tebal = Mata Anggaran, di bawahnya pekerjaan/pengadaan yang membebaninya (klik untuk membuka dokumennya)`, 10, d.warna);
 
     const back = ws.getRow(4);
-    gayaTautan(back.getCell(1), "‹ kembali ke RINGKASAN", "#RINGKASAN!A6");
-    gayaTautan(back.getCell(2), "lihat DAFTAR pengadaan →", "#DAFTAR!A6");
+    gayaTautan(back.getCell(2), "‹ RINGKASAN", "#RINGKASAN!A6");
+    gayaTautan(back.getCell(5), "DAFTAR pengadaan →", "#DAFTAR!A6");
+    gayaTautan(back.getCell(7), "buku PEMBEBANAN →", "#PEMBEBANAN!A6");
 
-    judulKolom(ws, 6, ["Mata Anggaran", "Persetujuan Pusat", "Addendum", "Total Persetujuan", "Realisasi", "Sisa", "Terserap", "Status", "Dokumen"], d.warna);
+    judulKolom(ws, 6, ["No", "Mata Anggaran / Pekerjaan", "Persetujuan Awal", "Addendum", "Total Persetujuan", "Realisasi", "Sisa", "Terserap", "Status", "Dokumen"], d.warna, 2);
 
-    const r0 = 7;
+    let rr = 7;
+    const barisMA: number[] = [];
     g.pos.forEach((pos, i) => {
-      const rr = r0 + i;
-      const row = ws.getRow(rr);
-      row.getCell(1).value = pos.ma;
-      row.getCell(2).value = pos.pagu;
-      row.getCell(3).value = pos.addendum || 0;
-      row.getCell(4).value = { formula: `B${rr}+C${rr}` };
-      // Realisasi = jumlah nilai item di RINCIAN yang grup & MA-nya cocok (kolom bantu H/I/J)
-      row.getCell(5).value = dokumen.length
-        ? { formula: `SUMIFS(RINCIAN!$J$5:$J$${rAkhir},RINCIAN!$H$5:$H$${rAkhir},"${qq(g.nama)}",RINCIAN!$I$5:$I$${rAkhir},$A${rr})` }
-        : 0;
-      row.getCell(6).value = { formula: `D${rr}-E${rr}` };
-      row.getCell(7).value = { formula: `IF(D${rr}=0,0,E${rr}/D${rr})` };
-      row.getCell(8).value = { formula: `IF(D${rr}=0,"–",IF(G${rr}>1,"OVERBUDGET",IF(G${rr}>=0.8,"WASPADA","AMAN")))` };
+      const rMA = rr;
+      barisMA.push(rMA);
+      const kerja = beban.filter((b) => b.grup === g.nama && b.ma === pos.ma);
 
-      const barisTuju = barisPos.get(`${g.nama}|${pos.ma}`);
-      const link = row.getCell(9);
-      if (barisTuju) gayaTautan(link, "lihat dokumen →", `#RINCIAN!A${barisTuju}`);
-      else {
-        link.value = "—";
-        link.font = { name: "Calibri", size: 9, color: { argb: "FF94A3B8" } };
-      }
-      link.alignment = { vertical: "middle", horizontal: "center" };
-
-      row.getCell(1).font = { name: "Calibri", size: 10, bold: true };
-      row.getCell(1).alignment = { vertical: "middle", wrapText: true };
-      for (let c = 2; c <= 6; c++) gayaAngka(row.getCell(c), c === 5);
-      row.getCell(3).numFmt = RP_ADD;
-      row.getCell(3).font = { name: "Calibri", size: 10, bold: true, color: { argb: UNGU } };
-      row.getCell(7).numFmt = PCT;
-      row.getCell(7).alignment = { vertical: "middle", horizontal: "center" };
-      row.getCell(7).font = { bold: true };
+      const row = ws.getRow(rMA);
+      row.getCell(1).value = i + 1;
+      row.getCell(2).value = pos.ma;
+      row.getCell(3).value = pos.pagu;
+      row.getCell(4).value = pos.addendum || 0;
+      row.getCell(5).value = { formula: `C${rMA}+D${rMA}` };
+      // Realisasi MA = jumlah baris pekerjaan di bawahnya (diisi setelah barisnya dibuat)
+      row.getCell(7).value = { formula: `E${rMA}-F${rMA}` };
+      row.getCell(8).value = { formula: `IF(E${rMA}=0,0,F${rMA}/E${rMA})` };
+      row.getCell(9).value = { formula: `IF(E${rMA}=0,"–",IF(H${rMA}>1,"OVERBUDGET",IF(H${rMA}>=0.8,"WASPADA","AMAN")))` };
+      row.getCell(10).value = kerja.length ? `${kerja.length} dokumen` : "—";
+      row.getCell(10).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(10).font = { name: "Calibri", size: 9, color: { argb: kerja.length ? TINTA : "FF94A3B8" } };
+      row.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+      row.getCell(2).font = { name: "Calibri", size: 10, bold: true };
+      row.getCell(2).alignment = { vertical: "middle", wrapText: true };
+      for (let c = 3; c <= 7; c++) gayaAngka(row.getCell(c), true);
+      row.getCell(4).numFmt = RP_ADD;
+      row.getCell(4).font = { name: "Calibri", size: 10, bold: true, color: { argb: UNGU } };
+      row.getCell(8).numFmt = PCT;
       row.getCell(8).alignment = { vertical: "middle", horizontal: "center" };
-      row.getCell(8).font = { name: "Calibri", size: 9, bold: true };
+      row.getCell(8).font = { bold: true };
+      row.getCell(9).alignment = { vertical: "middle", horizontal: "center" };
+      row.getCell(9).font = { name: "Calibri", size: 9, bold: true };
       row.height = 22;
-      for (let c = 1; c <= 9; c++) {
+      for (let c = 1; c <= 10; c++) {
         const cell = row.getCell(c);
-        if (i % 2 === 1) cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: ABU } };
-        cell.border = { bottom: { style: "hair", color: { argb: GARIS } } };
+        cell.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LANGIT } };
+        cell.border = { top: { style: "thin", color: { argb: GARIS } }, bottom: { style: "hair", color: { argb: GARIS } } };
       }
+      rr++;
+
+      // baris pekerjaan (dokumen yang membebani pos ini)
+      const r1 = rr;
+      kerja.forEach((b, k) => {
+        const dok = dokumen[b.di];
+        const rk = ws.getRow(rr);
+        rk.getCell(1).value = `${i + 1}.${k + 1}`;
+        rk.getCell(2).value = `   ${dok.nama}`;
+        rk.getCell(6).value = { formula: `PEMBEBANAN!F${b.baris}` };
+        gayaAngka(rk.getCell(6));
+        rk.getCell(7).value = dok.tanggal;
+        rk.getCell(7).alignment = { horizontal: "center", vertical: "middle" };
+        rk.getCell(7).font = { name: "Calibri", size: 9, color: { argb: "FF64748B" } };
+        rk.getCell(8).value = dok.sumber;
+        rk.getCell(8).alignment = { horizontal: "center", vertical: "middle" };
+        rk.getCell(8).font = { name: "Calibri", size: 8, color: { argb: "FF64748B" } };
+        rk.getCell(9).value = dok.nomor || "–";
+        rk.getCell(9).alignment = { horizontal: "center", vertical: "middle" };
+        rk.getCell(9).font = { name: "Calibri", size: 8, color: { argb: "FF64748B" } };
+        gayaTautan(rk.getCell(10), "buka →", `#'${sheetDok[b.di]}'!A1`);
+        rk.getCell(10).alignment = { horizontal: "center", vertical: "middle" };
+        rk.getCell(1).alignment = { horizontal: "center", vertical: "middle" };
+        rk.getCell(1).font = { name: "Calibri", size: 8, color: { argb: "FF94A3B8" } };
+        rk.getCell(2).font = { name: "Calibri", size: 9, color: { argb: TINTA } };
+        rk.getCell(2).alignment = { vertical: "middle", wrapText: true };
+        rk.height = 17;
+        for (let c = 1; c <= 10; c++) rk.getCell(c).border = { bottom: { style: "hair", color: { argb: GARIS } } };
+        rr++;
+      });
+      // Realisasi MA = SUM baris pekerjaan (kalau tak ada pekerjaan -> 0)
+      ws.getCell(rMA, 6).value = kerja.length ? { formula: `SUM(F${r1}:F${rr - 1})` } : 0;
+      gayaAngka(ws.getCell(rMA, 6), true);
     });
 
-    const rT = r0 + g.pos.length;
+    const rT = rr;
     const t = ws.getRow(rT);
-    t.getCell(1).value = "TOTAL";
-    (["B", "C", "D", "E", "F"] as const).forEach((col, i) => {
-      const c = i + 2;
-      t.getCell(c).value = { formula: `SUM(${col}${r0}:${col}${rT - 1})` };
+    t.getCell(2).value = "TOTAL";
+    (["C", "D", "E", "F", "G"] as const).forEach((col, i) => {
+      const c = i + 3;
+      // hanya baris Mata Anggaran yang dijumlah (baris pekerjaan sudah masuk di dalamnya)
+      t.getCell(c).value = barisMA.length ? { formula: barisMA.map((b) => `${col}${b}`).join("+") } : 0;
       gayaAngka(t.getCell(c), true);
     });
-    t.getCell(3).numFmt = RP_ADD;
-    t.getCell(7).value = { formula: `IF(D${rT}=0,0,E${rT}/D${rT})` };
-    t.getCell(7).numFmt = PCT;
-    t.getCell(7).alignment = { horizontal: "center" };
-    for (let c = 1; c <= 9; c++) {
+    t.getCell(4).numFmt = RP_ADD;
+    t.getCell(8).value = { formula: `IF(E${rT}=0,0,F${rT}/E${rT})` };
+    t.getCell(8).numFmt = PCT;
+    t.getCell(8).alignment = { horizontal: "center" };
+    for (let c = 1; c <= 10; c++) {
       t.getCell(c).font = { name: "Calibri", size: 11, bold: true, color: { argb: "FFFFFFFF" } };
       t.getCell(c).fill = { type: "pattern", pattern: "solid", fgColor: { argb: d.warna } };
     }
     t.height = 24;
 
-    if (g.pos.length) {
-      ws.addConditionalFormatting({ ref: `E${r0}:E${rT - 1}`, rules: [{ type: "dataBar", priority: 1, cfvo: [{ type: "min" }, { type: "max" }], color: { argb: TEAL } } as any] });
-      warnaStatus(ws, "G", "H", r0, rT - 1, 2);
+    if (barisMA.length) {
+      warnaStatus(ws, "H", "I", 7, rT - 1, 2);
+      ws.addConditionalFormatting({ ref: `F7:F${rT - 1}`, rules: [{ type: "dataBar", priority: 1, cfvo: [{ type: "min" }, { type: "max" }], color: { argb: TEAL } } as any] });
     }
     ringkasGrup.push({ nama: g.nama, sheet: sn, barisTotal: rT });
   }
 
   // =========================================================================
-  // 4) SHEET RINGKASAN — per grup, angkanya menunjuk baris TOTAL sheet grup
+  // 5) SHEET RINGKASAN
   // =========================================================================
   const ws = wb.addWorksheet("RINGKASAN", {
     views: [{ state: "frozen", ySplit: 6 }],
     pageSetup: { paperSize: 9, orientation: "landscape", fitToPage: true, fitToWidth: 1, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.4, header: 0.2, footer: 0.2 } },
   });
   ws.columns = [{ width: 30 }, { width: 26 }, { width: 18 }, { width: 15 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 11 }, { width: 13 }];
-  kop(ws, d.judul, `${d.periode} · dicetak ${d.dicetak} · klik nama ${d.labelGrup.toLowerCase()} untuk membuka rinciannya`, 9, d.warna);
+  kop(ws, d.judul, `${d.periode} · dicetak ${d.dicetak} · klik nama ${d.labelGrup.toLowerCase()} untuk membuka Budget Control-nya`, 9, d.warna);
 
   const navR = ws.getRow(5);
   gayaTautan(navR.getCell(1), "DAFTAR PENGADAAN →", "#DAFTAR!A6", 10);
-  gayaTautan(navR.getCell(2), "DOKUMEN LENGKAP (RINCIAN) →", "#RINCIAN!A5", 10);
+  gayaTautan(navR.getCell(2), "BUKU PEMBEBANAN →", "#PEMBEBANAN!A6", 10);
 
-  judulKolom(ws, 6, [d.labelGrup, "Keterangan Surat", "Persetujuan Pusat", "Addendum", "Total Persetujuan", "Realisasi", "Sisa", "Terserap", "Status"], d.warna, 2);
+  judulKolom(ws, 6, [d.labelGrup, "Keterangan Surat", "Persetujuan Awal", "Addendum", "Total Persetujuan", "Realisasi", "Sisa", "Terserap", "Status"], d.warna, 2);
 
   const g0 = 7;
   d.grup.forEach((g, i) => {
@@ -669,11 +725,10 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
     row.getCell(2).value = [g.noSurat ? `No. ${g.noSurat}` : "", g.noSuratAddendum ? `Add. ${g.noSuratAddendum}` : ""].filter(Boolean).join(" · ") || "–";
     row.getCell(2).font = { name: "Calibri", size: 9, color: { argb: "FF475569" } };
     row.getCell(2).alignment = { vertical: "middle", wrapText: true };
-    // tarik langsung dari baris TOTAL sheet grup -> tak mungkin beda dengan detailnya
-    row.getCell(3).value = { formula: `${sheetRef}!B${info.barisTotal}` };
-    row.getCell(4).value = { formula: `${sheetRef}!C${info.barisTotal}` };
-    row.getCell(5).value = { formula: `${sheetRef}!D${info.barisTotal}` };
-    row.getCell(6).value = { formula: `${sheetRef}!E${info.barisTotal}` };
+    row.getCell(3).value = { formula: `${sheetRef}!C${info.barisTotal}` };
+    row.getCell(4).value = { formula: `${sheetRef}!D${info.barisTotal}` };
+    row.getCell(5).value = { formula: `${sheetRef}!E${info.barisTotal}` };
+    row.getCell(6).value = { formula: `${sheetRef}!F${info.barisTotal}` };
     row.getCell(7).value = { formula: `E${rr}-F${rr}` };
     row.getCell(8).value = { formula: `IF(E${rr}=0,0,F${rr}/E${rr})` };
     row.getCell(9).value = { formula: `IF(E${rr}=0,"–",IF(H${rr}>1,"OVERBUDGET",IF(H${rr}>=0.8,"WASPADA","AMAN")))` };
@@ -715,24 +770,23 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
     warnaStatus(ws, "H", "I", g0, gT - 1, 2);
   }
 
-  // panduan telusur
   const rN = gT + 2;
   ws.mergeCells(rN, 1, rN + 2, 9);
   const n = ws.getCell(rN, 1);
   n.value =
-    `CARA MENELUSURI ANGKA (4 tingkat):\n` +
-    `  1. RINGKASAN — per ${d.labelGrup.toLowerCase()}. Klik namanya → sheet ${d.labelGrup.toLowerCase()} (per Mata Anggaran).\n` +
-    `  2. Sheet ${d.labelGrup.toLowerCase()} — klik "lihat dokumen →" pada satu Mata Anggaran → melompat ke SPPBJ/Non PR PO pertama yang membebani pos itu.\n` +
-    `  3. DAFTAR — indeks seluruh ${dokumen.length} pengadaan; klik "buka →" untuk membuka dokumennya.\n` +
-    `  4. RINCIAN — tiap SPPBJ ditulis utuh seperti dokumen aslinya (nomor, dasar pelimpahan, tabel barang, TOTAL, tanda tangan), 1 dokumen = 1 halaman cetak.\n` +
-    `Realisasi tiap Mata Anggaran = SUMIFS atas kolom bantu di RINCIAN, dan angka di RINGKASAN menunjuk baris TOTAL sheet grup — ubah satu item, seluruh tingkat ikut menyesuaikan.`;
+    `SUSUNAN BERKAS — satu pengadaan satu sheet, tidak dicampur:\n` +
+    `  1. RINGKASAN (halaman ini) — per ${d.labelGrup.toLowerCase()}. Klik namanya → Budget Control ${d.labelGrup.toLowerCase()} itu.\n` +
+    `  2. Sheet ${d.labelGrup.toLowerCase()} — gaya Lampiran 2: tiap Mata Anggaran punya Persetujuan Awal + Addendum = Total Persetujuan, lalu daftar pekerjaan/pengadaan yang membebaninya; klik "buka →" untuk melihat dokumennya.\n` +
+    `  3. DAFTAR — indeks ${dokumen.length} pengadaan.  4. PEMBEBANAN — buku pembebanan (dokumen × Mata Anggaran), dasar semua angka.\n` +
+    `  5. Sheet 01..${String(dokumen.length).padStart(2, "0")} — tiap SPPBJ/Non PR PO utuh seperti dokumen aslinya, siap cetak 1 halaman.\n` +
+    `Realisasi tiap Mata Anggaran = jumlah baris pekerjaannya; tiap pekerjaan = SUMIFS ke sheet dokumennya. Ubah satu harga di sheet dokumen → semua tingkat ikut berubah.`;
   n.font = { name: "Calibri", size: 9, color: { argb: "FF1E3A8A" } };
   n.alignment = { wrapText: true, vertical: "top" };
   n.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LANGIT } };
-  [rN, rN + 1, rN + 2].forEach((x) => (ws.getRow(x).height = 30));
+  [rN, rN + 1, rN + 2].forEach((x) => (ws.getRow(x).height = 32));
 
-  // urutan tab: RINGKASAN → sheet grup → DAFTAR → RINCIAN
-  const urut = ["RINGKASAN", ...ringkasGrup.map((x) => x.sheet), "DAFTAR", "RINCIAN"];
+  // urutan tab: RINGKASAN → sheet grup → DAFTAR → PEMBEBANAN → sheet dokumen
+  const urut = ["RINGKASAN", ...ringkasGrup.map((x) => x.sheet), "DAFTAR", "PEMBEBANAN", ...sheetDok];
   urut.forEach((nm, i) => { const sh: any = wb.getWorksheet(nm); if (sh) sh.orderNo = i + 1; });
   wb.views = [{ activeTab: 0, x: 0, y: 0, width: 20000, height: 12000, firstSheet: 0, visibility: "visible" }];
 
