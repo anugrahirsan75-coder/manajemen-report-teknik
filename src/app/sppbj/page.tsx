@@ -13,6 +13,7 @@ import KapalCell, { kapalDariItems } from "@/components/KapalCell";
 import PreviewModal from "@/components/PreviewModal";
 import JenisBadge from "@/components/JenisBadge";
 import { useAnggaran } from "@/lib/anggaran/store";
+import { jenisAnggaranOf } from "@/lib/anggaran/types";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
@@ -38,7 +39,12 @@ export default function SppbjList() {
     ].filter(Boolean).join(" ").toLowerCase();
     return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
   };
-  const filtered = rows.filter((r) => (!bulan || ym(r) === bulan) && matchTokens(r, query));
+  // saring per jenis anggaran (Rutin/Docking/Lainnya) — pakai aturan yang sama dgn Dashboard
+  const [jenis, setJenis] = useState<"" | "rutin" | "docking" | "lainnya">("");
+  const jenisOf = (r: any) => jenisAnggaranOf(r.payload || {});
+  const filtered = rows.filter((r) => (!bulan || ym(r) === bulan) && (!jenis || jenisOf(r) === jenis) && matchTokens(r, query));
+  const hitungJenis = (j: "rutin" | "docking" | "lainnya") =>
+    rows.filter((r) => (!bulan || ym(r) === bulan) && jenisOf(r) === j && matchTokens(r, query)).length;
 
   const refresh = async () => { setLoading(true); setRows(await listRemote()); setLoading(false); };
   useEffect(() => { if (supabaseReady) refresh(); /* eslint-disable-next-line */ }, [supabaseReady]);
@@ -166,6 +172,19 @@ export default function SppbjList() {
               {bulanList.map((b) => <option key={b} value={b}>{bulanTahun(b + "-01")}</option>)}
             </select>
           )}
+          {/* saring per jenis anggaran — warna sama dgn badge di tiap baris */}
+          <div className="flex rounded-lg overflow-hidden ring-1 ring-slate-200 bg-white">
+            {([["", "Semua", "text-slate-700", "bg-slate-700"],
+               ["rutin", "Rutin", "text-emerald-700", "bg-emerald-600"],
+               ["docking", "Docking", "text-amber-700", "bg-amber-500"],
+               ["lainnya", "Lainnya", "text-indigo-700", "bg-indigo-600"]] as const).map(([v, l, tint, aktif]) => (
+              <button key={v} onClick={() => setJenis(v as any)}
+                title={v ? `Tampilkan hanya pengadaan ber-Jenis Anggaran ${l}` : "Tampilkan semua jenis"}
+                className={`text-[11px] font-bold px-2.5 py-1.5 ${jenis === v ? `${aktif} text-white` : `${tint} hover:bg-slate-50`}`}>
+                {l}{v ? ` ${hitungJenis(v as any)}` : ""}
+              </button>
+            ))}
+          </div>
           <Link href="/dashboard" className="btn btn-ghost text-xs">📊 Dashboard Anggaran</Link>
           {supabaseReady && <button onClick={syncRekap} disabled={rekapBusy} className="btn btn-ghost text-xs" title="Kirim semua pengadaan (filter ini) ke spreadsheet REKAP PJK, per tab bulan">{rekapBusy ? "…" : "📊 Sync ke Rekap"}</button>}
           {supabaseReady && <button onClick={exportUsulan} disabled={exporting} className="btn btn-ghost text-xs" title="Excel usulan update harga Riil ke RAB master dari realisasi SPPBJ">{exporting ? "…" : "📤 Usulan Harga Riil"}</button>}

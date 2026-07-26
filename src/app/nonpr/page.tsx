@@ -11,6 +11,7 @@ import KapalCell from "@/components/KapalCell";
 import PreviewModal from "@/components/PreviewModal";
 import JenisBadge from "@/components/JenisBadge";
 import { useAnggaran } from "@/lib/anggaran/store";
+import { jenisAnggaranOf } from "@/lib/anggaran/types";
 
 export default function NonprList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useNonpr();
@@ -26,7 +27,12 @@ export default function NonprList() {
 
   const ym = (r: any): string => (r.payload?.tanggal || "").slice(0, 7);
   const bulanList = Array.from(new Set(rows.map(ym).filter(Boolean))).sort().reverse();
-  const filtered = bulan ? rows.filter((r) => ym(r) === bulan) : rows;
+  // saring per jenis anggaran (Rutin/Docking/Lainnya) — aturan sama dgn Dashboard
+  const [jenis, setJenis] = useState<"" | "rutin" | "docking" | "lainnya">("");
+  const jenisOf = (r: any) => jenisAnggaranOf(r.payload || {});
+  const filtered = rows.filter((r) => (!bulan || ym(r) === bulan) && (!jenis || jenisOf(r) === jenis));
+  const hitungJenis = (j: "rutin" | "docking" | "lainnya") =>
+    rows.filter((r) => (!bulan || ym(r) === bulan) && jenisOf(r) === j).length;
 
   const mulai = () => { newDraft(); router.push("/nonpr/isi"); };
   const buka = (r: any) => { loadById(r); router.push("/nonpr/detail"); };
@@ -69,6 +75,18 @@ export default function NonprList() {
               {bulanList.map((b) => <option key={b} value={b}>{bulanTahun(b + "-01")}</option>)}
             </select>
           )}
+          <div className="flex rounded-lg overflow-hidden ring-1 ring-slate-200 bg-white">
+            {([["", "Semua", "text-slate-700", "bg-slate-700"],
+               ["rutin", "Rutin", "text-emerald-700", "bg-emerald-600"],
+               ["docking", "Docking", "text-amber-700", "bg-amber-500"],
+               ["lainnya", "Lainnya", "text-indigo-700", "bg-indigo-600"]] as const).map(([v, l, tint, aktif]) => (
+              <button key={v} onClick={() => setJenis(v as any)}
+                title={v ? `Tampilkan hanya pengadaan ber-Jenis Anggaran ${l}` : "Tampilkan semua jenis"}
+                className={`text-[11px] font-bold px-2.5 py-1.5 ${jenis === v ? `${aktif} text-white` : `${tint} hover:bg-slate-50`}`}>
+                {l}{v ? ` ${hitungJenis(v as any)}` : ""}
+              </button>
+            ))}
+          </div>
           {supabaseReady && <button onClick={refresh} className="btn btn-ghost text-xs">↻ Refresh</button>}
         </div>
       </div>
