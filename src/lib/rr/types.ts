@@ -49,7 +49,9 @@ export const kunciKelompok = (k: { kode: string; judul: string }) => `${k.kode}|
 export interface RrItem {
   id: string;
   deskripsi: string;
-  spesifikasi: string;
+  spesifikasi: string;   // apa adanya dari dokumen — jangan diisi keterangan lain
+  /** jejak asal item bila ditarik dari SPPBJ/Non PR PO. Hanya untuk layar, TIDAK ikut ke Excel. */
+  asal?: string;
   jumlah: number;
   satuan: string;
   harga: number;

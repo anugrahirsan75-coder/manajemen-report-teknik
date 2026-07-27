@@ -168,7 +168,10 @@ export default function RencanaPage() {
         if (!kunci) { diabaikan++; continue; }
         (kumpul[kunci] ||= []).push({
           id: uid(), deskripsi: it.nama || "(tanpa nama)",
-          spesifikasi: [it.spesifikasi, `${p.sumber} ${p.nama}`].filter(Boolean).join(" · "),
+          // Spesifikasi harus sama persis dengan tabel SPPBJ/Non PR PO — kosong berarti kosong.
+          // Jejak dokumen asalnya disimpan terpisah di 'asal' (tampil di layar, tak ikut ke Excel).
+          spesifikasi: it.spesifikasi || "",
+          asal: `${p.sumber} ${p.nama}`,
           jumlah: it.jumlah || 0, satuan: it.satuan || "", harga: Math.round(harga),
         });
         n++;
@@ -230,7 +233,12 @@ export default function RencanaPage() {
     setXlsSibuk(true);
     try {
       const { exportRrExcel } = await import("@/lib/rr/export");
-      await exportRrExcel({ bulanRencana: bulan, bulanRealisasi: bulanKe(bulan, -1), dok });
+      // Berkas Lampiran 3 selalu sepasang: RENCANA satu bulan + REALISASI bulan sebelumnya.
+      // Bulan yang sedang dibuka jadi acuan sesuai tabnya, supaya yang diekspor benar-benar
+      // dokumen yang sedang dilihat (buka Realisasi Juli -> REAL Juli, bukan Juni).
+      const bulanRencana = tipe === "realisasi" ? bulanKe(bulan, 1) : bulan;
+      const bulanRealisasi = tipe === "realisasi" ? bulan : bulanKe(bulan, -1);
+      await exportRrExcel({ bulanRencana, bulanRealisasi, dok });
     } catch (e: any) {
       setPesan(`Gagal export: ${e?.message || e}`);
     } finally { setXlsSibuk(false); }
@@ -544,6 +552,7 @@ function Kelompok({ judul, items, terkunci, onUbah, tetangga = [], onPindah }: {
                       <td className="p-1">
                         <input value={i.deskripsi} disabled={terkunci} onChange={(e) => set(i.id, (x) => { x.deskripsi = e.target.value; })}
                           className="w-full border border-slate-200 rounded px-1.5 py-1" placeholder="nama barang / jasa" />
+                        {i.asal ? <span className="block text-[9px] text-slate-400 mt-0.5 truncate" title={i.asal}>dari {i.asal}</span> : null}
                       </td>
                       <td className="p-1">
                         <input value={i.spesifikasi} disabled={terkunci} onChange={(e) => set(i.id, (x) => { x.spesifikasi = e.target.value; })}
