@@ -33,6 +33,7 @@ export interface Kerusakan {
   akibat: string;           // Effect / Resulting — dampak & tindakan yang dilakukan
   lostOpportunity: number;  // jumlah trip yang hilang
   evidence: string;         // tautan bukti (Google Drive dsb)
+  foto?: string[];          // foto bukti yang diunggah langsung (URL di Storage)
   tindakLanjut: string;     // Follow up
   status: StatusKerusakan;
   biaya?: number;           // perkiraan biaya perbaikan (opsional)

@@ -17,6 +17,7 @@ import { useKerusakan } from "@/lib/kerusakan/store";
 import { Kerusakan, kerusakanBaru, BAGIAN, STATUS_LABEL, STATUS_WARNA, StatusKerusakan, ringkas } from "@/lib/kerusakan/types";
 import { rupiah, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
+import FotoUploader from "@/components/FotoUploader";
 
 export default function KerusakanPage() {
   const { ready, loading, list, err, reload, simpan, hapus } = useKerusakan();
@@ -25,6 +26,7 @@ export default function KerusakanPage() {
   const [tahun, setTahun] = useState("");
   const [cari, setCari] = useState("");
   const [edit, setEdit] = useState<Kerusakan | null>(null);
+  const [lihatFoto, setLihatFoto] = useState<{ urls: string[]; i: number } | null>(null);
   const [sibuk, setSibuk] = useState(false);
 
   const tahunList = useMemo(
@@ -186,9 +188,24 @@ export default function KerusakanPage() {
                     <td className="p-2 text-slate-700">{k.akibat || <span className="text-slate-400">—</span>}</td>
                     <td className="p-2 text-center font-bold tabular-nums text-slate-900">{k.lostOpportunity || 0}</td>
                     <td className="p-2">
+                      {k.foto?.length ? (
+                        <div className="flex flex-wrap gap-1 mb-1">
+                          {k.foto.slice(0, 3).map((u, i) => (
+                            /* eslint-disable-next-line @next/next/no-img-element */
+                            <img key={u + i} src={u} alt={`Foto ${i + 1}`} onClick={() => setLihatFoto({ urls: k.foto || [], i })}
+                              className="h-9 w-9 object-cover rounded ring-1 ring-slate-300 cursor-zoom-in" />
+                          ))}
+                          {k.foto.length > 3 && (
+                            <button onClick={() => setLihatFoto({ urls: k.foto || [], i: 3 })}
+                              className="h-9 w-9 rounded ring-1 ring-slate-300 bg-slate-100 text-[10px] font-bold text-slate-600">
+                              +{k.foto.length - 3}
+                            </button>
+                          )}
+                        </div>
+                      ) : null}
                       {k.evidence
                         ? <a href={k.evidence} target="_blank" rel="noreferrer" className="text-blue-700 font-bold text-xs hover:underline">buka ↗</a>
-                        : <span className="text-slate-300 text-xs">—</span>}
+                        : (!k.foto?.length ? <span className="text-slate-300 text-xs">—</span> : null)}
                     </td>
                     <td className="p-2 text-slate-700">{k.tindakLanjut || <span className="text-slate-400">—</span>}</td>
                     <td className="p-2 text-center">
@@ -263,6 +280,25 @@ export default function KerusakanPage() {
                   <input value={edit.evidence} onChange={(e) => setEdit({ ...edit, evidence: e.target.value })}
                     placeholder="https://drive.google.com/…" className="inp" />
                 </Baris>
+                <Baris label="Foto kerusakan (unggah langsung)" lebar>
+                  <FotoUploader compact
+                    label="Pilih / Tarik / Paste Foto"
+                    hint="boleh beberapa sekaligus · bisa tempel tangkapan layar (Ctrl+V)"
+                    onAdd={(urls) => setEdit((s) => (s ? { ...s, foto: [...(s.foto || []), ...urls] } : s))} />
+                  {edit.foto?.length ? (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {edit.foto.map((u, i) => (
+                        <div key={u + i} className="relative group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={u} alt={`Foto ${i + 1}`} className="h-20 w-20 object-cover rounded-lg ring-1 ring-slate-300" />
+                          <button type="button" title="Hapus foto ini"
+                            onClick={() => setEdit((s) => (s ? { ...s, foto: (s.foto || []).filter((_, j) => j !== i) } : s))}
+                            className="absolute -top-1.5 -right-1.5 h-5 w-5 rounded-full bg-rose-600 text-white text-[11px] font-bold shadow">✕</button>
+                        </div>
+                      ))}
+                    </div>
+                  ) : null}
+                </Baris>
                 <Baris label="Tindak lanjut (Follow up)" lebar>
                   <textarea rows={2} value={edit.tindakLanjut} onChange={(e) => setEdit({ ...edit, tindakLanjut: e.target.value })}
                     placeholder="mis. Telah diusulkan penggantian SC baru ke OMA Kantor Pusat" className="inp" />
@@ -276,6 +312,35 @@ export default function KerusakanPage() {
                 <button onClick={simpanEdit} disabled={sibuk} className="btn btn-primary text-sm">{sibuk ? "Menyimpan…" : "💾 Simpan"}</button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* lihat foto besar */}
+      {lihatFoto && (
+        <div className="fixed inset-0 z-[90] bg-black/80 flex items-center justify-center p-4"
+             onClick={() => setLihatFoto(null)}>
+          <div className="max-w-5xl w-full" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-white text-sm font-semibold">
+                Foto {lihatFoto.i + 1} dari {lihatFoto.urls.length}
+              </span>
+              <a href={lihatFoto.urls[lihatFoto.i]} target="_blank" rel="noreferrer"
+                 className="btn btn-ghost text-xs">Buka di tab baru ↗</a>
+              <button onClick={() => setLihatFoto(null)} className="btn btn-ghost text-xs ml-auto">✕ Tutup</button>
+            </div>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={lihatFoto.urls[lihatFoto.i]} alt="Foto kerusakan"
+                 className="w-full max-h-[75vh] object-contain rounded-xl bg-black" />
+            {lihatFoto.urls.length > 1 && (
+              <div className="flex flex-wrap gap-2 mt-3 justify-center">
+                {lihatFoto.urls.map((u, i) => (
+                  /* eslint-disable-next-line @next/next/no-img-element */
+                  <img key={u + i} src={u} alt={`Foto ${i + 1}`} onClick={() => setLihatFoto({ urls: lihatFoto.urls, i })}
+                       className={`h-14 w-14 object-cover rounded cursor-pointer ring-2 ${i === lihatFoto.i ? "ring-white" : "ring-transparent opacity-60"}`} />
+                ))}
+              </div>
+            )}
           </div>
         </div>
       )}
