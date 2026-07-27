@@ -3,7 +3,7 @@
 import { useMemo, useState, useCallback, Fragment, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { useAnggaran, PengadaanRow, realisasiRutin, realisasiRutinKapal, realisasiDocking, nilaiPerMA, type RealisasiKapal } from "@/lib/anggaran/store";
+import { useAnggaran, PengadaanRow, realisasiRutin, realisasiRutinKapal, realisasiDocking, nilaiPerMA, nilaiPengadaan, type RealisasiKapal } from "@/lib/anggaran/store";
 import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN, DOCKING_MA_INVESTASI, isMaInvestasi, rupiahShort,
   namaKapalPenuh, RKA, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
@@ -276,6 +276,53 @@ function Card({ title, icon, children, tone = "biru", badge, sub }: {
 
 /* ---------- rincian pengadaan per MA (reusable) ---------- */
 type MaDetailItem = { id: string; nama: string; nilai: number; sumber: string; tanggal: string; raw?: any };
+
+/**
+ * Pengadaan yang barangnya masuk STOK/persediaan: nilainya tidak menggerus pagu,
+ * jadi tak muncul di tabel serapan. Ditampilkan terpisah supaya tetap terlihat.
+ */
+function PanelStok({ rows }: { rows: PengadaanRow[] }) {
+  const [buka, setBuka] = useState(false);
+  if (!rows.length) return null;
+  const total = rows.reduce((s, r) => s + nilaiPengadaan(r.items), 0);
+  return (
+    <div className="mt-3 rounded-xl bg-sky-50 ring-1 ring-sky-200 px-3 py-2">
+      <button onClick={() => setBuka(!buka)} className="w-full flex items-center gap-2 text-left">
+        <span className="text-sky-700">📦</span>
+        <span className="text-xs font-bold text-sky-900">
+          {rows.length} pengadaan masuk stok / persediaan · {rupiah(total)}
+        </span>
+        <span className="text-[11px] text-sky-700">— tidak menggerus pagu Mata Anggaran</span>
+        <span className={`ml-auto text-sky-600 text-[10px] transition-transform ${buka ? "rotate-90" : ""}`}>▶</span>
+      </button>
+      {buka && (
+        <table className="w-full text-[11px] mt-2">
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} className="border-b border-sky-200 last:border-0">
+                <td className="py-1 pr-2 w-20">
+                  <span className={`px-1.5 py-0.5 rounded font-bold ${r.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>
+                    {r.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}
+                  </span>
+                </td>
+                <td className="py-1 pr-2 text-slate-800">
+                  {r.nama}
+                  {r.catatanAnggaran ? <span className="block text-[10px] text-sky-700">{r.catatanAnggaran}</span> : null}
+                </td>
+                <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{r.tanggal ? tanggalIndo(r.tanggal) : "—"}</td>
+                <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(nilaiPengadaan(r.items))}</td>
+                <td className="py-1 pl-3 text-right w-16">
+                  <Link href={`${r.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${r.id}`}
+                    className="text-blue-700 font-bold hover:underline whitespace-nowrap">buka →</Link>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      )}
+    </div>
+  );
+}
 function MaDetailList({ list }: { list: MaDetailItem[] }) {
   // dokumen yang sedang dilihat sekilas (tanpa meninggalkan halaman ini)
   const [lihat, setLihat] = useState<MaDetailItem | null>(null);
@@ -755,6 +802,11 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
         </>
       )}
 
+      {/* barang yang masuk stok bulan ini — terlihat, tapi tak dihitung sebagai serapan */}
+      {!edit && (
+        <PanelStok rows={pengadaan.filter((r) => r.stok && r.jenis === "rutin" && (r.tanggal || "").slice(0, 7) === bulan)} />
+      )}
+
       {/* daftar pengadaan rutin bulan ini */}
       {!edit && real.list.length > 0 && (
         <details className="mt-3 text-xs">
@@ -1123,6 +1175,13 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
             </tfoot>
           </table>
         </div>
+      )}
+
+      {/* barang yang masuk stok — tak dihitung sebagai serapan docking kapal ini */}
+      {!edit && (
+        <PanelStok rows={pengadaan.filter((r) => r.stok && r.jenis === "docking"
+          && parseInt((r.tanggal || "").slice(0, 4), 10) === tahun
+          && (r.items || []).some((i: any) => namaKapalPenuh(i.kapal || "") === kapal))} />
       )}
 
       {paste !== null && (

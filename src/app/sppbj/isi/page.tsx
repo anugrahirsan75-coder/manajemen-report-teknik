@@ -117,6 +117,8 @@ function SppbjIsiInner() {
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
   const { plafon, pengadaan, program } = useAnggaran();
   const rutinInfo = useMemo(() => {
+    // barang untuk stok tak menggerus pagu -> guardrail tidak berlaku
+    if (req.stokPersediaan) return null;
     if (jenisAnggaranOf(req) !== "rutin") return null;
     const ma = (req.mataAnggaran || [])[0] || "";
     if (!ma || !req.tanggal) return null;
@@ -128,7 +130,7 @@ function SppbjIsiInner() {
     const sisa = pagu - lain;
     const nilaiIni = nilaiPengadaan(req.items);
     return { ma, bulan, pagu, sisa, nilaiIni, hasPagu: pagu > 0, over: pagu > 0 && nilaiIni > sisa };
-  }, [req.jenisAnggaran, req.kategoriRekap, req.mataAnggaran, req.tanggal, req.items, req.id, plafon, pengadaan]);
+  }, [req.jenisAnggaran, req.kategoriRekap, req.mataAnggaran, req.tanggal, req.items, req.id, req.stokPersediaan, plafon, pengadaan]);
 
   // guardrail pagu Persetujuan Biaya Lainnya
   const progInfo = useMemo(() => {
@@ -255,6 +257,12 @@ function SppbjIsiInner() {
         </div>
       </div>
 
+      {req.stokPersediaan && (
+        <div className="mb-4 rounded-xl px-4 py-2.5 text-sm flex flex-wrap items-center gap-2 border bg-sky-50 text-sky-800 border-sky-200">
+          <span>📦 <b>Masuk stok / persediaan</b> — pengadaan ini <b>tidak menggerus</b> pagu Mata Anggaran manapun.</span>
+          {req.catatanAnggaran ? <span className="text-sky-700">· {req.catatanAnggaran}</span> : null}
+        </div>
+      )}
       {rutinInfo && (
         <div className={`mb-4 rounded-xl px-4 py-2.5 text-sm flex flex-wrap items-center gap-2 border ${rutinInfo.over ? "bg-red-50 text-red-700 border-red-200" : rutinInfo.hasPagu ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-amber-50 text-amber-700 border-amber-200"}`}>
           <span>🧭 Pagu RUTIN <b>{rutinInfo.ma}</b> ({bulanTahun(rutinInfo.bulan + "-01")}):</span>
@@ -323,6 +331,23 @@ function SppbjIsiInner() {
               <option value="Docking">Docking (Persetujuan Pusat)</option>
               <option value="Lainnya">Lainnya (Persetujuan Biaya Lainnya)</option>
             </select>
+          </Field>
+          <Field label="Perlakuan Anggaran">
+            <label className="flex items-start gap-2 rounded-lg border border-slate-300 px-3 py-2 bg-white cursor-pointer">
+              <input type="checkbox" className="mt-0.5" checked={!!req.stokPersediaan}
+                onChange={(e) => update({ stokPersediaan: e.target.checked || undefined })} />
+              <span className="text-sm leading-snug">
+                Masuk <b>STOK / persediaan</b>
+                <span className="block text-[11px] text-slate-500">
+                  barang disimpan dulu, belum dipakai kapal — tidak menggerus pagu Mata Anggaran.
+                  Nilainya tetap tercatat &amp; terlihat di Dashboard, hanya tak dihitung sebagai serapan.
+                </span>
+              </span>
+            </label>
+          </Field>
+          <Field label="Catatan Anggaran (tampil di Dashboard)">
+            <Input value={req.catatanAnggaran || ""} placeholder="mis. Suku cadang untuk stok, dipakai saat perbaikan berikutnya"
+              onChange={(e) => update({ catatanAnggaran: e.target.value || undefined })} />
           </Field>
           <Field label="Nama Pengadaan"><Input value={req.namaPengadaan} onChange={(e) => update({ namaPengadaan: e.target.value })} /></Field>
           <Field label="Dasar Pelimpahan (= KAK poin A)"><Input value={req.dasarPelimpahan} onChange={(e) => update({ dasarPelimpahan: e.target.value })} /></Field>

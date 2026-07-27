@@ -74,6 +74,20 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
   const [tampil, setTampil] = useState<"kapal" | "ma">("kapal");
 
   const real = useMemo(() => realisasiProgram(pengadaan, aktifId), [pengadaan, aktifId]);
+  // nomor SPPBJ & SPBJ tiap pengadaan, untuk ditampilkan pada rincian pos
+  const nomorDok = useMemo(() => {
+    const m: Record<string, { sppbj: string; spbj: string }> = {};
+    for (const p of pengadaan) {
+      const r: any = p.raw || {};
+      const num = (r.noSpbjNum || "").trim();
+      const bln = (r.noSpbjBulan || "").trim();
+      m[p.id] = {
+        sppbj: (r.noSPPBJ || "").trim(),
+        spbj: num ? `SPB/J.${num}/PBJ/${bln}/ASDP-${(p.tanggal || "").slice(0, 4)}` : (r.noSPBJ || "").trim(),
+      };
+    }
+    return m;
+  }, [pengadaan]);
 
   // gabung pagu + realisasi per (kapal|MA)
   const baris = useMemo(() => {
@@ -332,6 +346,9 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
                                   ))}
                                 </tbody>
                               </table>
+                              {/* dokumen yang membebani Mata Anggaran ini — supaya angka Terpakai bisa ditelusuri */}
+                              <DokumenPos judul={`Dokumen yang membebani ${m.ma}`}
+                                list={real.list.filter((x) => maKey(x.ma) === m.kunci)} nomor={nomorDok} />
                             </td>
                           </tr>
                         )}
@@ -429,6 +446,10 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
                                     <tr key={x.id + i} className="border-b border-slate-200 last:border-0">
                                       <td className="py-1 pr-2 w-20"><span className={`px-1.5 py-0.5 rounded font-bold ${x.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>{x.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}</span></td>
                                       <td className="py-1 pr-2 text-slate-800">{x.nama}</td>
+                                      <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-40 text-[10px] leading-tight">
+                                        {nomorDok[x.id]?.sppbj ? <>No. {nomorDok[x.id].sppbj}</> : <span className="text-slate-400">tanpa No. SPPBJ</span>}
+                                        {nomorDok[x.id]?.spbj ? <><br />{nomorDok[x.id].spbj}</> : null}
+                                      </td>
                                       <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{x.tanggal ? tanggalIndo(x.tanggal) : "—"}</td>
                                       <td className="py-1 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(Math.round(x.nilai))}</td>
                                       <td className="py-1 pl-3 text-right w-14">
@@ -491,6 +512,54 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/** Daftar SPPBJ / Non PR PO yang membebani satu pos — supaya angka Terpakai bisa ditelusuri. */
+function DokumenPos({ judul, list, nomor }: {
+  judul: string;
+  list: RealisasiItem[];
+  nomor: Record<string, { sppbj: string; spbj: string }>;
+}) {
+  if (!list.length) return null;
+  // satu dokumen bisa membebani beberapa kapal -> gabungkan per dokumen
+  const per: Record<string, { id: string; nama: string; sumber: string; tanggal: string; nilai: number }> = {};
+  for (const x of list) {
+    if (!per[x.id]) per[x.id] = { id: x.id, nama: x.nama, sumber: x.sumber, tanggal: x.tanggal, nilai: 0 };
+    per[x.id].nilai += x.nilai;
+  }
+  const dok = Object.values(per).sort((a, b) => b.nilai - a.nilai);
+  return (
+    <div className="mt-2 pt-2 border-t border-indigo-200">
+      <p className="text-[9px] uppercase tracking-wide text-slate-500 font-bold mb-1">{judul} · {dok.length} dokumen</p>
+      <table className="w-full text-[11px]">
+        <tbody>
+          {dok.map((d) => {
+            const n = nomor[d.id] || { sppbj: "", spbj: "" };
+            return (
+              <tr key={d.id} className="border-b border-slate-200 last:border-0">
+                <td className="py-1 pr-2 w-20">
+                  <span className={`px-1.5 py-0.5 rounded font-bold ${d.sumber === "Non PR PO" ? "bg-violet-100 text-violet-800" : "bg-sky-100 text-sky-800"}`}>
+                    {d.sumber === "Non PR PO" ? "Non PR PO" : "SPPBJ"}
+                  </span>
+                </td>
+                <td className="py-1 pr-2 text-slate-800">{d.nama}</td>
+                <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-40 text-[10px]">
+                  {n.sppbj ? <>No. {n.sppbj}</> : <span className="text-slate-400">tanpa No. SPPBJ</span>}
+                  {n.spbj ? <><br />{n.spbj}</> : null}
+                </td>
+                <td className="py-1 pr-2 text-slate-500 whitespace-nowrap w-24">{d.tanggal ? tanggalIndo(d.tanggal) : "—"}</td>
+                <td className="py-1 pr-2 text-right font-bold tabular-nums text-slate-900 whitespace-nowrap">{rupiah(Math.round(d.nilai))}</td>
+                <td className="py-1 text-right w-14">
+                  <Link href={`${d.sumber === "Non PR PO" ? "/nonpr" : "/sppbj"}?buka=${d.id}`}
+                    className="text-blue-700 font-bold hover:underline whitespace-nowrap" title="Buka dokumennya">buka →</Link>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
     </div>
   );
 }

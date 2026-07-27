@@ -59,6 +59,10 @@ export interface SppbjRequest {
   noPRSAP?: string; // Nomor PR SAP (2000xxxxxx) — kolom B & F di REKAP PJK
   kategoriRekap?: string; // KET. rekap: DOCKING(BIAYA) / DOCKING (INVESTASI) / RUTIN / INVESTASI DILUAR DOCKING
   jenisAnggaran?: "Rutin" | "Docking" | "Lainnya"; // klasifikasi Dashboard Anggaran (anti-overlap)
+  // Barang masuk PERSEDIAAN (stok), belum dipakai kapal tertentu -> tidak menggerus pagu
+  // Mata Anggaran manapun. Nilainya tetap tercatat & terlihat, hanya tak dihitung sbg serapan.
+  stokPersediaan?: boolean;
+  catatanAnggaran?: string; // keterangan bebas yang tampil di Dashboard Anggaran
   programId?: string; // tautan ke Persetujuan Biaya Lainnya (dashboard)
   stafTeknik: string; // Irsan Anugrah / Supriady Iran / manual
   deptHead: string; // default Eryanto Sidabalok

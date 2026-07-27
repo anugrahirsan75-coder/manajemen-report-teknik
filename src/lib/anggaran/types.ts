@@ -57,7 +57,13 @@ export const SINGKATAN_KAPAL: Record<string, string> = {
 };
 export const namaKapalPenuh = (s: string): string => {
   const t = (s || "").trim();
-  return SINGKATAN_KAPAL[t.toUpperCase()] || SINGKATAN_KAPAL[t] || t;
+  const sing = SINGKATAN_KAPAL[t.toUpperCase()] || SINGKATAN_KAPAL[t];
+  if (sing) return sing;
+  // Samakan ejaan & huruf besar-kecil ke daftar armada resmi, supaya "KMP. Baronang"
+  // dan "KMP. BARONANG" tidak dihitung sebagai dua kapal berbeda.
+  const inti = t.toUpperCase().replace(/^K(?:MP|M)\.?\s*/, "").replace(/\s+/g, " ").trim();
+  const hit = KAPAL_ANGGARAN.find((k) => k.replace(/^KMP\.\s*/, "").toUpperCase() === inti);
+  return hit || t;
 };
 
 // Mata Anggaran standar DOCKING (dari Persetujuan Pusat "Budget Control").

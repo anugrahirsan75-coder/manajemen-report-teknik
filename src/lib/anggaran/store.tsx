@@ -22,6 +22,8 @@ export interface PengadaanRow {
   programId?: string;     // tautan ke Persetujuan Biaya Lainnya
   items: any[];           // {kapal,jumlah,harga,hargaSpbj?}
   raw?: any;              // payload utuh (nomor, dasar pelimpahan, vendor, ttd) utk export dokumen
+  stok?: boolean;         // barang masuk PERSEDIAAN -> tidak menggerus pagu Mata Anggaran
+  catatanAnggaran?: string;
 }
 
 function rowsFromProjects(data: any[]): PengadaanRow[] {
@@ -29,7 +31,7 @@ function rowsFromProjects(data: any[]): PengadaanRow[] {
     const p = r.payload || {};
     const sumber = p.kind === "nonpr" ? "Non PR PO" : "SPPBJ";
     const ma = Array.isArray(p.mataAnggaran) ? p.mataAnggaran : p.mataAnggaran ? [p.mataAnggaran] : [];
-    return { id: r.id, sumber, nama: r.nama_kapal || p.namaPengadaan || "(tanpa nama)", tanggal: p.tanggal || "", mataAnggaran: ma, kategoriRekap: p.kategoriRekap || "", jenis: jenisAnggaranOf(p), programId: p.programId || undefined, items: p.items || [], raw: p } as PengadaanRow;
+    return { id: r.id, sumber, nama: r.nama_kapal || p.namaPengadaan || "(tanpa nama)", tanggal: p.tanggal || "", mataAnggaran: ma, kategoriRekap: p.kategoriRekap || "", jenis: jenisAnggaranOf(p), programId: p.programId || undefined, items: p.items || [], raw: p, stok: !!p.stokPersediaan, catatanAnggaran: p.catatanAnggaran || '' } as PengadaanRow;
   });
 }
 
@@ -80,7 +82,7 @@ export interface RealisasiKapal { kapal: string; nilai: number; pengadaan: Reali
 export function realisasiRutinKapal(rows: PengadaanRow[], bulan: string) {
   const per: Record<string, RealisasiKapal> = {};
   for (const p of rows) {
-    if (p.jenis !== "rutin") continue;
+    if (p.jenis !== "rutin" || p.stok) continue;   // stok persediaan tak menggerus pagu
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
     const maDefault = (p.mataAnggaran || [])[0] || "";
     for (const [kapal, v] of Object.entries(nilaiPerKapal(p))) {
@@ -101,7 +103,8 @@ export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
   const list: RealisasiItem[] = [];
   for (const p of rows) {
     // RUTIN = SPPBJ + Non PR PO ber-jenis rutin (docking dikecualikan). Anti-overlap: tepat 1 bucket.
-    if (p.jenis !== "rutin") continue;
+    // Barang yang masuk persediaan (stok) dilewati: belum menjadi beban Mata Anggaran.
+    if (p.jenis !== "rutin" || p.stok) continue;
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
     for (const [ma, v] of Object.entries(nilaiPerMA(p))) {
       const key = maKey(ma);
@@ -120,7 +123,7 @@ export function realisasiDocking(rows: PengadaanRow[], kapal: string, tahun: num
   const perKey: Record<string, number> = {};
   const list: RealisasiItem[] = [];
   for (const p of rows) {
-    if (p.jenis !== "docking") continue;
+    if (p.jenis !== "docking" || p.stok) continue;   // stok persediaan tak menggerus pagu
     if (parseInt((p.tanggal || "").slice(0, 4), 10) !== tahun) continue;
     for (const [ma, v] of Object.entries(nilaiPerMA(p, kapal))) {
       const key = maKey(ma);
@@ -138,7 +141,7 @@ export function realisasiProgram(rows: PengadaanRow[], programId: string) {
   const perKunci: Record<string, number> = {};   // `${kapal}|${maKey}`
   const list: RealisasiItem[] = [];
   for (const p of rows) {
-    if (p.programId !== programId) continue;
+    if (p.programId !== programId || p.stok) continue;   // stok persediaan tak menggerus pagu
     const maDefault = (p.mataAnggaran || [])[0] || "";
     const arr = p.items || [];
     const hasFinal = arr.some((it: any) => (it.hargaSpbj || 0) > 0);
