@@ -15,7 +15,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KAPAL_ANGGARAN, maKey, namaKapalPenuh } from "@/lib/anggaran/types";
 import { useAnggaran } from "@/lib/anggaran/store";
-import { pecahKapal } from "@/lib/kapal/nama";
+import { pecahKapal, ringkasKapal } from "@/lib/kapal/nama";
 import { useRR, idDoc } from "@/lib/rr/store";
 import {
   KELOMPOK_RR, MA_RR, kunciKelompok, RrDoc, RrItem, TipeRR,
@@ -145,10 +145,16 @@ export default function RencanaPage() {
     };
     const kumpul: Record<string, RrItem[]> = {};
     let n = 0, diabaikan = 0;
+    const lainKapal: string[] = [];   // pengadaan bulan ini yang tak menyebut kapal ini
     for (const p of pengadaan) {
       if (p.jenis !== "rutin") continue;
       if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
       const arr: any[] = p.items || [];
+      const kapalDok = Array.from(new Set(arr.flatMap((it) => pecahKapal(it.kapal || "").map(namaKapalPenuh))));
+      if (kapalDok.length && !kapalDok.includes(kapal)) {
+        lainKapal.push(`${p.nama} (${kapalDok.map((k) => ringkasKapal(k)).join(", ")})`);
+        continue;
+      }
       const adaFinal = arr.some((it) => (it.hargaSpbj || 0) > 0);
       const maDefault = (p.mataAnggaran || [])[0] || "";
       for (const it of arr) {
@@ -168,7 +174,15 @@ export default function RencanaPage() {
         n++;
       }
     }
-    if (!n) { setPesan(`Tidak ada pengadaan Rutin ${namaBulan(bulan)} untuk ${kapal}.`); setTimeout(() => setPesan(""), 4000); return; }
+    if (!n) {
+      // beri tahu SEBABNYA, bukan sekadar "tidak ada"
+      const sebab = lainKapal.length
+        ? `Ada ${lainKapal.length} pengadaan Rutin ${namaBulan(bulan)}, tetapi tak satu pun menyebut ${ringkasKapal(kapal)}: ${lainKapal.slice(0, 3).join("; ")}${lainKapal.length > 3 ? ` (dan ${lainKapal.length - 3} lagi)` : ""}.`
+        : `Belum ada pengadaan Rutin ${namaBulan(bulan)} sama sekali.`;
+      setPesan(sebab);
+      setTimeout(() => setPesan(""), 12000);
+      return;
+    }
     ubah((d) => {
       for (const [kunci, items] of Object.entries(kumpul)) {
         const g = d.kelompok.find((x) => x.kunci === kunci);
@@ -176,8 +190,12 @@ export default function RencanaPage() {
         else d.kelompok.push({ kunci, items });
       }
     });
-    setPesan(`${n} item ditarik dari SPPBJ / Non PR PO${diabaikan ? ` · ${diabaikan} item Mata Anggarannya di luar daftar Lampiran 3` : ""}. Periksa penempatan kelompoknya, lalu simpan.`);
-    setTimeout(() => setPesan(""), 9000);
+    setPesan(
+      `${n} item ditarik dari SPPBJ / Non PR PO`
+      + (diabaikan ? ` · ${diabaikan} item Mata Anggarannya di luar daftar Lampiran 3` : "")
+      + (lainKapal.length ? ` · ${lainKapal.length} pengadaan bulan ini tidak menyebut ${ringkasKapal(kapal)} (jadi tak ikut ditarik)` : "")
+      + `. Periksa penempatan kelompoknya, lalu simpan.`);
+    setTimeout(() => setPesan(""), 12000);
   };
 
   /** salin isi dari dokumen lain (bulan lalu / rencana bulan yang sama) */
