@@ -136,9 +136,12 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .dark .bg-white { background-color: #111827; }
 .dark .bg-slate-50 { background-color: #0f172a; }
 .dark .bg-slate-100 { background-color: #1e293b; }
+/* jejak/track grafik: harus tetap recessive di mode gelap, jangan menyala terang */
+.dark .bg-slate-200 { background-color: #273244; }
 .dark .bg-sky-50 { background-color: rgba(2, 132, 199, 0.14); }
 .dark .bg-blue-50 { background-color: rgba(37, 99, 235, 0.16); }
 .dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.14); }
+.dark .text-slate-900 { color: #f1f5f9; }
 .dark .text-slate-800 { color: #e5e7eb; }
 .dark .text-slate-700 { color: #d1d5db; }
 .dark .text-slate-600 { color: #cbd5e1; }
@@ -154,6 +157,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .dark .print-page .bg-blue-50 { background-color: #eff6ff; }
 .dark .print-page .bg-slate-100 { background-color: #f1f5f9; }
 .dark .print-page .text-slate-400 { color: #94a3b8; }
+.dark .print-page .text-slate-900, .dark .print-page .text-slate-800, .dark .print-page .text-slate-700, .dark .print-page .text-slate-600 { color: #000; }
 
 /* ====== Print / PDF — A4 ====== */
 @media print {

@@ -12,6 +12,7 @@ import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
 import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
 import Ringkasan from "@/components/anggaran/Ringkasan";
+import RutinSetahun from "@/components/anggaran/RutinSetahun";
 import { exportTipeExcel } from "@/lib/anggaran/exportTipe";
 import PreviewModal from "@/components/PreviewModal";
 
@@ -686,6 +687,9 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
           )}
         </div>
       </div>
+
+      {/* peta setahun: bulan mana yang over + kapal mana yang terbesar. Klik batang -> pindah bulan. */}
+      <RutinSetahun plafon={plafon} pengadaan={pengadaan} bulanAktif={bulan} onPilihBulan={setBulanSel} />
 
       {/* KPI mini */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
