@@ -7,6 +7,7 @@ import { useStore } from "@/lib/store";
 import { formatNomorSpk } from "@/lib/types";
 import { rupiahRp, tanggalIndo } from "@/lib/format";
 import { generateAll } from "@/lib/generateClient";
+import RekapSwakelola from "@/components/RekapSwakelola";
 
 const DOKUMEN = [
   { slug: "spk", no: "01", nama: "SPK Swakelola Docking", fmt: ["PDF", "Word"], icon: "📋", accent: "from-blue-500 to-indigo-600" },
@@ -121,6 +122,9 @@ export default function Home() {
           </Link>
         ))}
       </div>
+
+      {/* Rekap seluruh pekerjaan swakelola yang pernah disimpan (bukan cuma yang terbaru) */}
+      <RekapSwakelola />
 
       <footer className="mt-10 text-center text-xs text-slate-400">
         Output mengikuti template asli · format & logo persis · PDF via MS Office

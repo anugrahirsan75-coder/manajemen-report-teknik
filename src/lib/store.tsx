@@ -7,6 +7,21 @@ import { supabase, isSupabaseReady } from "./supabase";
 
 const LS_KEY = "swakelola_project";
 
+/** satu baris rekap pekerjaan swakelola yang pernah disimpan */
+export interface ProyekRingkas {
+  id: string;
+  namaKapal: string;
+  tahun: number;
+  nomorSpk: string;
+  nilai: number;
+  tanggalMulai: string;
+  tanggalSelesai: string;
+  jmlCrew: number;
+  jmlPekerjaan: number;
+  jmlFoto: number;
+  dibuatPada: string;
+}
+
 interface StoreCtx {
   data: ProjectData;
   setData: (d: ProjectData) => void;
@@ -14,6 +29,9 @@ interface StoreCtx {
   saving: boolean;
   saveRemote: () => Promise<void>;
   loadRemote: () => Promise<void>;
+  listProyek: () => Promise<ProyekRingkas[]>;
+  bukaProyek: (id: string) => Promise<void>;
+  hapusProyek: (id: string) => Promise<void>;
   supabaseReady: boolean;
   lastSaved: string | null;
 }
@@ -96,8 +114,53 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // ---- rekap pekerjaan swakelola yang pernah disimpan ----
+  // Baris swakelola = baris projects TANPA payload.kind (modul lain selalu memberi kind).
+  const listProyek = async (): Promise<ProyekRingkas[]> => {
+    if (!supabase) return [];
+    const { data: rows, error } = await supabase
+      .from("projects").select("id,nama_kapal,tahun,created_at,payload")
+      .filter("payload->>kind", "is", null)
+      .order("created_at", { ascending: false });
+    if (error) throw error;
+    return (rows || []).map((r: any) => {
+      const p = r.payload || {};
+      return {
+        id: r.id,
+        namaKapal: p.namaKapal || r.nama_kapal || "(tanpa kapal)",
+        tahun: p.tahun || r.tahun || 0,
+        nomorSpk: p.nomorSpk || "",
+        nilai: p.biayaPekerjaan || p.distribusi?.nilaiSwakelola || 0,
+        tanggalMulai: p.tanggalMulai || "",
+        tanggalSelesai: p.tanggalSelesai || "",
+        jmlCrew: (p.crew || []).length,
+        jmlPekerjaan: (p.pekerjaanDeck || []).length + (p.pekerjaanMesin || []).length,
+        jmlFoto: (p.fotoDok || []).length,
+        dibuatPada: r.created_at || "",
+      };
+    });
+  };
+
+  const bukaProyek = async (id: string) => {
+    if (!supabase) return;
+    setSaving(true);
+    try {
+      const { data: row, error } = await supabase.from("projects").select("id,payload").eq("id", id).single();
+      if (error) throw error;
+      if (row?.payload) setData({ ...sampleData, ...row.payload, id: row.id });
+    } finally { setSaving(false); }
+  };
+
+  const hapusProyek = async (id: string) => {
+    if (!supabase) return;
+    const { error } = await supabase.from("projects").delete().eq("id", id);
+    if (error) throw error;
+    // kalau yang dihapus sedang dibuka, lepaskan id-nya supaya simpan berikutnya bikin baris baru
+    if (data.id === id) update({ id: undefined });
+  };
+
   return (
-    <Ctx.Provider value={{ data, setData, update, saving, saveRemote, loadRemote, supabaseReady: isSupabaseReady, lastSaved }}>
+    <Ctx.Provider value={{ data, setData, update, saving, saveRemote, loadRemote, listProyek, bukaProyek, hapusProyek, supabaseReady: isSupabaseReady, lastSaved }}>
       {children}
     </Ctx.Provider>
   );
