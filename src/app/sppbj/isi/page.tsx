@@ -22,6 +22,7 @@ import { posProgram, cekPemakaian } from "@/lib/anggaran/program";
 import { tanggalIndo } from "@/lib/format";
 import { useMemo, useEffect, useRef, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 function SppbjIsiInner() {
   const { req, update, setItem, addItem, delItem, setItems, saveRemote, saving, newDraft } = useSppbj();
@@ -81,15 +82,22 @@ function SppbjIsiInner() {
   const rDari = Math.max(1, parseInt(dariNo || "1", 10) || 1);
   const rSampai = Math.min(nItem || 1, parseInt(sampaiNo || String(nItem || 1), 10) || nItem || 1);
   const seluruh = rDari <= 1 && rSampai >= nItem;
-  const isiKapalSemua = () => {
+  const isiKapalSemua = async () => {
     const k = (kapalMassal || kapalPertama).trim();
-    if (!k) { alert("Pilih / ketik nama kapal dulu."); return; }
-    if (!nItem) { alert("Belum ada item."); return; }
-    if (rDari > rSampai) { alert(`Rentang tak valid (${rDari} > ${rSampai}).`); return; }
+    if (!k) { void beritahu("Pilih / ketik nama kapal dulu."); return; }
+    if (!nItem) { void beritahu("Belum ada item."); return; }
+    if (rDari > rSampai) { void beritahu(`Rentang tak valid (${rDari} > ${rSampai}).`); return; }
     const target = req.items.slice(rDari - 1, rSampai);
     const beda = Array.from(new Set(target.map((i) => (i.kapal || "").trim()).filter(Boolean)));
     const cakupan = seluruh ? "SEMUA item" : `item no ${rDari}–${rSampai} (${target.length} baris)`;
-    if (beda.length > 1 && !confirm(`${cakupan} punya ${beda.length} kapal berbeda (${beda.join(", ")}).\nTimpa jadi "${k}"?`)) return;
+    if (beda.length > 1 && !(await konfirmasi({
+      nada: "perhatian", ikon: "🚢",
+      judul: `Timpa kapal jadi "${k}"?`,
+      pesan: `${cakupan} sekarang memakai ${beda.length} kapal berbeda.`,
+      rincian: beda,
+      tegasan: "Semuanya akan diganti jadi satu kapal.",
+      tombolYa: "Timpa",
+    }))) return;
     snapshot();
     setItems(req.items.map((it, i) => (i >= rDari - 1 && i <= rSampai - 1 ? { ...it, kapal: k } : it)));
   };
@@ -105,12 +113,20 @@ function SppbjIsiInner() {
     const kapalQ = qs.get("kapal") || "";
     const maQ = qs.get("ma") || "";
     const isiDraf = req.items.length > 0 || (req.namaPengadaan || "").trim();
-    if (isiDraf && !confirm("Draf SPPBJ saat ini akan diganti dengan pengadaan baru dari pos persetujuan. Lanjut?")) return;
+    (async () => {
+    if (isiDraf && !(await konfirmasi({
+      nada: "perhatian", ikon: "📄",
+      judul: "Ganti draf yang sedang dibuka?",
+      pesan: "Draf SPPBJ saat ini akan diganti dengan pengadaan baru dari pos persetujuan.",
+      tegasan: "Isi draf sekarang hilang kalau belum disimpan.",
+      tombolYa: "Ganti draf",
+    }))) return;
     newDraft();
     setTimeout(() => {
       update({ programId: pid, jenisAnggaran: "Lainnya", mataAnggaran: maQ ? [maQ] : [] });
       if (maQ || kapalQ) setItems([{ ...emptySppbjItem(kapalQ), satuan: "Ls", mataAnggaran: maQ || undefined }]);
     }, 0);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qs]);
 
@@ -141,32 +157,54 @@ function SppbjIsiInner() {
     return { pr, ...cekPemakaian(pos, req) };
   }, [req.programId, req.items, req.mataAnggaran, req.id, program, pengadaan]);
 
-  const lolosGuard = (): boolean => {
+  const lolosGuard = async (): Promise<boolean> => {
     if (progInfo && (progInfo.over.length || progInfo.tanpaPos.length)) {
-      const pesan = [
-        ...progInfo.over.map((o) => `• ${o.kapal} · ${o.ma} lebih ${rupiah(Math.round(o.lebih))}`),
-        ...progInfo.tanpaPos.map((o) => `• ${o.kapal} · ${o.ma} tak ada di surat ini`),
-      ].join("\n");
-      if (!confirm(`⚠ Pemakaian tak cocok dgn pagu surat "${progInfo.pr.nama}":\n${pesan}\n\nTetap lanjut?`)) return false;
+      if (!(await konfirmasi({
+        nada: "perhatian", ikon: "📊",
+        judul: "Pemakaian tak cocok dengan pagu surat",
+        pesan: `Surat persetujuan: "${progInfo.pr.nama}".`,
+        rincian: [
+          ...progInfo.over.map((o) => `${o.kapal} · ${o.ma} — LEBIH ${rupiah(Math.round(o.lebih))}`),
+          ...progInfo.tanpaPos.map((o) => `${o.kapal} · ${o.ma} — pos ini tak ada di surat`),
+        ],
+        tegasan: "Kalau diteruskan, pemakaian melebihi yang disetujui pusat.",
+        tombolYa: "Tetap lanjut",
+      }))) return false;
     }
-    if (rutinInfo?.over) return confirm(`⚠ OVERBUDGET pagu RUTIN.\nPengadaan ini ${rupiah(rutinInfo.nilaiIni)} melebihi sisa pagu ${rupiah(rutinInfo.sisa)} (lewat ${rupiah(rutinInfo.nilaiIni - rutinInfo.sisa)}).\nTetap lanjut?`);
+    if (rutinInfo?.over) return await konfirmasi({
+      nada: "perhatian", ikon: "🧭",
+      judul: "Overbudget pagu Rutin",
+      pesan: "Pengadaan ini melewati sisa pagu Rutin bulan ini.",
+      rincian: [
+        `Nilai pengadaan ini ${rupiah(rutinInfo.nilaiIni)}`,
+        `Sisa pagu ${rupiah(rutinInfo.sisa)}`,
+        `Lewat ${rupiah(rutinInfo.nilaiIni - rutinInfo.sisa)}`,
+      ],
+      tegasan: "Lebihnya perlu dilaporkan ke pusat.",
+      tombolYa: "Tetap lanjut",
+    });
     return true;
   };
-  const simpanGuard = async () => { if (lolosGuard()) await saveRemote(); };
+  const simpanGuard = async () => { if (await lolosGuard()) await saveRemote(); };
 
   // kirim pengadaan ini ke spreadsheet REKAP (tab bulan sesuai tanggal)
   const kirimRekap = async () => {
-    if (!lolosGuard()) return;
-    if (!(req.noPRSAP || "").trim() && !(req.noSPPBJ || "").trim()) { alert("Isi No. PR SAP dulu — jadi kunci baris di rekap."); return; }
-    if (!req.kategoriRekap && !confirm("Kategori Rekap (KET.) belum dipilih. Lanjut kirim tanpa KET?")) return;
+    if (!(await lolosGuard())) return;
+    if (!(req.noPRSAP || "").trim() && !(req.noSPPBJ || "").trim()) { void beritahu("Isi No. PR SAP dulu — jadi kunci baris di rekap."); return; }
+    if (!req.kategoriRekap && !(await konfirmasi({
+      nada: "perhatian", ikon: "🏷️",
+      judul: "Kategori Rekap belum dipilih",
+      pesan: "Kolom KET. di spreadsheet rekap akan kosong.",
+      tombolYa: "Kirim tanpa KET",
+    }))) return;
     setRekapBusy(true);
     try {
       const r = await sendToRekap([buildRekapRow(req)]);
-      if (r.ok) { const res = r.results?.[0]; alert(`Terkirim ke rekap → tab "${res?.sheet || "-"}" (${res?.action === "append" ? "baris baru" : "diperbarui"}).`); }
-      else alert("Gagal kirim: " + r.error);
+      if (r.ok) { const res = r.results?.[0]; void beritahu(`Terkirim ke rekap → tab "${res?.sheet || "-"}" (${res?.action === "append" ? "baris baru" : "diperbarui"}).`); }
+      else void beritahu("Gagal kirim: " + r.error);
     } catch (e: any) {
-      if (e instanceof NoRekapConfigError) alert("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET di server (lihat docs/rekap-apps-script.gs).");
-      else alert("Gagal: " + (e?.message || e));
+      if (e instanceof NoRekapConfigError) void beritahu("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET di server (lihat docs/rekap-apps-script.gs).");
+      else void beritahu("Gagal: " + (e?.message || e));
     } finally { setRekapBusy(false); }
   };
 
@@ -403,7 +441,7 @@ function SppbjIsiInner() {
             }}
             onTarik={(pos) => { snapshot(); setItems([...req.items, { ...emptySppbjItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls", mataAnggaran: pos.ma }]); }}
             onTarikSemua={(list) => {
-              if (!list.length) { alert("Semua pos di surat ini sudah habis terpakai."); return; }
+              if (!list.length) { void beritahu("Semua pos di surat ini sudah habis terpakai."); return; }
               snapshot();
               setItems([...req.items, ...list.map((pos) => ({ ...emptySppbjItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls", mataAnggaran: pos.ma }))]);
             }}

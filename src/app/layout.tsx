@@ -7,6 +7,7 @@ import { SppbjProvider } from "@/lib/sppbj/store";
 import { NonprProvider } from "@/lib/nonpr/store";
 import { ServisProvider } from "@/lib/servis/store";
 import Sidebar from "@/components/Sidebar";
+import { PenyediaDialog } from "@/components/Konfirmasi";
 
 const jakarta = Plus_Jakarta_Sans({ subsets: ["latin"], display: "swap", variable: "--font-sans" });
 
@@ -35,6 +36,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                     <Sidebar />
                     <div className="flex-1 min-w-0">{children}</div>
                   </div>
+                  {/* satu dialog untuk seluruh aplikasi — dipakai konfirmasi() & beritahu() */}
+                  <PenyediaDialog />
                 </ServisProvider>
               </NonprProvider>
             </SppbjProvider>

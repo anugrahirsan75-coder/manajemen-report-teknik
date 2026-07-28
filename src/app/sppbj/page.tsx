@@ -14,6 +14,7 @@ import PreviewModal from "@/components/PreviewModal";
 import JenisBadge from "@/components/JenisBadge";
 import { useAnggaran } from "@/lib/anggaran/store";
 import { jenisAnggaranOf } from "@/lib/anggaran/types";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 export default function SppbjList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
@@ -65,22 +66,34 @@ export default function SppbjList() {
     else setBukaGagal("Pengadaan yang dituju tak ditemukan — mungkin sudah dihapus.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bukaId, rows, loading]);
-  const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
+  const hapus = async (id: string, nama: string) => {
+    if (!(await konfirmasi({
+      nada: "bahaya", judul: "Hapus pengadaan ini?", pesan: nama,
+      tegasan: "Seluruh itemnya ikut terhapus dan tak bisa dikembalikan.", tombolYa: "Ya, hapus",
+    }))) return;
+    await deleteRemote(id); refresh();
+  };
 
   // Sync ke spreadsheet REKAP PJK (semua pengadaan di filter -> tab bulan masing-masing)
   const [rekapBusy, setRekapBusy] = useState(false);
   const syncRekap = async () => {
     const rows = filtered.map((r) => buildRekapRow(r.payload)).filter((x) => x.nomorSppbj && x.month);
-    if (!rows.length) { alert("Tak ada pengadaan dgn No. PR SAP di filter ini. Isi No. PR SAP dulu."); return; }
-    if (!confirm(`Kirim ${rows.length} pengadaan ke spreadsheet REKAP?\n(pengadaan tanpa No. PR SAP dilewati)`)) return;
+    if (!rows.length) { void beritahu("Tak ada pengadaan dgn No. PR SAP di filter ini. Isi No. PR SAP dulu."); return; }
+    if (!(await konfirmasi({
+      nada: "biasa", ikon: "📊",
+      judul: `Kirim ${rows.length} pengadaan ke spreadsheet REKAP?`,
+      pesan: "Tiap pengadaan masuk ke tab bulannya masing-masing; baris yang sudah ada akan diperbarui.",
+      tegasan: "Pengadaan tanpa No. PR SAP dilewati.",
+      tombolYa: `Kirim ${rows.length} baris`,
+    }))) return;
     setRekapBusy(true);
     try {
       const r = await sendToRekap(rows);
-      if (r.ok) alert(`Terkirim ${r.results?.length || rows.length} baris ke rekap (per tab bulan).`);
-      else alert("Gagal kirim: " + r.error);
+      if (r.ok) void beritahu(`Terkirim ${r.results?.length || rows.length} baris ke rekap (per tab bulan).`);
+      else void beritahu("Gagal kirim: " + r.error);
     } catch (e: any) {
-      if (e instanceof NoRekapConfigError) alert("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET (lihat docs/rekap-apps-script.gs).");
-      else alert("Gagal: " + (e?.message || e));
+      if (e instanceof NoRekapConfigError) void beritahu("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET (lihat docs/rekap-apps-script.gs).");
+      else void beritahu("Gagal: " + (e?.message || e));
     } finally { setRekapBusy(false); }
   };
 
@@ -115,9 +128,9 @@ export default function SppbjList() {
           }
         });
       });
-      if (!out.length) { alert("Belum ada item ber-kode katalog dengan Harga SPBJ final.\nPilih item via 📚 Katalog di form, lalu isi Harga SPBJ (Fase 2)."); return; }
+      if (!out.length) { void beritahu("Belum ada item ber-kode katalog dengan Harga SPBJ final.\nPilih item via 📚 Katalog di form, lalu isi Harga SPBJ (Fase 2)."); return; }
       const res = await fetch("/api/sppbj/usulan-harga-export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: out }) });
-      if (!res.ok) { alert("Gagal ekspor: " + res.status); return; }
+      if (!res.ok) { void beritahu("Gagal ekspor: " + res.status); return; }
       const blob = await res.blob();
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a"); a.href = url; a.download = `Usulan_Harga_Riil_${new Date().toISOString().slice(0, 10)}.xlsx`; a.click(); URL.revokeObjectURL(url);

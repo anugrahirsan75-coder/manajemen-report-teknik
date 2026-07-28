@@ -9,6 +9,7 @@ import { KAPAL_LIST_NONPR, VENDOR_NONPR } from "@/lib/nonpr/db";
 import { Field, Input, Section } from "@/components/Field";
 
 import FotoUploader from "@/components/FotoUploader";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 export default function ServisIsi() {
   const { editing, setEditing, saveItem, deleteItem } = useServis();
@@ -30,15 +31,18 @@ export default function ServisIsi() {
   const addFotos = (urls: string[]) => set({ foto: [...(it.foto || []), ...urls].slice(0, 3) });
 
   const simpan = async () => {
-    if (!it.namaBarang.trim()) { alert("Nama barang wajib diisi."); return; }
-    if (!it.kapal.trim()) { alert("Kapal wajib diisi."); return; }
+    if (!it.namaBarang.trim()) { void beritahu("Nama barang wajib diisi."); return; }
+    if (!it.kapal.trim()) { void beritahu("Kapal wajib diisi."); return; }
     setSaving(true);
     try { await saveItem(it); setEditing(null); router.push("/servis"); }
     finally { setSaving(false); }
   };
 
   const hapus = async () => {
-    if (!confirm(`Hapus "${it.namaBarang}"?`)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", judul: "Hapus barang servis ini?", pesan: it.namaBarang,
+      tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus",
+    }))) return;
     await deleteItem(it.id); setEditing(null); router.push("/servis");
   };
 

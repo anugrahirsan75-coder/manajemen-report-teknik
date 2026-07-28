@@ -10,6 +10,7 @@ import {
 } from "@/lib/kapal/types";
 import { uploadInventaris, removeInventaris } from "@/lib/kapal/upload";
 import { SailingWaves, EmptyShip } from "@/components/MaritimeFx";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 export default function ShipDatabasePage() {
   const { ships, loading, saving, lastSaved, supabaseReady, updateShip, saveAll } = useKapalDb();
@@ -170,11 +171,15 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
       for (const f of Array.from(files)) added.push(await uploadInventaris(draft.id, f));
       const next = { ...draft, inventaris: [...draft.inventaris, ...added] };
       setDraft(next); await onPersist(next);
-    } catch (e: any) { alert("Gagal unggah: " + (e?.message || e)); }
+    } catch (e: any) { void beritahu("Gagal unggah: " + (e?.message || e)); }
     finally { setUploading(false); }
   };
   const onDeleteFile = async (f: ShipFile) => {
-    if (!confirm(`Hapus file "${f.name}"?`)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", judul: `Hapus file "${f.name}"?`,
+      pesan: "Berkas ini dibuang dari daftar lampiran kapal.",
+      tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus",
+    }))) return;
     await removeInventaris(f);
     const next = { ...draft, inventaris: draft.inventaris.filter((x) => x.url !== f.url) };
     setDraft(next); await onPersist(next);

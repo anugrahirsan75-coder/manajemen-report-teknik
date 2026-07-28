@@ -8,6 +8,7 @@ import { useServis } from "@/lib/servis/store";
 import { ServisItem, ServisStatus, SERVIS_STATUS_LABEL, SERVIS_STATUS_COLOR, newServisItem, lamaHari, telatHari } from "@/lib/servis/types";
 import { KAPAL_LIST_NONPR } from "@/lib/nonpr/db";
 import { tanggalIndo, rupiah, bulanTahun } from "@/lib/format";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 export default function ServisList() {
   const { items, loading, refresh, deleteItem, setEditing, supabaseReady } = useServis();
@@ -43,10 +44,16 @@ export default function ServisList() {
 
   const tambah = () => { setEditing(newServisItem()); router.push("/servis/isi"); };
   const edit = (it: ServisItem) => { setEditing(it); router.push("/servis/isi"); };
-  const hapus = async (it: ServisItem) => { if (!confirm(`Hapus "${it.namaBarang}"?`)) return; await deleteItem(it.id); };
+  const hapus = async (it: ServisItem) => {
+    if (!(await konfirmasi({
+      nada: "bahaya", judul: "Hapus barang servis ini?", pesan: it.namaBarang,
+      tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus",
+    }))) return;
+    await deleteItem(it.id);
+  };
 
   const exportExcel = async () => {
-    if (!filtered.length) { alert("Tidak ada data untuk diekspor."); return; }
+    if (!filtered.length) { void beritahu("Tidak ada data untuk diekspor."); return; }
     setBusy(true);
     try {
       const res = await fetch("/api/servis/export", {
@@ -56,7 +63,7 @@ export default function ServisList() {
       if (!res.ok) { let m = res.statusText; try { m = (await res.json()).error ?? m; } catch {} throw new Error(m); }
       const blob = await res.blob();
       saveAs(blob, `Monitoring Servis Bengkel ${new Date().toISOString().slice(0, 10)}.xlsx`);
-    } catch (e: any) { alert("Gagal export: " + (e?.message ?? e)); } finally { setBusy(false); }
+    } catch (e: any) { void beritahu("Gagal export: " + (e?.message ?? e)); } finally { setBusy(false); }
   };
 
   return (

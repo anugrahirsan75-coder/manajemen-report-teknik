@@ -5,6 +5,7 @@ import { useState, Fragment } from "react";
 import { saveAs } from "file-saver";
 import { Section } from "@/components/Field";
 import type { CekResult } from "@/lib/material/kodeCheck";
+import { beritahu } from "@/components/Konfirmasi";
 
 interface Row { id: string; nama: string; partNumber: string }
 const uid = () => globalThis.crypto?.randomUUID?.() ?? String(Math.random());
@@ -46,7 +47,7 @@ export default function CekKodeMaterial() {
 
   const salinKolom = async (kolom: string, judul: string) => {
     const isi = nilaiKolom(kolom);
-    if (!isi.length) { alert("Belum ada item."); return; }
+    if (!isi.length) { void beritahu("Belum ada item."); return; }
     const teks = isi.join("\n"); // 1 nilai per baris -> tempel langsung ke kolom Excel
     try {
       await navigator.clipboard.writeText(teks);
@@ -78,13 +79,13 @@ export default function CekKodeMaterial() {
           lainnya: x?.kode2 ? `${x.kode2} — ${x.desc2 || ""}` : "",
         };
       });
-    if (!out.length) { alert("Belum ada item."); return; }
+    if (!out.length) { void beritahu("Belum ada item."); return; }
     setExporting(true);
     try {
       const r = await fetch("/api/material/cek-export", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ rows: out }) });
       if (!r.ok) throw new Error((await r.json()).error || "Gagal export");
       saveAs(await r.blob(), `Cek Kode Material ${new Date().toISOString().slice(0, 10)}.xlsx`);
-    } catch (e: any) { alert("Gagal: " + (e?.message ?? e)); } finally { setExporting(false); }
+    } catch (e: any) { void beritahu("Gagal: " + (e?.message ?? e)); } finally { setExporting(false); }
   };
 
   const setRow = (id: string, patch: Partial<Row>) =>
@@ -132,7 +133,7 @@ export default function CekKodeMaterial() {
       setOpen({});
       if (j.meta) setMeta(j.meta);
     } catch (e: any) {
-      alert("Gagal: " + (e?.message ?? e));
+      void beritahu("Gagal: " + (e?.message ?? e));
     } finally {
       setBusy(false);
     }
@@ -148,9 +149,9 @@ export default function CekKodeMaterial() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Gagal sinkron");
       setMeta(j.meta);
-      alert(`DB tersinkron: ${j.meta.count} kode (${j.meta.source === "live" ? "live dari spreadsheet" : "fallback bundled"}).`);
+      void beritahu(`DB tersinkron: ${j.meta.count} kode (${j.meta.source === "live" ? "live dari spreadsheet" : "fallback bundled"}).`);
     } catch (e: any) {
-      alert("Gagal sinkron: " + (e?.message ?? e));
+      void beritahu("Gagal sinkron: " + (e?.message ?? e));
     } finally {
       setSyncing(false);
     }

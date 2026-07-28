@@ -58,26 +58,69 @@ const NADA: Record<NadaKonfirmasi, {
   },
 };
 
-export function useKonfirmasi() {
-  const [opsi, setOpsi] = useState<OpsiKonfirmasi | null>(null);
-  const jawab = useRef<((ya: boolean) => void) | null>(null);
+/** dipakai internal: satu antrean untuk seluruh aplikasi */
+interface Antrean extends OpsiKonfirmasi { hanyaOk?: boolean; res: (ya: boolean) => void }
+let dorong: ((a: Antrean) => void) | null = null;
 
-  const konfirmasi = useCallback((o: OpsiKonfirmasi) => new Promise<boolean>((res) => {
-    jawab.current = res;
-    setOpsi(o);
-  }), []);
-
-  const tutup = useCallback((ya: boolean) => {
-    setOpsi(null);
-    jawab.current?.(ya);
-    jawab.current = null;
-  }, []);
-
-  const dialogKonfirmasi = opsi ? <DialogKonfirmasi opsi={opsi} onJawab={tutup} /> : null;
-  return { konfirmasi, dialogKonfirmasi };
+/**
+ * Tanya ya/tidak. Bisa dipanggil dari mana saja (termasuk file store non-React),
+ * tanpa hook. Kalau penyedia belum terpasang (SSR / dipanggil terlalu awal),
+ * jatuh ke confirm() bawaan supaya alur tetap jalan.
+ */
+export function konfirmasi(o: OpsiKonfirmasi | string): Promise<boolean> {
+  const opsi: OpsiKonfirmasi = typeof o === "string" ? { judul: o } : o;
+  if (!dorong) {
+    if (typeof window === "undefined") return Promise.resolve(false);
+    return Promise.resolve(window.confirm([opsi.judul, opsi.pesan, ...(opsi.rincian || []), opsi.tegasan].filter(Boolean).join("\n")));
+  }
+  return new Promise<boolean>((res) => dorong!({ ...opsi, res }));
 }
 
-function DialogKonfirmasi({ opsi, onJawab }: { opsi: OpsiKonfirmasi; onJawab: (ya: boolean) => void }) {
+/**
+ * Beri tahu saja (pengganti alert): satu tombol, tak ada pilihan.
+ * Bentuk singkat: beritahu("Gagal simpan: ...") — otomatis bernada bahaya
+ * kalau kalimatnya menyebut gagal/error.
+ */
+export function beritahu(o: OpsiKonfirmasi | string): Promise<void> {
+  let opsi: OpsiKonfirmasi;
+  if (typeof o === "string") {
+    const teks = o.trim();
+    const buruk = /gagal|error|tidak bisa|tak bisa|belum|salah|kosong|wajib|minimal/i.test(teks);
+    // baris pertama jadi judul kalau pesannya panjang & bertingkat
+    const baris = teks.split("\n");
+    const judul = baris.length > 1 && baris[0].length <= 90 ? baris[0].replace(/[:：]\s*$/, "") : teks.slice(0, 90);
+    opsi = baris.length > 1 && baris[0].length <= 90
+      ? { judul, pesan: baris.slice(1).join("\n").trim() || undefined, nada: buruk ? "perhatian" : "biasa" }
+      : { judul: teks, nada: buruk ? "perhatian" : "biasa" };
+  } else opsi = o;
+
+  if (!dorong) {
+    if (typeof window !== "undefined") window.alert([opsi.judul, opsi.pesan, ...(opsi.rincian || []), opsi.tegasan].filter(Boolean).join("\n"));
+    return Promise.resolve();
+  }
+  return new Promise<void>((res) => dorong!({ ...opsi, hanyaOk: true, res: () => res() }));
+}
+
+/** Pasang SEKALI di layout — menyediakan dialog untuk seluruh halaman & store. */
+export function PenyediaDialog() {
+  const [antre, setAntre] = useState<Antrean[]>([]);
+  useEffect(() => {
+    dorong = (a) => setAntre((q) => [...q, a]);
+    return () => { dorong = null; };
+  }, []);
+  const kini = antre[0];
+  const tutup = useCallback((ya: boolean) => {
+    setAntre((q) => { q[0]?.res(ya); return q.slice(1); });
+  }, []);
+  return kini ? <DialogKonfirmasi opsi={kini} hanyaOk={kini.hanyaOk} onJawab={tutup} /> : null;
+}
+
+/** Bentuk lama (berbasis hook) — tetap ada supaya pemakaian yang sudah jalan tak perlu diubah. */
+export function useKonfirmasi() {
+  return { konfirmasi, beritahu, dialogKonfirmasi: null as React.ReactNode };
+}
+
+function DialogKonfirmasi({ opsi, onJawab, hanyaOk }: { opsi: OpsiKonfirmasi; onJawab: (ya: boolean) => void; hanyaOk?: boolean }) {
   const n = NADA[opsi.nada || "biasa"];
   const yaRef = useRef<HTMLButtonElement>(null);
   const tidakRef = useRef<HTMLButtonElement>(null);

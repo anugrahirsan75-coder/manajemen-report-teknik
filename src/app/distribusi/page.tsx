@@ -6,6 +6,7 @@ import { sampleData } from "@/lib/sampleData";
 import { Distribusi, DistribusiGroup, hitungDistribusi, brutoUntukJabatan } from "@/lib/types";
 import { rupiah, rupiah5 } from "@/lib/format";
 import { Input } from "@/components/Field";
+import { beritahu } from "@/components/Konfirmasi";
 
 export default function DistribusiPage() {
   const { data, update } = useStore();
@@ -28,7 +29,7 @@ export default function DistribusiPage() {
       return c;
     });
     update({ crew, biayaPekerjaan: dist.nilaiSwakelola });
-    alert(`Nilai Bruto terisi untuk ${matched}/${data.crew.length} crew (berdasarkan kecocokan jabatan).`);
+    void beritahu(`Nilai Bruto terisi untuk ${matched}/${data.crew.length} crew (berdasarkan kecocokan jabatan).`);
   };
 
   return (

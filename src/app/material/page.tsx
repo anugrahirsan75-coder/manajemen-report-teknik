@@ -7,6 +7,7 @@ import { useMaterial } from "@/lib/material/store";
 import { itemKategori } from "@/lib/material/types";
 import { bulanTahun } from "@/lib/format";
 import { generateMaterial, generateMaterialAll, MATERIAL_DOCS } from "@/lib/material/generateClient";
+import { beritahu } from "@/components/Konfirmasi";
 
 export default function MaterialDashboard() {
   const { req } = useMaterial();
@@ -16,7 +17,7 @@ export default function MaterialDashboard() {
 
   const run = async (fn: () => Promise<void>, key: string) => {
     setBusy(key);
-    try { await fn(); } catch (e: any) { alert("Gagal: " + (e?.message ?? e)); } finally { setBusy(null); }
+    try { await fn(); } catch (e: any) { void beritahu("Gagal: " + (e?.message ?? e)); } finally { setBusy(null); }
   };
 
   return (

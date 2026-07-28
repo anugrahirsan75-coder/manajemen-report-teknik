@@ -8,6 +8,7 @@ import { formatNomorSpk } from "@/lib/types";
 import { rupiahRp, tanggalIndo } from "@/lib/format";
 import { generateAll } from "@/lib/generateClient";
 import RekapSwakelola from "@/components/RekapSwakelola";
+import { beritahu } from "@/components/Konfirmasi";
 
 const DOKUMEN = [
   { slug: "spk", no: "01", nama: "SPK Swakelola Docking", fmt: ["PDF", "Word"], icon: "📋", accent: "from-blue-500 to-indigo-600" },
@@ -35,7 +36,7 @@ export default function Home() {
     try {
       await generateAll(data);
     } catch (e: any) {
-      alert("Gagal generate semua: " + (e?.message ?? e));
+      void beritahu("Gagal generate semua: " + (e?.message ?? e));
     } finally {
       setZipBusy(false);
     }

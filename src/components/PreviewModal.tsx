@@ -23,13 +23,18 @@ export default function PreviewModal({ jenis, payload, onTutup, onBuka }: Previe
   const p = payload || {};
   const isi = (
     <div className="fixed inset-0 z-[120] bg-black/50 overflow-auto no-print-bg" onMouseDown={onTutup}>
-      <div className="min-h-full py-6" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="no-print max-w-[210mm] mx-auto px-3 flex flex-wrap items-center gap-2 mb-2">
+      {/* pembungkus TIDAK menahan klik: area gelap di kiri/kanan kertas harus tetap menutup.
+          Yang menahan hanya bilah tombol & lembar kertasnya sendiri (lihat di bawah). */}
+      <div className="min-h-full py-6">
+        <div onMouseDown={(e) => e.stopPropagation()}
+          className="no-print max-w-[210mm] mx-auto px-3 flex flex-wrap items-center gap-2 mb-2">
           <span className="text-white font-bold text-sm truncate flex-1">{p.namaPengadaan || "(tanpa nama)"}</span>
           {onBuka && <button onClick={onBuka} className="btn btn-primary text-xs">Buka detail →</button>}
           <button onClick={() => window.print()} className="btn btn-ghost text-xs">🖨️ Cetak</button>
           <button onClick={onTutup} className="btn btn-ghost text-xs">✕ Tutup</button>
         </div>
+        {/* w-fit: pembungkus hanya selebar kertas, supaya klik di area gelap kiri/kanan tetap menutup */}
+        <div className="w-fit mx-auto" onMouseDown={(e) => e.stopPropagation()}>
         <PreviewPengadaan
           jenis={jenis}
           judul={jenis === "SPPBJ" ? "Daftar Kebutuhan Pengadaan Barang/Jasa" : "Daftar Kebutuhan Pengadaan (Non PR PO)"}
@@ -45,6 +50,7 @@ export default function PreviewModal({ jenis, payload, onTutup, onBuka }: Previe
           deptHead={p.deptHead}
           items={p.items || []}
         />
+        </div>
       </div>
     </div>
   );

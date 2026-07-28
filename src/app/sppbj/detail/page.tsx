@@ -9,6 +9,7 @@ import { rupiahRp, bulanTahun } from "@/lib/format";
 import { generateSppbjDoc, generateSppbjAll } from "@/lib/sppbj/generateClient";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
 import { fullNoKontrak } from "@/lib/sppbj/types";
+import { beritahu } from "@/components/Konfirmasi";
 
 export default function SppbjDetail() {
   const { req, update, saveRemote, saving, lastSaved } = useSppbj();
@@ -18,7 +19,7 @@ export default function SppbjDetail() {
   const fase2 = req.status !== "menunggu_spbj";
 
   const run = async (fn: () => Promise<void>, key: string) => {
-    setBusy(key); try { await fn(); } catch (e: any) { alert("Gagal: " + (e?.message ?? e)); } finally { setBusy(null); }
+    setBusy(key); try { await fn(); } catch (e: any) { void beritahu("Gagal: " + (e?.message ?? e)); } finally { setBusy(null); }
   };
 
   return (

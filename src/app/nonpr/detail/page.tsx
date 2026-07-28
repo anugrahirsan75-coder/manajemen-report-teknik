@@ -8,6 +8,7 @@ import { generateNonpr } from "@/lib/nonpr/generateClient";
 import { kapalUnikNonpr, nonprTotal } from "@/lib/nonpr/types";
 import { MAX_NILAI_NONPR } from "@/lib/nonpr/db";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
+import { beritahu } from "@/components/Konfirmasi";
 
 export default function NonprDetail() {
   const { req, saveRemote, saving } = useNonpr();
@@ -19,7 +20,7 @@ export default function NonprDetail() {
 
   const run = async (fn: () => Promise<void>, key: string) => {
     setBusy(key);
-    try { await fn(); } catch (e: any) { alert("Gagal: " + (e?.message ?? e)); } finally { setBusy(null); }
+    try { await fn(); } catch (e: any) { void beritahu("Gagal: " + (e?.message ?? e)); } finally { setBusy(null); }
   };
 
   return (

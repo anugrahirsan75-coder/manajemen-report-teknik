@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { ProjectData } from "@/lib/types";
 import { generateDoc } from "@/lib/generateClient";
+import { beritahu } from "@/components/Konfirmasi";
 
 interface Props {
   title: string;
@@ -21,7 +22,7 @@ export default function DocToolbar({ title, slug, data, nativeKind, extra }: Pro
     try {
       await generateDoc(slug, key, data);
     } catch (e: any) {
-      alert("Gagal generate: " + (e?.message ?? e));
+      void beritahu("Gagal generate: " + (e?.message ?? e));
     } finally {
       setBusy(null);
     }

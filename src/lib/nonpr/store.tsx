@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { NonprRequest, NonprItem, emptyNonprItem, newNonprDraft } from "./types";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { catatBackup } from "@/lib/backup/local";
+import { beritahu } from "@/components/Konfirmasi";
 
 const LS_KEY = "nonpr_request";
 
@@ -54,7 +55,7 @@ export function NonprProvider({ children }: { children: React.ReactNode }) {
       catatBackup("nonpr", row?.id ?? req.id, payload, req.namaPengadaan);
       setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
     } catch (e: any) {
-      alert("Gagal simpan: " + e.message + "\nData tersimpan lokal.");
+      void beritahu("Gagal simpan: " + e.message + "\nData tersimpan lokal.");
       persist(req);
     } finally { setSaving(false); }
   };
@@ -63,13 +64,13 @@ export function NonprProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) return [];
     const { data, error } = await supabase.from("projects").select("id,nama_kapal,payload,created_at")
       .filter("payload->>kind", "eq", "nonpr").order("created_at", { ascending: false });
-    if (error) { alert("Gagal muat riwayat: " + error.message); return []; }
+    if (error) { void beritahu("Gagal muat riwayat: " + error.message); return []; }
     return (data ?? []).map((r: any) => ({ id: r.id, nama_pengadaan: r.nama_kapal, payload: r.payload, created_at: r.created_at }));
   };
   const deleteRemote = async (id: string) => {
     if (!supabase) return;
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) alert("Gagal hapus: " + error.message);
+    if (error) void beritahu("Gagal hapus: " + error.message);
   };
   const loadById = (row: any) => { const n = { ...newNonprDraft(), ...row.payload, id: row.id }; if (!Array.isArray(n.items)) n.items = []; setReq(n); persist(n); };
   const newDraft = () => { const n = newNonprDraft(); setReq(n); persist(n); };

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { ProjectData } from "./types";
 import { sampleData } from "./sampleData";
 import { supabase, isSupabaseReady } from "./supabase";
+import { beritahu } from "@/components/Konfirmasi";
 
 const LS_KEY = "swakelola_project";
 
@@ -88,7 +89,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (row?.id) update({ id: row.id });
       setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
     } catch (e: any) {
-      alert("Gagal simpan ke Supabase: " + e.message + "\nData tersimpan lokal.");
+      void beritahu("Gagal simpan ke Supabase: " + e.message + "\nData tersimpan lokal.");
       persistLocal(data);
     } finally {
       setSaving(false);
@@ -108,7 +109,7 @@ export function StoreProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       if (rows && rows[0]?.payload) setData({ ...rows[0].payload, id: rows[0].id });
     } catch (e: any) {
-      alert("Gagal load: " + e.message);
+      void beritahu("Gagal load: " + e.message);
     } finally {
       setSaving(false);
     }

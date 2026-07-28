@@ -12,6 +12,7 @@ import PreviewModal from "@/components/PreviewModal";
 import JenisBadge from "@/components/JenisBadge";
 import { useAnggaran } from "@/lib/anggaran/store";
 import { jenisAnggaranOf } from "@/lib/anggaran/types";
+import { konfirmasi } from "@/components/Konfirmasi";
 
 export default function NonprList() {
   const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useNonpr();
@@ -49,7 +50,13 @@ export default function NonprList() {
     else setBukaGagal("Pengadaan yang dituju tak ditemukan — mungkin sudah dihapus.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bukaId, rows, loading]);
-  const hapus = async (id: string, nama: string) => { if (!confirm(`Hapus "${nama}"?`)) return; await deleteRemote(id); refresh(); };
+  const hapus = async (id: string, nama: string) => {
+    if (!(await konfirmasi({
+      nada: "bahaya", judul: "Hapus pengadaan ini?", pesan: nama,
+      tegasan: "Seluruh itemnya ikut terhapus dan tak bisa dikembalikan.", tombolYa: "Ya, hapus",
+    }))) return;
+    await deleteRemote(id); refresh();
+  };
 
   return (
     <main className="max-w-6xl mx-auto px-5 py-8">

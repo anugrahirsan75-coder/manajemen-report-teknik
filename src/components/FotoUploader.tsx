@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { uploadFoto } from "@/lib/fotoStorage";
+import { beritahu } from "@/components/Konfirmasi";
 
 interface Props {
   onAdd: (urls: string[]) => void;            // tambah ke koleksi luar (maks ditegakkan pemanggil)
@@ -53,7 +54,7 @@ export default function FotoUploader({ onAdd, max, label = "Pilih / Tarik / Past
   const readClipboard = async () => {
     try {
       if (!navigator.clipboard?.read) {
-        alert("Browser tidak mendukung navigator.clipboard.read(). Gunakan Ctrl+V atau drag-drop.");
+        void beritahu("Browser tidak mendukung navigator.clipboard.read(). Gunakan Ctrl+V atau drag-drop.");
         return;
       }
       const items = await navigator.clipboard.read();
@@ -68,15 +69,15 @@ export default function FotoUploader({ onAdd, max, label = "Pilih / Tarik / Past
         }
       }
       if (!files.length) {
-        alert("Tidak ada gambar di clipboard.");
+        void beritahu("Tidak ada gambar di clipboard.");
         return;
       }
       handleFiles(files);
     } catch (e: any) {
       if (e.name === "NotAllowedError" || e.name === "SecurityError") {
-        alert("Izin clipboard ditolak. Izinkan akses clipboard di pengaturan browser, atau gunakan Ctrl+V / drag-drop.");
+        void beritahu("Izin clipboard ditolak. Izinkan akses clipboard di pengaturan browser, atau gunakan Ctrl+V / drag-drop.");
       } else {
-        alert("Gagal baca clipboard: " + (e?.message ?? e));
+        void beritahu("Gagal baca clipboard: " + (e?.message ?? e));
       }
     }
   };

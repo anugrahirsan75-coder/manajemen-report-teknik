@@ -10,6 +10,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useStore, ProyekRingkas } from "@/lib/store";
 import { rupiahRp, tanggalIndo } from "@/lib/format";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 export default function RekapSwakelola() {
   const { data, supabaseReady, listProyek, bukaProyek, hapusProyek } = useStore();
@@ -48,17 +49,28 @@ export default function RekapSwakelola() {
 
   const onBuka = async (p: ProyekRingkas) => {
     if (p.id === data.id) return;
-    if (!confirm(`Buka pekerjaan ${p.namaKapal} — SPK.${p.nomorSpk}/${p.tahun}?\n\nData yang sedang tampil sekarang akan diganti. Pastikan sudah disimpan.`)) return;
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "📂",
+      judul: `Buka pekerjaan ${p.namaKapal}?`,
+      pesan: `SPK.${p.nomorSpk}/TN.101/ASDP-TTE/SWK/${p.tahun}`,
+      tegasan: "Data yang sedang tampil akan diganti — pastikan sudah disimpan.",
+      tombolYa: "Buka pekerjaan ini",
+    }))) return;
     setSibuk(p.id);
-    try { await bukaProyek(p.id); } catch (e: any) { alert("Gagal membuka: " + (e?.message ?? e)); }
+    try { await bukaProyek(p.id); } catch (e: any) { void beritahu("Gagal membuka: " + (e?.message ?? e)); }
     finally { setSibuk(""); }
   };
 
   const onHapus = async (p: ProyekRingkas) => {
-    if (!confirm(`Hapus rekaman ${p.namaKapal} — SPK.${p.nomorSpk}/${p.tahun} (${rupiahRp(p.nilai)})?\n\nTindakan ini tidak bisa dibatalkan.`)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", judul: `Hapus rekaman ${p.namaKapal}?`,
+      pesan: `SPK.${p.nomorSpk}/TN.101/ASDP-TTE/SWK/${p.tahun}`,
+      rincian: [`Nilai ${rupiahRp(p.nilai)}`, `${p.jmlCrew} crew · ${p.jmlPekerjaan} pekerjaan`],
+      tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus",
+    }))) return;
     setSibuk(p.id);
     try { await hapusProyek(p.id); await ambil(); }
-    catch (e: any) { alert("Gagal menghapus: " + (e?.message ?? e)); }
+    catch (e: any) { void beritahu("Gagal menghapus: " + (e?.message ?? e)); }
     finally { setSibuk(""); }
   };
 

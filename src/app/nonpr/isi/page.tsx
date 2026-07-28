@@ -11,6 +11,7 @@ import { NonprItem, emptyNonprItem, kapalUnikNonpr, nonprTotal, ketLines } from 
 import FotoUploader from "@/components/FotoUploader";
 import { useAnggaran } from "@/lib/anggaran/store";
 import PaguProgram from "@/components/anggaran/PaguProgram";
+import { beritahu } from "@/components/Konfirmasi";
 
 export default function NonprIsi() {
   const { program, pengadaan } = useAnggaran();
@@ -84,7 +85,7 @@ export default function NonprIsi() {
             }}
             onTarik={(pos) => { setItems([...req.items, { ...emptyNonprItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls" }]); if (!req.mataAnggaran) update({ mataAnggaran: pos.ma }); }}
             onTarikSemua={(list) => {
-              if (!list.length) { alert("Semua pos di surat ini sudah habis terpakai."); return; }
+              if (!list.length) { void beritahu("Semua pos di surat ini sudah habis terpakai."); return; }
               setItems([...req.items, ...list.map((pos) => ({ ...emptyNonprItem(pos.kapal === "(umum)" ? "" : pos.kapal), satuan: "Ls" }))]);
             }}
           />

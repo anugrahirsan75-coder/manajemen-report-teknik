@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { ServisItem } from "./types";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { catatBackup } from "@/lib/backup/local";
+import { beritahu } from "@/components/Konfirmasi";
 
 const LS_KEY = "servis_items";
 
@@ -36,7 +37,7 @@ export function ServisProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       setItems((data ?? []).map((r: any) => ({ ...r.payload, id: r.id })));
     } catch (e: any) {
-      alert("Gagal muat data servis: " + e.message);
+      void beritahu("Gagal muat data servis: " + e.message);
       setItems(lsRead());
     } finally { setLoading(false); }
   };
@@ -57,7 +58,7 @@ export function ServisProvider({ children }: { children: React.ReactNode }) {
       id: item.id, nama_kapal: item.namaBarang,
       tahun: parseInt((item.tanggalKirim || "").slice(0, 4)) || null, payload,
     });
-    if (error) { alert("Gagal simpan: " + error.message); return; }
+    if (error) { void beritahu("Gagal simpan: " + error.message); return; }
     catatBackup("servis", item.id, payload, item.namaBarang);
     await refresh();
   };
@@ -65,7 +66,7 @@ export function ServisProvider({ children }: { children: React.ReactNode }) {
   const deleteItem = async (id: string) => {
     if (!supabase) { const cur = lsRead().filter((x) => x.id !== id); lsWrite(cur); setItems(cur); return; }
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) { alert("Gagal hapus: " + error.message); return; }
+    if (error) { void beritahu("Gagal hapus: " + error.message); return; }
     await refresh();
   };
 

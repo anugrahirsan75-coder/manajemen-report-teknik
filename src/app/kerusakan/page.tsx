@@ -18,6 +18,7 @@ import { Kerusakan, kerusakanBaru, BAGIAN, STATUS_LABEL, STATUS_WARNA, StatusKer
 import { rupiah, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
 import FotoUploader from "@/components/FotoUploader";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 export default function KerusakanPage() {
   const { ready, loading, list, err, reload, simpan, hapus } = useKerusakan();
@@ -58,8 +59,8 @@ export default function KerusakanPage() {
 
   const simpanEdit = async () => {
     if (!edit) return;
-    if (!edit.kapal) { alert("Pilih kapal dulu."); return; }
-    if (!edit.kejadian.trim()) { alert("Isi dulu kejadiannya."); return; }
+    if (!edit.kapal) { void beritahu("Pilih kapal dulu."); return; }
+    if (!edit.kejadian.trim()) { void beritahu("Isi dulu kejadiannya."); return; }
     setSibuk(true);
     try { await simpan(edit); setEdit(null); } finally { setSibuk(false); }
   };
@@ -216,7 +217,14 @@ export default function KerusakanPage() {
                     </td>
                     <td className="p-2 text-right whitespace-nowrap">
                       <button onClick={() => setEdit({ ...k })} className="text-xs font-bold text-slate-700 hover:underline">✏️</button>
-                      <button onClick={() => { if (confirm(`Hapus catatan kerusakan ${k.kapal} (${k.tanggal})?`)) hapus(k.id); }}
+                      <button onClick={async () => {
+                        if (await konfirmasi({
+                          nada: "bahaya", judul: "Hapus catatan kerusakan ini?",
+                          pesan: `${k.kapal} — ${k.tanggal}`,
+                          rincian: [k.kejadian || "(tanpa keterangan kejadian)"],
+                          tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus",
+                        })) hapus(k.id);
+                      }}
                         className="text-xs text-rose-600 hover:text-rose-800 ml-2">🗑️</button>
                     </td>
                   </tr>

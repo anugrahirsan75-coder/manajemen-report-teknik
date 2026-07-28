@@ -5,6 +5,7 @@ import { SppbjRequest, SppbjItem, emptySppbjItem } from "./types";
 import { DEPT_HEAD, STAF_TEKNIK } from "./db";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { catatBackup } from "@/lib/backup/local";
+import { beritahu } from "@/components/Konfirmasi";
 
 const LS_KEY = "sppbj_request";
 
@@ -75,7 +76,7 @@ export function SppbjProvider({ children }: { children: React.ReactNode }) {
       catatBackup("sppbj", row?.id ?? req.id, payload, req.namaPengadaan);
       setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
     } catch (e: any) {
-      alert("Gagal simpan: " + e.message + "\nData tersimpan lokal.");
+      void beritahu("Gagal simpan: " + e.message + "\nData tersimpan lokal.");
       persist(req);
     } finally { setSaving(false); }
   };
@@ -89,13 +90,13 @@ export function SppbjProvider({ children }: { children: React.ReactNode }) {
     if (!supabase) return [];
     const { data, error } = await supabase.from("projects").select("id,nama_kapal,payload,created_at")
       .filter("payload->>kind", "eq", "sppbj").order("created_at", { ascending: false });
-    if (error) { alert("Gagal muat riwayat: " + error.message); return []; }
+    if (error) { void beritahu("Gagal muat riwayat: " + error.message); return []; }
     return (data ?? []).map((r: any) => ({ id: r.id, nama_pengadaan: r.nama_kapal, status: r.payload?.status, payload: r.payload, created_at: r.created_at }));
   };
   const deleteRemote = async (id: string) => {
     if (!supabase) return;
     const { error } = await supabase.from("projects").delete().eq("id", id);
-    if (error) alert("Gagal hapus: " + error.message);
+    if (error) void beritahu("Gagal hapus: " + error.message);
   };
   const loadById = (row: any) => { const n = { ...defaultReq(), ...row.payload, id: row.id }; if (!Array.isArray(n.items)) n.items = []; setReq(n); persist(n); };
   const newDraft = () => { const n = defaultReq(); setReq(n); persist(n); };

@@ -12,6 +12,7 @@ import { PengadaanRow, realisasiProgram, RealisasiItem } from "@/lib/anggaran/st
 import { PlafonProgram, ProgramRow, KAPAL_ANGGARAN, MATA_ANGGARAN, fullMA, maKey, namaKapalPenuh, isMaInvestasi } from "@/lib/anggaran/types";
 import { pecahKapal, ringkasKapal } from "@/lib/kapal/nama";
 import { rupiah, tanggalIndo } from "@/lib/format";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 const idBaru = () => globalThis.crypto?.randomUUID?.() ?? String(Math.random()).slice(2);
 
@@ -155,17 +156,21 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
   const hapus = async () => {
     if (!aktif) return;
     const tertaut = pengadaan.filter((x) => x.programId === aktif.id);
-    const pesan = [
-      `Hapus persetujuan "${aktif.nama}"?`,
-      `${(aktif.rows || []).length} baris pagu, total ${rupiah(totalPagu)}.`,
-      "",
-      "Pengadaan/SPPBJ TIDAK ikut terhapus — hanya pagunya.",
-      tertaut.length
-        ? `⚠ ${tertaut.length} pengadaan masih tertaut ke surat ini dan akan kehilangan kendali pagunya:\n` +
-          tertaut.slice(0, 5).map((x) => `  • ${x.nama}`).join("\n") + (tertaut.length > 5 ? `\n  • …(${tertaut.length - 5} lagi)` : "")
-        : "",
-    ].filter(Boolean).join("\n");
-    if (!confirm(pesan)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "📜",
+      judul: "Hapus surat persetujuan ini?",
+      pesan: aktif.nama,
+      rincian: [
+        `${(aktif.rows || []).length} baris pagu · total ${rupiah(totalPagu)}`,
+        "Pengadaan/SPPBJ TIDAK ikut terhapus — hanya pagunya",
+        ...(tertaut.length ? [
+          `${tertaut.length} pengadaan masih tertaut & akan kehilangan kendali pagu:`,
+          ...tertaut.slice(0, 5).map((x) => `— ${x.nama}`),
+          ...(tertaut.length > 5 ? [`— …${tertaut.length - 5} lagi`] : []),
+        ] : []),
+      ],
+      tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus",
+    }))) return;
     await onSave(program.filter((p) => p.id !== aktif.id));
     setPilih("");
   };
@@ -507,7 +512,7 @@ export default function ProgramLainnya({ program, pengadaan, onSave, onExcel, xl
             <div className="flex items-center justify-end gap-2 mt-2">
               <span className="text-[11px] text-slate-500 mr-auto">{parseProgramPaste(paste).length} baris terbaca</span>
               <button onClick={() => setPaste(null)} className="btn btn-ghost text-xs">Tutup</button>
-              <button onClick={() => { const r = parseProgramPaste(paste); if (!r.length) { alert("Tak terbaca. Pastikan tiap baris ada angkanya."); return; } setDraft({ ...draft, rows: r }); setPaste(null); }} className="btn btn-primary text-xs">Pakai →</button>
+              <button onClick={() => { const r = parseProgramPaste(paste); if (!r.length) { void beritahu("Tak terbaca. Pastikan tiap baris ada angkanya."); return; } setDraft({ ...draft, rows: r }); setPaste(null); }} className="btn btn-primary text-xs">Pakai →</button>
             </div>
           </div>
         </div>

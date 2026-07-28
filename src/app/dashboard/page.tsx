@@ -15,6 +15,7 @@ import Ringkasan from "@/components/anggaran/Ringkasan";
 import RutinSetahun from "@/components/anggaran/RutinSetahun";
 import { exportTipeExcel } from "@/lib/anggaran/exportTipe";
 import PreviewModal from "@/components/PreviewModal";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 const JUDUL: Record<string, string> = {
   ringkas: "Dashboard Anggaran", rutin: "Kendali Anggaran Rutin", docking: "Kendali Anggaran Docking",
@@ -52,7 +53,7 @@ function DashboardInner() {
         bulan: new Date().toISOString().slice(0, 7),
         tahun: parseInt(tahun || String(new Date().getFullYear()), 10),
       });
-    } catch (e: any) { alert("Gagal export: " + (e?.message ?? e)); }
+    } catch (e: any) { void beritahu("Gagal export: " + (e?.message ?? e)); }
     finally { setXlsBusy(false); }
   };
 
@@ -622,15 +623,19 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
     setDraft(src.length ? src.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]);
     setEdit(true);
   };
-  const salin = () => { const pe = plafon.find((p) => p.bulan === prevMonth(bulan)); if (pe?.rows?.length) setDraft(pe.rows.map((r) => ({ ...r }))); else alert("Pagu bulan sebelumnya belum ada."); };
+  const salin = () => { const pe = plafon.find((p) => p.bulan === prevMonth(bulan)); if (pe?.rows?.length) setDraft(pe.rows.map((r) => ({ ...r }))); else void beritahu("Pagu bulan sebelumnya belum ada."); };
   // hapus SELURUH pagu bulan ini (pengadaan tidak ikut terhapus)
   const hapusPagu = async () => {
     if (!entry) return;
     const nilai = rows.reduce((s, r) => s + (r.nilai || 0), 0);
-    if (!confirm(`Hapus pagu RUTIN ${bulanTahun(bulan + "-01")}?
-${rows.length} Mata Anggaran, total ${rupiah(nilai)}.
-
-Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "🧭",
+      judul: `Hapus pagu RUTIN ${bulanTahun(bulan + "-01")}?`,
+      pesan: "Angka pagu bulan ini dibuang dari Kendali Anggaran Rutin.",
+      rincian: [`${rows.length} Mata Anggaran · total ${rupiah(nilai)}`,
+                "Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya"],
+      tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus pagu",
+    }))) return;
     setBusy(true);
     try { await onSave(plafon.filter((p) => p.bulan !== bulan)); setEdit(false); } finally { setBusy(false); }
   };
@@ -839,7 +844,7 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
             <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={8} className="w-full border rounded-lg p-2 text-xs font-mono" placeholder={"Akomodasi Kapal\t102066000\nFumigasi\t3500000\nPermesinan dan Kelistrikan\t156379140"} />
             <div className="flex justify-end gap-2 mt-2">
               <button onClick={() => setPaste(null)} className="btn btn-ghost text-xs">Tutup</button>
-              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(p); setEdit(true); setPaste(null); } else alert("Tak terbaca. Pastikan tiap baris: Mata Anggaran lalu nilai."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
+              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(p); setEdit(true); setPaste(null); } else void beritahu("Tak terbaca. Pastikan tiap baris: Mata Anggaran lalu nilai."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
             </div>
           </div>
         </div>
@@ -990,10 +995,14 @@ function AnggaranDocking({ docking, pengadaan, onSave, onExcel, xlsBusy }: { doc
   // hapus pagu docking kapal+tahun ini (pengadaan tidak ikut terhapus)
   const hapusPagu = async () => {
     if (!entry) return;
-    if (!confirm(`Hapus pagu DOCKING ${kapal} ${tahun}?
-${rows.length} Mata Anggaran, pagu total ${rupiah(totalPagu)}.
-
-Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "⚓",
+      judul: `Hapus pagu DOCKING ${kapal} ${tahun}?`,
+      pesan: "Pagu Persetujuan Pusat kapal ini dibuang.",
+      rincian: [`${rows.length} Mata Anggaran · pagu total ${rupiah(totalPagu)}`,
+                "Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya"],
+      tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus pagu",
+    }))) return;
     setBusy(true);
     try { await onSave(docking.filter((d) => !(d.kapal === kapal && d.tahun === tahun))); setEdit(false); } finally { setBusy(false); }
   };
@@ -1196,7 +1205,7 @@ Pengadaan/SPPBJ TIDAK ikut terhapus — hanya angka pagunya.`)) return;
             <textarea value={paste} onChange={(e) => setPaste(e.target.value)} rows={8} className="w-full border rounded-lg p-2 text-xs font-mono" placeholder={"5010403003 Kapal Ro-Ro\t852446993\n5010303001 Pelumas\t35348770\n5010403100 Permesinan\t144546074"} />
             <div className="flex justify-end gap-2 mt-2">
               <button onClick={() => setPaste(null)} className="btn btn-ghost text-xs">Tutup</button>
-              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(seedDockingDraft(p)); setEdit(true); setPaste(null); } else alert("Tak terbaca."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
+              <button onClick={() => { const p = parsePlafonPaste(paste); if (p.length) { setDraft(seedDockingDraft(p)); setEdit(true); setPaste(null); } else void beritahu("Tak terbaca."); }} className="btn btn-primary text-xs">Isi {parsePlafonPaste(paste).length || ""} baris →</button>
             </div>
           </div>
         </div>
