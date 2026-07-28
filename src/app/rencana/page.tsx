@@ -136,7 +136,7 @@ export default function RencanaPage() {
    * Item Akomodasi/Permesinan masuk ke kelompok "Lain-Lain" karena sub-kelompoknya tak bisa
    * ditebak dari dokumen — tinggal dipindahkan lewat tombol ⇄ pada barisnya.
    */
-  const tarikDariPengadaan = () => {
+  const hitungTarikan = useMemo(() => () => {
     const sasaran = (kode: string) => {
       const sub = KELOMPOK_RR.filter((k) => k.kode === kode);
       if (!sub.length) return "";
@@ -177,6 +177,56 @@ export default function RencanaPage() {
         n++;
       }
     }
+    return { kumpul, n, diabaikan, lainKapal };
+  }, [pengadaan, bulan, kapal]);
+
+  /**
+   * Sidik jari satu item, dipakai untuk mengenali item yang SAMA.
+   * 'asal' ikut dihitung supaya dua SPPBJ berbeda yang kebetulan berisi barang
+   * sama tetap dianggap dua item yang sah — bukan dobel.
+   */
+  const sidik = (i: RrItem) =>
+    [i.asal || "(manual)", (i.deskripsi || "").trim().toLowerCase(), (i.spesifikasi || "").trim().toLowerCase(),
+     i.jumlah || 0, (i.satuan || "").trim().toLowerCase(), i.harga || 0].join("|");
+
+  /** berapa banyak tiap sidik jari sudah ada di SELURUH dokumen (item bisa dipindah antar kelompok) */
+  const stokDoc = (d: RrDoc | null) => {
+    const n: Record<string, number> = {};
+    (d?.kelompok || []).forEach((g) => (g.items || []).forEach((i) => { const k = sidik(i); n[k] = (n[k] || 0) + 1; }));
+    return n;
+  };
+
+  /**
+   * Dobel yang SUDAH terlanjur masuk: baris hasil tarikan yang jumlahnya melebihi
+   * yang ada di SPPBJ/Non PR PO. Hanya baris ber-'asal' yang dihitung — baris yang
+   * diketik tangan tidak pernah diusik.
+   */
+  const dobel = useMemo(() => {
+    if (!kerja) return { n: 0, nilai: 0, rincian: [] as { nama: string; lebih: number }[] };
+    const { kumpul } = hitungTarikan();
+    const sumber: Record<string, number> = {};
+    Object.values(kumpul).forEach((arr) => arr.forEach((i) => { const k = sidik(i); sumber[k] = (sumber[k] || 0) + 1; }));
+    const punya: Record<string, { n: number; contoh: RrItem }> = {};
+    kerja.kelompok.forEach((g) => (g.items || []).forEach((i) => {
+      if (!i.asal) return;                       // baris ketik tangan: bukan urusan tarikan
+      const k = sidik(i);
+      if (sumber[k] === undefined) return;       // tak dikenali di bulan ini: jangan ditebak
+      (punya[k] ||= { n: 0, contoh: i }).n++;
+    }));
+    let n = 0, nilai = 0;
+    const rincian: { nama: string; lebih: number }[] = [];
+    Object.entries(punya).forEach(([k, v]) => {
+      const lebih = v.n - (sumber[k] || 0);
+      if (lebih <= 0) return;
+      n += lebih; nilai += lebih * nilaiItem(v.contoh);
+      rincian.push({ nama: v.contoh.deskripsi || "(tanpa nama)", lebih });
+    });
+    rincian.sort((a, b) => b.lebih - a.lebih);
+    return { n, nilai, rincian };
+  }, [kerja, hitungTarikan]);
+
+  const tarikDariPengadaan = () => {
+    const { kumpul, n, diabaikan, lainKapal } = hitungTarikan();
     if (!n) {
       // beri tahu SEBABNYA, bukan sekadar "tidak ada"
       const sebab = lainKapal.length
@@ -186,19 +236,74 @@ export default function RencanaPage() {
       setTimeout(() => setPesan(""), 12000);
       return;
     }
+
+    // ANTI-DOBEL: item yang sudah ada di dokumen ini dilewati. Pencocokan pakai
+    // JUMLAH, bukan sekadar "ada/tidak" — kalau SPPBJ memang memuat barang yang
+    // sama dua baris, dua-duanya tetap masuk; menekan tombol ini dua kali tidak.
+    const punya = stokDoc(kerja);
+    const tambah: Record<string, RrItem[]> = {};
+    let baru = 0, lewat = 0;
+    for (const [kunci, items] of Object.entries(kumpul)) {
+      for (const it of items) {
+        const k = sidik(it);
+        if ((punya[k] || 0) > 0) { punya[k]--; lewat++; continue; }
+        (tambah[kunci] ||= []).push(it); baru++;
+      }
+    }
+
+    if (!baru) {
+      setPesan(`⚠ Tidak ada yang ditambahkan — ${lewat} item dari SPPBJ / Non PR PO ${namaBulan(bulan)} untuk ${ringkasKapal(kapal)} SUDAH ada di dokumen ini. Realisasi tidak jadi dobel.`);
+      setTimeout(() => setPesan(""), 12000);
+      return;
+    }
+
+    if (lewat && !confirm(
+      `${lewat} item sudah pernah ditarik sebelumnya dan akan DILEWATI.\n`
+      + `${baru} item baru akan ditambahkan.\n\nLanjutkan?`)) return;
+
     ubah((d) => {
-      for (const [kunci, items] of Object.entries(kumpul)) {
+      for (const [kunci, items] of Object.entries(tambah)) {
         const g = d.kelompok.find((x) => x.kunci === kunci);
         if (g) g.items = [...g.items.filter((i) => i.deskripsi || i.harga), ...items];
         else d.kelompok.push({ kunci, items });
       }
     });
     setPesan(
-      `${n} item ditarik dari SPPBJ / Non PR PO`
+      `${baru} item ditarik dari SPPBJ / Non PR PO`
+      + (lewat ? ` · ${lewat} dilewati karena sudah ada (anti-dobel)` : "")
       + (diabaikan ? ` · ${diabaikan} item Mata Anggarannya di luar daftar Lampiran 3` : "")
       + (lainKapal.length ? ` · ${lainKapal.length} pengadaan bulan ini tidak menyebut ${ringkasKapal(kapal)} (jadi tak ikut ditarik)` : "")
       + `. Periksa penempatan kelompoknya, lalu simpan.`);
     setTimeout(() => setPesan(""), 12000);
+  };
+
+  /** buang baris tarikan yang berlebih (sisa dobel lama), sisakan sebanyak yang ada di SPPBJ */
+  const rapikanDobel = () => {
+    if (!kerja || !dobel.n) return;
+    if (!confirm(
+      `Buang ${dobel.n} baris dobel (${rupiah(Math.round(dobel.nilai))})?\n\n`
+      + dobel.rincian.slice(0, 6).map((r) => `· ${r.nama} — kelebihan ${r.lebih} baris`).join("\n")
+      + (dobel.rincian.length > 6 ? `\n· …${dobel.rincian.length - 6} lagi` : "")
+      + `\n\nYang disisakan sebanyak yang benar-benar ada di SPPBJ / Non PR PO. Baris yang Anda ketik sendiri tidak diusik.`)) return;
+
+    const { kumpul } = hitungTarikan();
+    const sumber: Record<string, number> = {};
+    Object.values(kumpul).forEach((arr) => arr.forEach((i) => { const k = sidik(i); sumber[k] = (sumber[k] || 0) + 1; }));
+    const sisa = { ...sumber };
+    let dibuang = 0;
+    ubah((d) => {
+      d.kelompok.forEach((g) => {
+        g.items = (g.items || []).filter((i) => {
+          if (!i.asal) return true;
+          const k = sidik(i);
+          if (sumber[k] === undefined) return true;
+          if ((sisa[k] || 0) > 0) { sisa[k]--; return true; }
+          dibuang++; return false;
+        });
+      });
+    });
+    setPesan(`${dibuang} baris dobel dibuang. Periksa lalu simpan.`);
+    setTimeout(() => setPesan(""), 8000);
   };
 
   /** salin isi dari dokumen lain (bulan lalu / rencana bulan yang sama) */
@@ -391,6 +496,18 @@ export default function RencanaPage() {
             <p className="mx-5 mt-3 text-xs bg-rose-50 text-rose-800 ring-1 ring-rose-200 rounded-lg px-3 py-2">
               Sudah lewat tenggat ({tenggat.teks}). Isi tetap bisa disimpan, tapi laporkan keterlambatannya ke pusat.
             </p>
+          )}
+          {dobel.n > 0 && !terkunci && (
+            <div className="mx-5 mt-3 text-xs bg-amber-50 text-amber-900 ring-1 ring-amber-300 rounded-lg px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="flex-1 min-w-[16rem]">
+                <b>⚠ Ada {dobel.n} baris dobel</b> senilai <b className="tabular-nums">{rupiah(Math.round(dobel.nilai))}</b> — jumlahnya melebihi yang benar-benar ada di SPPBJ / Non PR PO
+                {dobel.rincian.length ? <> (mis. <i>{dobel.rincian[0].nama}</i> kelebihan {dobel.rincian[0].lebih} baris)</> : null}.
+                Kalau dibiarkan, realisasi yang dilaporkan jadi lebih besar dari kenyataan.
+              </span>
+              <button onClick={rapikanDobel} className="btn btn-ghost text-xs shrink-0" title="Buang baris berlebih; sisakan sebanyak yang ada di SPPBJ. Baris ketik tangan tidak diusik.">
+                🧹 Rapikan dobel
+              </button>
+            </div>
           )}
 
           <div className="p-5 pt-4 space-y-3">
