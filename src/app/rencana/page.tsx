@@ -147,6 +147,77 @@ export default function RencanaPage() {
     } finally { setSibuk(false); }
   };
 
+  /* ---- pencocokan sebulan (dipakai tombol kirim massal & panel Rekap) ---- */
+  const harapBulan = useMemo(() => hitungSeharusnya(pengadaan, bulan), [pengadaan, bulan]);
+  const dashBulan = useMemo(() => (bulan ? realisasiRutin(pengadaan, bulan).total : 0), [pengadaan, bulan]);
+
+  /** dokumen bulan ini per kapal — yang sedang dibuka diambil dari salinan kerja (termasuk suntingan belum disimpan) */
+  const docBulan = useMemo(() => {
+    const m = new Map<string, RrDoc>();
+    dok.filter((x) => x.tipe === tipe && x.bulan === bulan).forEach((d) => m.set(d.kapal, d));
+    if (kerja && kerja.tipe === tipe && kerja.bulan === bulan) m.set(kerja.kapal, kerja);
+    return Array.from(m.values());
+  }, [dok, kerja, tipe, bulan]);
+
+  /** Tandai SELURUH kapal bulan ini sebagai terkirim — sekali klik. */
+  const tandaiSemua = async () => {
+    if (!bulan) return;
+    const kandidat = docBulan.filter((d) => d.status !== "terkirim" && totalDoc(d).total > 0);
+    const kosong = docBulan.filter((d) => totalDoc(d).total <= 0);
+    const sudah = docBulan.filter((d) => d.status === "terkirim");
+    const belumAda = KAPAL_ANGGARAN.filter((k) => !docBulan.some((d) => d.kapal === k));
+    const nilai = kandidat.reduce((s, d) => s + totalDoc(d).total, 0);
+
+    if (!kandidat.length) {
+      setPesan(sudah.length
+        ? `Semua ${sudah.length} dokumen ${tipe} ${namaBulan(bulan)} sudah ditandai terkirim.`
+        : `Belum ada isi yang bisa dikirim untuk ${tipe} ${namaBulan(bulan)}.`);
+      setTimeout(() => setPesan(""), 8000);
+      return;
+    }
+
+    // untuk realisasi: peringatkan kalau totalnya belum sama dengan Dashboard Anggaran Rutin
+    const dasarSemua = docBulan.reduce((s, d) => s + totalDoc(d).dasar, 0);
+    const beda = Math.round(dasarSemua - harapBulan.bisa);
+    const belumCocok = tipe === "realisasi" && Math.abs(beda) >= 1000;
+
+    if (!(await konfirmasi({
+      nada: belumCocok ? "perhatian" : "sukses", ikon: "🔒",
+      judul: `Tandai SEMUA ${tipe} ${namaBulan(bulan)} terkirim?`,
+      pesan: `${kandidat.length} kapal akan dikunci sekaligus. Setelah ini isinya tak bisa diubah tanpa membuka kunci lagi.`,
+      rincian: [
+        `${kandidat.length} kapal dikunci · total ${rupiah(nilai)}`,
+        ...(sudah.length ? [`${sudah.length} kapal sudah terkirim (dilewati)`] : []),
+        ...(kosong.length ? [`${kosong.length} kapal masih kosong (dilewati): ${kosong.map((d) => ringkasKapal(d.kapal)).join(", ")}`] : []),
+        ...(belumAda.length ? [`${belumAda.length} kapal belum dibuat sama sekali: ${belumAda.map(ringkasKapal).join(", ")}`] : []),
+        ...(belumCocok ? [`Total masih ${beda < 0 ? "KURANG" : "LEBIH"} ${rupiah(Math.abs(beda))} dibanding Dashboard Anggaran Rutin`] : []),
+      ],
+      tegasan: belumCocok
+        ? "Angkanya belum cocok dengan Dashboard. Sebaiknya tarik dulu kapal yang kurang, baru dikirim."
+        : undefined,
+      tombolYa: `Kirim ${kandidat.length} kapal`,
+    }))) return;
+
+    setSibuk(true);
+    const stempel = new Date().toISOString();
+    try {
+      let n = 0;
+      for (const d of kandidat) {
+        setPesan(`Menandai terkirim… ${++n}/${kandidat.length} (${ringkasKapal(d.kapal)})`);
+        await simpan({ ...d, status: "terkirim", dikirimPada: stempel });
+      }
+      // dokumen yang sedang dibuka ikut berubah di layar
+      if (kerja && kandidat.some((d) => d.id === kerja.id)) {
+        setKerja({ ...kerja, status: "terkirim", dikirimPada: stempel });
+        setBerubah(false);
+      }
+      setPesan(`✅ ${kandidat.length} kapal ditandai terkirim untuk ${tipe} ${namaBulan(bulan)}.`);
+      setTimeout(() => setPesan(""), 8000);
+    } catch (e: any) {
+      setPesan(`Gagal menandai: ${e?.message || e}`);
+    } finally { setSibuk(false); }
+  };
+
   const bukaKunci = async () => {
     if (!kerja) return;
     if (!(await konfirmasi({
@@ -522,6 +593,13 @@ export default function RencanaPage() {
           <span className="ml-auto text-[11px] text-slate-500">
             {jumlahTerkirim} terkirim · {jumlahDraf} draf · {KAPAL_ANGGARAN.length - jumlahTerkirim - jumlahDraf} belum diisi
           </span>
+          {jumlahDraf > 0 && (
+            <button onClick={tandaiSemua} disabled={sibuk}
+              className="btn btn-success text-xs disabled:opacity-50"
+              title={`Tandai ${jumlahDraf} kapal yang masih draf sebagai terkirim, sekali klik`}>
+              🔒 Tandai semua terkirim ({jumlahDraf})
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-1.5 mt-3">
@@ -694,7 +772,7 @@ export default function RencanaPage() {
       )}
 
       {/* ================= rekap semua kapal ================= */}
-      <Rekap dok={dok} bulan={bulan} tipe={tipe} pengadaan={pengadaan} />
+      <Rekap dok={dok} bulan={bulan} tipe={tipe} harap={harapBulan} dash={dashBulan} />
 
       {loading && <p className="mt-4 text-xs text-slate-400">memuat…</p>}
       {dialogKonfirmasi}
@@ -893,10 +971,10 @@ function hitungSeharusnya(pengadaan: PengadaanRow[], bulan: string) {
   };
 }
 
-function Rekap({ dok, bulan, tipe, pengadaan }: { dok: RrDoc[]; bulan: string; tipe: TipeRR; pengadaan: PengadaanRow[] }) {
-  const harap = useMemo(() => hitungSeharusnya(pengadaan, bulan), [pengadaan, bulan]);
-  const dash = useMemo(() => (bulan ? realisasiRutin(pengadaan, bulan).total : 0), [pengadaan, bulan]);
-
+function Rekap({ dok, bulan, tipe, harap, dash }: {
+  dok: RrDoc[]; bulan: string; tipe: TipeRR;
+  harap: ReturnType<typeof hitungSeharusnya>; dash: number;
+}) {
   const baris = useMemo(() => KAPAL_ANGGARAN.map((k) => {
     const d = dok.find((x) => x.tipe === tipe && x.bulan === bulan && x.kapal === k);
     const per = d ? totalPerMA(d) : {};
