@@ -14,7 +14,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KAPAL_ANGGARAN, maKey, namaKapalPenuh } from "@/lib/anggaran/types";
-import { useAnggaran } from "@/lib/anggaran/store";
+import { useAnggaran, realisasiRutin, PengadaanRow } from "@/lib/anggaran/store";
 import { pecahKapal, ringkasKapal } from "@/lib/kapal/nama";
 import { useRR, idDoc } from "@/lib/rr/store";
 import {
@@ -694,7 +694,7 @@ export default function RencanaPage() {
       )}
 
       {/* ================= rekap semua kapal ================= */}
-      <Rekap dok={dok} bulan={bulan} tipe={tipe} />
+      <Rekap dok={dok} bulan={bulan} tipe={tipe} pengadaan={pengadaan} />
 
       {loading && <p className="mt-4 text-xs text-slate-400">memuat…</p>}
       {dialogKonfirmasi}
@@ -841,14 +841,77 @@ function Kelompok({ judul, items, terkunci, onUbah, tetangga = [], onPindah }: {
 }
 
 /* ---------------- rekap semua kapal (Budget Control Rutin) ---------------- */
-function Rekap({ dok, bulan, tipe }: { dok: RrDoc[]; bulan: string; tipe: TipeRR }) {
+/**
+ * Berapa NILAI YANG SEHARUSNYA masuk Lampiran 3 pada satu bulan, dipecah per kapal —
+ * dihitung langsung dari SPPBJ/Non PR PO Rutin, memakai rumus yang sama dengan
+ * Dashboard Anggaran Rutin. Dipakai untuk mencocokkan; kalau tak sama, sebabnya
+ * ikut dilaporkan (item tanpa nama kapal, Mata Anggaran di luar Lampiran 3, dst).
+ */
+function hitungSeharusnya(pengadaan: PengadaanRow[], bulan: string) {
+  const kodeLampiran = new Set(KELOMPOK_RR.map((k) => k.kode));
+  const perKapal: Record<string, number> = {};
+  let bisa = 0, tanpaKapal = 0, kapalAsing = 0, maLuar = 0;
+  const cTanpaKapal: { nama: string; dok: string; nilai: number }[] = [];
+  const cKapalAsing: { nama: string; kapal: string; nilai: number }[] = [];
+  const cMaLuar: { nama: string; ma: string; nilai: number }[] = [];
+
+  for (const p of pengadaan) {
+    if (p.jenis !== "rutin" || p.stok) continue;              // sama dengan realisasiRutin()
+    if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
+    const arr: any[] = p.items || [];
+    const adaFinal = arr.some((it) => (it.hargaSpbj || 0) > 0);
+    const maDefault = (p.mataAnggaran || [])[0] || "";
+    for (const it of arr) {
+      const nilai = (adaFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
+      if (!nilai) continue;
+      const kode = maKey((it.mataAnggaran || "").trim() || maDefault);
+      if (!kodeLampiran.has(kode)) {
+        maLuar += nilai; cMaLuar.push({ nama: it.nama || "(tanpa nama)", ma: kode, nilai });
+        continue;
+      }
+      const semua = pecahKapal(it.kapal || "").map(namaKapalPenuh);
+      const dikenal = semua.filter((k) => KAPAL_ANGGARAN.includes(k));
+      if (!semua.length) {
+        tanpaKapal += nilai; cTanpaKapal.push({ nama: it.nama || "(tanpa nama)", dok: p.nama, nilai });
+        continue;
+      }
+      if (!dikenal.length) {
+        kapalAsing += nilai; cKapalAsing.push({ nama: it.nama || "(tanpa nama)", kapal: semua.join(", "), nilai });
+        continue;
+      }
+      // item multi-kapal dibagi rata — persis seperti saat ditarik
+      const bagi = nilai / semua.length;
+      semua.forEach((k) => {
+        if (!KAPAL_ANGGARAN.includes(k)) { kapalAsing += bagi; return; }
+        perKapal[k] = (perKapal[k] || 0) + bagi; bisa += bagi;
+      });
+    }
+  }
+  return {
+    perKapal, bisa, tanpaKapal, kapalAsing, maLuar,
+    contoh: { tanpaKapal: cTanpaKapal, kapalAsing: cKapalAsing, maLuar: cMaLuar },
+  };
+}
+
+function Rekap({ dok, bulan, tipe, pengadaan }: { dok: RrDoc[]; bulan: string; tipe: TipeRR; pengadaan: PengadaanRow[] }) {
+  const harap = useMemo(() => hitungSeharusnya(pengadaan, bulan), [pengadaan, bulan]);
+  const dash = useMemo(() => (bulan ? realisasiRutin(pengadaan, bulan).total : 0), [pengadaan, bulan]);
+
   const baris = useMemo(() => KAPAL_ANGGARAN.map((k) => {
     const d = dok.find((x) => x.tipe === tipe && x.bulan === bulan && x.kapal === k);
     const per = d ? totalPerMA(d) : {};
-    const total = d ? totalDoc(d).total : 0;
-    return { kapal: k, per, total, status: d?.status, ada: !!d };
-  }), [dok, bulan, tipe]);
+    const t = d ? totalDoc(d) : { dasar: 0, ppn: 0, total: 0 };
+    return { kapal: k, per, total: t.total, dasar: t.dasar, status: d?.status, ada: !!d, harus: harap.perKapal[k] || 0 };
+  }), [dok, bulan, tipe, harap]);
+
   const totalSemua = baris.reduce((s, b) => s + b.total, 0);
+  const dasarSemua = baris.reduce((s, b) => s + b.dasar, 0);
+  const ppnSemua = totalSemua - dasarSemua;
+  const selisih = Math.round(dasarSemua - harap.bisa);
+  const takTertarik = harap.tanpaKapal + harap.kapalAsing + harap.maLuar;
+  const belumDiisi = baris.filter((b) => b.harus > 0 && b.dasar <= 0);
+  const bedaKapal = baris.filter((b) => b.dasar > 0 && Math.abs(b.dasar - b.harus) >= 1000);
+  const pas = Math.abs(selisih) < 1000;   // beda < Rp 1.000 = pembulatan harga satuan
   if (!bulan) return null;
 
   return (
@@ -857,6 +920,72 @@ function Rekap({ dok, bulan, tipe }: { dok: RrDoc[]; bulan: string; tipe: TipeRR
         <span className="h-8 w-8 rounded-lg asdp-gradient text-white grid place-items-center text-sm">📋</span>
         <span className="accent-bar">Rekap {tipe} {namaBulan(bulan)} — semua kapal</span>
       </h3>
+
+      {/* ===== pencocokan dengan Dashboard Anggaran Rutin ===== */}
+      {tipe === "realisasi" && (dash > 0 || dasarSemua > 0) && (
+        <div className={`mb-4 rounded-xl ring-1 overflow-hidden ${pas ? "ring-emerald-300 bg-emerald-50" : "ring-amber-300 bg-amber-50"}`}>
+          <div className="px-4 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-1.5 border-b border-black/5">
+            <span className="text-sm font-extrabold text-slate-800">
+              {pas ? "✅ Cocok dengan Dashboard Anggaran Rutin" : "⚠ Belum cocok dengan Dashboard Anggaran Rutin"}
+            </span>
+            <span className="text-[11px] text-slate-600">{namaBulan(bulan)} · realisasi Rutin seluruh kapal</span>
+            <a href={`/dashboard?v=rutin`} className="ml-auto text-[11px] font-bold text-[#1ca3dd] hover:text-[#16357f]">buka Dashboard →</a>
+          </div>
+
+          <div className="grid sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-black/5">
+            <Angka label="Dashboard Rutin — terpakai" nilai={rupiah(Math.round(dash))} sub="dari SPPBJ + Non PR PO bulan ini" />
+            <Angka label="Lampiran 3 — semua kapal" nilai={rupiah(Math.round(dasarSemua))}
+              sub={ppnSemua ? `di luar PPN ${rupiah(Math.round(ppnSemua))}` : "sebelum PPN"} />
+            <Angka label="Seharusnya bisa ditarik" nilai={rupiah(Math.round(harap.bisa))}
+              sub={selisih === 0 ? "sudah masuk semua"
+                : selisih < 0 ? `kurang ${rupiah(Math.abs(selisih))}` : `lebih ${rupiah(selisih)}`}
+              tint={pas ? "text-emerald-800" : "text-amber-900"} />
+          </div>
+
+          <div className="px-4 py-2.5 text-[11px] text-slate-700 space-y-1 border-t border-black/5">
+            {takTertarik > 0 && (
+              <p>
+                <b>{rupiah(Math.round(takTertarik))}</b> dari Dashboard memang <b>tidak bisa</b> masuk Lampiran 3:
+                {harap.tanpaKapal > 0 && <> {harap.contoh.tanpaKapal.length} item tanpa nama kapal ({rupiah(Math.round(harap.tanpaKapal))}
+                  {harap.contoh.tanpaKapal[0] ? <>, mis. <i>{harap.contoh.tanpaKapal[0].nama}</i></> : null})</>}
+                {harap.kapalAsing > 0 && <> · {harap.contoh.kapalAsing.length} item kapalnya di luar daftar armada ({rupiah(Math.round(harap.kapalAsing))})</>}
+                {harap.maLuar > 0 && <> · {harap.contoh.maLuar.length} item Mata Anggarannya di luar Lampiran 3 ({rupiah(Math.round(harap.maLuar))}
+                  {harap.contoh.maLuar[0] ? <>, mis. MA {harap.contoh.maLuar[0].ma}</> : null})</>}
+                . Perbaiki di SPPBJ-nya kalau memang salah isi.
+              </p>
+            )}
+            {!pas && belumDiisi.length > 0 && (
+              <p className="text-amber-900 font-semibold">
+                <b>Belum ditarik sama sekali</b> ({belumDiisi.length} kapal, {rupiah(Math.round(belumDiisi.reduce((s, b) => s + b.harus, 0)))}):{" "}
+                {belumDiisi.map((b) => `${ringkasKapal(b.kapal)} ${rupiah(Math.round(b.harus))}`).join(" · ")}
+                {" "}— buka kapalnya lalu tekan ⚡ Tarik dari SPPBJ / Non PR PO.
+              </p>
+            )}
+            {!pas && bedaKapal.length > 0 && (
+              <p className="text-amber-900 font-semibold">
+                <b>Angkanya berbeda</b> ({bedaKapal.length} kapal):{" "}
+                {bedaKapal.map((b) => {
+                  const d = Math.round(b.dasar - b.harus);
+                  return `${ringkasKapal(b.kapal)} ${d > 0 ? "+" : ""}${rupiah(d)}`;
+                }).join(" · ")}
+                {" "}— tarik ulang (yang sudah ada otomatis dilewati), atau periksa baris yang diketik tangan.
+              </p>
+            )}
+            {!pas && belumDiisi.length === 0 && bedaKapal.length === 0 && (
+              <p className="text-amber-900 font-semibold">
+                Selisih {rupiah(Math.abs(selisih))} — lihat kolom <b>Selisih</b> di tabel bawah.
+              </p>
+            )}
+            {pas && (
+              <p className="text-emerald-800">
+                Total Lampiran 3 sudah sama dengan yang bisa ditarik dari SPPBJ / Non PR PO bulan ini
+                {takTertarik > 0 ? " (di luar yang memang tak bisa masuk di atas)" : ""}. Aman dikirim ke pusat.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="overflow-x-auto">
         <table className="w-full text-xs">
           <thead className="text-[10px] uppercase tracking-wide text-slate-600 font-bold bg-slate-100">
@@ -864,6 +993,10 @@ function Rekap({ dok, bulan, tipe }: { dok: RrDoc[]; bulan: string; tipe: TipeRR
               <th className="p-2 text-left">Kapal</th>
               {MA_RR.map((m) => <th key={m.kode} className="p-2 text-right whitespace-nowrap">{m.kode}</th>)}
               <th className="p-2 text-right">Total</th>
+              {tipe === "realisasi" && <>
+                <th className="p-2 text-right whitespace-nowrap" title="Nilai yang seharusnya masuk, dihitung dari SPPBJ / Non PR PO bulan ini">Seharusnya</th>
+                <th className="p-2 text-right">Selisih</th>
+              </>}
               <th className="p-2 text-center">Status</th>
             </tr>
           </thead>
@@ -877,6 +1010,17 @@ function Rekap({ dok, bulan, tipe }: { dok: RrDoc[]; bulan: string; tipe: TipeRR
                   </td>
                 ))}
                 <td className="p-2 text-right font-bold text-slate-800 tabular-nums">{b.total ? rupiah(b.total) : "–"}</td>
+                {tipe === "realisasi" && (() => {
+                  const bedaK = Math.round(b.dasar - b.harus);
+                  const pasK = Math.abs(bedaK) < 1000;
+                  return <>
+                    <td className="p-2 text-right tabular-nums text-slate-500">{b.harus ? rupiah(Math.round(b.harus)) : "–"}</td>
+                    <td className={`p-2 text-right tabular-nums font-bold ${!b.harus && !b.dasar ? "text-slate-300" : pasK ? "text-emerald-700" : "text-amber-700"}`}
+                      title={pasK ? "sudah sama" : bedaK < 0 ? "masih kurang dari SPPBJ" : "lebih besar dari SPPBJ"}>
+                      {!b.harus && !b.dasar ? "–" : pasK ? "✓" : (bedaK > 0 ? "+" : "") + rupiah(bedaK)}
+                    </td>
+                  </>;
+                })()}
                 <td className="p-2 text-center">
                   {b.status === "terkirim" ? <span className="chip bg-emerald-100 text-emerald-700">terkirim</span>
                     : b.ada ? <span className="chip bg-amber-100 text-amber-700">draf</span>
@@ -892,11 +1036,27 @@ function Rekap({ dok, bulan, tipe }: { dok: RrDoc[]; bulan: string; tipe: TipeRR
                 </td>
               ))}
               <td className="p-2 text-right text-slate-900 tabular-nums">{rupiah(totalSemua)}</td>
+              {tipe === "realisasi" && <>
+                <td className="p-2 text-right tabular-nums text-slate-600">{rupiah(Math.round(harap.bisa))}</td>
+                <td className={`p-2 text-right tabular-nums ${pas ? "text-emerald-700" : "text-amber-700"}`}>
+                  {pas ? "✓" : (selisih > 0 ? "+" : "") + rupiah(selisih)}
+                </td>
+              </>}
               <td />
             </tr>
           </tbody>
         </table>
       </div>
+    </div>
+  );
+}
+
+function Angka({ label, nilai, sub, tint = "text-slate-900" }: { label: string; nilai: string; sub?: string; tint?: string }) {
+  return (
+    <div className="px-4 py-2.5">
+      <p className="text-[10px] uppercase tracking-wide text-slate-500 font-bold">{label}</p>
+      <p className={`text-base font-extrabold tabular-nums leading-tight ${tint}`}>{nilai}</p>
+      {sub && <p className="text-[10px] text-slate-500">{sub}</p>}
     </div>
   );
 }
