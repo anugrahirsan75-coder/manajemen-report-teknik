@@ -23,6 +23,8 @@ import {
   totalDoc, totalKelompok, totalPerMA, nilaiItem, bulanRealisasiAktif,
 } from "@/lib/rr/types";
 import { rupiah } from "@/lib/format";
+import { useKonfirmasi } from "@/components/Konfirmasi";
+import { tentukanKelompok } from "@/lib/rr/penempatan";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const barisKosong = (): RrItem => ({ id: uid(), deskripsi: "", spesifikasi: "", jumlah: 0, satuan: "", harga: 0 });
@@ -82,6 +84,7 @@ export default function RencanaPage() {
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
   const terkunci = kerja?.status === "terkirim";
+  const { konfirmasi, dialogKonfirmasi } = useKonfirmasi();
 
   const ubah = (f: (d: RrDoc) => void) => {
     if (!kerja || terkunci) return;
@@ -108,12 +111,32 @@ export default function RencanaPage() {
 
   const tandaiTerkirim = async () => {
     if (!kerja) return;
-    if (!confirm(`Tandai ${tipe} ${namaBulan(bulan)} — ${kapal} sebagai TERKIRIM?\n\nSetelah ini isinya dikunci (tak bisa berubah tanpa membuka kunci lagi).`)) return;
+    if (!(await konfirmasi({
+      nada: "sukses", ikon: "🔒",
+      judul: "Tandai sebagai TERKIRIM?",
+      pesan: `${tipe === "rencana" ? "Rencana" : "Realisasi"} ${namaBulan(bulan)} — ${kapal}.`,
+      rincian: [
+        `${kerja.kelompok.reduce((n, g) => n + (g.items || []).length, 0)} item terisi`,
+        `Nilai ${rupiah(t.total)}`,
+      ],
+      tegasan: "Isinya dikunci setelah ini — untuk mengubah lagi, kuncinya harus dibuka dulu.",
+      tombolYa: "Ya, tandai terkirim",
+    }))) return;
     await simpanDoc({ ...kerja, status: "terkirim", dikirimPada: new Date().toISOString() });
   };
   const hapusDoc = async () => {
     if (!kerja || !tersimpan) return;
-    if (!confirm(`Hapus ${tipe} ${namaBulan(bulan)} — ${kapal}?\n\nSeluruh itemnya ikut terhapus dan tak bisa dikembalikan.`)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "🗑️",
+      judul: `Hapus ${tipe} ${namaBulan(bulan)}?`,
+      pesan: `${kapal} — dokumen ini beserta seluruh isinya akan dibuang dari Supabase.`,
+      rincian: [
+        `${kerja.kelompok.reduce((n, g) => n + (g.items || []).length, 0)} item`,
+        `Nilai ${rupiah(t.total)}`,
+      ],
+      tegasan: "Tidak bisa dikembalikan.",
+      tombolYa: "Ya, hapus",
+    }))) return;
     setSibuk(true);
     try {
       await hapus(kerja.id);
@@ -126,24 +149,26 @@ export default function RencanaPage() {
 
   const bukaKunci = async () => {
     if (!kerja) return;
-    if (!confirm("Buka kunci untuk revisi?\n\nDokumen ini sudah ditandai terkirim ke pusat. Perubahan setelah ini perlu dilaporkan ulang.")) return;
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "🔓",
+      judul: "Buka kunci untuk revisi?",
+      pesan: "Dokumen ini sudah ditandai terkirim ke pusat.",
+      tegasan: "Perubahan setelah ini perlu dilaporkan ulang ke pusat.",
+      tombolYa: "Buka kunci",
+    }))) return;
     await simpanDoc({ ...kerja, status: "draf" });
   };
 
   /**
    * Tarik realisasi dari pengadaan yang SUDAH tercatat (SPPBJ + Non PR PO ber-jenis Rutin)
    * pada bulan & kapal ini. Item multi-kapal dibagi rata supaya totalnya tetap pas.
-   * Item Akomodasi/Permesinan masuk ke kelompok "Lain-Lain" karena sub-kelompoknya tak bisa
-   * ditebak dari dokumen — tinggal dipindahkan lewat tombol ⇄ pada barisnya.
+   * Penempatan sub-kelompok (cleaning / suku cadang / service / dst.) ditentukan
+   * tentukanKelompok(): maksud NAMA PENGADAAN dulu, baru nama barangnya.
+   * Selalu bisa dikoreksi lewat tombol ⇄ pada barisnya.
    */
   const hitungTarikan = useMemo(() => () => {
-    const sasaran = (kode: string) => {
-      const sub = KELOMPOK_RR.filter((k) => k.kode === kode);
-      if (!sub.length) return "";
-      const lain = sub.find((k) => /lain/i.test(k.judul));
-      return kunciKelompok(lain || sub[0]);
-    };
     const kumpul: Record<string, RrItem[]> = {};
+    const sebaran: Record<string, number> = {};   // judul kelompok -> jumlah item
     let n = 0, diabaikan = 0;
     const lainKapal: string[] = [];   // pengadaan bulan ini yang tak menyebut kapal ini
     for (const p of pengadaan) {
@@ -164,8 +189,10 @@ export default function RencanaPage() {
         const harga = (adaFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) / bagi;
         if (!harga) continue;
         const kode = maKey((it.mataAnggaran || "").trim() || maDefault);
-        const kunci = sasaran(kode);
+        const tempat = tentukanKelompok(kode, p.nama || "", it.nama || "", it.spesifikasi || "");
+        const kunci = tempat.kunci;
         if (!kunci) { diabaikan++; continue; }
+        sebaran[tempat.judul] = (sebaran[tempat.judul] || 0) + 1;
         (kumpul[kunci] ||= []).push({
           id: uid(), deskripsi: it.nama || "(tanpa nama)",
           // Spesifikasi harus sama persis dengan tabel SPPBJ/Non PR PO — kosong berarti kosong.
@@ -177,7 +204,7 @@ export default function RencanaPage() {
         n++;
       }
     }
-    return { kumpul, n, diabaikan, lainKapal };
+    return { kumpul, n, diabaikan, lainKapal, sebaran };
   }, [pengadaan, bulan, kapal]);
 
   /**
@@ -225,8 +252,8 @@ export default function RencanaPage() {
     return { n, nilai, rincian };
   }, [kerja, hitungTarikan]);
 
-  const tarikDariPengadaan = () => {
-    const { kumpul, n, diabaikan, lainKapal } = hitungTarikan();
+  const tarikDariPengadaan = async () => {
+    const { kumpul, n, diabaikan, lainKapal, sebaran } = hitungTarikan();
     if (!n) {
       // beri tahu SEBABNYA, bukan sekadar "tidak ada"
       const sebab = lainKapal.length
@@ -257,9 +284,13 @@ export default function RencanaPage() {
       return;
     }
 
-    if (lewat && !confirm(
-      `${lewat} item sudah pernah ditarik sebelumnya dan akan DILEWATI.\n`
-      + `${baru} item baru akan ditambahkan.\n\nLanjutkan?`)) return;
+    if (lewat && !(await konfirmasi({
+      nada: "perhatian", ikon: "⚡",
+      judul: "Sebagian item sudah pernah ditarik",
+      pesan: `Supaya realisasi tidak dobel, yang sudah ada akan dilewati.`,
+      rincian: [`${lewat} item DILEWATI (sudah ada di dokumen ini)`, `${baru} item baru akan ditambahkan`],
+      tombolYa: `Tambahkan ${baru} item`,
+    }))) return;
 
     ubah((d) => {
       for (const [kunci, items] of Object.entries(tambah)) {
@@ -268,23 +299,100 @@ export default function RencanaPage() {
         else d.kelompok.push({ kunci, items });
       }
     });
+    // sebaran hanya untuk yang BENAR-BENAR masuk kali ini
+    const sebaranBaru: Record<string, number> = {};
+    Object.entries(tambah).forEach(([kunci, items]) => {
+      const judul = kunci.split("|")[1] || kunci;
+      sebaranBaru[judul] = (sebaranBaru[judul] || 0) + items.length;
+    });
+    const petaKelompok = Object.entries(sebaranBaru).sort((a, b) => b[1] - a[1])
+      .map(([j, c]) => `${j} ${c}`).join(" · ");
+
     setPesan(
       `${baru} item ditarik dari SPPBJ / Non PR PO`
       + (lewat ? ` · ${lewat} dilewati karena sudah ada (anti-dobel)` : "")
       + (diabaikan ? ` · ${diabaikan} item Mata Anggarannya di luar daftar Lampiran 3` : "")
       + (lainKapal.length ? ` · ${lainKapal.length} pengadaan bulan ini tidak menyebut ${ringkasKapal(kapal)} (jadi tak ikut ditarik)` : "")
-      + `. Periksa penempatan kelompoknya, lalu simpan.`);
-    setTimeout(() => setPesan(""), 12000);
+      + `.\nPenempatan: ${petaKelompok}. Geser dengan tombol ⇄ bila ada yang kurang pas, lalu simpan.`);
+    setTimeout(() => setPesan(""), 14000);
+  };
+
+  /**
+   * Item hasil tarikan yang menurut aturan penempatan seharusnya duduk di kelompok lain.
+   * Muncul pada dokumen yang diisi SEBELUM aturan ini ada (semuanya menumpuk di Lain-Lain).
+   * Hanya baris ber-'asal'; yang diketik tangan tidak pernah dipindah otomatis.
+   */
+  const namaDokAsal = (asal?: string) => (asal || "").replace(/^(SPPBJ|Non PR PO)\s+/i, "");
+  const salahTempat = useMemo(() => {
+    if (!kerja) return { n: 0, rincian: [] as { dari: string; ke: string; n: number }[] };
+    const hit: Record<string, number> = {};
+    kerja.kelompok.forEach((g) => {
+      const kode = g.kunci.split("|")[0];
+      const dari = g.kunci.split("|")[1] || g.kunci;
+      (g.items || []).forEach((i) => {
+        if (!i.asal) return;
+        const h = tentukanKelompok(kode, namaDokAsal(i.asal), i.deskripsi || "", i.spesifikasi || "");
+        if (!h.kunci || h.kunci === g.kunci) return;
+        hit[`${dari}→${h.judul}`] = (hit[`${dari}→${h.judul}`] || 0) + 1;
+      });
+    });
+    const rincian = Object.entries(hit).map(([k, n]) => {
+      const [dari, ke] = k.split("→");
+      return { dari, ke, n };
+    }).sort((a, b) => b.n - a.n);
+    return { n: rincian.reduce((s, r) => s + r.n, 0), rincian };
+  }, [kerja]);
+
+  /** pindahkan item tarikan ke kelompok yang tepat menurut aturan penempatan */
+  const tataUlangKelompok = async () => {
+    if (!kerja || !salahTempat.n) return;
+    if (!(await konfirmasi({
+      nada: "biasa", ikon: "⇄",
+      judul: `Tata ulang ${salahTempat.n} item ke kelompok yang tepat?`,
+      pesan: "Penempatan dibaca dari maksud nama pengadaannya, lalu nama barangnya. Nilai & Mata Anggaran tidak berubah — hanya judul kebutuhannya yang dirapikan.",
+      rincian: salahTempat.rincian.slice(0, 8).map((r) => `${r.n} item: ${r.dari} → ${r.ke}`),
+      tegasan: "Baris yang Anda ketik sendiri tidak dipindah.",
+      tombolYa: "Tata ulang",
+    }))) return;
+
+    let pindah = 0;
+    ubah((d) => {
+      const masuk: Record<string, RrItem[]> = {};
+      d.kelompok.forEach((g) => {
+        const kode = g.kunci.split("|")[0];
+        g.items = (g.items || []).filter((i) => {
+          if (!i.asal) return true;
+          const h = tentukanKelompok(kode, namaDokAsal(i.asal), i.deskripsi || "", i.spesifikasi || "");
+          if (!h.kunci || h.kunci === g.kunci) return true;
+          (masuk[h.kunci] ||= []).push(i); pindah++; return false;
+        });
+      });
+      for (const [kunci, items] of Object.entries(masuk)) {
+        const g = d.kelompok.find((x) => x.kunci === kunci);
+        if (g) g.items = [...(g.items || []), ...items];
+        else d.kelompok.push({ kunci, items });
+      }
+      // rapikan urutan tampilan: barang serupa berdekatan
+      d.kelompok.forEach((g) => g.items.sort((a, b) => (a.deskripsi || "").localeCompare(b.deskripsi || "", "id")));
+    });
+    setPesan(`${pindah} item ditata ulang ke kelompok yang tepat. Periksa, lalu simpan.`);
+    setTimeout(() => setPesan(""), 10000);
   };
 
   /** buang baris tarikan yang berlebih (sisa dobel lama), sisakan sebanyak yang ada di SPPBJ */
-  const rapikanDobel = () => {
+  const rapikanDobel = async () => {
     if (!kerja || !dobel.n) return;
-    if (!confirm(
-      `Buang ${dobel.n} baris dobel (${rupiah(Math.round(dobel.nilai))})?\n\n`
-      + dobel.rincian.slice(0, 6).map((r) => `· ${r.nama} — kelebihan ${r.lebih} baris`).join("\n")
-      + (dobel.rincian.length > 6 ? `\n· …${dobel.rincian.length - 6} lagi` : "")
-      + `\n\nYang disisakan sebanyak yang benar-benar ada di SPPBJ / Non PR PO. Baris yang Anda ketik sendiri tidak diusik.`)) return;
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "🧹",
+      judul: `Buang ${dobel.n} baris dobel?`,
+      pesan: `Senilai ${rupiah(Math.round(dobel.nilai))}. Yang disisakan sebanyak yang benar-benar ada di SPPBJ / Non PR PO.`,
+      rincian: [
+        ...dobel.rincian.slice(0, 6).map((r) => `${r.nama} — kelebihan ${r.lebih} baris`),
+        ...(dobel.rincian.length > 6 ? [`…${dobel.rincian.length - 6} jenis lagi`] : []),
+      ],
+      tegasan: "Baris yang Anda ketik sendiri tidak diusik.",
+      tombolYa: "Rapikan",
+    }))) return;
 
     const { kumpul } = hitungTarikan();
     const sumber: Record<string, number> = {};
@@ -490,7 +598,7 @@ export default function RencanaPage() {
             </div>
           </div>
 
-          {pesan && <p className="px-5 pt-3 text-xs font-semibold text-slate-600">{pesan}</p>}
+          {pesan && <p className="px-5 pt-3 text-xs font-semibold text-slate-600 whitespace-pre-line leading-relaxed">{pesan}</p>}
           {simpanErr && <p className="px-5 pt-3 text-xs font-semibold text-rose-700">Supabase: {simpanErr}</p>}
           {tenggat?.tingkat === "lewat" && !terkunci && (
             <p className="mx-5 mt-3 text-xs bg-rose-50 text-rose-800 ring-1 ring-rose-200 rounded-lg px-3 py-2">
@@ -506,6 +614,19 @@ export default function RencanaPage() {
               </span>
               <button onClick={rapikanDobel} className="btn btn-ghost text-xs shrink-0" title="Buang baris berlebih; sisakan sebanyak yang ada di SPPBJ. Baris ketik tangan tidak diusik.">
                 🧹 Rapikan dobel
+              </button>
+            </div>
+          )}
+          {salahTempat.n > 0 && !terkunci && (
+            <div className="mx-5 mt-3 text-xs bg-sky-50 text-slate-800 ring-1 ring-sky-200 rounded-lg px-3 py-2.5 flex flex-wrap items-center gap-x-3 gap-y-2">
+              <span className="flex-1 min-w-[16rem]">
+                <b>⇄ {salahTempat.n} item bisa ditata ulang</b> ke judul kebutuhan yang lebih tepat
+                {salahTempat.rincian.length ? <> (mis. {salahTempat.rincian[0].n} item <i>{salahTempat.rincian[0].dari}</i> → <i>{salahTempat.rincian[0].ke}</i>)</> : null}.
+                Berkas realisasinya jadi terbaca per jenis kebutuhan, bukan menumpuk di Lain-Lain.
+              </span>
+              <button onClick={tataUlangKelompok} className="btn btn-ghost text-xs shrink-0"
+                title="Pindahkan item hasil tarikan ke kelompok yang tepat. Nilai & Mata Anggaran tidak berubah.">
+                ⇄ Tata ulang kelompok
               </button>
             </div>
           )}
@@ -576,6 +697,7 @@ export default function RencanaPage() {
       <Rekap dok={dok} bulan={bulan} tipe={tipe} />
 
       {loading && <p className="mt-4 text-xs text-slate-400">memuat…</p>}
+      {dialogKonfirmasi}
     </main>
   );
 }
