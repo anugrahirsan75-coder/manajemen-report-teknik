@@ -124,6 +124,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <NavLink href="/kerusakan" icon="🛠️" label="Rekap Kerusakan Kapal" desc="Report Accident · kejadian &amp; tindak lanjut" active={path.startsWith("/kerusakan")} onNavigate={onNavigate} />
 
         <SectionLabel>Data Kapal</SectionLabel>
+        <NavLink href="/sensor" icon="📡" label="Monitoring Sensor" desc="Data sensor kapal Regional 4 (Looker)" active={path.startsWith("/sensor")} onNavigate={onNavigate} />
         <NavLink href="/armada" icon="⚓" label="Profil Armada" desc="Lihat spesifikasi & inventaris" active={path.startsWith("/armada")} onNavigate={onNavigate} />
         <NavLink href="/kapal" icon="🚢" label="Ship Database" desc="Isi & edit data kapal" active={path.startsWith("/kapal")} onNavigate={onNavigate} />
 
