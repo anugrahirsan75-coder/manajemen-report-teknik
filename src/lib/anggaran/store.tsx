@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
-import { RKA, PlafonRutin, PlafonDocking, PlafonProgram, maKey, namaKapalPenuh, jenisAnggaranOf } from "./types";
+import { RKA, PlafonRutin, PlafonDocking, PlafonProgram, maKey, namaKapalPenuh, jenisAnggaranOf, type JenisAnggaran } from "./types";
 import { pecahKapal } from "@/lib/kapal/nama";
 import { catatBackup } from "@/lib/backup/local";
 
@@ -45,12 +45,15 @@ export function nilaiPengadaan(items: any[]): number {
 // Pecah nilai pengadaan per Mata Anggaran ITEM (it.mataAnggaran; kosong = ikut MA pertama pengadaan).
 // filterKapal opsional: hanya item milik kapal itu (dipakai Kendali Docking).
 // useFinal=false -> pakai harga estimasi saja (dipakai KPI/penyerapan dashboard).
-export function nilaiPerMA(p: { items?: any[]; mataAnggaran?: string[] }, filterKapal?: string, useFinal = true): Record<string, number> {
+export function nilaiPerMA(p: { items?: any[]; mataAnggaran?: string[] }, filterKapal?: string, useFinal = true,
+                           saring?: (it: any) => boolean): Record<string, number> {
   const arr = p.items || [];
+  // hasFinal tetap dilihat dari SELURUH item: adanya harga SPBJ itu sifat dokumen, bukan sifat baris
   const hasFinal = useFinal && arr.some((it) => (it.hargaSpbj || 0) > 0);
   const maDefault = (p.mataAnggaran || [])[0] || "";
   const out: Record<string, number> = {};
   for (const it of arr) {
+    if (saring && !saring(it)) continue;
     if (filterKapal && namaKapalPenuh(it.kapal || "") !== filterKapal) continue;
     const ma = (it.mataAnggaran || "").trim() || maDefault;
     const v = (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
@@ -61,11 +64,13 @@ export function nilaiPerMA(p: { items?: any[]; mataAnggaran?: string[] }, filter
 
 // Pecah nilai pengadaan per KAPAL (dari kolom kapal tiap item).
 // Item yang menyebut >1 kapal dibagi RATA ke kapal2 itu (biar total tetap pas, tak dobel).
-export function nilaiPerKapal(p: { items?: any[] }, useFinal = true): Record<string, number> {
+export function nilaiPerKapal(p: { items?: any[] }, useFinal = true,
+                              saring?: (it: any) => boolean): Record<string, number> {
   const arr = p.items || [];
   const hasFinal = useFinal && arr.some((it) => (it.hargaSpbj || 0) > 0);
   const out: Record<string, number> = {};
   for (const it of arr) {
+    if (saring && !saring(it)) continue;
     const v = (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
     if (!v) continue;
     const ks = pecahKapal(it.kapal || "");
@@ -77,15 +82,31 @@ export function nilaiPerKapal(p: { items?: any[] }, useFinal = true): Record<str
 }
 export const TANPA_KAPAL = "(tanpa kapal)";
 
+/**
+ * Sumber anggaran efektif sebuah item dalam PengadaanRow.
+ * Kosong = ikut dokumennya, jadi seluruh data lama berperilaku persis seperti sebelumnya.
+ * Diisi = baris itu dibebankan ke sumber lain (1 SPPBJ boleh memakai >1 sumber).
+ */
+export function jenisItemRow(p: PengadaanRow, it: any): { jenis: JenisAnggaran; programId?: string } {
+  const j = (it?.jenisAnggaran || "").toLowerCase();
+  if (j === "rutin" || j === "docking") return { jenis: j as JenisAnggaran };
+  if (j === "lainnya") return { jenis: "lainnya", programId: it?.programId || p.programId };
+  // programId dokumen tetap dibawa apa pun jenisnya -> rekap pagu surat tak berubah
+  return { jenis: p.jenis, programId: p.programId };
+}
+/** apakah pengadaan ini menyentuh sumber anggaran tsb sama sekali (penyaring cepat) */
+const menyentuh = (p: PengadaanRow, jenis: JenisAnggaran) =>
+  p.jenis === jenis || (p.items || []).some((it: any) => (it?.jenisAnggaran || "").toLowerCase() === jenis);
+
 export interface RealisasiKapal { kapal: string; nilai: number; pengadaan: RealisasiItem[] }
 /** Serapan RUTIN per KAPAL untuk 1 bulan ("YYYY-MM") — SPPBJ + Non PR PO. */
 export function realisasiRutinKapal(rows: PengadaanRow[], bulan: string) {
   const per: Record<string, RealisasiKapal> = {};
   for (const p of rows) {
-    if (p.jenis !== "rutin" || p.stok) continue;   // stok persediaan tak menggerus pagu
+    if (p.stok || !menyentuh(p, "rutin")) continue;   // stok persediaan tak menggerus pagu
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
     const maDefault = (p.mataAnggaran || [])[0] || "";
-    for (const [kapal, v] of Object.entries(nilaiPerKapal(p))) {
+    for (const [kapal, v] of Object.entries(nilaiPerKapal(p, true, (it) => jenisItemRow(p, it).jenis === "rutin"))) {
       if (!per[kapal]) per[kapal] = { kapal, nilai: 0, pengadaan: [] };
       per[kapal].nilai += v;
       per[kapal].pengadaan.push({ id: p.id, nama: p.nama, ma: maDefault, nilai: v, key: kapal, sumber: p.sumber, tanggal: p.tanggal, raw: p.raw });
@@ -104,9 +125,9 @@ export function realisasiRutin(rows: PengadaanRow[], bulan: string) {
   for (const p of rows) {
     // RUTIN = SPPBJ + Non PR PO ber-jenis rutin (docking dikecualikan). Anti-overlap: tepat 1 bucket.
     // Barang yang masuk persediaan (stok) dilewati: belum menjadi beban Mata Anggaran.
-    if (p.jenis !== "rutin" || p.stok) continue;
+    if (p.stok || !menyentuh(p, "rutin")) continue;
     if ((p.tanggal || "").slice(0, 7) !== bulan) continue;
-    for (const [ma, v] of Object.entries(nilaiPerMA(p))) {
+    for (const [ma, v] of Object.entries(nilaiPerMA(p, undefined, true, (it) => jenisItemRow(p, it).jenis === "rutin"))) {
       const key = maKey(ma);
       perKey[key] = (perKey[key] || 0) + v;
       list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal, raw: p.raw });
@@ -123,9 +144,9 @@ export function realisasiDocking(rows: PengadaanRow[], kapal: string, tahun: num
   const perKey: Record<string, number> = {};
   const list: RealisasiItem[] = [];
   for (const p of rows) {
-    if (p.jenis !== "docking" || p.stok) continue;   // stok persediaan tak menggerus pagu
+    if (p.stok || !menyentuh(p, "docking")) continue;   // stok persediaan tak menggerus pagu
     if (parseInt((p.tanggal || "").slice(0, 4), 10) !== tahun) continue;
-    for (const [ma, v] of Object.entries(nilaiPerMA(p, kapal))) {
+    for (const [ma, v] of Object.entries(nilaiPerMA(p, kapal, true, (it) => jenisItemRow(p, it).jenis === "docking"))) {
       const key = maKey(ma);
       perKey[key] = (perKey[key] || 0) + v;
       list.push({ id: p.id, nama: p.nama, ma, nilai: v, key, sumber: p.sumber, tanggal: p.tanggal, raw: p.raw });
@@ -141,11 +162,14 @@ export function realisasiProgram(rows: PengadaanRow[], programId: string) {
   const perKunci: Record<string, number> = {};   // `${kapal}|${maKey}`
   const list: RealisasiItem[] = [];
   for (const p of rows) {
-    if (p.programId !== programId || p.stok) continue;   // stok persediaan tak menggerus pagu
-    const maDefault = (p.mataAnggaran || [])[0] || "";
+    if (p.stok) continue;   // stok persediaan tak menggerus pagu
     const arr = p.items || [];
+    // dokumennya tertaut ke surat ini, ATAU ada baris yang dibebankan ke surat ini
+    if (p.programId !== programId && !arr.some((it: any) => it?.programId === programId)) continue;
+    const maDefault = (p.mataAnggaran || [])[0] || "";
     const hasFinal = arr.some((it: any) => (it.hargaSpbj || 0) > 0);
     for (const it of arr) {
+      if (jenisItemRow(p, it).programId !== programId) continue;
       const v = (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
       if (!v) continue;
       const ma = (it.mataAnggaran || "").trim() || maDefault;

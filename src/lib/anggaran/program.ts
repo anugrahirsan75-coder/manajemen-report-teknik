@@ -5,7 +5,7 @@
  * pengecekan pemakaian sebuah pengadaan terhadap pagu surat persetujuan.
  */
 import { PlafonProgram, maKey, namaKapalPenuh, fullMA, isMaInvestasi } from "./types";
-import { PengadaanRow } from "./store";
+import { PengadaanRow, jenisItemRow } from "./store";
 import { pecahKapal } from "@/lib/kapal/nama";
 
 export interface PosProgram {
@@ -21,12 +21,14 @@ export interface PosProgram {
 const kunciPos = (kapal: string, ma: string) => `${namaKapalPenuh(kapal || "") || "(umum)"}|${maKey(ma)}`;
 
 /** Nilai sebuah pengadaan dipecah per pos (kapal x MA). Item multi-kapal dibagi rata. */
-export function nilaiPerPos(p: { items?: any[]; mataAnggaran?: string[] | string }): Record<string, number> {
+export function nilaiPerPos(p: { items?: any[]; mataAnggaran?: string[] | string },
+                            saring?: (it: any) => boolean): Record<string, number> {
   const arr = p.items || [];
   const maDefault = (Array.isArray(p.mataAnggaran) ? p.mataAnggaran[0] : p.mataAnggaran) || "";
   const hasFinal = arr.some((it: any) => (it.hargaSpbj || 0) > 0);
   const out: Record<string, number> = {};
   for (const it of arr) {
+    if (saring && !saring(it)) continue;
     const v = (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
     if (!v) continue;
     const ma = (it.mataAnggaran || "").trim() || maDefault;
@@ -54,9 +56,11 @@ export function posProgram(prog: PlafonProgram | undefined, pengadaan: Pengadaan
     };
   }
   for (const p of pengadaan) {
-    if (p.programId !== prog.id) continue;
     if (abaikanId && p.id === abaikanId) continue;
-    for (const [kunci, v] of Object.entries(nilaiPerPos(p))) {
+    // dokumennya tertaut ke surat ini, ATAU sebagian barisnya dibebankan ke surat ini
+    const adaBaris = (p.items || []).some((it: any) => it?.programId === prog.id);
+    if (p.programId !== prog.id && !adaBaris) continue;
+    for (const [kunci, v] of Object.entries(nilaiPerPos(p, (it) => jenisItemRow(p, it).programId === prog.id))) {
       if (!by[kunci]) {
         const [kapal, kode] = kunci.split("|");
         by[kunci] = { kunci, kapal, ma: fullMA(kode), pagu: 0, pakai: 0, sisa: 0, inv: isMaInvestasi(kode) };
@@ -71,10 +75,13 @@ export function posProgram(prog: PlafonProgram | undefined, pengadaan: Pengadaan
 
 export interface CekPos { pos: PosProgram | null; kunci: string; kapal: string; ma: string; nilai: number; sisa: number; lebih: number }
 /** Cek pemakaian pengadaan yang sedang dibuat terhadap pos pagu. */
-export function cekPemakaian(pos: PosProgram[], req: { items?: any[]; mataAnggaran?: string[] | string }): {
+export function cekPemakaian(pos: PosProgram[], req: { items?: any[]; mataAnggaran?: string[] | string },
+                             saring?: (it: any) => boolean): {
   rincian: CekPos[]; totalDipakai: number; totalSisa: number; over: CekPos[]; tanpaPos: CekPos[];
 } {
-  const per = nilaiPerPos(req);
+  // saring dipakai bila pengadaan ini memakai >1 sumber anggaran: hanya baris milik
+  // surat inilah yang boleh diadu dengan pagunya.
+  const per = nilaiPerPos(req, saring);
   const map: Record<string, PosProgram> = {};
   pos.forEach((p) => { map[p.kunci] = p; });
   const rincian: CekPos[] = Object.entries(per).map(([kunci, nilai]) => {

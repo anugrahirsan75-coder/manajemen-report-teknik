@@ -32,6 +32,46 @@ export function jenisAnggaranOf(p: { jenisAnggaran?: string; kategoriRekap?: str
   return /docking/i.test(p.kategoriRekap || "") ? "docking" : "rutin";
 }
 
+/**
+ * Sumber anggaran EFEKTIF sebuah ITEM.
+ *
+ * Satu SPPBJ di lapangan sering memakai lebih dari satu sumber: sebagian item
+ * dibebankan ke pagu Docking kapal, sisanya ke surat Persetujuan Biaya Lainnya
+ * (atau ke pagu Rutin bulan itu). Dokumen fisiknya tetap SATU, jadi yang dipecah
+ * bukan dokumennya melainkan pembebanan per barisnya.
+ *
+ * Item yang tidak diisi mengikuti pengadaannya — data lama terbaca sama persis.
+ */
+export function jenisItemOf(
+  dok: { jenisAnggaran?: string; kategoriRekap?: string; programId?: string },
+  it?: { jenisAnggaran?: string; programId?: string },
+): { jenis: JenisAnggaran; programId?: string } {
+  const j = (it?.jenisAnggaran || "").toLowerCase();
+  if (j === "rutin" || j === "docking") return { jenis: j as JenisAnggaran };
+  if (j === "lainnya") return { jenis: "lainnya", programId: it?.programId || dok.programId };
+  // programId dokumen tetap dibawa apa pun jenisnya, supaya rekap pagu surat
+  // berperilaku persis seperti sebelum ada pembebanan per item.
+  return { jenis: jenisAnggaranOf(dok), programId: dok.programId };
+}
+
+/** kunci pembanding sumber anggaran (surat yang berbeda dihitung berbeda) */
+export const kunciSumber = (x: { jenis: JenisAnggaran; programId?: string }) =>
+  x.jenis === "lainnya" ? `lainnya|${x.programId || ""}` : x.jenis;
+
+/** true bila pengadaan ini membebani LEBIH DARI SATU sumber anggaran */
+export function anggaranCampuran(dok: {
+  items?: any[]; jenisAnggaran?: string; kategoriRekap?: string; programId?: string;
+}): boolean {
+  const s = new Set<string>();
+  for (const it of dok.items || []) {
+    const nilai = (it?.hargaSpbj || it?.harga || 0) * (it?.jumlah || 0);
+    if (!nilai) continue;                       // baris kosong tak menentukan apa-apa
+    s.add(kunciSumber(jenisItemOf(dok, it)));
+    if (s.size > 1) return true;
+  }
+  return false;
+}
+
 // kategori dari teks mata anggaran (utama) atau nama pengadaan (fallback)
 export function kategoriPengadaan(mataAnggaran: string[] | string | undefined, nama?: string): Kategori {
   const arr = Array.isArray(mataAnggaran) ? mataAnggaran : mataAnggaran ? [mataAnggaran] : [];

@@ -16,7 +16,7 @@ import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import { useAnggaran, realisasiRutin, nilaiPengadaan } from "@/lib/anggaran/store";
-import { maKey, jenisAnggaranOf } from "@/lib/anggaran/types";
+import { maKey, jenisAnggaranOf, jenisItemOf, anggaranCampuran, kunciSumber } from "@/lib/anggaran/types";
 import PaguProgram from "@/components/anggaran/PaguProgram";
 import { posProgram, cekPemakaian } from "@/lib/anggaran/program";
 import { tanggalIndo } from "@/lib/format";
@@ -33,7 +33,7 @@ function SppbjIsiInner() {
   const [rekapBusy, setRekapBusy] = useState(false);
   // kolom Mata Anggaran per item hanya perlu saat pengadaan mencentang >1 MA
   const multiMA = (req.mataAnggaran || []).length > 1;
-  const nCol = multiMA ? 10 : 9;
+  const nCol = 9 + (multiMA ? 1 : 0) + (req.anggaranPerItem ? 1 : 0);
   const kodeSingkat = (m: string) => (m || "").match(/\d{6,}/)?.[0] || m;
   // warna per Mata Anggaran (urutan sesuai centang) biar mudah dibedakan sekilas
   const MA_WARNA = [
@@ -44,6 +44,20 @@ function SppbjIsiInner() {
     "bg-rose-50 text-rose-800 border-rose-300",
     "bg-teal-50 text-teal-800 border-teal-300",
   ];
+  // ---- sumber anggaran per item (1 SPPBJ boleh membebani >1 sumber) ----
+  const WARNA_SUMBER: Record<string, string> = {
+    rutin: "bg-sky-50 text-sky-800 border-sky-300",
+    docking: "bg-orange-50 text-orange-800 border-orange-300",
+    lainnya: "bg-indigo-50 text-indigo-800 border-indigo-300",
+    ikut: "bg-white text-slate-500 border-slate-300",
+  };
+  const warnaSumber = (it: SppbjItem) => WARNA_SUMBER[it.jenisAnggaran || "ikut"] || WARNA_SUMBER.ikut;
+  const labelSumber = (it: SppbjItem) => {
+    if (!it.jenisAnggaran) return "Ikut sumber anggaran pengadaan ini";
+    if (it.jenisAnggaran !== "lainnya") return `Dibebankan ke pagu ${it.jenisAnggaran}`;
+    return `Dibebankan ke surat: ${program.find((p) => p.id === it.programId)?.nama || "(belum dipilih)"}`;
+  };
+
   const warnaMA = (ma: string) => {
     const efektif = (ma || "").trim() || (req.mataAnggaran || [])[0] || "";
     const i = (req.mataAnggaran || []).indexOf(efektif);
@@ -135,7 +149,9 @@ function SppbjIsiInner() {
   const rutinInfo = useMemo(() => {
     // barang untuk stok tak menggerus pagu -> guardrail tidak berlaku
     if (req.stokPersediaan) return null;
-    if (jenisAnggaranOf(req) !== "rutin") return null;
+    // yang diadu dengan pagu Rutin hanya BARIS yang dibebankan ke Rutin
+    const itemRutin = (req.items || []).filter((it) => jenisItemOf(req, it).jenis === "rutin");
+    if (!itemRutin.length) return null;
     const ma = (req.mataAnggaran || [])[0] || "";
     if (!ma || !req.tanggal) return null;
     const bulan = req.tanggal.slice(0, 7);
@@ -144,28 +160,63 @@ function SppbjIsiInner() {
     const pagu = pe?.rows.find((r) => maKey(r.ma) === key)?.nilai || 0;
     const lain = realisasiRutin(pengadaan.filter((p) => p.id !== req.id), bulan).perKey[key] || 0;
     const sisa = pagu - lain;
-    const nilaiIni = nilaiPengadaan(req.items);
+    const nilaiIni = nilaiPengadaan(itemRutin);
     return { ma, bulan, pagu, sisa, nilaiIni, hasPagu: pagu > 0, over: pagu > 0 && nilaiIni > sisa };
   }, [req.jenisAnggaran, req.kategoriRekap, req.mataAnggaran, req.tanggal, req.items, req.id, req.stokPersediaan, plafon, pengadaan]);
 
-  // guardrail pagu Persetujuan Biaya Lainnya
-  const progInfo = useMemo(() => {
-    if (!req.programId) return null;
-    const pr = program.find((x) => x.id === req.programId);
-    if (!pr) return null;
-    const pos = posProgram(pr, pengadaan, req.id);
-    return { pr, ...cekPemakaian(pos, req) };
-  }, [req.programId, req.items, req.mataAnggaran, req.id, program, pengadaan]);
+  // guardrail pagu Persetujuan Biaya Lainnya.
+  // Satu SPPBJ bisa membebani BEBERAPA surat sekaligus (kolom Anggaran per item),
+  // jadi tiap surat diperiksa terpisah dengan hanya baris miliknya.
+  const progInfoList = useMemo(() => {
+    const ids = new Set<string>();
+    if (req.programId) ids.add(req.programId);        // tautan dokumen (perilaku lama)
+    (req.items || []).forEach((it) => {               // + surat yang dibebani per baris
+      const s = jenisItemOf(req, it);
+      if (s.jenis === "lainnya" && s.programId) ids.add(s.programId);
+    });
+    return Array.from(ids).map((id) => {
+      const pr = program.find((x) => x.id === id);
+      if (!pr) return null;
+      const pos = posProgram(pr, pengadaan, req.id);
+      const saring = (it: any) => jenisItemOf(req, it).programId === id;
+      return { pr, ...cekPemakaian(pos, req, saring) };
+    }).filter(Boolean) as { pr: any; over: any[]; tanpaPos: any[] }[];
+  }, [req.programId, req.items, req.mataAnggaran, req.id, req.jenisAnggaran, req.kategoriRekap, program, pengadaan]);
+  const progInfo = progInfoList[0] || null;
+
+  /** rekap nilai per sumber anggaran — dasar tampilan & pengingat pembagian */
+  const campuran = useMemo(() => {
+    const arr = req.items || [];
+    const hasFinal = arr.some((it) => (it.hargaSpbj || 0) > 0);
+    const by: Record<string, { kunci: string; label: string; warna: string; nilai: number; jml: number }> = {};
+    for (const it of arr) {
+      const v = (hasFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
+      if (!v) continue;
+      const s = jenisItemOf(req, it);
+      const kunci = kunciSumber(s);
+      const label = s.jenis === "lainnya"
+        ? `📜 ${(program.find((p) => p.id === s.programId)?.nama || "Persetujuan Lainnya").slice(0, 38)}`
+        : s.jenis === "docking" ? "⚓ Docking" : "🧭 Rutin";
+      const warna = s.jenis === "lainnya" ? "bg-indigo-50 text-indigo-800 border-indigo-300"
+        : s.jenis === "docking" ? "bg-orange-50 text-orange-800 border-orange-300"
+        : "bg-sky-50 text-sky-800 border-sky-300";
+      const b = (by[kunci] ||= { kunci, label, warna, nilai: 0, jml: 0 });
+      b.nilai += v; b.jml += 1;
+    }
+    const baris = Object.values(by).sort((a, b) => b.nilai - a.nilai);
+    return { baris, n: baris.length };
+  }, [req.items, req.jenisAnggaran, req.kategoriRekap, req.programId, program]);
 
   const lolosGuard = async (): Promise<boolean> => {
-    if (progInfo && (progInfo.over.length || progInfo.tanpaPos.length)) {
+    for (const pi of progInfoList) {
+      if (!pi.over.length && !pi.tanpaPos.length) continue;
       if (!(await konfirmasi({
         nada: "perhatian", ikon: "📊",
         judul: "Pemakaian tak cocok dengan pagu surat",
-        pesan: `Surat persetujuan: "${progInfo.pr.nama}".`,
+        pesan: `Surat persetujuan: "${pi.pr.nama}".`,
         rincian: [
-          ...progInfo.over.map((o) => `${o.kapal} · ${o.ma} — LEBIH ${rupiah(Math.round(o.lebih))}`),
-          ...progInfo.tanpaPos.map((o) => `${o.kapal} · ${o.ma} — pos ini tak ada di surat`),
+          ...pi.over.map((o: any) => `${o.kapal} · ${o.ma} — LEBIH ${rupiah(Math.round(o.lebih))}`),
+          ...pi.tanpaPos.map((o: any) => `${o.kapal} · ${o.ma} — pos ini tak ada di surat`),
         ],
         tegasan: "Kalau diteruskan, pemakaian melebihi yang disetujui pusat.",
         tombolYa: "Tetap lanjut",
@@ -370,7 +421,11 @@ function SppbjIsiInner() {
               <option value="Lainnya">Lainnya (Persetujuan Biaya Lainnya)</option>
             </select>
           </Field>
-          <Field label="Perlakuan Anggaran">
+          {/* blok ini pakai <div>, BUKAN <Field> — Field sendiri sebuah <label>,
+              dan dua <label> bersarang membuat centang kedua memicu centang pertama */}
+          <div className="block">
+            <span className="text-xs font-semibold text-slate-600">Perlakuan Anggaran</span>
+            <div className="mt-1">
             <label className="flex items-start gap-2 rounded-lg border border-slate-300 px-3 py-2 bg-white cursor-pointer">
               <input type="checkbox" className="mt-0.5" checked={!!req.stokPersediaan}
                 onChange={(e) => update({ stokPersediaan: e.target.checked || undefined })} />
@@ -382,7 +437,20 @@ function SppbjIsiInner() {
                 </span>
               </span>
             </label>
-          </Field>
+            <label className="flex items-start gap-2 rounded-lg border border-slate-300 px-3 py-2 bg-white cursor-pointer mt-2">
+              <input type="checkbox" className="mt-0.5" checked={!!req.anggaranPerItem}
+                onChange={(e) => update({ anggaranPerItem: e.target.checked || undefined })} />
+              <span className="text-sm leading-snug">
+                Pakai <b>lebih dari satu sumber anggaran</b>
+                <span className="block text-[11px] text-slate-500">
+                  buka kolom <b>Anggaran</b> di tabel item, mis. sebagian item dibebankan ke pagu
+                  Docking kapal dan sisanya ke surat Persetujuan Biaya Lainnya. Item yang dibiarkan
+                  kosong tetap ikut Jenis Anggaran pengadaan ini.
+                </span>
+              </span>
+            </label>
+            </div>
+          </div>
           <Field label="Catatan Anggaran (tampil di Dashboard)">
             <Input value={req.catatanAnggaran || ""} placeholder="mis. Suku cadang untuk stok, dipakai saat perbaikan berikutnya"
               onChange={(e) => update({ catatanAnggaran: e.target.value || undefined })} />
@@ -453,6 +521,28 @@ function SppbjIsiInner() {
         <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-3 text-sm text-slate-700">
           <b className="text-sky-800">📋 Paste dari Excel:</b> urutan <b>Kapal · Jumlah · Satuan · Nama Barang/Jasa · Spesifikasi · Harga</b> → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>. Item dengan kapal sama dikelompokkan + dibuat sheet BSTB-nya nanti.
         </div>
+        {/* pembagian per sumber anggaran — muncul begitu pengadaan ini membebani >1 sumber */}
+        {(req.anggaranPerItem || campuran.n > 1) && (
+          <div className={`rounded-xl p-3 mb-3 ring-1 ${campuran.n > 1 ? "bg-violet-50 ring-violet-200" : "bg-slate-50 ring-slate-200"}`}>
+            <p className="text-[11px] font-bold uppercase tracking-wide text-slate-600 mb-2">
+              Pembagian per sumber anggaran {campuran.n > 1 && <span className="text-violet-700">· {campuran.n} sumber</span>}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {campuran.baris.map((b) => (
+                <span key={b.kunci} className={`text-xs font-semibold px-2.5 py-1.5 rounded-lg border ${b.warna}`}>
+                  {b.label} <b className="tabular-nums">{rupiah(Math.round(b.nilai))}</b>
+                  <span className="opacity-60"> · {b.jml} item</span>
+                </span>
+              ))}
+              {campuran.baris.length === 0 && <span className="text-xs text-slate-500">belum ada item bernilai.</span>}
+            </div>
+            {campuran.n > 1 && (
+              <p className="text-[11px] text-violet-800 mt-2">
+                Tiap bagian akan menggerus pagunya masing-masing di Dashboard. Dokumen SPPBJ-nya tetap satu &amp; dicetak utuh.
+              </p>
+            )}
+          </div>
+        )}
         <datalist id="kapalListSppbj">{KAPAL_LIST.map((k) => <option key={k} value={k} />)}</datalist>
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <button onClick={() => addItemU()} className="bg-[#16357f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">＋ Tambah Item</button>
@@ -486,7 +576,7 @@ function SppbjIsiInner() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">
-              <tr><th className="p-2 border w-8">No</th><th className="p-2 border">Kapal</th><th className="p-2 border">Jml</th><th className="p-2 border">Sat</th><th className="p-2 border text-left">Nama Barang/Jasa</th><th className="p-2 border text-left">Spesifikasi</th>{multiMA && <th className="p-2 border" title="Mata Anggaran item ini (kosong = ikut MA pertama)">M. Anggaran</th>}<th className="p-2 border">Harga Satuan</th><th className="p-2 border">Jumlah</th><th className="p-2 border"></th></tr>
+              <tr><th className="p-2 border w-8">No</th><th className="p-2 border">Kapal</th><th className="p-2 border">Jml</th><th className="p-2 border">Sat</th><th className="p-2 border text-left">Nama Barang/Jasa</th><th className="p-2 border text-left">Spesifikasi</th>{multiMA && <th className="p-2 border" title="Mata Anggaran item ini (kosong = ikut MA pertama)">M. Anggaran</th>}{req.anggaranPerItem && <th className="p-2 border" title="Sumber anggaran yang dibebani item ini (kosong = ikut pengadaan)">Anggaran</th>}<th className="p-2 border">Harga Satuan</th><th className="p-2 border">Jumlah</th><th className="p-2 border"></th></tr>
             </thead>
             <tbody>
               {req.items.map((it, ri) => (
@@ -528,6 +618,25 @@ function SppbjIsiInner() {
                         className={`w-28 px-1 py-0.5 text-xs border rounded font-semibold ${warnaMA(it.mataAnggaran || "")}`} title={it.mataAnggaran || `ikut ${req.mataAnggaran[0] || "-"}`}>
                         <option value="">↳ {kodeSingkat(req.mataAnggaran[0] || "")}</option>
                         {req.mataAnggaran.map((m) => <option key={m} value={m}>{kodeSingkat(m)}</option>)}
+                      </select>
+                    </td>
+                  )}
+                  {req.anggaranPerItem && (
+                    <td className="border p-1">
+                      <select
+                        value={it.jenisAnggaran ? (it.jenisAnggaran === "lainnya" ? `lainnya|${it.programId || ""}` : it.jenisAnggaran) : ""}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          if (!v) return setItem(it.id, { jenisAnggaran: undefined, programId: undefined });
+                          if (v.startsWith("lainnya|")) return setItem(it.id, { jenisAnggaran: "lainnya", programId: v.slice(8) || undefined });
+                          setItem(it.id, { jenisAnggaran: v as any, programId: undefined });
+                        }}
+                        className={`w-32 px-1 py-0.5 text-xs border rounded font-semibold ${warnaSumber(it)}`}
+                        title={labelSumber(it)}>
+                        <option value="">↳ ikut pengadaan</option>
+                        <option value="rutin">🧭 Rutin</option>
+                        <option value="docking">⚓ Docking</option>
+                        {program.map((pr) => <option key={pr.id} value={`lainnya|${pr.id}`}>📜 {pr.nama.slice(0, 40)}</option>)}
                       </select>
                     </td>
                   )}

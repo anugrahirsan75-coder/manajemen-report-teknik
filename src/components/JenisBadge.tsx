@@ -6,7 +6,7 @@
  */
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { PlafonProgram, jenisAnggaranOf } from "@/lib/anggaran/types";
+import { PlafonProgram, jenisAnggaranOf, anggaranCampuran } from "@/lib/anggaran/types";
 import { PengadaanRow } from "@/lib/anggaran/store";
 import { posProgram, nilaiPerPos } from "@/lib/anggaran/program";
 import { rupiah, tanggalIndo, bulanTahun } from "@/lib/format";
@@ -58,9 +58,19 @@ export default function JenisBadge({ payload, program = [], pengadaan = [] }: {
   };
 
   // lebar TETAP -> judul pengadaan di semua baris mulai sejajar
+  // pengadaan yang membebani >1 sumber: badge utama = jenis dokumen, ditambah penanda "campuran"
+  const campuran = anggaranCampuran(payload || {});
   const badge = (
-    <span className={`inline-flex items-center justify-center gap-0.5 w-[4.75rem] text-[9px] font-bold uppercase px-1 py-0.5 rounded shrink-0 ${GAYA[jenis]}`}>
-      {TEKS[jenis]}{bisaKlik && <span className="opacity-70">▾</span>}
+    <span className="inline-flex items-center gap-1 shrink-0">
+      <span className={`inline-flex items-center justify-center gap-0.5 w-[4.75rem] text-[9px] font-bold uppercase px-1 py-0.5 rounded shrink-0 ${GAYA[jenis]}`}>
+        {TEKS[jenis]}{bisaKlik && <span className="opacity-70">▾</span>}
+      </span>
+      {campuran && (
+        <span className="text-[9px] font-bold uppercase px-1 py-0.5 rounded bg-violet-100 text-violet-800 ring-1 ring-violet-300"
+          title="Pengadaan ini membebani lebih dari satu sumber anggaran — tiap bagian menggerus pagunya masing-masing">
+          campuran
+        </span>
+      )}
     </span>
   );
   if (!bisaKlik) return badge;

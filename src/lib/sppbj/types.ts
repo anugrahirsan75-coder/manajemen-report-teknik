@@ -12,6 +12,12 @@ export interface SppbjItem {
   // Mata Anggaran khusus item ini (opsional). Kosong = ikut MA pertama pengadaan.
   // Hanya dipakai saat pengadaan mencentang >1 MA — biar penyerapan per MA akurat.
   mataAnggaran?: string;
+  // Sumber anggaran khusus item ini. Kosong = ikut pengadaan.
+  // Dipakai bila 1 SPPBJ membebani lebih dari satu sumber (mis. sebagian item
+  // dari pagu Docking kapal, sisanya dari surat Persetujuan Biaya Lainnya).
+  jenisAnggaran?: "rutin" | "docking" | "lainnya";
+  // Bila jenisAnggaran = "lainnya": surat persetujuan mana yang dibebani item ini.
+  programId?: string;
   // --- metadata katalog HSPK (opsional, TIDAK dipakai fill.ts/template — output SPPBJ tetap) ---
   kodeKatalog?: string;   // kode item katalog RAB, mis. JS2-HL-002 (utk feedback harga riil)
   sumberHarga?: "Riil" | "Pasar"; // asal harga saat dipilih dari katalog
@@ -62,6 +68,8 @@ export interface SppbjRequest {
   // Barang masuk PERSEDIAAN (stok), belum dipakai kapal tertentu -> tidak menggerus pagu
   // Mata Anggaran manapun. Nilainya tetap tercatat & terlihat, hanya tak dihitung sbg serapan.
   stokPersediaan?: boolean;
+  /** tampilkan kolom sumber anggaran per item (pengadaan memakai >1 sumber) */
+  anggaranPerItem?: boolean;
   catatanAnggaran?: string; // keterangan bebas yang tampil di Dashboard Anggaran
   programId?: string; // tautan ke Persetujuan Biaya Lainnya (dashboard)
   stafTeknik: string; // Irsan Anugrah / Supriady Iran / manual
