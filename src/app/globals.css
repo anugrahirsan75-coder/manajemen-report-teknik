@@ -141,6 +141,20 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 .dark .bg-sky-50 { background-color: rgba(2, 132, 199, 0.14); }
 .dark .bg-blue-50 { background-color: rgba(37, 99, 235, 0.16); }
 .dark .bg-amber-50 { background-color: rgba(245, 158, 11, 0.14); }
+/* kolom isian ringkas dipakai form Monitoring Docking */
+.inp {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.65rem;
+  font-size: 0.8125rem;
+  background: #fff;
+  outline: none;
+  transition: border-color .15s, box-shadow .15s;
+}
+.inp:focus { border-color: #1ca3dd; box-shadow: 0 0 0 3px rgba(28,163,221,.15); }
+.dark .inp { background: #0f172a; color: #e5e7eb; border-color: #334155; }
+
 .dark .text-slate-900 { color: #f1f5f9; }
 .dark .text-slate-800 { color: #e5e7eb; }
 .dark .text-slate-700 { color: #d1d5db; }

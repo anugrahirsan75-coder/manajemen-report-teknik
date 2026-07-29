@@ -1,0 +1,562 @@
+"use client";
+/**
+ * Monitoring Docking Kapal.
+ *
+ *  - Grafik semua kapal: target vs lama docking sebenarnya (bullet), warna = status.
+ *  - Garis waktu setahun: kapan tiap kapal keluar & kembali ke lintasan.
+ *  - Tabel + form milestone mengikuti form Jadwal Docking pusat.
+ *  - Unggah Berita Acara (BAST, Mulai Pekerjaan, Naik/Turun Dok, dst).
+ *  - Status kelas BKI per tahun (AS I–IV, IS, SS, DS) beserta jatuh temponya.
+ */
+import { useMemo, useState } from "react";
+import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
+import { ringkasKapal } from "@/lib/kapal/nama";
+import { tanggalIndo } from "@/lib/format";
+import { useDocking } from "@/lib/docking/store";
+import {
+  DockingJadwal, KelasBki, TAHAP, JENIS_BA, JENIS_SURVEY, STATUS_SURVEY_LABEL, StatusSurvey,
+  BerkasBA, dockingBaru, kelasBaru, ringkasDocking, gayaDocking, labelBA,
+} from "@/lib/docking/types";
+import { unggahBerkas, ukuranSingkat, BerkasError } from "@/lib/berkasStorage";
+import { konfirmasi, beritahu } from "@/components/Konfirmasi";
+
+const BLN = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+const uid = () => globalThis.crypto?.randomUUID?.() ?? String(Math.random());
+const hariKe = (iso?: string) => {
+  if (!iso) return null;
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d.getTime())) return null;
+  const awal = new Date(d.getFullYear(), 0, 1).getTime();
+  return Math.round((d.getTime() - awal) / 86400000);
+};
+
+export default function DockingPage() {
+  const { ready, loading, err, jadwal, kelas, reload, simpanJadwal, simpanKelas, hapusJadwal, hapusKelas } = useDocking();
+  const [tahun, setTahun] = useState(String(new Date().getFullYear()));
+  const [edit, setEdit] = useState<DockingJadwal | null>(null);
+  const [sibuk, setSibuk] = useState(false);
+
+  const tahunList = useMemo(() => {
+    const s = new Set<string>([String(new Date().getFullYear())]);
+    jadwal.forEach((d) => s.add(String(d.tahun)));
+    kelas.forEach((k) => s.add(String(k.tahun)));
+    return Array.from(s).sort().reverse();
+  }, [jadwal, kelas]);
+
+  /** satu baris per kapal — kapal tanpa jadwal tetap tampil supaya ketahuan belum diisi */
+  const baris = useMemo(() => KAPAL_ANGGARAN.map((k) => {
+    const d = jadwal.find((x) => x.kapal === k && String(x.tahun) === tahun);
+    const r = d ? ringkasDocking(d) : null;
+    const kls = kelas.filter((x) => x.kapal === k && String(x.tahun) === tahun);
+    return { kapal: k, dok: d, r, kelas: kls };
+  }), [jadwal, kelas, tahun]);
+
+  const adaData = baris.filter((b) => b.dok);
+  const selesai = adaData.filter((b) => b.r?.status === "selesai");
+  const berjalan = adaData.filter((b) => b.r?.status === "berjalan");
+  const telat = selesai.filter((b) => (b.r?.selisih ?? 0) > 0);
+  const rata = selesai.length
+    ? Math.round(selesai.reduce((s, b) => s + (b.r?.utama || 0), 0) / selesai.length) : 0;
+
+  const maksHari = Math.max(1, ...adaData.map((b) => Math.max(b.r?.target || 0, b.r?.utama || 0)));
+
+  const bukaBaru = (kapal: string) => setEdit(dockingBaru(kapal, +tahun));
+
+  const simpanEdit = async () => {
+    if (!edit) return;
+    if (!edit.keluarLintasan) { void beritahu("Isi dulu tanggal Keluar Lintasan — itu awal hitungan lama docking."); return; }
+    setSibuk(true);
+    try { await simpanJadwal(edit); setEdit(null); } finally { setSibuk(false); }
+  };
+
+  const hapusEdit = async () => {
+    if (!edit) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "⚓",
+      judul: `Hapus jadwal docking ${edit.kapal} ${edit.tahun}?`,
+      pesan: "Seluruh tanggal milestone dan daftar berita acaranya ikut hilang.",
+      rincian: [`${(edit.berkas || []).length} berkas berita acara terlampir`],
+      tegasan: "Berkas di Storage tidak ikut terhapus, tapi tautannya hilang dari sini.",
+      tombolYa: "Ya, hapus",
+    }))) return;
+    setSibuk(true);
+    try { await hapusJadwal(edit.id); setEdit(null); } finally { setSibuk(false); }
+  };
+
+  return (
+    <main className="max-w-6xl mx-auto px-5 py-8">
+      <div className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
+        <div className="glass hero-glow rounded-3xl px-7 py-6 flex flex-wrap items-center gap-4">
+          <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 grid place-items-center text-2xl text-white shadow-md shrink-0">🛠️</div>
+          <div className="flex-1 min-w-0">
+            <h1 className="text-2xl font-extrabold asdp-text-gradient tracking-tight">Monitoring Docking Kapal</h1>
+            <p className="text-slate-500 text-sm">Lama pengerjaan vs target · berita acara · status kelas BKI</p>
+          </div>
+          <select value={tahun} onChange={(e) => setTahun(e.target.value)} className="text-xs border border-slate-300 rounded-lg px-2.5 py-1.5 bg-white font-semibold">
+            {tahunList.map((t) => <option key={t} value={t}>{t}</option>)}
+          </select>
+          <button onClick={reload} className="btn btn-ghost text-xs">↻ Muat ulang</button>
+        </div>
+      </div>
+
+      {!ready && (
+        <p className="mt-5 text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-xl p-3">
+          Butuh Supabase (env) supaya jadwal &amp; berita acara tersimpan dan bisa dibuka dari perangkat lain.
+        </p>
+      )}
+      {err && <p className="mt-4 text-xs font-semibold text-rose-700">Supabase: {err}</p>}
+
+      {/* ringkasan */}
+      <section className="mt-4 grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <Kartu label="Sudah docking" nilai={`${selesai.length} kapal`} tint="text-emerald-700" bar="bg-emerald-500" />
+        <Kartu label="Sedang docking" nilai={`${berjalan.length} kapal`} tint="text-sky-700" bar="bg-sky-500" />
+        <Kartu label="Belum ada jadwal" nilai={`${KAPAL_ANGGARAN.length - adaData.length} kapal`} tint="text-slate-700" bar="bg-slate-400" />
+        <Kartu label="Rata-rata lama" nilai={rata ? `${rata} hari` : "—"} sub="keluar → tiba lintasan" tint="text-slate-900" bar="bg-slate-500" />
+        <Kartu label="Lewat target" nilai={`${telat.length} kapal`} sub={telat.length ? telat.map((b) => ringkasKapal(b.kapal)).slice(0, 3).join(", ") : "tidak ada"}
+          tint={telat.length ? "text-red-700" : "text-emerald-700"} bar={telat.length ? "bg-red-500" : "bg-emerald-500"} />
+      </section>
+
+      {/* ================= grafik lama docking ================= */}
+      <section className="mt-4 bg-white rounded-2xl ring-line elev-md p-5">
+        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-1">
+          <h3 className="font-bold text-slate-800">Lama docking vs target — {tahun}</h3>
+          <span className="text-[11px] text-slate-500">batang abu = target hari · batang berwarna = kenyataan (keluar → tiba di lintasan)</span>
+          <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-600">
+            <Leg kelas="bg-emerald-500" teks="lebih cepat" /><Leg kelas="bg-amber-500" teks="pas target" />
+            <Leg kelas="bg-red-500" teks="lewat target" /><Leg kelas="bg-sky-500" teks="masih berjalan" />
+          </div>
+        </div>
+        {!adaData.length ? (
+          <p className="text-sm text-slate-500 text-center py-6">Belum ada jadwal docking di tahun {tahun}. Klik kapal di tabel bawah untuk mengisinya.</p>
+        ) : (
+          <div className="space-y-2 mt-3">
+            {adaData
+              .slice()
+              .sort((a, b) => (b.r?.utama || 0) - (a.r?.utama || 0))
+              .map((b) => {
+                const r = b.r!; const g = gayaDocking(r);
+                const nyata = r.utama ?? 0;
+                return (
+                  <button key={b.kapal} onClick={() => setEdit({ ...b.dok! })}
+                    className="w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1ca3dd] rounded"
+                    title={`${b.kapal} · target ${r.target ?? "-"} hari · nyata ${nyata} hari${r.selisih != null ? ` (${r.selisih > 0 ? "+" : ""}${r.selisih})` : ""}`}>
+                    <div className="flex items-center gap-2">
+                      <span className="w-28 sm:w-36 shrink-0 text-[11px] font-semibold text-slate-700 truncate group-hover:text-[#16357f]">{ringkasKapal(b.kapal)}</span>
+                      <span className="flex-1 relative h-5 block">
+                        {r.target ? <span className="absolute inset-y-0 left-0 bg-slate-200 rounded block" style={{ width: `${(r.target / maksHari) * 100}%` }} /> : null}
+                        {r.target ? <span className="absolute inset-y-0 w-[2px] bg-slate-500/70 block" style={{ left: `calc(${(r.target / maksHari) * 100}% - 1px)` }} title={`target ${r.target} hari`} /> : null}
+                        <span className={`absolute top-1 bottom-1 left-0 rounded block ${g.bar}`} style={{ width: `${Math.max(1, (nyata / maksHari) * 100)}%` }} />
+                      </span>
+                      <span className="w-16 shrink-0 text-right text-[11px] font-bold tabular-nums text-slate-800">{nyata} hr</span>
+                      <span className={`w-28 shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded ring-1 text-center ${g.chip}`}>{g.teks}</span>
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+        )}
+      </section>
+
+      {/* ================= garis waktu setahun ================= */}
+      {adaData.length > 0 && (
+        <section className="mt-4 bg-white rounded-2xl ring-line elev-md p-5">
+          <h3 className="font-bold text-slate-800 mb-1">Garis waktu docking {tahun}</h3>
+          <p className="text-[11px] text-slate-500 mb-3">kapan tiap kapal keluar dari lintasan sampai kembali — berguna untuk melihat tumpang tindih armada</p>
+          <div className="flex text-[9px] text-slate-400 mb-1">
+            <span className="w-28 sm:w-36 shrink-0" />
+            {BLN.map((m) => <span key={m} className="flex-1 text-center">{m}</span>)}
+          </div>
+          <div className="space-y-1.5">
+            {adaData.map((b) => {
+              const r = b.r!; const g = gayaDocking(r);
+              const a = hariKe(r.mulai); const z = hariKe(r.akhir) ?? (r.status === "berjalan" ? hariKe(new Date().toISOString().slice(0, 10)) : a);
+              const kiri = a != null ? (a / 365) * 100 : 0;
+              const lebar = a != null && z != null ? Math.max(0.8, ((z - a) / 365) * 100) : 0;
+              return (
+                <div key={b.kapal} className="flex items-center gap-2">
+                  <span className="w-28 sm:w-36 shrink-0 text-[11px] font-semibold text-slate-700 truncate">{ringkasKapal(b.kapal)}</span>
+                  <span className="flex-1 relative h-4 bg-slate-100 rounded block overflow-hidden">
+                    {[...Array(11)].map((_, i) => <span key={i} className="absolute inset-y-0 w-px bg-white/70" style={{ left: `${((i + 1) / 12) * 100}%` }} />)}
+                    {a != null && (
+                      <span className={`absolute inset-y-0 rounded ${g.bar} block`} style={{ left: `${kiri}%`, width: `${lebar}%` }}
+                        title={`${b.kapal}: ${tanggalIndo(r.mulai || "")} → ${r.akhir ? tanggalIndo(r.akhir) : "masih berjalan"}`} />
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {/* ================= tabel per kapal ================= */}
+      <section className="mt-4 bg-white rounded-2xl ring-line elev-md p-5">
+        <h3 className="font-bold text-slate-800 mb-3">Rincian per kapal — {tahun}</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead className="bg-slate-100 text-[10px] uppercase tracking-wide text-slate-600 font-bold">
+              <tr>
+                <th className="p-2 text-left">Kapal</th>
+                <th className="p-2 text-left">Galangan</th>
+                <th className="p-2 text-left whitespace-nowrap">Keluar → Tiba lintasan</th>
+                <th className="p-2 text-right">Target</th>
+                <th className="p-2 text-right">Nyata</th>
+                <th className="p-2 text-right">Selisih</th>
+                <th className="p-2 text-center">Status</th>
+                <th className="p-2 text-center">BA</th>
+                <th className="p-2 text-left">Kelas BKI</th>
+                <th className="p-2" />
+              </tr>
+            </thead>
+            <tbody>
+              {baris.map((b) => {
+                const r = b.r; const g = r ? gayaDocking(r) : null;
+                return (
+                  <tr key={b.kapal} className="border-b border-slate-100 last:border-0 row-hover cursor-pointer"
+                    onClick={() => (b.dok ? setEdit({ ...b.dok }) : bukaBaru(b.kapal))}>
+                    <td className="p-2 font-semibold text-slate-800 whitespace-nowrap">{b.kapal}</td>
+                    <td className="p-2 text-slate-600">{b.dok?.galangan || "—"}</td>
+                    <td className="p-2 text-slate-600 whitespace-nowrap">
+                      {b.dok?.keluarLintasan ? `${tanggalIndo(b.dok.keluarLintasan)} → ${b.dok.tibaLintasan ? tanggalIndo(b.dok.tibaLintasan) : "…"}` : "—"}
+                    </td>
+                    <td className="p-2 text-right tabular-nums text-slate-600">{r?.target ?? "—"}</td>
+                    <td className="p-2 text-right tabular-nums font-bold text-slate-900">{r?.utama ?? "—"}</td>
+                    <td className={`p-2 text-right tabular-nums font-bold ${r?.selisih == null ? "text-slate-300" : r.selisih > 0 ? "text-red-700" : "text-emerald-700"}`}>
+                      {r?.selisih == null ? "—" : `${r.selisih > 0 ? "+" : ""}${r.selisih}`}
+                    </td>
+                    <td className="p-2 text-center">
+                      {g ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ring-1 ${g.chip}`}>{g.teks}</span>
+                        : <span className="text-[10px] text-slate-400">belum diisi</span>}
+                    </td>
+                    <td className="p-2 text-center tabular-nums text-slate-600">{(b.dok?.berkas || []).length || "—"}</td>
+                    <td className="p-2">
+                      {b.kelas.length ? (
+                        <span className="flex flex-wrap gap-1">
+                          {b.kelas.map((k) => (
+                            <span key={k.id} className={`text-[10px] font-bold px-1.5 py-0.5 rounded ring-1 ${
+                              k.status === "selesai" ? "bg-emerald-100 text-emerald-800 ring-emerald-300"
+                                : k.status === "proses" ? "bg-amber-100 text-amber-800 ring-amber-300"
+                                : "bg-slate-100 text-slate-600 ring-slate-300"}`}
+                              title={`${k.jenis}${k.dueDate ? ` · jatuh tempo ${tanggalIndo(k.dueDate)}` : ""} — ${STATUS_SURVEY_LABEL[k.status]}`}>
+                              {k.jenis}
+                            </span>
+                          ))}
+                        </span>
+                      ) : <span className="text-[10px] text-slate-400">—</span>}
+                    </td>
+                    <td className="p-2 text-right whitespace-nowrap">
+                      <span className="text-[11px] font-bold text-[#1ca3dd]">{b.dok ? "buka →" : "+ isi"}</span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      {edit && (
+        <FormDocking
+          nilai={edit} setNilai={setEdit} sibuk={sibuk}
+          kelas={kelas.filter((k) => k.kapal === edit.kapal && k.tahun === edit.tahun)}
+          onSimpan={simpanEdit} onHapus={hapusEdit} onTutup={() => setEdit(null)}
+          onSimpanKelas={simpanKelas} onHapusKelas={hapusKelas}
+        />
+      )}
+      {loading && <p className="mt-4 text-xs text-slate-400">memuat…</p>}
+    </main>
+  );
+}
+
+/* ============================ form / detail ============================ */
+
+function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup, onSimpanKelas, onHapusKelas }: {
+  nilai: DockingJadwal; setNilai: (d: DockingJadwal) => void; kelas: KelasBki[]; sibuk: boolean;
+  onSimpan: () => void; onHapus: () => void; onTutup: () => void;
+  onSimpanKelas: (k: KelasBki) => Promise<void>; onHapusKelas: (id: string) => Promise<void>;
+}) {
+  const [tab, setTab] = useState<"jadwal" | "ba" | "kelas">("jadwal");
+  const r = ringkasDocking(nilai);
+  const g = gayaDocking(r);
+  const set = (p: Partial<DockingJadwal>) => setNilai({ ...nilai, ...p });
+
+  return (
+    <div className="fixed inset-0 z-[80] bg-black/50 overflow-auto" onMouseDown={onTutup}>
+      <div className="min-h-full py-8 px-3 flex items-start justify-center">
+        <div className="bg-white w-full max-w-4xl rounded-2xl shadow-2xl overflow-hidden" onMouseDown={(e) => e.stopPropagation()}>
+          <div className="px-6 py-4 border-b border-slate-200 flex flex-wrap items-center gap-3">
+            <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-amber-500 to-orange-600 grid place-items-center text-xl text-white shadow-md shrink-0">⚓</div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-lg font-extrabold text-slate-800 leading-tight">{nilai.kapal} · Docking {nilai.tahun}</h3>
+              <p className="text-[11px] text-slate-500">{nilai.galangan || "galangan belum diisi"}</p>
+            </div>
+            <span className={`text-[11px] font-bold px-2.5 py-1 rounded-lg ring-1 ${g.chip}`}>{g.teks}</span>
+          </div>
+
+          <div className="px-6 pt-3 flex gap-1 border-b border-slate-200">
+            {([["jadwal", "📅 Jadwal & lama"], ["ba", `📄 Berita Acara (${(nilai.berkas || []).length})`], ["kelas", `🏷️ Kelas BKI (${kelas.length})`]] as const).map(([v, t]) => (
+              <button key={v} onClick={() => setTab(v)}
+                className={`text-xs font-semibold px-3 py-2 rounded-t-lg border-b-2 transition ${tab === v ? "border-[#16357f] text-[#16357f] bg-slate-50" : "border-transparent text-slate-500 hover:text-slate-700"}`}>{t}</button>
+            ))}
+          </div>
+
+          <div className="p-6 max-h-[62vh] overflow-auto">
+            {tab === "jadwal" && <TabJadwal nilai={nilai} set={set} r={r} />}
+            {tab === "ba" && <TabBA nilai={nilai} set={set} />}
+            {tab === "kelas" && <TabKelas kapal={nilai.kapal} tahun={nilai.tahun} kelas={kelas} onSimpan={onSimpanKelas} onHapus={onHapusKelas} />}
+          </div>
+
+          <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center gap-2">
+            <button onClick={onHapus} disabled={sibuk} className="btn btn-danger-soft text-sm disabled:opacity-50">🗑️ Hapus</button>
+            <span className="ml-auto" />
+            <button onClick={onTutup} className="btn btn-ghost text-sm">Batal</button>
+            <button onClick={onSimpan} disabled={sibuk} className="btn btn-primary text-sm px-5 disabled:opacity-50">{sibuk ? "…" : "💾 Simpan"}</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function TabJadwal({ nilai, set, r }: { nilai: DockingJadwal; set: (p: Partial<DockingJadwal>) => void; r: ReturnType<typeof ringkasDocking> }) {
+  return (
+    <>
+      <div className="grid sm:grid-cols-2 gap-3 mb-4">
+        <Baris label="Cabang"><input className="inp" value={nilai.cabang || ""} onChange={(e) => set({ cabang: e.target.value })} /></Baris>
+        <Baris label="Galangan"><input className="inp" value={nilai.galangan || ""} onChange={(e) => set({ galangan: e.target.value })} placeholder="mis. PT. IKI (Persero) Bitung" /></Baris>
+        <Baris label="Owner Surveyor"><input className="inp" value={nilai.os || ""} onChange={(e) => set({ os: e.target.value })} /></Baris>
+        <Baris label="Tipe Docking">
+          <select className="inp" value={nilai.tipe || "DOCKING"} onChange={(e) => set({ tipe: e.target.value })}>
+            <option>DOCKING</option><option>EMERGENCY DOCKING</option><option>DOCKING TAHUNAN</option>
+          </select>
+        </Baris>
+        <Baris label="Bulan Jadwal (pusat)"><input className="inp" value={nilai.jadwalBulan || ""} onChange={(e) => set({ jadwalBulan: e.target.value })} placeholder="mis. Januari" /></Baris>
+        <Baris label="Bulan Pelaksanaan"><input className="inp" value={nilai.bulanPelaksanaan || ""} onChange={(e) => set({ bulanPelaksanaan: e.target.value })} /></Baris>
+        <Baris label="Target Docking (hari)">
+          <input type="number" className="inp" value={nilai.targetHari ?? ""} onChange={(e) => set({ targetHari: e.target.value ? +e.target.value : undefined })} placeholder="22" />
+        </Baris>
+      </div>
+
+      <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Tanggal pelaksanaan</p>
+      <div className="grid sm:grid-cols-2 gap-3">
+        {TAHAP.map((t) => (
+          <Baris key={t.key} label={`${t.label}${t.wajib ? " *" : ""}`}>
+            <input type="date" className="inp" value={(nilai as any)[t.key] || ""} onChange={(e) => set({ [t.key]: e.target.value || undefined } as any)} />
+          </Baris>
+        ))}
+      </div>
+
+      <div className="mt-4 grid sm:grid-cols-4 gap-2">
+        <Hitung label="Off lintasan" nilai={r.offLintasan ?? r.berjalan} sat="hari" sub="keluar → tiba lintasan" tebal />
+        <Hitung label="Di galangan" nilai={r.diGalangan} sat="hari" sub="tiba → selesai kerja" />
+        <Hitung label="Di atas dock" nilai={r.diAtasDock} sat="hari" sub="naik → turun dock" />
+        <Hitung label="Selisih target" nilai={r.selisih} sat="hari" sub={r.target ? `target ${r.target} hari` : "target belum diisi"} tanda />
+      </div>
+
+      <Baris label="Catatan" lebar>
+        <textarea className="inp min-h-[70px]" value={nilai.catatan || ""} onChange={(e) => set({ catatan: e.target.value })}
+          placeholder="mis. keterlambatan karena menunggu material, cuaca, dsb." />
+      </Baris>
+    </>
+  );
+}
+
+function TabBA({ nilai, set }: { nilai: DockingJadwal; set: (p: Partial<DockingJadwal>) => void }) {
+  const [jenis, setJenis] = useState<string>(JENIS_BA[0].key);
+  const [unggah, setUnggah] = useState(false);
+  const berkas = nilai.berkas || [];
+
+  const tambah = async (files: File[]) => {
+    if (!files.length) return;
+    setUnggah(true);
+    try {
+      const baru: BerkasBA[] = [];
+      for (const f of files) {
+        const { url, ukuran } = await unggahBerkas(f, `berita-acara/${nilai.kapal.replace(/\W+/g, "_")}-${nilai.tahun}`);
+        baru.push({ id: uid(), jenis, nama: f.name, url, ukuran, diunggahPada: new Date().toISOString() });
+      }
+      set({ berkas: [...berkas, ...baru] });
+    } catch (e: any) {
+      void beritahu(e instanceof BerkasError ? e.message : `Gagal mengunggah: ${e?.message ?? e}`);
+    } finally { setUnggah(false); }
+  };
+
+  const buang = async (b: BerkasBA) => {
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "📄", judul: "Buang berkas ini dari daftar?",
+      pesan: b.nama, rincian: [labelBA(b.jenis), ukuranSingkat(b.ukuran)].filter(Boolean),
+      tegasan: "Tautannya hilang dari sini (berkas di Storage tidak ikut dihapus).", tombolYa: "Buang",
+    }))) return;
+    set({ berkas: berkas.filter((x) => x.id !== b.id) });
+  };
+
+  return (
+    <>
+      <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 p-3 mb-4">
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-xs font-semibold text-slate-700">Jenis berita acara:</span>
+          <select value={jenis} onChange={(e) => setJenis(e.target.value)} className="text-xs border border-slate-300 rounded-lg px-2 py-1.5 bg-white">
+            {JENIS_BA.map((j) => <option key={j.key} value={j.key}>{j.label}{j.kode !== "—" ? ` · ${j.kode}` : ""}</option>)}
+          </select>
+          <label className={`btn btn-primary text-xs cursor-pointer ${unggah ? "opacity-60 pointer-events-none" : ""}`}>
+            {unggah ? "mengunggah…" : "＋ Unggah berkas"}
+            <input type="file" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" className="hidden"
+              onChange={(e) => { tambah(Array.from(e.target.files || [])); e.target.value = ""; }} />
+          </label>
+        </div>
+        <p className="text-[11px] text-slate-500 mt-1.5">
+          Pilih jenisnya dulu, baru unggah — supaya berkas terdaftar sebagai BA yang benar. Boleh beberapa berkas sekaligus. Maks 15 MB per berkas.
+        </p>
+      </div>
+
+      {/* kelengkapan BA menurut milestone yang sudah terisi */}
+      <div className="flex flex-wrap gap-1.5 mb-4">
+        {JENIS_BA.filter((j) => j.key !== "lain").map((j) => {
+          const ada = berkas.some((b) => b.jenis === j.key);
+          const perlu = j.tahap && (nilai as any)[j.tahap];
+          return (
+            <span key={j.key} title={ada ? "sudah ada berkasnya" : perlu ? "tanggalnya sudah terisi tapi berkas BA belum diunggah" : "belum waktunya"}
+              className={`text-[10px] font-bold px-2 py-1 rounded-lg ring-1 ${
+                ada ? "bg-emerald-100 text-emerald-800 ring-emerald-300"
+                  : perlu ? "bg-amber-100 text-amber-800 ring-amber-300"
+                  : "bg-slate-100 text-slate-500 ring-slate-300"}`}>
+              {ada ? "✓" : perlu ? "!" : "·"} {j.label.replace(/^BA /, "")}
+            </span>
+          );
+        })}
+      </div>
+
+      {!berkas.length ? (
+        <p className="text-sm text-slate-500 text-center py-6 bg-slate-50 rounded-xl ring-1 ring-slate-200">Belum ada berita acara diunggah.</p>
+      ) : (
+        <div className="space-y-2">
+          {berkas.map((b) => (
+            <div key={b.id} className="flex flex-wrap items-center gap-3 rounded-xl ring-1 ring-slate-200 px-3.5 py-2.5">
+              <span className="h-9 w-9 rounded-lg bg-rose-100 text-rose-700 grid place-items-center text-base shrink-0">📄</span>
+              <div className="flex-1 min-w-[12rem]">
+                <p className="text-xs font-bold text-slate-800">{labelBA(b.jenis)}</p>
+                <p className="text-[11px] text-slate-500 truncate" title={b.nama}>{b.nama} {b.ukuran ? `· ${ukuranSingkat(b.ukuran)}` : ""}</p>
+              </div>
+              <input className="inp !w-40 !text-[11px] !py-1" placeholder="No. BA" value={b.nomor || ""}
+                onChange={(e) => set({ berkas: berkas.map((x) => x.id === b.id ? { ...x, nomor: e.target.value } : x) })} />
+              <input type="date" className="inp !w-36 !text-[11px] !py-1" value={b.tanggal || ""}
+                onChange={(e) => set({ berkas: berkas.map((x) => x.id === b.id ? { ...x, tanggal: e.target.value } : x) })} />
+              <a href={b.url} target="_blank" rel="noreferrer" className="btn btn-ghost text-[11px]">buka ↗</a>
+              <button onClick={() => buang(b)} className="text-rose-600 hover:text-rose-800 text-sm">✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+    </>
+  );
+}
+
+function TabKelas({ kapal, tahun, kelas, onSimpan, onHapus }: {
+  kapal: string; tahun: number; kelas: KelasBki[];
+  onSimpan: (k: KelasBki) => Promise<void>; onHapus: (id: string) => Promise<void>;
+}) {
+  const [draf, setDraf] = useState<KelasBki | null>(null);
+  const simpan = async () => { if (draf) { await onSimpan(draf); setDraf(null); } };
+
+  return (
+    <>
+      <p className="text-[11px] text-slate-600 bg-sky-50 ring-1 ring-sky-200 rounded-xl px-3.5 py-2.5 mb-3 leading-relaxed">
+        Kapal Ro-Ro berkelas BKI menjalani <b>Survey Tahunan (AS I–IV)</b> dalam daur 5 tahun, ditutup
+        <b> Survey Pembaruan Kelas (SS)</b>; <b>Survey Antara (IS)</b> jatuh di sekitar AS II–III dan
+        <b> Survey Pengedokan (DS)</b> mengikuti jadwal dock. Catat jatuh tempo &amp; jendela surveinya di sini
+        supaya jadwal docking bisa disandingkan dengan kewajiban kelas.
+      </p>
+
+      {kelas.length > 0 && (
+        <div className="space-y-2 mb-3">
+          {kelas.map((k) => (
+            <div key={k.id} className="flex flex-wrap items-center gap-3 rounded-xl ring-1 ring-slate-200 px-3.5 py-2.5">
+              <span className="text-xs font-extrabold text-slate-800 w-14">{k.jenis}</span>
+              <div className="flex-1 min-w-[12rem] text-[11px] text-slate-600">
+                {k.dueDate ? <>jatuh tempo <b className="text-slate-800">{tanggalIndo(k.dueDate)}</b></> : "jatuh tempo belum diisi"}
+                {k.rentangDari && k.rentangSampai && <> · jendela {tanggalIndo(k.rentangDari)} – {tanggalIndo(k.rentangSampai)}</>}
+                {k.noSertifikat && <> · sertifikat {k.noSertifikat}</>}
+              </div>
+              <span className={`text-[10px] font-bold px-2 py-0.5 rounded ring-1 ${
+                k.status === "selesai" ? "bg-emerald-100 text-emerald-800 ring-emerald-300"
+                  : k.status === "proses" ? "bg-amber-100 text-amber-800 ring-amber-300"
+                  : "bg-slate-100 text-slate-600 ring-slate-300"}`}>{STATUS_SURVEY_LABEL[k.status]}</span>
+              <button onClick={() => setDraf({ ...k })} className="btn btn-ghost text-[11px]">✏️</button>
+              <button onClick={async () => {
+                if (await konfirmasi({ nada: "bahaya", judul: `Hapus catatan ${k.jenis} ${k.tahun}?`, pesan: kapal, tegasan: "Tidak bisa dikembalikan.", tombolYa: "Ya, hapus" })) await onHapus(k.id);
+              }} className="text-rose-600 hover:text-rose-800 text-sm">✕</button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {!draf ? (
+        <button onClick={() => setDraf(kelasBaru(kapal, tahun))} className="btn btn-primary text-xs">＋ Tambah survey kelas</button>
+      ) : (
+        <div className="rounded-xl ring-1 ring-[#1ca3dd] bg-sky-50/50 p-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <Baris label="Jenis survey">
+              <select className="inp" value={draf.jenis} onChange={(e) => setDraf({ ...draf, jenis: e.target.value })}>
+                {JENIS_SURVEY.map((s) => <option key={s.key} value={s.key}>{s.label}</option>)}
+              </select>
+            </Baris>
+            <Baris label="Status">
+              <select className="inp" value={draf.status} onChange={(e) => setDraf({ ...draf, status: e.target.value as StatusSurvey })}>
+                {(Object.keys(STATUS_SURVEY_LABEL) as StatusSurvey[]).map((s) => <option key={s} value={s}>{STATUS_SURVEY_LABEL[s]}</option>)}
+              </select>
+            </Baris>
+            <Baris label="Jatuh tempo (due date)"><input type="date" className="inp" value={draf.dueDate || ""} onChange={(e) => setDraf({ ...draf, dueDate: e.target.value || undefined })} /></Baris>
+            <Baris label="No. Sertifikat"><input className="inp" value={draf.noSertifikat || ""} onChange={(e) => setDraf({ ...draf, noSertifikat: e.target.value })} /></Baris>
+            <Baris label="Jendela survey — dari"><input type="date" className="inp" value={draf.rentangDari || ""} onChange={(e) => setDraf({ ...draf, rentangDari: e.target.value || undefined })} /></Baris>
+            <Baris label="Jendela survey — sampai"><input type="date" className="inp" value={draf.rentangSampai || ""} onChange={(e) => setDraf({ ...draf, rentangSampai: e.target.value || undefined })} /></Baris>
+            <Baris label="Catatan" lebar><input className="inp" value={draf.catatan || ""} onChange={(e) => setDraf({ ...draf, catatan: e.target.value })} /></Baris>
+          </div>
+          <div className="flex gap-2 mt-3">
+            <button onClick={simpan} className="btn btn-primary text-xs">💾 Simpan survey</button>
+            <button onClick={() => setDraf(null)} className="btn btn-ghost text-xs">Batal</button>
+          </div>
+        </div>
+      )}
+    </>
+  );
+}
+
+/* ============================ potongan kecil ============================ */
+
+function Kartu({ label, nilai, sub, tint, bar }: { label: string; nilai: string; sub?: string; tint: string; bar: string }) {
+  return (
+    <div className="relative bg-white rounded-2xl ring-line elev-sm pl-4 pr-3 py-3 overflow-hidden">
+      <span className={`absolute left-0 top-0 bottom-0 w-1.5 ${bar}`} />
+      <p className="text-[10px] uppercase tracking-[0.12em] text-slate-500 font-bold">{label}</p>
+      <p className={`text-xl font-extrabold leading-tight ${tint}`}>{nilai}</p>
+      {sub && <p className="text-[10px] text-slate-500 truncate">{sub}</p>}
+    </div>
+  );
+}
+const Leg = ({ kelas, teks }: { kelas: string; teks: string }) =>
+  <span className="flex items-center gap-1"><i className={`w-2.5 h-2.5 rounded-sm inline-block ${kelas}`} />{teks}</span>;
+
+function Baris({ label, children, lebar }: { label: string; children: React.ReactNode; lebar?: boolean }) {
+  return (
+    <div className={lebar ? "sm:col-span-2 mt-3" : ""}>
+      <label className="block text-[11px] font-semibold text-slate-600 mb-1">{label}</label>
+      {children}
+    </div>
+  );
+}
+
+function Hitung({ label, nilai, sat, sub, tebal, tanda }: {
+  label: string; nilai: number | null; sat: string; sub?: string; tebal?: boolean; tanda?: boolean;
+}) {
+  const warna = !tanda ? (tebal ? "text-slate-900" : "text-slate-700")
+    : nilai == null ? "text-slate-400" : nilai > 0 ? "text-red-700" : "text-emerald-700";
+  return (
+    <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 px-3 py-2">
+      <p className="text-[10px] uppercase tracking-wide text-slate-500 font-bold">{label}</p>
+      <p className={`text-lg font-extrabold tabular-nums leading-tight ${warna}`}>
+        {nilai == null ? "—" : `${tanda && nilai > 0 ? "+" : ""}${nilai} ${sat}`}
+      </p>
+      {sub && <p className="text-[10px] text-slate-500">{sub}</p>}
+    </div>
+  );
+}
