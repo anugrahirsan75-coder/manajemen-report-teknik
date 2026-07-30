@@ -140,6 +140,70 @@ export async function backupPenuh(rows: any[]): Promise<{ ok: boolean; jumlah: n
   }
 }
 
+/**
+ * Backup KODINGAN: salin source.zip (dibundel saat build oleh
+ * scripts/bundle-source.cjs) ke folder backup — jadi folder backup memuat
+ * DATA sekaligus SELURUH KODE untuk membangun ulang aplikasi.
+ */
+export async function backupKodingan(): Promise<{ ok: boolean; berkas?: string; info?: any; pesan?: string }> {
+  const root = await folderSiap(true);
+  if (!root) return { ok: false, pesan: "Folder backup belum dipilih / izin belum diberikan." };
+  try {
+    const [rZip, rMan] = await Promise.all([fetch("/backup/source.zip"), fetch("/backup/source-manifest.json")]);
+    if (!rZip.ok) return { ok: false, pesan: `source.zip tidak ditemukan (${rZip.status}) — build belum menyertakan bundel kodingan.` };
+    const blob = await rZip.blob();
+    const info = rMan.ok ? await rMan.json() : null;
+
+    const dir = await subFolder(root, "kodingan");
+    const berkas = `source_${stempel()}.zip`;
+    const fh = await dir.getFileHandle(berkas, { create: true });
+    const w = await fh.createWritable();
+    await w.write(blob);
+    await w.close();
+    // salinan "terbaru" bernama tetap + manifes, biar gampang ditemukan
+    const fh2 = await dir.getFileHandle("source_TERBARU.zip", { create: true });
+    const w2 = await fh2.createWritable();
+    await w2.write(blob);
+    await w2.close();
+    if (info) await tulisFile(dir, "MANIFEST.json", JSON.stringify(info, null, 2));
+    await tulisFile(dir, "BACA-SAYA.txt", [
+      "BACKUP KODINGAN — Manajemen Report Teknik ASDP Ternate",
+      "",
+      "source_TERBARU.zip : seluruh kode aplikasi (src, docs, scripts, konfigurasi)",
+      "source_<tanggal>.zip : arsip bertanggal",
+      "",
+      "Cara membangun ulang aplikasi dari nol:",
+      "  1. Ekstrak source_TERBARU.zip ke folder kosong",
+      "  2. npm install",
+      "  3. Buat .env.local: NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_ANON_KEY,",
+      "     AUTH_TOKEN, APP_USERS (rahasia sengaja TIDAK ikut di ZIP)",
+      "  4. npm run dev   (atau: npm run build && npm start)",
+      "",
+      "Arsitektur, logika bisnis & keamanan dijelaskan di docs/ARSITEKTUR.md di dalam ZIP.",
+      info ? `Commit: ${info.commit} · dibundel ${info.dibuat} · ${info.jumlahBerkas} berkas` : "",
+    ].join("\n"));
+    localStorage.setItem(LS_TERAKHIR, new Date().toISOString());
+    return { ok: true, berkas, info };
+  } catch (e: any) {
+    return { ok: false, pesan: e?.message || String(e) };
+  }
+}
+
+/** Fallback tanpa folder: unduh ZIP kodingan langsung. */
+export async function unduhKodingan(): Promise<{ ok: boolean; pesan?: string }> {
+  try {
+    const r = await fetch("/backup/source.zip");
+    if (!r.ok) return { ok: false, pesan: `source.zip tidak ditemukan (${r.status}).` };
+    const url = URL.createObjectURL(await r.blob());
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `source-mrt_${stempel()}.zip`;
+    a.click();
+    URL.revokeObjectURL(url);
+    return { ok: true };
+  } catch (e: any) { return { ok: false, pesan: e?.message || String(e) }; }
+}
+
 /** Fallback untuk browser tanpa File System Access API: unduh 1 file JSON. */
 export function unduhSatuFile(rows: any[]) {
   const isi = JSON.stringify({ diambil: new Date().toISOString(), jumlah: rows.length, rows }, null, 2);

@@ -8,7 +8,8 @@
     "start": "next start -p 3001",
     "lint": "next lint",
     "backup": "node scripts/backup-supabase.cjs",
-    "restore": "node scripts/restore-supabase.cjs"
+    "restore": "node scripts/restore-supabase.cjs",
+    "prebuild": "node scripts/bundle-source.cjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.45.4",
