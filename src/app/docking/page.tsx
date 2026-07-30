@@ -46,13 +46,26 @@ export default function DockingPage() {
     return Array.from(s).sort().reverse();
   }, [jadwal, kelas]);
 
-  /** satu baris per kapal — kapal tanpa jadwal tetap tampil supaya ketahuan belum diisi */
-  const baris = useMemo(() => KAPAL_ANGGARAN.map((k) => {
-    const d = jadwal.find((x) => x.kapal === k && String(x.tahun) === tahun);
-    const r = d ? ringkasDocking(d) : null;
-    const kls = kelas.filter((x) => x.kapal === k && String(x.tahun) === tahun);
-    return { kapal: k, dok: d, r, kelas: kls };
-  }), [jadwal, kelas, tahun]);
+  /**
+   * Satu baris per kapal — kapal tanpa jadwal tetap tampil supaya ketahuan belum diisi.
+   * Urutannya mengikuti KAPAN kapal mulai docking (paling awal di atas); yang belum
+   * ada tanggalnya ditaruh di bawah dan otomatis naik sendiri begitu tanggalnya diisi.
+   */
+  const baris = useMemo(() => {
+    const awalDocking = (d?: DockingJadwal) =>
+      d && (d.keluarLintasan || d.berangkatGalangan || d.tibaGalangan || d.naikDock) || "";
+    return KAPAL_ANGGARAN.map((k) => {
+      const d = jadwal.find((x) => x.kapal === k && String(x.tahun) === tahun);
+      const r = d ? ringkasDocking(d) : null;
+      const kls = kelas.filter((x) => x.kapal === k && String(x.tahun) === tahun);
+      return { kapal: k, dok: d, r, kelas: kls, awal: awalDocking(d) };
+    }).sort((a, b) => {
+      if (a.awal && b.awal) return a.awal.localeCompare(b.awal) || a.kapal.localeCompare(b.kapal);
+      if (a.awal) return -1;          // yang sudah punya tanggal selalu di atas
+      if (b.awal) return 1;
+      return a.kapal.localeCompare(b.kapal);
+    });
+  }, [jadwal, kelas, tahun]);
 
   const adaData = baris.filter((b) => b.dok);
   const selesai = adaData.filter((b) => b.r?.status === "selesai");
