@@ -55,7 +55,15 @@ export default function NonprIsi() {
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 sticky top-3 z-20 flex items-center justify-between gap-3">
         <div>
-          <Link href="/nonpr" className="text-xs text-slate-500 hover:text-[#16357f]">‹ SPPBJ Non PR PO</Link>
+          <span className="flex items-center gap-2.5">
+            <Link href="/nonpr" title="Kembali ke SPPBJ Non PR PO"
+              className="shrink-0 h-9 w-9 grid place-items-center rounded-xl border border-slate-300 bg-white text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f] transition">←</Link>
+            <nav className="flex items-center gap-1.5 text-[11px] text-slate-500" aria-label="Navigasi">
+              <Link href="/nonpr" className="font-semibold hover:text-[#16357f] hover:underline">SPPBJ Non PR PO</Link>
+              <span className="text-slate-300">›</span>
+              <span className="font-bold text-slate-700">Input / Edit</span>
+            </nav>
+          </span>
           <h1 className="text-xl font-extrabold asdp-text-gradient">Input Pengadaan Non PR PO</h1>
           <p className="text-xs text-slate-500">{req.items.length} item · {kapals.length} kapal · total <b className={over ? "text-red-600" : "text-slate-700"}>{rupiah(total)}</b></p>
         </div>

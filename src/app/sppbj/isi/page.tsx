@@ -335,12 +335,29 @@ function SppbjIsiInner() {
   return (
     <main className="max-w-5xl mx-auto px-5 py-8">
       <div className="glass rounded-2xl ring-line elev-md px-5 py-4 mb-6 sticky top-3 z-20 flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <Link href="/sppbj" className="text-xs text-slate-500 hover:text-[#16357f]">‹ SPPBJ</Link>
-          <h1 className="text-xl font-extrabold asdp-text-gradient">Input SPPBJ</h1>
-          <p className="text-xs text-slate-500">{req.items.length} item · {bulanTahun(req.tanggal)} · estimasi {rupiah(total)}</p>
+        {/* Tombol kembali dibuat sebagai tombol sungguhan + jejak lokasi.
+            Sebelumnya hanya tulisan "‹ SPPBJ" sebesar 12px yang mudah terlewat. */}
+        <div className="flex items-center gap-3 min-w-0">
+          <Link href="/sppbj" title="Kembali ke daftar Riwayat Pengadaan"
+            className="shrink-0 h-10 w-10 grid place-items-center rounded-xl border border-slate-300 bg-white text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f] transition text-lg">
+            ←
+          </Link>
+          <div className="min-w-0">
+            <nav className="flex items-center gap-1.5 text-[11px] text-slate-500 mb-0.5" aria-label="Navigasi">
+              <Link href="/sppbj" className="font-semibold hover:text-[#16357f] hover:underline">SPPBJ Pengadaan</Link>
+              <span className="text-slate-300">›</span>
+              <span className="font-bold text-slate-700">{req.id ? "Ubah pengadaan" : "Pengadaan baru"}</span>
+            </nav>
+            <h1 className="text-xl font-extrabold asdp-text-gradient leading-tight truncate" title={req.namaPengadaan || undefined}>
+              {req.namaPengadaan?.trim() || "Input SPPBJ"}
+            </h1>
+            <p className="text-xs text-slate-500">{req.items.length} item · {bulanTahun(req.tanggal)} · estimasi {rupiah(total)}</p>
+          </div>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Link href="/sppbj" className="btn btn-ghost text-sm" title="Kembali ke daftar pengadaan yang sudah tersimpan">
+            ← Daftar pengadaan
+          </Link>
           <button onClick={kirimRekap} disabled={rekapBusy} className="text-sm font-semibold px-4 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50" title="Kirim ke spreadsheet REKAP PJK (tab bulan sesuai tanggal)">{rekapBusy ? "…" : "📊 Kirim ke Rekap"}</button>
           <button onClick={simpanGuard} disabled={saving} className="asdp-gradient text-white text-sm font-semibold px-5 py-2 rounded-xl shadow">{saving ? "…" : "💾 Simpan"}</button>
         </div>
