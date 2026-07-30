@@ -1,3 +1,5 @@
+import { ParameterKapal } from "./parameter";
+
 /**
  * Rencana RKA (usulan RKA tahun berikutnya, mis. 2027).
  *
@@ -44,6 +46,8 @@ export interface RkaKapal {
   nilai: Record<string, number>;
   /** pembanding yang terekam saat pengisian otomatis (audit jejak) */
   dasar?: Record<string, number>;
+  /** parameter teknis kapal utk mesin hitung pelumas & Tingkat Perawatan */
+  param?: ParameterKapal;
   catatan?: string;
   diubahPada?: string;
 }

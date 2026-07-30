@@ -16,6 +16,8 @@ import { useRka } from "@/lib/rka/store";
 import { RkaKapal, KELOMPOK_RKA, rkaBaru, totalRka } from "@/lib/rka/types";
 import { dasarDariTahun } from "@/lib/rka/isi";
 import { exportRkaExcel } from "@/lib/rka/excel";
+import { ParameterKapal, PARAM_BAKU, TP_INTERVAL, gemukBakuKg, jamPerMinggu, hitungSemua, Lintasan } from "@/lib/rka/parameter";
+import { useKapalDb } from "@/lib/kapal/store";
 import { konfirmasi, beritahu } from "@/components/Konfirmasi";
 
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -154,6 +156,7 @@ function FormRka({ nilai, setNilai, sibuk, tahunDasar, pengadaan, onSimpan, onHa
   nilai: RkaKapal; setNilai: (d: RkaKapal) => void; sibuk: boolean; tahunDasar: number;
   pengadaan: any[]; onSimpan: () => void; onHapus: () => void; onTutup: () => void;
 }) {
+  const [tab, setTab] = useState<"usulan" | "param">("usulan");
   const [faktor, setFaktor] = useState("");
   const dasar = useMemo(() => dasarDariTahun(pengadaan, nilai.kapal, tahunDasar), [pengadaan, nilai.kapal, tahunDasar]);
   const adaDasar = Object.keys(dasar).length > 0;
@@ -188,7 +191,15 @@ function FormRka({ nilai, setNilai, sibuk, tahunDasar, pengadaan, onSimpan, onHa
             </div>
           </div>
 
+          <div className="px-6 pt-3 flex gap-1 border-b border-slate-200">
+            {([["usulan", "📋 Usulan biaya"], ["param", "⚙️ Parameter & Hitung Teknis"]] as const).map(([v, t]) => (
+              <button key={v} onClick={() => setTab(v)}
+                className={`text-xs font-semibold px-3 py-2 rounded-t-lg border-b-2 transition ${tab === v ? "border-[#16357f] text-[#16357f] bg-slate-50" : "border-transparent text-slate-500 hover:text-slate-700"}`}>{t}</button>
+            ))}
+          </div>
+
           <div className="p-6 max-h-[62vh] overflow-auto">
+            {tab === "param" ? <TabParameter nilai={nilai} set={set} /> : <>
             <div className="flex flex-wrap items-end gap-2 mb-4">
               <button onClick={isiOtomatis} disabled={!adaDasar}
                 title={adaDasar ? `Isi semua kelompok dari realisasi ${tahunDasar} di aplikasi` : `Belum ada realisasi ${tahunDasar} untuk kapal ini`}
@@ -244,6 +255,7 @@ function FormRka({ nilai, setNilai, sibuk, tahunDasar, pengadaan, onSimpan, onHa
               <textarea className="inp min-h-[60px] mt-1" value={nilai.catatan || ""} onChange={(e) => set({ catatan: e.target.value })}
                 placeholder="mis. tahun depan SS — anggaran docking dinaikkan" />
             </label>
+            </>}
           </div>
 
           <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center gap-2">
@@ -255,6 +267,164 @@ function FormRka({ nilai, setNilai, sibuk, tahunDasar, pengadaan, onSimpan, onHa
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Parameter teknis + mesin hitung (pelumas & Tingkat Perawatan).
+ * Rumusnya sama persis dengan workbook RKA pusat — lihat lib/rka/parameter.ts.
+ */
+function TabParameter({ nilai, set }: { nilai: RkaKapal; set: (p: Partial<RkaKapal>) => void }) {
+  const { ships } = useKapalDb();
+  const p: ParameterKapal = { ...PARAM_BAKU, ...(nilai.param || {}) };
+  const setP = (x: Partial<ParameterKapal>) => set({ param: { ...p, ...x } });
+  const lint: Lintasan[] = p.lintasan?.length ? p.lintasan : [{ nama: "Lintasan I", tripPerMinggu: 0, jamPerTrip: 0 }];
+  const setLint = (i: number, x: Partial<Lintasan>) =>
+    setP({ lintasan: lint.map((l, j) => (j === i ? { ...l, ...x } : l)) });
+
+  const h = hitungSemua(p);
+  const jamMgg = jamPerMinggu(p);
+
+  /** tarik GT / daya mesin dari Ship Database supaya tak diketik dua kali */
+  const dariKapal = () => {
+    const s = ships.find((x) => x.nama === nilai.kapal);
+    if (!s) { void beritahu("Kapal ini belum ada di Ship Database."); return; }
+    const angka = (v: any) => { const n = parseFloat(String(v || "").replace(/[^\d.,]/g, "").replace(",", ".")); return isFinite(n) ? n : undefined; };
+    setP({
+      grt: angka(s.dimension?.gt) ?? p.grt,
+      meHp: angka(s.mainEngine?.ehp) ?? p.meHp,
+      aeHp: angka(s.auxEngine?.ehp) ?? p.aeHp,
+      meUnit: p.meUnit ?? 2, aeUnit: p.aeUnit ?? 2,
+      gemukKgPerBulan: p.gemukKgPerBulan ?? gemukBakuKg(angka(s.dimension?.gt)),
+    });
+  };
+
+  const pindahkan = async () => {
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "⚡", judul: "Pindahkan hasil hitung ke usulan?",
+      pesan: "Kelompok Pelumas dan Pemeliharaan Mesin & Kelistrikan akan ditimpa dengan hasil perhitungan ini.",
+      rincian: [`Pelumas ${rupiah(Math.round(h.pelumas.total))}`, `Permesinan (TP ME+AE) ${rupiah(Math.round(h.permesinan))}`],
+      tombolYa: "Pindahkan",
+    }))) return;
+    set({ nilai: { ...nilai.nilai, pelumas: Math.round(h.pelumas.total), permesinan: Math.round(h.permesinan) } });
+  };
+
+  const Num = ({ label, k, sat, step }: { label: string; k: keyof ParameterKapal; sat?: string; step?: string }) => (
+    <label className="block">
+      <span className="text-[10px] font-semibold text-slate-500">{label}{sat ? ` (${sat})` : ""}</span>
+      <input type="number" step={step} className="inp mt-1" value={(p[k] as any) ?? ""}
+        onChange={(e) => setP({ [k]: e.target.value ? +e.target.value : undefined } as any)} />
+    </label>
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <button onClick={dariKapal} className="btn btn-ghost text-xs">🚢 Ambil dari Ship Database</button>
+        <span className="text-[11px] text-slate-500">GT &amp; daya mesin diambil dari data kapal; sisanya diisi sekali lalu tersimpan bersama usulan.</span>
+        <button onClick={pindahkan} className="btn btn-primary text-xs ml-auto">⚡ Pindahkan ke usulan</button>
+      </div>
+
+      <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Mesin &amp; operasi</p>
+      <div className="grid sm:grid-cols-4 gap-3 mb-4">
+        <Num label="GRT" k="grt" />
+        <Num label="Mesin Induk — jumlah" k="meUnit" sat="unit" />
+        <Num label="Daya per ME" k="meHp" sat="HP" />
+        <Num label="Jam kerja ME awal tahun" k="jamKerjaAwalMe" sat="jam" />
+        <Num label="Mesin Bantu — jumlah" k="aeUnit" sat="unit" />
+        <Num label="Daya per AE" k="aeHp" sat="HP" />
+        <Num label="Jam kerja AE / hari" k="jamAePerHari" sat="jam" />
+        <Num label="Jam kerja AE awal tahun" k="jamKerjaAwalAe" sat="jam" />
+        <Num label="Hari operasi setahun" k="hariOperasi" sat="hari" />
+        <Num label="Trip setahun" k="tripSetahun" sat="trip" />
+        <Num label="Waktu tempuh 1 trip" k="jamPerTripUtama" sat="jam" step="0.05" />
+      </div>
+
+      <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">
+        Pola operasi <span className="normal-case font-normal text-slate-400">— menentukan jam kerja ME: {jamMgg} jam/minggu · {Math.round(jamMgg * 52)} jam/tahun</span>
+      </p>
+      <div className="space-y-2 mb-4">
+        {lint.map((l, i) => (
+          <div key={i} className="flex flex-wrap items-end gap-2">
+            <label className="block flex-1 min-w-[10rem]">
+              <span className="text-[10px] font-semibold text-slate-500">Lintasan</span>
+              <input className="inp mt-1" value={l.nama} onChange={(e) => setLint(i, { nama: e.target.value })} placeholder="mis. Bastiong – Sofifi" />
+            </label>
+            <label className="block"><span className="text-[10px] font-semibold text-slate-500">Trip / minggu</span>
+              <input type="number" className="inp mt-1 !w-28" value={l.tripPerMinggu || ""} onChange={(e) => setLint(i, { tripPerMinggu: +e.target.value })} /></label>
+            <label className="block"><span className="text-[10px] font-semibold text-slate-500">Jam / trip</span>
+              <input type="number" step="0.05" className="inp mt-1 !w-28" value={l.jamPerTrip || ""} onChange={(e) => setLint(i, { jamPerTrip: +e.target.value })} /></label>
+            <button onClick={() => setP({ lintasan: lint.filter((_, j) => j !== i) })} className="h-10 px-2.5 rounded-lg border border-slate-300 text-rose-600 hover:bg-rose-50 text-sm">✕</button>
+          </div>
+        ))}
+        <button onClick={() => setP({ lintasan: [...lint, { nama: `Lintasan ${lint.length + 1}`, tripPerMinggu: 0, jamPerTrip: 0 }] })}
+          className="btn btn-ghost text-xs">＋ Tambah lintasan</button>
+      </div>
+
+      <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Pelumas &amp; gemuk</p>
+      <div className="grid sm:grid-cols-4 gap-3 mb-3">
+        <Num label="Constanta (SOC)" k="constanta" step="0.0001" />
+        <Num label="Rendemen ME" k="rendemenMe" step="0.05" />
+        <Num label="Rendemen AE" k="rendemenAe" step="0.05" />
+        <Num label="Harga pelumas mesin" k="hargaPelumas" sat="Rp/L" />
+        <Num label="Kapasitas oil pan ME" k="kapasitasMe" sat="L" />
+        <Num label="Kapasitas oil pan AE" k="kapasitasAe" sat="L" />
+        <Num label="Ganti pelumas ME / tahun" k="gantiMeSetahun" sat="kali" />
+        <Num label="Ganti pelumas AE / tahun" k="gantiAeSetahun" sat="kali" />
+        <Num label="Hidraulik / bulan" k="hidraulikLiterPerBulan" sat="L" />
+        <Num label="Harga hidraulik" k="hargaHidraulik" sat="Rp/L" />
+        <Num label={`Gemuk / bulan (baku ${gemukBakuKg(p.grt)} kg)`} k="gemukKgPerBulan" sat="kg" />
+        <Num label="Harga gemuk" k="hargaGemuk" sat="Rp/kg" />
+      </div>
+
+      <div className="rounded-xl ring-1 ring-sky-200 bg-sky-50 p-3.5 mb-4 text-[11px] text-slate-700">
+        <p className="font-bold text-slate-800 mb-1.5">Hasil hitung pelumas — total {rupiah(Math.round(h.pelumas.total))}</p>
+        <div className="grid sm:grid-cols-2 gap-x-6 gap-y-0.5">
+          <span>Topping up ME: {h.pelumas.literPerJamMe.toFixed(3)} L/jam × {p.jamPerTripUtama || 0} jam = {h.pelumas.literPerTripMe.toFixed(2)} L/trip × {p.tripSetahun || 0} trip = <b>{Math.round(h.pelumas.toppingMeLiter)} L</b> → {rupiah(Math.round(h.pelumas.toppingMeRp))}</span>
+          <span>Topping up AE: {h.pelumas.literPerJamAe.toFixed(3)} L/jam × {p.jamAePerHari || 0} jam/hari = {h.pelumas.literPerHariAe.toFixed(2)} L/hari × {p.hariOperasi || 0} hari = <b>{Math.round(h.pelumas.toppingAeLiter)} L</b> → {rupiah(Math.round(h.pelumas.toppingAeRp))}</span>
+          <span>Penggantian ME: {rupiah(Math.round(h.pelumas.gantiMeRp))}</span>
+          <span>Penggantian AE: {rupiah(Math.round(h.pelumas.gantiAeRp))}</span>
+          <span>Hidraulik: {rupiah(Math.round(h.pelumas.hidraulikRp))}</span>
+          <span>Gemuk: {rupiah(Math.round(h.pelumas.gemukRp))}</span>
+        </div>
+      </div>
+
+      <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">
+        Tingkat Perawatan <span className="normal-case font-normal text-slate-400">— jumlah kejadian dihitung dari jam kerja; isi biaya sekali kejadian</span>
+      </p>
+      <div className="grid lg:grid-cols-2 gap-4">
+        {([["me", "Mesin Induk", h.tpMe, p.biayaTpMe], ["ae", "Mesin Bantu", h.tpAe, p.biayaTpAe]] as const).map(([kk, judul, res, biaya]) => (
+          <div key={kk} className="rounded-xl ring-1 ring-slate-200 p-3">
+            <p className="font-bold text-slate-800 text-xs mb-1">{judul} — {Math.round(res.jamSetahun)} jam/tahun (awal {Math.round(res.jamAwal)} → akhir {Math.round(res.jamAkhir)})</p>
+            <table className="w-full text-[11px]">
+              <thead className="text-[9px] uppercase text-slate-500 font-bold">
+                <tr><th className="text-left p-1">Tingkat</th><th className="text-right p-1">Kali</th><th className="text-right p-1 w-32">Biaya / kejadian</th><th className="text-right p-1">Total</th></tr>
+              </thead>
+              <tbody>
+                {res.baris.map((b) => (
+                  <tr key={b.key} className="border-b border-slate-100 last:border-0">
+                    <td className="p-1 text-slate-700">{b.label}</td>
+                    <td className="p-1 text-right tabular-nums font-semibold">{b.kali}</td>
+                    <td className="p-1">
+                      <input type="number" className="inp !py-1 !text-[11px] text-right"
+                        value={biaya?.[b.key] ?? ""}
+                        onChange={(e) => setP({ [kk === "me" ? "biayaTpMe" : "biayaTpAe"]: { ...(biaya || {}), [b.key]: e.target.value ? +e.target.value : 0 } } as any)} />
+                    </td>
+                    <td className="p-1 text-right tabular-nums text-slate-700">{b.total ? rupiahShort(b.total) : "–"}</td>
+                  </tr>
+                ))}
+                <tr className="bg-slate-50 font-extrabold"><td className="p-1" colSpan={3}>TOTAL</td><td className="p-1 text-right tabular-nums">{rupiah(Math.round(res.total))}</td></tr>
+              </tbody>
+            </table>
+          </div>
+        ))}
+      </div>
+      <p className="text-[11px] text-slate-500 mt-3">
+        Rumus pelumas &amp; jam kerja sudah dicocokkan sel-per-sel dengan workbook RKA pusat (KMP. TUNA 2026).
+        Daftar suku cadang tiap TP tidak ada di aplikasi, jadi biayanya diisi manual di sini —
+        jumlah kejadiannya yang dihitung otomatis.
+      </p>
+    </>
   );
 }
 
