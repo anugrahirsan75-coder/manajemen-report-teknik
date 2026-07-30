@@ -172,9 +172,7 @@ export default function DockingPage() {
       </section>
 
       {/* ============ ringkasan kesiapan persiapan docking ============ */}
-      <KesiapanPanel baris={adaData} onBuka={(d) => buka(d, "siap")} onTemplate={async (d) => {
-        await simpanJadwal({ ...d, persiapan: TEMPLATE_PERSIAPAN.map((x) => persiapanBaru(x)) });
-      }} />
+      <KesiapanPanel baris={adaData} onBuka={(d) => buka(d, "siap")} />
 
       {/* ============ termin pembayaran yang perlu diurus ============ */}
       {perluBayar.length > 0 && (
@@ -509,13 +507,11 @@ function TabJadwal({ nilai, set, r }: { nilai: DockingJadwal; set: (p: Partial<D
  *  - "Item apa yang tersendat di banyak kapal?" -> matriks item x kapal
  * Klik di mana pun langsung membuka kapal itu pada tab Persiapan.
  */
-function KesiapanPanel({ baris, onBuka, onTemplate }: {
+function KesiapanPanel({ baris, onBuka }: {
   baris: { kapal: string; dok?: DockingJadwal; r: any }[];
   onBuka: (d: DockingJadwal) => void;
-  onTemplate: (d: DockingJadwal) => Promise<void>;
 }) {
   const [tampil, setTampil] = useState<"kapal" | "matriks">("kapal");
-  const [sibuk, setSibuk] = useState("");
 
   const data = useMemo(() => baris
     .filter((b) => b.dok)
@@ -541,11 +537,6 @@ function KesiapanPanel({ baris, onBuka, onTemplate }: {
   const totSelesai = punya.reduce((s, d) => s + d.r.selesai, 0);
   const pctArmada = totItem ? Math.round((totSelesai / totItem) * 100) : 0;
   const siapPenuh = punya.filter((d) => d.r.pct >= 100).length;
-
-  const pakaiTemplate = async (d: DockingJadwal) => {
-    setSibuk(d.id);
-    try { await onTemplate(d); } finally { setSibuk(""); }
-  };
 
   return (
     <section className="mt-4 bg-white rounded-2xl ring-line elev-md p-5">
@@ -581,17 +572,10 @@ function KesiapanPanel({ baris, onBuka, onTemplate }: {
             </button>
           ))}
           {belumPunya.length > 0 && (
-            <div className="pt-2 mt-1 border-t border-slate-100">
-              <p className="text-[11px] text-slate-500 mb-1.5">Belum punya checklist ({belumPunya.length} kapal) — sekali klik untuk memasang template {TEMPLATE_PERSIAPAN.length} item:</p>
-              <div className="flex flex-wrap gap-1.5">
-                {belumPunya.map((d) => (
-                  <button key={d.kapal} onClick={() => pakaiTemplate(d.dok)} disabled={!!sibuk}
-                    className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f] disabled:opacity-50">
-                    {sibuk === d.dok.id ? "…" : `＋ ${ringkasKapal(d.kapal)}`}
-                  </button>
-                ))}
-              </div>
-            </div>
+            <p className="pt-2 mt-1 border-t border-slate-100 text-[11px] text-slate-500">
+              Belum punya checklist ({belumPunya.length} kapal):{" "}
+              <span className="text-slate-600">{belumPunya.map((d) => ringkasKapal(d.kapal)).join(" · ")}</span>
+            </p>
           )}
         </div>
       ) : (
