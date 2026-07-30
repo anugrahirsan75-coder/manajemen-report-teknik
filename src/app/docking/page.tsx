@@ -38,6 +38,9 @@ export default function DockingPage() {
   const { ready, loading, err, jadwal, kelas, reload, simpanJadwal, simpanKelas, hapusJadwal, hapusKelas } = useDocking();
   const [tahun, setTahun] = useState(String(new Date().getFullYear()));
   const [edit, setEdit] = useState<DockingJadwal | null>(null);
+  const [tabAwal, setTabAwal] = useState<"jadwal" | "siap">("jadwal");
+  /** buka kapal langsung pada tab tertentu */
+  const buka = (d: DockingJadwal, t: "jadwal" | "siap" = "jadwal") => { setTabAwal(t); setEdit({ ...d }); };
   const [sibuk, setSibuk] = useState(false);
 
   const tahunList = useMemo(() => {
@@ -96,7 +99,7 @@ export default function DockingPage() {
   const nSiap = perluBayar.filter((x) => x.t.status === "siap" || x.t.status === "terlambat").length;
   const nTerlambat = perluBayar.filter((x) => x.t.status === "terlambat").length;
 
-  const bukaBaru = (kapal: string) => setEdit(dockingBaru(kapal, +tahun));
+  const bukaBaru = (kapal: string) => { setTabAwal("jadwal"); setEdit(dockingBaru(kapal, +tahun)); };
 
   const simpanEdit = async () => {
     if (!edit) return;
@@ -168,6 +171,11 @@ export default function DockingPage() {
           bar={nTerlambat ? "bg-red-500" : nSiap ? "bg-sky-500" : "bg-slate-400"} />
       </section>
 
+      {/* ============ ringkasan kesiapan persiapan docking ============ */}
+      <KesiapanPanel baris={adaData} onBuka={(d) => buka(d, "siap")} onTemplate={async (d) => {
+        await simpanJadwal({ ...d, persiapan: TEMPLATE_PERSIAPAN.map((x) => persiapanBaru(x)) });
+      }} />
+
       {/* ============ termin pembayaran yang perlu diurus ============ */}
       {perluBayar.length > 0 && (
         <section className={`mt-4 rounded-2xl ring-1 overflow-hidden ${nTerlambat ? "ring-red-300 bg-red-50" : nSiap ? "ring-sky-300 bg-sky-50" : "ring-slate-200 bg-slate-50"}`}>
@@ -231,7 +239,7 @@ export default function DockingPage() {
                 const r = b.r!; const g = gayaDocking(r);
                 const nyata = r.utama ?? 0;
                 return (
-                  <button key={b.kapal} onClick={() => setEdit({ ...b.dok! })}
+                  <button key={b.kapal} onClick={() => buka(b.dok!)}
                     className="w-full text-left group focus:outline-none focus-visible:ring-2 focus-visible:ring-[#1ca3dd] rounded"
                     title={`${b.kapal} · target ${r.target ?? "-"} hari · nyata ${nyata} hari${r.selisih != null ? ` (${r.selisih > 0 ? "+" : ""}${r.selisih})` : ""}`}>
                     <div className="flex items-center gap-2">
@@ -309,7 +317,7 @@ export default function DockingPage() {
                 const r = b.r; const g = r ? gayaDocking(r) : null;
                 return (
                   <tr key={b.kapal} className="border-b border-slate-100 last:border-0 row-hover cursor-pointer"
-                    onClick={() => (b.dok ? setEdit({ ...b.dok }) : bukaBaru(b.kapal))}>
+                    onClick={() => (b.dok ? buka(b.dok) : bukaBaru(b.kapal))}>
                     <td className="p-2 font-semibold text-slate-800 whitespace-nowrap">{b.kapal}</td>
                     <td className="p-2 text-slate-600">{b.dok?.galangan || "—"}</td>
                     <td className="p-2 text-slate-600 whitespace-nowrap">
@@ -382,7 +390,7 @@ export default function DockingPage() {
 
       {edit && (
         <FormDocking
-          nilai={edit} setNilai={setEdit} sibuk={sibuk}
+          nilai={edit} setNilai={setEdit} sibuk={sibuk} tabAwal={tabAwal}
           kelas={kelas.filter((k) => k.kapal === edit.kapal && k.tahun === edit.tahun)}
           onSimpan={simpanEdit} onHapus={hapusEdit} onTutup={() => setEdit(null)}
           onSimpanKelas={simpanKelas} onHapusKelas={hapusKelas}
@@ -395,12 +403,13 @@ export default function DockingPage() {
 
 /* ============================ form / detail ============================ */
 
-function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup, onSimpanKelas, onHapusKelas }: {
+function FormDocking({ nilai, setNilai, kelas, sibuk, tabAwal, onSimpan, onHapus, onTutup, onSimpanKelas, onHapusKelas }: {
   nilai: DockingJadwal; setNilai: (d: DockingJadwal) => void; kelas: KelasBki[]; sibuk: boolean;
+  tabAwal?: "jadwal" | "siap";
   onSimpan: () => void; onHapus: () => void; onTutup: () => void;
   onSimpanKelas: (k: KelasBki) => Promise<void>; onHapusKelas: (id: string) => Promise<void>;
 }) {
-  const [tab, setTab] = useState<"jadwal" | "siap" | "termin" | "ba" | "kelas">("jadwal");
+  const [tab, setTab] = useState<"jadwal" | "siap" | "termin" | "ba" | "kelas">(tabAwal || "jadwal");
   const r = ringkasDocking(nilai);
   const g = gayaDocking(r);
   const set = (p: Partial<DockingJadwal>) => setNilai({ ...nilai, ...p });
@@ -489,6 +498,152 @@ function TabJadwal({ nilai, set, r }: { nilai: DockingJadwal; set: (p: Partial<D
           placeholder="mis. keterlambatan karena menunggu material, cuaca, dsb." />
       </Baris>
     </>
+  );
+}
+
+/**
+ * Ringkasan kesiapan persiapan docking seluruh armada.
+ *
+ * Dua cara lihat, karena dua pertanyaan berbeda:
+ *  - "Kapal mana yang paling belum siap?"  -> daftar batang per kapal, urut termuda
+ *  - "Item apa yang tersendat di banyak kapal?" -> matriks item x kapal
+ * Klik di mana pun langsung membuka kapal itu pada tab Persiapan.
+ */
+function KesiapanPanel({ baris, onBuka, onTemplate }: {
+  baris: { kapal: string; dok?: DockingJadwal; r: any }[];
+  onBuka: (d: DockingJadwal) => void;
+  onTemplate: (d: DockingJadwal) => Promise<void>;
+}) {
+  const [tampil, setTampil] = useState<"kapal" | "matriks">("kapal");
+  const [sibuk, setSibuk] = useState("");
+
+  const data = useMemo(() => baris
+    .filter((b) => b.dok)
+    .map((b) => ({ kapal: b.kapal, dok: b.dok!, r: ringkasPersiapan(b.dok!.persiapan) }))
+    .sort((a, b) => {
+      if (a.r.ada !== b.r.ada) return a.r.ada ? -1 : 1;   // yang punya checklist dulu
+      return a.r.pct - b.r.pct || a.kapal.localeCompare(b.kapal);
+    }), [baris]);
+
+  // daftar item unik lintas kapal (template dulu, item khusus menyusul)
+  const items = useMemo(() => {
+    const urut: string[] = [...TEMPLATE_PERSIAPAN];
+    data.forEach((d) => (d.dok.persiapan || []).forEach((it) => {
+      if (it.nama && !urut.includes(it.nama)) urut.push(it.nama);
+    }));
+    return urut.filter((nama) => data.some((d) => (d.dok.persiapan || []).some((it) => it.nama === nama)));
+  }, [data]);
+
+  if (!data.length) return null;
+  const punya = data.filter((d) => d.r.ada);
+  const belumPunya = data.filter((d) => !d.r.ada);
+  const totItem = punya.reduce((s, d) => s + d.r.total, 0);
+  const totSelesai = punya.reduce((s, d) => s + d.r.selesai, 0);
+  const pctArmada = totItem ? Math.round((totSelesai / totItem) * 100) : 0;
+  const siapPenuh = punya.filter((d) => d.r.pct >= 100).length;
+
+  const pakaiTemplate = async (d: DockingJadwal) => {
+    setSibuk(d.id);
+    try { await onTemplate(d); } finally { setSibuk(""); }
+  };
+
+  return (
+    <section className="mt-4 bg-white rounded-2xl ring-line elev-md p-5">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
+        <h3 className="font-bold text-slate-800">✅ Kesiapan persiapan docking</h3>
+        <span className="text-[11px] text-slate-500">klik kapal / kotak untuk langsung membuka checklistnya</span>
+        <div className="ml-auto flex items-center gap-3">
+          <span className="text-[11px] text-slate-600">
+            <b className="text-slate-900">{pctArmada}%</b> armada · {totSelesai}/{totItem} item · {siapPenuh} kapal siap penuh
+          </span>
+          <div className="flex gap-1">
+            {([["kapal", "📋 Per kapal"], ["matriks", "▦ Matriks"]] as const).map(([v, t]) => (
+              <button key={v} onClick={() => setTampil(v)}
+                className={`text-[10px] font-semibold px-2 py-1 rounded-md border transition ${tampil === v ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white border-slate-300 text-slate-600 hover:border-[#1ca3dd]"}`}>{t}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {tampil === "kapal" ? (
+        <div className="space-y-1.5">
+          {punya.map((d) => (
+            <button key={d.kapal} onClick={() => onBuka(d.dok)}
+              className="w-full text-left flex items-center gap-2.5 rounded-lg px-2 py-1.5 hover:bg-slate-50 transition group">
+              <span className="w-28 sm:w-36 shrink-0 text-[11px] font-semibold text-slate-700 truncate group-hover:text-[#16357f]">{ringkasKapal(d.kapal)}</span>
+              <span className="flex-1 flex h-4 rounded overflow-hidden ring-1 ring-inset ring-slate-200 bg-slate-100">
+                <span className="bg-emerald-500 h-full" style={{ width: `${d.r.total ? (d.r.selesai / d.r.total) * 100 : 0}%` }} />
+                <span className="bg-amber-400 h-full" style={{ width: `${d.r.total ? (d.r.proses / d.r.total) * 100 : 0}%` }} />
+              </span>
+              <span className="w-14 shrink-0 text-right text-[11px] font-bold tabular-nums text-slate-800">{d.r.selesai}/{d.r.total}</span>
+              <span className={`w-16 shrink-0 text-right text-[11px] font-extrabold tabular-nums ${
+                d.r.pct >= 100 ? "text-emerald-700" : d.r.pct >= 50 ? "text-amber-700" : "text-red-700"}`}>{d.r.pct}%</span>
+            </button>
+          ))}
+          {belumPunya.length > 0 && (
+            <div className="pt-2 mt-1 border-t border-slate-100">
+              <p className="text-[11px] text-slate-500 mb-1.5">Belum punya checklist ({belumPunya.length} kapal) — sekali klik untuk memasang template {TEMPLATE_PERSIAPAN.length} item:</p>
+              <div className="flex flex-wrap gap-1.5">
+                {belumPunya.map((d) => (
+                  <button key={d.kapal} onClick={() => pakaiTemplate(d.dok)} disabled={!!sibuk}
+                    className="text-[11px] font-bold px-2.5 py-1.5 rounded-lg border border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f] disabled:opacity-50">
+                    {sibuk === d.dok.id ? "…" : `＋ ${ringkasKapal(d.kapal)}`}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs">
+            <thead>
+              <tr className="text-[9px] uppercase tracking-wide text-slate-500 font-bold">
+                <th className="p-1.5 text-left sticky left-0 bg-white">Item persiapan</th>
+                {punya.map((d) => (
+                  <th key={d.kapal} className="p-1.5 text-center cursor-pointer hover:text-[#16357f]" onClick={() => onBuka(d.dok)}>
+                    <span className="block [writing-mode:vertical-rl] rotate-180 h-20 mx-auto">{ringkasKapal(d.kapal)}</span>
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {items.map((nama) => (
+                <tr key={nama} className="border-b border-slate-100 last:border-0">
+                  <td className="p-1.5 text-slate-700 whitespace-nowrap sticky left-0 bg-white">{nama}</td>
+                  {punya.map((d) => {
+                    const it = (d.dok.persiapan || []).find((x) => x.nama === nama);
+                    const st = it ? STATUS_SIAP[it.status] : null;
+                    return (
+                      <td key={d.kapal} className="p-1 text-center">
+                        <button onClick={() => onBuka(d.dok)}
+                          title={`${ringkasKapal(d.kapal)} — ${nama}: ${it ? st!.label : "tidak ada di kapal ini"}${it?.noRef ? ` (${it.noRef})` : ""}`}
+                          className={`w-6 h-6 grid place-items-center rounded text-[10px] font-extrabold ring-1 mx-auto ${
+                            !it ? "bg-white ring-slate-200 text-slate-300"
+                              : it.status === "selesai" ? "bg-emerald-100 ring-emerald-300 text-emerald-800"
+                              : it.status === "proses" ? "bg-amber-100 ring-amber-300 text-amber-800"
+                              : it.status === "tidak_perlu" ? "bg-slate-100 ring-slate-300 text-slate-400"
+                              : "bg-red-100 ring-red-300 text-red-800"}`}>
+                          {!it ? "·" : it.status === "selesai" ? "✓" : it.status === "proses" ? "…" : it.status === "tidak_perlu" ? "—" : "○"}
+                        </button>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))}
+              <tr className="bg-slate-50 font-extrabold">
+                <td className="p-1.5 text-slate-800 sticky left-0 bg-slate-50">KESIAPAN</td>
+                {punya.map((d) => (
+                  <td key={d.kapal} className={`p-1.5 text-center text-[10px] tabular-nums ${
+                    d.r.pct >= 100 ? "text-emerald-700" : d.r.pct >= 50 ? "text-amber-700" : "text-red-700"}`}>{d.r.pct}%</td>
+                ))}
+              </tr>
+            </tbody>
+          </table>
+          <p className="text-[10px] text-slate-400 mt-2">✓ sudah · … diproses · ○ belum · — tidak perlu · · tidak ada di kapal itu</p>
+        </div>
+      )}
+    </section>
   );
 }
 
