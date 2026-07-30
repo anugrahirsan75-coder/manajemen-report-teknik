@@ -18,6 +18,7 @@ import { dasarDariTahun } from "@/lib/rka/isi";
 import { exportRkaExcel } from "@/lib/rka/excel";
 import { ParameterKapal, PARAM_BAKU, TP_INTERVAL, gemukBakuKg, jamPerMinggu, hitungSemua, Lintasan } from "@/lib/rka/parameter";
 import { useKapalDb } from "@/lib/kapal/store";
+import { useFleetplan, ringkasFleet, polaDariFleet } from "@/lib/rka/fleetplan";
 import { konfirmasi, beritahu } from "@/components/Konfirmasi";
 
 const BLN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
@@ -276,6 +277,9 @@ function FormRka({ nilai, setNilai, sibuk, tahunDasar, pengadaan, onSimpan, onHa
  */
 function TabParameter({ nilai, set }: { nilai: RkaKapal; set: (p: Partial<RkaKapal>) => void }) {
   const { ships } = useKapalDb();
+  const { list: fleets } = useFleetplan();
+  // fleetplan tahun dasar (tahun RKA - 1); kalau tak ada, pakai yang terbaru
+  const fleet = fleets.find((f) => f.tahun === nilai.tahun - 1) || fleets[0];
   const p: ParameterKapal = { ...PARAM_BAKU, ...(nilai.param || {}) };
   const setP = (x: Partial<ParameterKapal>) => set({ param: { ...p, ...x } });
   const lint: Lintasan[] = p.lintasan?.length ? p.lintasan : [{ nama: "Lintasan I", tripPerMinggu: 0, jamPerTrip: 0 }];
@@ -297,6 +301,21 @@ function TabParameter({ nilai, set }: { nilai: RkaKapal; set: (p: Partial<RkaKap
       meUnit: p.meUnit ?? 2, aeUnit: p.aeUnit ?? 2,
       gemukKgPerBulan: p.gemukKgPerBulan ?? gemukBakuKg(angka(s.dimension?.gt)),
     });
+  };
+
+  const rf = ringkasFleet(fleet, nilai.kapal);
+  const dariFleet = async () => {
+    if (!fleet) { void beritahu("Data Fleetplan belum ada di aplikasi."); return; }
+    if (!rf.rute.length) { void beritahu(`${nilai.kapal} tidak punya rute di Fleetplan ${fleet.tahun}.`); return; }
+    const v = p.kecepatanKnot || 0;
+    if (!v) { void beritahu("Isi dulu Kecepatan (knot) — jam per trip dihitung dari jarak ÷ kecepatan."); return; }
+    if ((p.lintasan || []).length && !(await konfirmasi({
+      nada: "perhatian", ikon: "🗺️", judul: `Ganti pola operasi dengan Fleetplan ${fleet.tahun}?`,
+      pesan: `${rf.rute.length} lintasan · ${rf.tripSetahun} trip setahun · ${Math.round(rf.milSetahun)} Nm.`,
+      tegasan: "Pola operasi yang sudah diketik akan ditimpa.", tombolYa: "Ambil dari Fleetplan",
+    }))) return;
+    const pola = polaDariFleet(fleet, nilai.kapal, v);
+    setP({ lintasan: pola.lintasan, tripSetahun: pola.tripSetahun, jamPerTripUtama: pola.jamPerTripUtama });
   };
 
   const pindahkan = async () => {
@@ -321,7 +340,11 @@ function TabParameter({ nilai, set }: { nilai: RkaKapal; set: (p: Partial<RkaKap
     <>
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <button onClick={dariKapal} className="btn btn-ghost text-xs">🚢 Ambil dari Ship Database</button>
-        <span className="text-[11px] text-slate-500">GT &amp; daya mesin diambil dari data kapal; sisanya diisi sekali lalu tersimpan bersama usulan.</span>
+        <button onClick={dariFleet} disabled={!rf.rute.length} className="btn btn-ghost text-xs disabled:opacity-40"
+          title={rf.rute.length ? `Fleetplan ${fleet?.tahun}: ${rf.rute.length} lintasan · ${rf.tripSetahun} trip/tahun` : "Kapal ini tak ada di Fleetplan"}>
+          🗺️ Ambil pola dari Fleetplan{fleet ? ` ${fleet.tahun}` : ""}
+        </button>
+        <span className="text-[11px] text-slate-500">GT &amp; daya mesin dari Ship Database; pola operasi (lintasan, trip, jarak) dari Fleetplan cabang.</span>
         <button onClick={pindahkan} className="btn btn-primary text-xs ml-auto">⚡ Pindahkan ke usulan</button>
       </div>
 
@@ -338,10 +361,25 @@ function TabParameter({ nilai, set }: { nilai: RkaKapal; set: (p: Partial<RkaKap
         <Num label="Hari operasi setahun" k="hariOperasi" sat="hari" />
         <Num label="Trip setahun" k="tripSetahun" sat="trip" />
         <Num label="Waktu tempuh 1 trip" k="jamPerTripUtama" sat="jam" step="0.05" />
+        <Num label="Kecepatan dinas" k="kecepatanKnot" sat="knot" step="0.5" />
       </div>
 
+      {rf.rute.length > 0 && (
+        <div className="rounded-xl ring-1 ring-violet-200 bg-violet-50 p-3.5 mb-3 text-[11px] text-slate-700">
+          <p className="font-bold text-slate-800 mb-1">
+            Fleetplan {fleet?.tahun} — {rf.rute.length} lintasan · {rf.tripSetahun} trip/tahun · {Math.round(rf.milSetahun).toLocaleString("id-ID")} Nm
+            {rf.jarakRataRata ? ` · rata-rata ${rf.jarakRataRata.toFixed(1)} Nm/trip` : ""}
+          </p>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+            {rf.rute.map((r) => (
+              <span key={r.lintasan}>{r.lintasan}: <b>{r.tripSetahun}</b> trip{r.jarakNm ? ` · ${r.jarakNm} Nm` : ""}</span>
+            ))}
+          </div>
+        </div>
+      )}
+
       <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">
-        Pola operasi <span className="normal-case font-normal text-slate-400">— menentukan jam kerja ME: {jamMgg} jam/minggu · {Math.round(jamMgg * 52)} jam/tahun</span>
+        Pola operasi <span className="normal-case font-normal text-slate-400">— menentukan jam kerja ME: {jamMgg.toFixed(1)} jam/minggu · {Math.round(jamMgg * 52).toLocaleString("id-ID")} jam/tahun</span>
       </p>
       <div className="space-y-2 mb-4">
         {lint.map((l, i) => (

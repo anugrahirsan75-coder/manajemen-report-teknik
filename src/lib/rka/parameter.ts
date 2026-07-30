@@ -33,6 +33,7 @@ export interface ParameterKapal {
   tripSetahun?: number;      // total trip setahun (mis. 220) — dipakai topping-up ME
   jamPerTripUtama?: number;  // waktu tempuh 1 trip (jam) — mis. 3,25
   jamAePerHari?: number;     // jam kerja AE per hari (mis. 12)
+  kecepatanKnot?: number;    // kecepatan dinas — jam/trip = jarak Nm / kecepatan
   jamKerjaAwalMe?: number;   // jam kerja ME saat awal tahun (dari counter mesin)
   jamKerjaAwalAe?: number;
   // pelumas
