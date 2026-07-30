@@ -22,6 +22,7 @@ export const JENIS_BA = [
   { key: "selesai", kode: "TF-102.02.11", label: "BA Selesai Pekerjaan", tahap: "selesaiPekerjaan" },
   { key: "sea_trial", kode: "—", label: "BA Sea Trial", tahap: "seaTrial" },
   { key: "serah_kembali", kode: "—", label: "BA Serah Terima Kembali", tahap: "kembaliLintasan" },
+  { key: "selesai_pemeliharaan", kode: "—", label: "BA Selesai Masa Pemeliharaan", tahap: "selesaiPemeliharaan" },
   { key: "lain", kode: "—", label: "Dokumen lain", tahap: "" },
 ] as const;
 export type KeyBA = typeof JENIS_BA[number]["key"];
@@ -50,7 +51,13 @@ export const TAHAP: { key: string; label: string; wajib?: boolean }[] = [
   { key: "kembaliLintasan", label: "Kembali ke Lintasan" },
   { key: "tibaLintasan", label: "Tiba di Lintasan" },
   { key: "tanggalSKKP", label: "Tanggal SKKP" },
+  // Bukan bagian lama docking: kapal sudah melayani lagi. Dicatat karena
+  // menjadi pemicu pembayaran Termin III.
+  { key: "selesaiPemeliharaan", label: "Selesai Masa Pemeliharaan" },
 ];
+
+/** masa pemeliharaan baku setelah BA Selesai Pekerjaan (hari) */
+export const MASA_PEMELIHARAAN_HARI = 30;
 export type KeyTahap = typeof TAHAP[number]["key"];
 
 export interface DockingJadwal {
@@ -68,10 +75,116 @@ export interface DockingJadwal {
   keluarLintasan?: string; berangkatGalangan?: string; tibaGalangan?: string;
   naikDock?: string; turunDock?: string; selesaiPekerjaan?: string;
   seaTrial?: string; kembaliLintasan?: string; tibaLintasan?: string; tanggalSKKP?: string;
+  /** tanggal BA Selesai Masa Pemeliharaan (pemicu Termin III) */
+  selesaiPemeliharaan?: string;
+  /** lama masa pemeliharaan menurut kontrak — kosong = 30 hari */
+  masaPemeliharaanHari?: number;
+
+  /** nilai kontrak docking; dipakai menghitung nominal termin dari porsi persen */
+  nilaiKontrak?: number;
+  termin?: TerminBayar[];
 
   berkas?: BerkasBA[];
   catatan?: string;
   diubahPada?: string;
+}
+
+// ====================== termin pembayaran ======================
+
+/**
+ * Pembayaran docking dibayar 3 termin, masing-masing dipicu terbitnya sebuah
+ * Berita Acara — bukan tanggal kalender. Jadi selama BA pemicunya belum ada,
+ * termin itu belum boleh dibayar.
+ */
+export const TERMIN = [
+  { ke: 1, label: "Termin I", pemicu: "naikDock", baKey: "naik_dok", baLabel: "BA Naik Dok" },
+  { ke: 2, label: "Termin II", pemicu: "selesaiPekerjaan", baKey: "selesai", baLabel: "BA Selesai Pekerjaan" },
+  { ke: 3, label: "Termin III", pemicu: "selesaiPemeliharaan", baKey: "selesai_pemeliharaan", baLabel: "BA Selesai Masa Pemeliharaan" },
+] as const;
+
+export interface TerminBayar {
+  ke: number;              // 1 | 2 | 3
+  persen?: number;         // porsi nilai kontrak
+  nominal?: number;        // nominal bila tak memakai persen
+  tanggalBayar?: string;
+  noBukti?: string;        // no. kwitansi / SPP / voucher
+  catatan?: string;
+}
+
+export type StatusTermin = "belum_siap" | "siap" | "menunggu" | "terlambat" | "dibayar";
+export const STATUS_TERMIN: Record<StatusTermin, { label: string; chip: string }> = {
+  belum_siap: { label: "BA belum ada", chip: "bg-slate-100 text-slate-600 ring-slate-300" },
+  siap: { label: "Bisa dibayar", chip: "bg-sky-100 text-sky-800 ring-sky-300" },
+  menunggu: { label: "Menunggu jatuh tempo", chip: "bg-slate-100 text-slate-600 ring-slate-300" },
+  terlambat: { label: "Terlambat dibayar", chip: "bg-red-100 text-red-800 ring-red-300" },
+  dibayar: { label: "Sudah dibayar", chip: "bg-emerald-100 text-emerald-800 ring-emerald-300" },
+};
+
+/** ambang hari sejak BA pemicu terbit sebelum termin dianggap terlambat dibayar */
+export const AMBANG_TERLAMBAT = 14;
+
+export interface RingkasTermin {
+  ke: number;
+  label: string;
+  baLabel: string;
+  /** tanggal BA pemicu (kalau sudah ada) */
+  tanggalPemicu?: string;
+  /** untuk Termin III: perkiraan tanggal BA bila belum terbit (selesai pekerjaan + masa pemeliharaan) */
+  perkiraan?: string;
+  adaBerkas: boolean;
+  nominal: number | null;
+  persen?: number;
+  tanggalBayar?: string;
+  noBukti?: string;
+  status: StatusTermin;
+  /** + = masih sekian hari lagi, − = sudah lewat sekian hari */
+  sisaHari: number | null;
+}
+
+const p2 = (n: number) => String(n).padStart(2, "0");
+export const tambahHari = (iso: string, n: number) => {
+  const d = new Date(iso + "T00:00:00");
+  if (isNaN(d.getTime())) return "";
+  d.setDate(d.getDate() + n);
+  return `${d.getFullYear()}-${p2(d.getMonth() + 1)}-${p2(d.getDate())}`;
+};
+
+/** jatuh tempo BA Selesai Masa Pemeliharaan = BA Selesai Pekerjaan + masa pemeliharaan */
+export function jatuhTempoPemeliharaan(d: DockingJadwal): string {
+  if (!d.selesaiPekerjaan) return "";
+  return tambahHari(d.selesaiPekerjaan, d.masaPemeliharaanHari ?? MASA_PEMELIHARAAN_HARI);
+}
+
+export function ringkasTermin(d: DockingJadwal, now = new Date()): RingkasTermin[] {
+  const hariIni = `${now.getFullYear()}-${p2(now.getMonth() + 1)}-${p2(now.getDate())}`;
+  const berkas = d.berkas || [];
+  return TERMIN.map((t) => {
+    const simpan = (d.termin || []).find((x) => x.ke === t.ke);
+    const tanggalPemicu = (d as any)[t.pemicu] as string | undefined;
+    const perkiraan = t.ke === 3 && !tanggalPemicu ? jatuhTempoPemeliharaan(d) || undefined : undefined;
+    const adaBerkas = berkas.some((b) => b.jenis === t.baKey);
+
+    const nominal = simpan?.nominal
+      ? simpan.nominal
+      : simpan?.persen && d.nilaiKontrak
+      ? Math.round((d.nilaiKontrak * simpan.persen) / 100)
+      : null;
+
+    const acuan = tanggalPemicu || perkiraan;
+    const sisaHari = acuan ? hariAntara(hariIni, acuan) : null;
+
+    let status: StatusTermin;
+    if (simpan?.tanggalBayar) status = "dibayar";
+    else if (!tanggalPemicu) status = perkiraan && (sisaHari ?? 1) > 0 ? "menunggu" : "belum_siap";
+    else status = (sisaHari ?? 0) <= -AMBANG_TERLAMBAT ? "terlambat" : "siap";
+
+    return {
+      ke: t.ke, label: t.label, baLabel: t.baLabel,
+      tanggalPemicu, perkiraan, adaBerkas, nominal,
+      persen: simpan?.persen, tanggalBayar: simpan?.tanggalBayar, noBukti: simpan?.noBukti,
+      status, sisaHari,
+    };
+  });
 }
 
 // ====================== kelas / survey BKI ======================

@@ -16,7 +16,10 @@ import { useDocking } from "@/lib/docking/store";
 import {
   DockingJadwal, KelasBki, TAHAP, JENIS_BA, JENIS_SURVEY, STATUS_SURVEY_LABEL, StatusSurvey,
   BerkasBA, dockingBaru, kelasBaru, ringkasDocking, gayaDocking, labelBA,
+  TERMIN, TerminBayar, ringkasTermin, RingkasTermin, STATUS_TERMIN, MASA_PEMELIHARAAN_HARI,
+  jatuhTempoPemeliharaan, AMBANG_TERLAMBAT,
 } from "@/lib/docking/types";
+import { rupiah } from "@/lib/format";
 import { unggahBerkas, ukuranSingkat, BerkasError } from "@/lib/berkasStorage";
 import { konfirmasi, beritahu } from "@/components/Konfirmasi";
 
@@ -59,6 +62,25 @@ export default function DockingPage() {
     ? Math.round(selesai.reduce((s, b) => s + (b.r?.utama || 0), 0) / selesai.length) : 0;
 
   const maksHari = Math.max(1, ...adaData.map((b) => Math.max(b.r?.target || 0, b.r?.utama || 0)));
+
+  /**
+   * Termin lintas kapal yang perlu diurus — inilah jawaban "kapan harus bayar
+   * Termin III". Yang sudah dibayar & yang BA pemicunya belum kelihatan sama
+   * sekali tidak ikut; urut dari yang paling mendesak.
+   */
+  const perluBayar = useMemo(() => {
+    const out: { kapal: string; dok: DockingJadwal; t: RingkasTermin }[] = [];
+    adaData.forEach((b) => ringkasTermin(b.dok!).forEach((t) => {
+      if (t.status === "dibayar" || t.status === "belum_siap") return;
+      out.push({ kapal: b.kapal, dok: b.dok!, t });
+    }));
+    const bobot = { terlambat: 0, siap: 1, menunggu: 2 } as Record<string, number>;
+    return out.sort((x, y) =>
+      (bobot[x.t.status] ?? 9) - (bobot[y.t.status] ?? 9) || (x.t.sisaHari ?? 0) - (y.t.sisaHari ?? 0));
+  }, [adaData]);
+
+  const nSiap = perluBayar.filter((x) => x.t.status === "siap" || x.t.status === "terlambat").length;
+  const nTerlambat = perluBayar.filter((x) => x.t.status === "terlambat").length;
 
   const bukaBaru = (kapal: string) => setEdit(dockingBaru(kapal, +tahun));
 
@@ -107,14 +129,60 @@ export default function DockingPage() {
       {err && <p className="mt-4 text-xs font-semibold text-rose-700">Supabase: {err}</p>}
 
       {/* ringkasan */}
-      <section className="mt-4 grid grid-cols-2 lg:grid-cols-5 gap-3">
+      <section className="mt-4 grid grid-cols-2 lg:grid-cols-6 gap-3">
         <Kartu label="Sudah docking" nilai={`${selesai.length} kapal`} tint="text-emerald-700" bar="bg-emerald-500" />
         <Kartu label="Sedang docking" nilai={`${berjalan.length} kapal`} tint="text-sky-700" bar="bg-sky-500" />
         <Kartu label="Belum ada jadwal" nilai={`${KAPAL_ANGGARAN.length - adaData.length} kapal`} tint="text-slate-700" bar="bg-slate-400" />
         <Kartu label="Rata-rata lama" nilai={rata ? `${rata} hari` : "—"} sub="keluar → tiba lintasan" tint="text-slate-900" bar="bg-slate-500" />
         <Kartu label="Lewat target" nilai={`${telat.length} kapal`} sub={telat.length ? telat.map((b) => ringkasKapal(b.kapal)).slice(0, 3).join(", ") : "tidak ada"}
           tint={telat.length ? "text-red-700" : "text-emerald-700"} bar={telat.length ? "bg-red-500" : "bg-emerald-500"} />
+        <Kartu label="Termin bisa dibayar" nilai={`${nSiap} termin`}
+          sub={nTerlambat ? `${nTerlambat} sudah terlambat` : nSiap ? "BA pemicunya sudah terbit" : "tidak ada yang menunggu"}
+          tint={nTerlambat ? "text-red-700" : nSiap ? "text-sky-700" : "text-slate-700"}
+          bar={nTerlambat ? "bg-red-500" : nSiap ? "bg-sky-500" : "bg-slate-400"} />
       </section>
+
+      {/* ============ termin pembayaran yang perlu diurus ============ */}
+      {perluBayar.length > 0 && (
+        <section className={`mt-4 rounded-2xl ring-1 overflow-hidden ${nTerlambat ? "ring-red-300 bg-red-50" : nSiap ? "ring-sky-300 bg-sky-50" : "ring-slate-200 bg-slate-50"}`}>
+          <div className="px-5 py-3 flex flex-wrap items-center gap-x-3 gap-y-1 border-b border-black/5">
+            <h3 className="font-bold text-slate-800">💰 Termin pembayaran yang perlu diurus</h3>
+            <span className="text-[11px] text-slate-600">
+              tiap termin dipicu terbitnya Berita Acara — bukan tanggal kalender
+            </span>
+            <span className="ml-auto text-[11px] font-bold">
+              {nTerlambat ? <span className="text-red-700">{nTerlambat} terlambat · </span> : null}
+              <span className="text-sky-800">{nSiap} bisa dibayar</span>
+            </span>
+          </div>
+          <div className="divide-y divide-black/5">
+            {perluBayar.slice(0, 8).map(({ kapal, dok, t }) => {
+              const st = STATUS_TERMIN[t.status];
+              return (
+                <button key={`${kapal}-${t.ke}`} onClick={() => setEdit({ ...dok })}
+                  className="w-full text-left px-5 py-2.5 flex flex-wrap items-center gap-x-4 gap-y-1 hover:bg-white/60 transition">
+                  <span className="text-xs font-extrabold text-slate-800 w-24 shrink-0">{t.label}</span>
+                  <span className="text-xs font-semibold text-slate-700 w-36 shrink-0 truncate">{ringkasKapal(kapal)}</span>
+                  <span className="text-[11px] text-slate-600 flex-1 min-w-[13rem]">
+                    {t.tanggalPemicu
+                      ? <>{t.baLabel} terbit <b>{tanggalIndo(t.tanggalPemicu)}</b></>
+                      : <>{t.baLabel} diperkirakan <b>{t.perkiraan ? tanggalIndo(t.perkiraan) : "—"}</b></>}
+                  </span>
+                  {t.nominal != null && <span className="text-[11px] font-bold tabular-nums text-slate-800">{rupiah(t.nominal)}</span>}
+                  <span className={`text-[10px] font-bold px-2 py-0.5 rounded ring-1 ${st.chip}`}>{st.label}</span>
+                  <span className={`text-[11px] font-bold tabular-nums w-24 text-right ${
+                    t.sisaHari == null ? "text-slate-400" : t.sisaHari < 0 ? "text-red-700" : "text-slate-600"}`}>
+                    {t.sisaHari == null ? "—" : t.sisaHari < 0 ? `lewat ${-t.sisaHari} hr` : t.sisaHari === 0 ? "hari ini" : `${t.sisaHari} hr lagi`}
+                  </span>
+                </button>
+              );
+            })}
+            {perluBayar.length > 8 && (
+              <p className="px-5 py-2 text-[11px] text-slate-500">…{perluBayar.length - 8} termin lain, lihat di kartu kapalnya.</p>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ================= grafik lama docking ================= */}
       <section className="mt-4 bg-white rounded-2xl ring-line elev-md p-5">
@@ -204,6 +272,7 @@ export default function DockingPage() {
                 <th className="p-2 text-right">Selisih</th>
                 <th className="p-2 text-center">Status</th>
                 <th className="p-2 text-center">BA</th>
+                <th className="p-2 text-center" title="Termin I dipicu BA Naik Dok · II BA Selesai Pekerjaan · III BA Selesai Masa Pemeliharaan">Termin</th>
                 <th className="p-2 text-left">Kelas BKI</th>
                 <th className="p-2" />
               </tr>
@@ -229,6 +298,19 @@ export default function DockingPage() {
                         : <span className="text-[10px] text-slate-400">belum diisi</span>}
                     </td>
                     <td className="p-2 text-center tabular-nums text-slate-600">{(b.dok?.berkas || []).length || "—"}</td>
+                    <td className="p-2 text-center">
+                      {b.dok ? (
+                        <span className="inline-flex gap-1">
+                          {ringkasTermin(b.dok).map((t) => (
+                            <span key={t.ke}
+                              title={`${t.label} — pemicu ${t.baLabel}: ${STATUS_TERMIN[t.status].label}${t.tanggalBayar ? ` (dibayar ${tanggalIndo(t.tanggalBayar)})` : ""}`}
+                              className={`w-5 h-5 grid place-items-center text-[9px] font-extrabold rounded ring-1 ${STATUS_TERMIN[t.status].chip}`}>
+                              {t.ke === 1 ? "I" : t.ke === 2 ? "II" : "III"}
+                            </span>
+                          ))}
+                        </span>
+                      ) : <span className="text-[10px] text-slate-400">—</span>}
+                    </td>
                     <td className="p-2">
                       {b.kelas.length ? (
                         <span className="flex flex-wrap gap-1">
@@ -275,7 +357,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup
   onSimpan: () => void; onHapus: () => void; onTutup: () => void;
   onSimpanKelas: (k: KelasBki) => Promise<void>; onHapusKelas: (id: string) => Promise<void>;
 }) {
-  const [tab, setTab] = useState<"jadwal" | "ba" | "kelas">("jadwal");
+  const [tab, setTab] = useState<"jadwal" | "termin" | "ba" | "kelas">("jadwal");
   const r = ringkasDocking(nilai);
   const g = gayaDocking(r);
   const set = (p: Partial<DockingJadwal>) => setNilai({ ...nilai, ...p });
@@ -294,7 +376,10 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup
           </div>
 
           <div className="px-6 pt-3 flex gap-1 border-b border-slate-200">
-            {([["jadwal", "📅 Jadwal & lama"], ["ba", `📄 Berita Acara (${(nilai.berkas || []).length})`], ["kelas", `🏷️ Kelas BKI (${kelas.length})`]] as const).map(([v, t]) => (
+            {([["jadwal", "📅 Jadwal & lama"],
+               ["termin", `💰 Termin (${ringkasTermin(nilai).filter((t) => t.status === "dibayar").length}/3 dibayar)`],
+               ["ba", `📄 Berita Acara (${(nilai.berkas || []).length})`],
+               ["kelas", `🏷️ Kelas BKI (${kelas.length})`]] as const).map(([v, t]) => (
               <button key={v} onClick={() => setTab(v)}
                 className={`text-xs font-semibold px-3 py-2 rounded-t-lg border-b-2 transition ${tab === v ? "border-[#16357f] text-[#16357f] bg-slate-50" : "border-transparent text-slate-500 hover:text-slate-700"}`}>{t}</button>
             ))}
@@ -302,6 +387,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup
 
           <div className="p-6 max-h-[62vh] overflow-auto">
             {tab === "jadwal" && <TabJadwal nilai={nilai} set={set} r={r} />}
+            {tab === "termin" && <TabTermin nilai={nilai} set={set} />}
             {tab === "ba" && <TabBA nilai={nilai} set={set} />}
             {tab === "kelas" && <TabKelas kapal={nilai.kapal} tahun={nilai.tahun} kelas={kelas} onSimpan={onSimpanKelas} onHapus={onHapusKelas} />}
           </div>
@@ -357,6 +443,122 @@ function TabJadwal({ nilai, set, r }: { nilai: DockingJadwal; set: (p: Partial<D
         <textarea className="inp min-h-[70px]" value={nilai.catatan || ""} onChange={(e) => set({ catatan: e.target.value })}
           placeholder="mis. keterlambatan karena menunggu material, cuaca, dsb." />
       </Baris>
+    </>
+  );
+}
+
+function TabTermin({ nilai, set }: { nilai: DockingJadwal; set: (p: Partial<DockingJadwal>) => void }) {
+  const daftar = ringkasTermin(nilai);
+  const tempo = jatuhTempoPemeliharaan(nilai);
+  const setT = (ke: number, p: Partial<TerminBayar>) => {
+    const lama = nilai.termin || [];
+    const ada = lama.find((x) => x.ke === ke);
+    const baru = ada ? lama.map((x) => (x.ke === ke ? { ...x, ...p } : x)) : [...lama, { ke, ...p }];
+    set({ termin: baru });
+  };
+  const totalPersen = daftar.reduce((s, t) => s + (t.persen || 0), 0);
+  const totalNominal = daftar.reduce((s, t) => s + (t.nominal || 0), 0);
+  const terbayar = daftar.filter((t) => t.tanggalBayar).reduce((s, t) => s + (t.nominal || 0), 0);
+
+  return (
+    <>
+      <div className="grid sm:grid-cols-3 gap-3 mb-4">
+        <Baris label="Nilai kontrak docking (Rp)">
+          <input type="number" className="inp" value={nilai.nilaiKontrak ?? ""}
+            onChange={(e) => set({ nilaiKontrak: e.target.value ? +e.target.value : undefined })} placeholder="mis. 1500000000" />
+        </Baris>
+        <Baris label="Masa pemeliharaan (hari)">
+          <input type="number" className="inp" value={nilai.masaPemeliharaanHari ?? ""}
+            onChange={(e) => set({ masaPemeliharaanHari: e.target.value ? +e.target.value : undefined })}
+            placeholder={String(MASA_PEMELIHARAAN_HARI)} />
+        </Baris>
+        <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-slate-500 font-bold">Jatuh tempo BA Pemeliharaan</p>
+          <p className="text-sm font-extrabold text-slate-900 leading-tight">{tempo ? tanggalIndo(tempo) : "—"}</p>
+          <p className="text-[10px] text-slate-500">
+            {nilai.selesaiPekerjaan
+              ? `BA Selesai Pekerjaan + ${nilai.masaPemeliharaanHari ?? MASA_PEMELIHARAAN_HARI} hari`
+              : "isi dulu tanggal Selesai Pekerjaan"}
+          </p>
+        </div>
+      </div>
+
+      <div className="space-y-3">
+        {daftar.map((t) => {
+          const st = STATUS_TERMIN[t.status];
+          const def = TERMIN.find((x) => x.ke === t.ke)!;
+          return (
+            <div key={t.ke} className={`rounded-xl ring-1 p-4 ${t.status === "terlambat" ? "ring-red-300 bg-red-50/40"
+              : t.status === "siap" ? "ring-sky-300 bg-sky-50/40"
+              : t.status === "dibayar" ? "ring-emerald-300 bg-emerald-50/30" : "ring-slate-200"}`}>
+              <div className="flex flex-wrap items-center gap-2 mb-2.5">
+                <span className="text-sm font-extrabold text-slate-800">{t.label}</span>
+                <span className={`text-[10px] font-bold px-2 py-0.5 rounded ring-1 ${st.chip}`}>{st.label}</span>
+                <span className="text-[11px] text-slate-600">
+                  pemicu: <b>{t.baLabel}</b>
+                  {t.tanggalPemicu ? <> · terbit {tanggalIndo(t.tanggalPemicu)}</> :
+                    t.perkiraan ? <> · diperkirakan {tanggalIndo(t.perkiraan)}</> : <> · tanggalnya belum diisi</>}
+                </span>
+                <span className={`ml-auto text-[11px] font-bold ${t.adaBerkas ? "text-emerald-700" : "text-amber-700"}`}
+                  title={t.adaBerkas ? "berkas BA sudah diunggah" : "berkas BA belum diunggah di tab Berita Acara"}>
+                  {t.adaBerkas ? "✓ berkas BA ada" : "! berkas BA belum diunggah"}
+                </span>
+              </div>
+              <div className="grid sm:grid-cols-4 gap-3">
+                <Baris label="Porsi (%)">
+                  <input type="number" className="inp" value={t.persen ?? ""}
+                    onChange={(e) => setT(t.ke, { persen: e.target.value ? +e.target.value : undefined })} placeholder="mis. 30" />
+                </Baris>
+                <Baris label="Nominal (Rp)">
+                  <input type="number" className="inp"
+                    value={(nilai.termin || []).find((x) => x.ke === t.ke)?.nominal ?? ""}
+                    onChange={(e) => setT(t.ke, { nominal: e.target.value ? +e.target.value : undefined })}
+                    placeholder={t.persen && nilai.nilaiKontrak ? String(t.nominal ?? "") : "isi bila tak pakai %"} />
+                </Baris>
+                <Baris label="Tanggal dibayar">
+                  <input type="date" className="inp" value={t.tanggalBayar || ""}
+                    onChange={(e) => setT(t.ke, { tanggalBayar: e.target.value || undefined })} />
+                </Baris>
+                <Baris label="No. bukti / kwitansi">
+                  <input className="inp" value={t.noBukti || ""} onChange={(e) => setT(t.ke, { noBukti: e.target.value })} />
+                </Baris>
+              </div>
+              {t.status === "siap" && (
+                <p className="text-[11px] text-sky-800 font-semibold mt-2">
+                  {t.baLabel} sudah terbit — termin ini sudah boleh diproses pembayarannya.
+                </p>
+              )}
+              {t.status === "terlambat" && (
+                <p className="text-[11px] text-red-800 font-semibold mt-2">
+                  Sudah {t.sisaHari != null ? -t.sisaHari : "?"} hari sejak {t.baLabel} terbit (ambang {AMBANG_TERLAMBAT} hari) dan belum tercatat dibayar.
+                </p>
+              )}
+              {t.ke === 3 && t.status === "menunggu" && (
+                <p className="text-[11px] text-slate-600 mt-2">
+                  BA Selesai Masa Pemeliharaan belum terbit. Perkiraan {t.perkiraan ? tanggalIndo(t.perkiraan) : "—"}
+                  {t.sisaHari != null ? ` (${t.sisaHari} hari lagi)` : ""} — isi tanggalnya di tab Jadwal setelah BA-nya ada.
+                </p>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      <div className="mt-4 grid sm:grid-cols-3 gap-2">
+        <Hitung label="Total porsi" nilai={totalPersen || null} sat="%" sub={totalPersen && totalPersen !== 100 ? "belum 100% — periksa" : "lengkap"} />
+        <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-slate-500 font-bold">Nilai seluruh termin</p>
+          <p className="text-lg font-extrabold tabular-nums text-slate-900 leading-tight">{totalNominal ? rupiah(totalNominal) : "—"}</p>
+          {nilai.nilaiKontrak ? <p className="text-[10px] text-slate-500">kontrak {rupiah(nilai.nilaiKontrak)}</p> : null}
+        </div>
+        <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 px-3 py-2">
+          <p className="text-[10px] uppercase tracking-wide text-slate-500 font-bold">Sudah dibayar</p>
+          <p className="text-lg font-extrabold tabular-nums text-emerald-700 leading-tight">{terbayar ? rupiah(terbayar) : "—"}</p>
+          <p className="text-[10px] text-slate-500">
+            sisa {totalNominal - terbayar > 0 ? rupiah(totalNominal - terbayar) : "—"}
+          </p>
+        </div>
+      </div>
     </>
   );
 }
