@@ -100,6 +100,9 @@ export default function SppbjDetail() {
           nomor={req.noSPPBJ || fullNoKontrak(req) || ""}
           tanggal={req.tanggal}
           noDRP={req.noDRP}
+          noPRSAP={req.noPRSAP}
+          noPOSAP={req.noPOSAP}
+          grSes={req.grSes}
           dasarPelimpahan={req.dasarPelimpahan}
           namaPengadaan={req.namaPengadaan}
           mataAnggaran={req.mataAnggaran || []}

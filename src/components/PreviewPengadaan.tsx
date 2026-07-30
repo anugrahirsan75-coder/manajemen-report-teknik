@@ -16,6 +16,10 @@ export interface PreviewProps {
   nomor: string;              // No. SPPB/J atau No. SPPB
   tanggal: string;            // ISO
   noDRP?: string;
+  noPRSAP?: string;           // No. PR SAP
+  noPOSAP?: string;           // No. PO SAP
+  /** GR/SES; pekerjaan docking bisa 3 termin dalam satu SPPBJ */
+  grSes?: { termin?: number; nomor: string; tanggal?: string; nilai?: number }[];
   dasarPelimpahan?: string;
   namaPengadaan: string;
   mataAnggaran: string[];
@@ -53,6 +57,8 @@ export default function PreviewPengadaan(p: PreviewProps) {
           <div>Nomor&nbsp;&nbsp;: <b>{p.nomor || "—"}</b></div>
           <div>Tanggal: {p.tanggal ? tanggalIndo(p.tanggal) : "—"}</div>
           {p.noDRP ? <div>No. DRP: {p.noDRP}</div> : null}
+          {p.noPRSAP ? <div>No. PR SAP: <b>{p.noPRSAP}</b></div> : null}
+          {p.noPOSAP ? <div>No. PO SAP: <b>{p.noPOSAP}</b></div> : null}
         </div>
         <div className="text-right">
           <div>Ternate, {p.tanggal ? bulanTahun(p.tanggal) : "—"}</div>
@@ -74,6 +80,23 @@ export default function PreviewPengadaan(p: PreviewProps) {
           <tr><td className="align-top pr-2">Nama Pengadaan</td><td className="align-top pr-1">:</td><td className="align-top">{p.namaPengadaan || "—"}</td></tr>
           <tr><td className="align-top pr-2">Mata Anggaran</td><td className="align-top pr-1">:</td><td className="align-top">{p.mataAnggaran.filter(Boolean).join(", ") || "—"}</td></tr>
           {p.vendor ? <tr><td className="align-top pr-2">Vendor</td><td className="align-top pr-1">:</td><td className="align-top">{p.vendor}</td></tr> : null}
+          {/* GR/SES: satu baris untuk pengadaan biasa, tiga baris bertermin untuk docking */}
+          {(p.grSes || []).filter((g) => (g.nomor || "").trim()).length ? (
+            <tr>
+              <td className="align-top pr-2">No. GR/SES</td>
+              <td className="align-top pr-1">:</td>
+              <td className="align-top">
+                {(p.grSes || []).filter((g) => (g.nomor || "").trim()).map((g, i) => (
+                  <span key={i} className="block">
+                    {g.termin ? <b>Termin {g.termin === 1 ? "I" : g.termin === 2 ? "II" : "III"} — </b> : null}
+                    {g.nomor}
+                    {g.tanggal ? ` (${tanggalIndo(g.tanggal)})` : ""}
+                    {g.nilai ? ` · ${rupiah(g.nilai)}` : ""}
+                  </span>
+                ))}
+              </td>
+            </tr>
+          ) : null}
         </tbody>
       </table>
 

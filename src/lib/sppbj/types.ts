@@ -52,6 +52,25 @@ export const STATUS_COLOR: Record<SppbjStatus, string> = {
   selesai: "bg-green-100 text-green-700",
 };
 
+/**
+ * Satu baris GR/SES. Untuk pengadaan biasa cukup satu (termin dibiarkan kosong);
+ * untuk Pekerjaan Docking dipakai 3 baris, termin 1/2/3 sesuai Berita Acara
+ * pemicunya (Naik Dok, Selesai Pekerjaan, Selesai Masa Pemeliharaan).
+ */
+export interface GrSes {
+  id: string;
+  termin?: number;    // 1 | 2 | 3 — kosong bila bukan pekerjaan bertermin
+  nomor: string;      // No. GR / SES di SAP
+  tanggal?: string;   // ISO
+  nilai?: number;     // nilai yang di-GR (opsional)
+  catatan?: string;
+}
+
+export const grSesBaru = (termin?: number): GrSes => ({
+  id: globalThis.crypto?.randomUUID?.() ?? String(Math.random()),
+  termin, nomor: "",
+});
+
 export interface SppbjRequest {
   id?: string;
   status: SppbjStatus;
@@ -63,6 +82,12 @@ export interface SppbjRequest {
   mataAnggaran: string[]; // >=1
   noDRP: string;
   noPRSAP?: string; // Nomor PR SAP (2000xxxxxx) — kolom B & F di REKAP PJK
+  noPOSAP?: string; // Nomor PO SAP (terbit setelah PR disetujui)
+  /**
+   * Nomor GR/SES (Goods Receipt / Service Entry Sheet) — bukti penerimaan di SAP.
+   * Pekerjaan docking dibayar 3 termin dalam SATU SPPBJ, jadi bisa ada 3 nomor.
+   */
+  grSes?: GrSes[];
   kategoriRekap?: string; // KET. rekap: DOCKING(BIAYA) / DOCKING (INVESTASI) / RUTIN / INVESTASI DILUAR DOCKING
   jenisAnggaran?: "Rutin" | "Docking" | "Lainnya"; // klasifikasi Dashboard Anggaran (anti-overlap)
   // Barang masuk PERSEDIAAN (stok), belum dipakai kapal tertentu -> tidak menggerus pagu

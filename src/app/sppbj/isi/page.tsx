@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSppbj } from "@/lib/sppbj/store";
 import { MATA_ANGGARAN, STAF_TEKNIK, KAPAL_LIST, DEPT_HEAD, VENDOR_DB, MATL_GROUP, KATEGORI_REKAP } from "@/lib/sppbj/db";
-import { SppbjItem, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest, fullNoKontrak } from "@/lib/sppbj/types";
+import { SppbjItem, GrSes, grSesBaru, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest, fullNoKontrak } from "@/lib/sppbj/types";
 import { useState, Fragment } from "react";
 import { Field, Input, Section } from "@/components/Field";
 import DrpPicker from "@/components/DrpPicker";
@@ -392,6 +392,9 @@ function SppbjIsiInner() {
             <Input value={req.noPRSAP || ""} onChange={(e) => update({ noPRSAP: e.target.value })}
               placeholder={(req.noSPPBJ || "").trim() ? `↳ ${req.noSPPBJ}` : "2000xxxxxx"} />
           </Field>
+          <Field label="No. PO SAP" hint="terbit setelah PR disetujui — ikut tampil di preview">
+            <Input value={req.noPOSAP || ""} onChange={(e) => update({ noPOSAP: e.target.value })} placeholder="45000xxxxx" />
+          </Field>
           <Field label="Kategori Rekap (KET. di spreadsheet)">
             {/* daftar bawah = surat Persetujuan Biaya Lainnya yang sudah dibuat di Dashboard.
                 Memilihnya sekaligus menautkan pengadaan ke surat itu (pagu + KET. rekap). */}
@@ -716,6 +719,71 @@ function SppbjIsiInner() {
             <datalist id="vendorList">{VENDOR_DB.map((v) => <option key={v.nama} value={v.nama} />)}</datalist>
           </Field>
         </div>
+        {/* ===== GR / SES ===== */}
+        <div className="mt-5 rounded-xl ring-1 ring-slate-200 bg-slate-50/70 p-4">
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <span className="text-xs font-bold text-slate-700">No. GR / SES</span>
+            <span className="text-[11px] text-slate-500">Goods Receipt / Service Entry Sheet di SAP — ikut tampil di preview</span>
+            <div className="ml-auto flex items-center gap-2">
+              <button onClick={() => update({ grSes: [...(req.grSes || []), grSesBaru()] })}
+                className="btn btn-ghost text-xs">＋ Tambah baris</button>
+              <button onClick={() => update({ grSes: [1, 2, 3].map((t) => grSesBaru(t)) })}
+                className="btn btn-primary text-xs"
+                title="Pekerjaan docking dibayar 3 termin dalam 1 SPPBJ, jadi ada 3 nomor GR/SES">
+                🛠️ Siapkan 3 termin (docking)
+              </button>
+            </div>
+          </div>
+          {!(req.grSes || []).length ? (
+            <p className="text-[11px] text-slate-500">
+              Belum ada. Untuk pengadaan biasa cukup satu baris; untuk <b>Pekerjaan Docking</b> pakai tombol
+              &ldquo;Siapkan 3 termin&rdquo; — Termin I saat BA Naik Dok, II saat BA Selesai Pekerjaan,
+              III saat BA Selesai Masa Pemeliharaan.
+            </p>
+          ) : (
+            <div className="space-y-2 mt-2">
+              {(req.grSes || []).map((g, i) => (
+                <div key={g.id} className="flex flex-wrap items-end gap-2">
+                  <label className="block">
+                    <span className="text-[10px] font-semibold text-slate-500">Termin</span>
+                    <select value={g.termin ?? ""} onChange={(e) => update({
+                      grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, termin: e.target.value ? +e.target.value : undefined } : x) })}
+                      className="mt-1 w-24 rounded-lg border border-slate-300 px-2 py-2 text-sm bg-white">
+                      <option value="">—</option><option value="1">I</option><option value="2">II</option><option value="3">III</option>
+                    </select>
+                  </label>
+                  <label className="block flex-1 min-w-[11rem]">
+                    <span className="text-[10px] font-semibold text-slate-500">No. GR / SES</span>
+                    <Input value={g.nomor} placeholder="mis. 5000123456" onChange={(e) => update({
+                      grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, nomor: e.target.value } : x) })} />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] font-semibold text-slate-500">Tanggal</span>
+                    <Input type="date" value={g.tanggal || ""} onChange={(e) => update({
+                      grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, tanggal: e.target.value || undefined } : x) })} />
+                  </label>
+                  <label className="block">
+                    <span className="text-[10px] font-semibold text-slate-500">Nilai (Rp)</span>
+                    <Input type="number" value={g.nilai ?? ""} onChange={(e) => update({
+                      grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, nilai: e.target.value ? +e.target.value : undefined } : x) })} />
+                  </label>
+                  <button onClick={() => update({ grSes: (req.grSes || []).filter((x) => x.id !== g.id) })}
+                    className="h-10 px-2.5 rounded-lg border border-slate-300 text-rose-600 hover:bg-rose-50 text-sm" title="Buang baris ini">✕</button>
+                </div>
+              ))}
+              {(() => {
+                const total = (req.grSes || []).reduce((s, g) => s + (g.nilai || 0), 0);
+                return total ? (
+                  <p className="text-[11px] text-slate-600 pt-1">
+                    Total GR/SES <b className="tabular-nums">{rupiah(total)}</b>
+                    {total !== total ? <span className="text-amber-700"> · estimasi pengadaan {rupiah(total)} (selisih {rupiah(Math.abs(total - total))})</span> : " · sama dengan estimasi"}
+                  </p>
+                ) : null;
+              })()}
+            </div>
+          )}
+        </div>
+
         {kapalUnik(req.items).length > 0 && (
           <div className="mt-4">
             <span className="text-xs font-medium text-slate-600">Penerima BSTB per kapal (default Nakhoda)</span>

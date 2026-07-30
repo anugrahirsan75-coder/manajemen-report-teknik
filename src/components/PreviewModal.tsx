@@ -41,6 +41,9 @@ export default function PreviewModal({ jenis, payload, onTutup, onBuka }: Previe
           nomor={(jenis === "SPPBJ" ? p.noSPPBJ || fullNoKontrak(p) : p.noSPPB) || ""}
           tanggal={p.tanggal || ""}
           noDRP={p.noDRP}
+          noPRSAP={p.noPRSAP}
+          noPOSAP={p.noPOSAP}
+          grSes={p.grSes}
           dasarPelimpahan={p.dasarPelimpahan}
           namaPengadaan={p.namaPengadaan || ""}
           mataAnggaran={Array.isArray(p.mataAnggaran) ? p.mataAnggaran : p.mataAnggaran ? [p.mataAnggaran] : []}
