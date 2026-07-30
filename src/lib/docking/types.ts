@@ -85,6 +85,8 @@ export interface DockingJadwal {
   termin?: TerminBayar[];
 
   berkas?: BerkasBA[];
+  /** checklist persiapan docking (SPPBJ repair list, anode, cat, dst.) */
+  persiapan?: PersiapanItem[];
   catatan?: string;
   diubahPada?: string;
 }
@@ -185,6 +187,69 @@ export function ringkasTermin(d: DockingJadwal, now = new Date()): RingkasTermin
       status, sisaHari,
     };
   });
+}
+
+// ====================== checklist persiapan docking ======================
+
+/**
+ * Persiapan docking = deretan pengadaan yang HARUS beres sebelum/selama kapal
+ * naik dock. Komponennya mengikuti Evaluasi Persetujuan Pusat (mis. Gorango
+ * 2026: Docking Induk/Repair List, Anode, Cat BGA-AGA, Fumigasi, Surat Kapal,
+ * Swakelola, Alat Kerja, Suku Cadang, Investasi, Mobilisasi/BBM) — tetapi tiap
+ * kapal berbeda, jadi daftarnya bisa ditambah/dikurangi bebas per kapal.
+ */
+export type StatusSiap = "belum" | "proses" | "selesai" | "tidak_perlu";
+export const STATUS_SIAP: Record<StatusSiap, { label: string; chip: string }> = {
+  belum: { label: "Belum", chip: "bg-red-100 text-red-800 ring-red-300" },
+  proses: { label: "Sedang diproses", chip: "bg-amber-100 text-amber-800 ring-amber-300" },
+  selesai: { label: "Sudah", chip: "bg-emerald-100 text-emerald-800 ring-emerald-300" },
+  tidak_perlu: { label: "Tidak perlu", chip: "bg-slate-100 text-slate-500 ring-slate-300" },
+};
+
+export interface PersiapanItem {
+  id: string;
+  nama: string;          // mis. "SPPBJ Repair List (Docking Induk)"
+  status: StatusSiap;
+  noRef?: string;        // No. SPPBJ / SPBJ / dokumen terkait
+  tanggal?: string;      // ISO — kapan beres
+  catatan?: string;
+}
+
+/** template awal — bisa diubah bebas per kapal setelah dibuat */
+export const TEMPLATE_PERSIAPAN: string[] = [
+  "SPPBJ Repair List (Docking Induk)",
+  "Anode (Zinc Anode)",
+  "Cat BGA / AGA / Kamar Mesin (Owner Supply)",
+  "Perlengkapan Deck",
+  "Alat Kerja Mesin & Deck",
+  "Suku Cadang ME / AE",
+  "Perbengkelan",
+  "Swakelola Docking",
+  "Fumigasi",
+  "BBM Mobilisasi Docking",
+  "Pelumas Docking",
+  "Surat-Surat Kapal (Sertifikasi)",
+  "Investasi (SC ME/AE, Kelistrikan, dll.)",
+];
+
+export const persiapanBaru = (nama = ""): PersiapanItem => ({
+  id: globalThis.crypto?.randomUUID?.() ?? String(Math.random()),
+  nama, status: "belum",
+});
+
+/** progres: yang "tidak perlu" dikeluarkan dari pembagi supaya 100% berarti benar-benar siap */
+export function ringkasPersiapan(list: PersiapanItem[] | undefined) {
+  const semua = list || [];
+  const dihitung = semua.filter((x) => x.status !== "tidak_perlu");
+  const selesai = dihitung.filter((x) => x.status === "selesai").length;
+  const proses = dihitung.filter((x) => x.status === "proses").length;
+  return {
+    ada: semua.length > 0,
+    total: dihitung.length,
+    selesai, proses,
+    belum: dihitung.length - selesai - proses,
+    pct: dihitung.length ? Math.round((selesai / dihitung.length) * 100) : 0,
+  };
 }
 
 // ====================== kelas / survey BKI ======================

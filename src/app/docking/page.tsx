@@ -18,6 +18,7 @@ import {
   BerkasBA, dockingBaru, kelasBaru, ringkasDocking, gayaDocking, labelBA,
   TERMIN, TerminBayar, ringkasTermin, RingkasTermin, STATUS_TERMIN, MASA_PEMELIHARAAN_HARI,
   jatuhTempoPemeliharaan, AMBANG_TERLAMBAT,
+  PersiapanItem, TEMPLATE_PERSIAPAN, persiapanBaru, ringkasPersiapan, STATUS_SIAP, StatusSiap,
 } from "@/lib/docking/types";
 import { rupiah } from "@/lib/format";
 import { unggahBerkas, ukuranSingkat, BerkasError } from "@/lib/berkasStorage";
@@ -99,9 +100,21 @@ export default function DockingPage() {
 
   const simpanEdit = async () => {
     if (!edit) return;
-    if (!edit.keluarLintasan) { void beritahu("Isi dulu tanggal Keluar Lintasan — itu awal hitungan lama docking."); return; }
+    // Keluar Lintasan penting utk hitung lama docking, tapi TIDAK boleh memblokir:
+    // rekaman dari Berita Acara sering belum punya tanggal itu, dan checklist /
+    // termin / berkas tetap harus bisa disimpan. Cukup diingatkan sekali.
+    if (!edit.keluarLintasan && !(edit as any)._ingatkan) {
+      (edit as any)._ingatkan = true;
+      void beritahu({
+        nada: "perhatian", judul: "Tanggal Keluar Lintasan belum diisi",
+        pesan: "Data tetap disimpan. Isi tanggalnya nanti supaya lama docking (off-lintasan) ikut terhitung.",
+      });
+    }
     setSibuk(true);
-    try { await simpanJadwal(edit); setEdit(null); } finally { setSibuk(false); }
+    try {
+      const { _ingatkan, ...bersih } = edit as any;
+      await simpanJadwal(bersih); setEdit(null);
+    } finally { setSibuk(false); }
   };
 
   const hapusEdit = async () => {
@@ -284,6 +297,7 @@ export default function DockingPage() {
                 <th className="p-2 text-right">Nyata</th>
                 <th className="p-2 text-right">Selisih</th>
                 <th className="p-2 text-center">Status</th>
+                <th className="p-2 text-center" title="Persiapan docking: SPPBJ repair list, anode, cat, suku cadang, dst.">Siap</th>
                 <th className="p-2 text-center">BA</th>
                 <th className="p-2 text-center" title="Termin I dipicu BA Naik Dok · II BA Selesai Pekerjaan · III BA Selesai Masa Pemeliharaan">Termin</th>
                 <th className="p-2 text-left">Kelas BKI</th>
@@ -309,6 +323,22 @@ export default function DockingPage() {
                     <td className="p-2 text-center">
                       {g ? <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ring-1 ${g.chip}`}>{g.teks}</span>
                         : <span className="text-[10px] text-slate-400">belum diisi</span>}
+                    </td>
+                    <td className="p-2 text-center">
+                      {(() => {
+                        if (!b.dok) return <span className="text-[10px] text-slate-400">—</span>;
+                        const rp = ringkasPersiapan(b.dok.persiapan);
+                        if (!rp.ada) return <span className="text-[10px] text-slate-400" title="Checklist belum dibuat — buka kapal → tab Persiapan">belum ada</span>;
+                        return (
+                          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ring-1 tabular-nums ${
+                            rp.pct >= 100 ? "bg-emerald-100 text-emerald-800 ring-emerald-300"
+                              : rp.pct >= 50 ? "bg-amber-100 text-amber-800 ring-amber-300"
+                              : "bg-red-100 text-red-800 ring-red-300"}`}
+                            title={`${rp.selesai} dari ${rp.total} item siap · ${rp.proses} sedang diproses`}>
+                            {rp.selesai}/{rp.total}
+                          </span>
+                        );
+                      })()}
                     </td>
                     <td className="p-2 text-center tabular-nums text-slate-600">{(b.dok?.berkas || []).length || "—"}</td>
                     <td className="p-2 text-center">
@@ -370,7 +400,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup
   onSimpan: () => void; onHapus: () => void; onTutup: () => void;
   onSimpanKelas: (k: KelasBki) => Promise<void>; onHapusKelas: (id: string) => Promise<void>;
 }) {
-  const [tab, setTab] = useState<"jadwal" | "termin" | "ba" | "kelas">("jadwal");
+  const [tab, setTab] = useState<"jadwal" | "siap" | "termin" | "ba" | "kelas">("jadwal");
   const r = ringkasDocking(nilai);
   const g = gayaDocking(r);
   const set = (p: Partial<DockingJadwal>) => setNilai({ ...nilai, ...p });
@@ -390,6 +420,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup
 
           <div className="px-6 pt-3 flex gap-1 border-b border-slate-200">
             {([["jadwal", "📅 Jadwal & lama"],
+               ["siap", (() => { const r = ringkasPersiapan(nilai.persiapan); return `✅ Persiapan${r.ada ? ` (${r.selesai}/${r.total})` : ""}`; })()],
                ["termin", `💰 Termin (${ringkasTermin(nilai).filter((t) => t.status === "dibayar").length}/3 dibayar)`],
                ["ba", `📄 Berita Acara (${(nilai.berkas || []).length})`],
                ["kelas", `🏷️ Kelas BKI (${kelas.length})`]] as const).map(([v, t]) => (
@@ -400,6 +431,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, onSimpan, onHapus, onTutup
 
           <div className="p-6 max-h-[62vh] overflow-auto">
             {tab === "jadwal" && <TabJadwal nilai={nilai} set={set} r={r} />}
+            {tab === "siap" && <TabPersiapan nilai={nilai} set={set} />}
             {tab === "termin" && <TabTermin nilai={nilai} set={set} />}
             {tab === "ba" && <TabBA nilai={nilai} set={set} />}
             {tab === "kelas" && <TabKelas kapal={nilai.kapal} tahun={nilai.tahun} kelas={kelas} onSimpan={onSimpanKelas} onHapus={onHapusKelas} />}
@@ -456,6 +488,99 @@ function TabJadwal({ nilai, set, r }: { nilai: DockingJadwal; set: (p: Partial<D
         <textarea className="inp min-h-[70px]" value={nilai.catatan || ""} onChange={(e) => set({ catatan: e.target.value })}
           placeholder="mis. keterlambatan karena menunggu material, cuaca, dsb." />
       </Baris>
+    </>
+  );
+}
+
+function TabPersiapan({ nilai, set }: { nilai: DockingJadwal; set: (p: Partial<DockingJadwal>) => void }) {
+  const list = nilai.persiapan || [];
+  const r = ringkasPersiapan(list);
+  const [namaBaru, setNamaBaru] = useState("");
+  const ubah = (id: string, p: Partial<PersiapanItem>) =>
+    set({ persiapan: list.map((x) => (x.id === id ? { ...x, ...p } : x)) });
+  const tambah = (nama: string) => {
+    const n = nama.trim();
+    if (!n) return;
+    set({ persiapan: [...list, persiapanBaru(n)] });
+    setNamaBaru("");
+  };
+  // urutan siklus klik cepat pada status: belum -> proses -> selesai -> belum
+  const putar = (s: StatusSiap): StatusSiap => (s === "belum" ? "proses" : s === "proses" ? "selesai" : "belum");
+
+  return (
+    <>
+      {/* progres */}
+      {r.ada && (
+        <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 p-3.5 mb-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+            <span className="text-sm font-extrabold text-slate-800">Kesiapan docking: {r.pct}%</span>
+            <span className="text-[11px] text-slate-600">{r.selesai} sudah · {r.proses} diproses · {r.belum} belum{list.length - r.total ? ` · ${list.length - r.total} tidak perlu` : ""}</span>
+          </div>
+          <div className="flex h-3 rounded-full overflow-hidden ring-1 ring-inset ring-slate-200 bg-white">
+            <div className="bg-emerald-500" style={{ width: `${r.total ? (r.selesai / r.total) * 100 : 0}%` }} />
+            <div className="bg-amber-400" style={{ width: `${r.total ? (r.proses / r.total) * 100 : 0}%` }} />
+          </div>
+        </div>
+      )}
+
+      {!list.length ? (
+        <div className="rounded-xl ring-1 ring-sky-200 bg-sky-50 p-4 text-center">
+          <p className="text-sm text-slate-700 mb-3">
+            Belum ada checklist. Mulai dari template baku (SPPBJ Repair List, Anode, Cat BGA/AGA,
+            Perlengkapan Deck, Alat Kerja, Suku Cadang, Perbengkelan, Swakelola, Fumigasi, BBM,
+            Pelumas, Surat Kapal, Investasi) — setelah itu bebas ditambah / dibuang sesuai kapal.
+          </p>
+          <button onClick={() => set({ persiapan: TEMPLATE_PERSIAPAN.map((n) => persiapanBaru(n)) })}
+            className="btn btn-primary text-xs">📋 Pakai template ({TEMPLATE_PERSIAPAN.length} item)</button>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          {list.map((it) => {
+            const st = STATUS_SIAP[it.status];
+            return (
+              <div key={it.id} className={`rounded-xl ring-1 px-3.5 py-2.5 ${
+                it.status === "selesai" ? "ring-emerald-200 bg-emerald-50/40"
+                  : it.status === "proses" ? "ring-amber-200 bg-amber-50/40"
+                  : it.status === "tidak_perlu" ? "ring-slate-200 bg-slate-50 opacity-70" : "ring-slate-200"}`}>
+                <div className="flex flex-wrap items-center gap-2">
+                  <button onClick={() => ubah(it.id, { status: putar(it.status), tanggal: putar(it.status) === "selesai" ? (it.tanggal || new Date().toISOString().slice(0, 10)) : it.tanggal })}
+                    title="Klik untuk ganti status: Belum → Sedang diproses → Sudah"
+                    className={`h-7 w-7 grid place-items-center rounded-lg ring-1 text-sm shrink-0 ${st.chip}`}>
+                    {it.status === "selesai" ? "✓" : it.status === "proses" ? "…" : it.status === "tidak_perlu" ? "—" : "○"}
+                  </button>
+                  <input className={`flex-1 min-w-[12rem] bg-transparent text-sm font-semibold outline-none ${it.status === "tidak_perlu" ? "line-through text-slate-400" : "text-slate-800"}`}
+                    value={it.nama} onChange={(e) => ubah(it.id, { nama: e.target.value })} />
+                  <select value={it.status} onChange={(e) => ubah(it.id, { status: e.target.value as StatusSiap })}
+                    className={`text-[11px] font-bold rounded-lg px-2 py-1 ring-1 border-0 ${st.chip}`}>
+                    {(Object.keys(STATUS_SIAP) as StatusSiap[]).map((s) => <option key={s} value={s}>{STATUS_SIAP[s].label}</option>)}
+                  </select>
+                  <input className="inp !w-36 !text-[11px] !py-1" placeholder="No. SPPBJ / ref"
+                    value={it.noRef || ""} onChange={(e) => ubah(it.id, { noRef: e.target.value })} />
+                  <input type="date" className="inp !w-36 !text-[11px] !py-1" value={it.tanggal || ""}
+                    onChange={(e) => ubah(it.id, { tanggal: e.target.value || undefined })} />
+                  <button onClick={() => set({ persiapan: list.filter((x) => x.id !== it.id) })}
+                    className="text-rose-600 hover:text-rose-800 text-sm px-1" title="Buang item ini">✕</button>
+                </div>
+                <input className="mt-1.5 w-full bg-transparent text-[11px] text-slate-500 outline-none placeholder:text-slate-300"
+                  placeholder="catatan (opsional) — mis. menunggu barang dari Surabaya"
+                  value={it.catatan || ""} onChange={(e) => ubah(it.id, { catatan: e.target.value })} />
+              </div>
+            );
+          })}
+
+          <div className="flex items-center gap-2 pt-1">
+            <input className="inp flex-1" placeholder="tambah item baru — mis. Pengadaan Wire Rope"
+              value={namaBaru} onChange={(e) => setNamaBaru(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") tambah(namaBaru); }} />
+            <button onClick={() => tambah(namaBaru)} className="btn btn-primary text-xs">＋ Tambah</button>
+          </div>
+          <p className="text-[11px] text-slate-500">
+            Klik lingkaran untuk memutar status (Belum → Diproses → Sudah). Nama item bisa langsung
+            diketik ulang. Item &ldquo;Tidak perlu&rdquo; tidak dihitung dalam persen kesiapan.
+            Jangan lupa <b>Simpan</b> setelah selesai.
+          </p>
+        </div>
+      )}
     </>
   );
 }
