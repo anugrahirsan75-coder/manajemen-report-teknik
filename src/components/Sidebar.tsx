@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import LonengPengingat from "@/components/LonengPengingat";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -120,7 +119,6 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
       {/* Navigasi */}
       <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
         <SectionLabel>Ringkasan</SectionLabel>
-        <LonengPengingat onNavigate={onNavigate} />
         <NavLink href="/dashboard" icon="📊" label="Dashboard Anggaran" desc="Penyerapan, pagu & rincian" active={path.startsWith("/dashboard")} onNavigate={onNavigate} />
         <NavLink href="/rencana" icon="📆" label="Rencana &amp; Realisasi" desc="Lampiran 3 · usulan bulanan per kapal" active={path.startsWith("/rencana")} onNavigate={onNavigate} />
         <NavLink href="/kerusakan" icon="🛠️" label="Rekap Kerusakan Kapal" desc="Report Accident · kejadian &amp; tindak lanjut" active={path.startsWith("/kerusakan")} onNavigate={onNavigate} />
