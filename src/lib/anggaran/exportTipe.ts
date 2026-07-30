@@ -45,8 +45,29 @@ export interface OpsiExportTipe {
   docking: PlafonDocking[];
   program: PlafonProgram[];
   pengadaan: PengadaanRow[];
-  bulan: string;  // "YYYY-MM" (Rutin)
-  tahun: number;  // (Docking)
+  bulan: string;        // "YYYY-MM" — bulan awal (Rutin)
+  /** bulan akhir bila yang diminta REKAP RENTANG; kosong = satu bulan saja */
+  bulanAkhir?: string;
+  tahun: number;        // (Docking)
+}
+
+/** daftar "YYYY-MM" dari awal sampai akhir (inklusif); urutan otomatis dibetulkan */
+export function daftarBulan(dari: string, sampai: string): string[] {
+  if (!dari) return [];
+  const a = dari <= (sampai || dari) ? dari : sampai;
+  const b = dari <= (sampai || dari) ? (sampai || dari) : dari;
+  const out: string[] = [];
+  const [y0, m0] = a.split("-").map(Number);
+  const [y1, m1] = b.split("-").map(Number);
+  if (!y0 || !m0 || !y1 || !m1) return [dari];
+  let y = y0, m = m0;
+  // batas aman 240 bulan supaya salah input tak membuat perulangan tak berujung
+  for (let i = 0; i < 240; i++) {
+    out.push(`${y}-${String(m).padStart(2, "0")}`);
+    if (y === y1 && m === m1) break;
+    m += 1; if (m > 12) { m = 1; y += 1; }
+  }
+  return out;
 }
 
 interface PosItem { grup: string; ma: string; nilai: number }
@@ -171,22 +192,35 @@ export async function exportTipeExcel(o: OpsiExportTipe) {
     }
   }
 
-  // ================= RUTIN: grup = bulan, pos = Mata Anggaran =================
+  // ============ RUTIN: satu grup PER BULAN, pos = Mata Anggaran ============
+  // Satu bulan maupun rentang bulan memakai jalur yang sama: rentang hanya
+  // berarti lebih dari satu grup, jadi rekapnya tetap terpisah per bulan
+  // sekaligus punya baris TOTAL keseluruhan.
   if (o.tipe === "rutin") {
     judul = "Anggaran Rutin";
-    periode = bulanTahun(o.bulan + "-01");
     labelGrup = "Periode";
-    const e = o.plafon.find((x) => x.bulan === o.bulan);
-    grup.push({
-      nama: periode, pendek: periode,
-      pos: (e?.rows || []).map((x) => ({ ma: labelMA(x.ma), pagu: x.nilai || 0, addendum: x.addendum || 0 })),
+    const bulanRange = daftarBulan(o.bulan, o.bulanAkhir || o.bulan);
+    periode = bulanRange.length > 1
+      ? `${bulanTahun(bulanRange[0] + "-01")} – ${bulanTahun(bulanRange[bulanRange.length - 1] + "-01")} (${bulanRange.length} bulan)`
+      : bulanTahun(o.bulan + "-01");
+
+    const labelBulan: Record<string, string> = {};
+    bulanRange.forEach((b) => {
+      const nama = bulanTahun(b + "-01");
+      labelBulan[b] = nama;
+      const e = o.plafon.find((x) => x.bulan === b);
+      grup.push({
+        nama, pendek: nama,
+        pos: (e?.rows || []).map((x) => ({ ma: labelMA(x.ma), pagu: x.nilai || 0, addendum: x.addendum || 0 })),
+      });
     });
 
     for (const p of o.pengadaan) {
       if (jenisAnggaranOf(p as any) !== "rutin") continue;
-      if ((p.tanggal || "").slice(0, 7) !== o.bulan) continue;
+      const bl = (p.tanggal || "").slice(0, 7);
+      if (!labelBulan[bl]) continue;
       const dok = dokumenDari(p, (_kapal, maTeks, nilai) =>
-        nilai ? [{ grup: periode, ma: labelMA(maTeks), nilai }] : []);
+        nilai ? [{ grup: labelBulan[bl], ma: labelMA(maTeks), nilai }] : []);
       if (dok) {
         dok._pos.forEach((x: PosItem) => tambahPos(x.grup, x.ma));
         dokumen.push(dok);

@@ -13,7 +13,7 @@ import { ringkasKapal } from "@/lib/kapal/nama";
 import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
 import Ringkasan from "@/components/anggaran/Ringkasan";
 import RutinSetahun from "@/components/anggaran/RutinSetahun";
-import { exportTipeExcel } from "@/lib/anggaran/exportTipe";
+import { exportTipeExcel, daftarBulan } from "@/lib/anggaran/exportTipe";
 import PreviewModal from "@/components/PreviewModal";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
@@ -45,12 +45,15 @@ function DashboardInner() {
   const [tahun, setTahun] = useState<string>("");
   const [xlsBusy, setXlsBusy] = useState(false);
   // Export Excel PER TIPE (berjenjang + tautan antar sheet)
-  const unduhExcel = async (tipe: "rutin" | "docking" | "lainnya") => {
+  const unduhExcel = async (tipe: "rutin" | "docking" | "lainnya", dari?: string, sampai?: string) => {
     setXlsBusy(true);
     try {
       await exportTipeExcel({
         tipe, plafon, docking, program, pengadaan,
-        bulan: new Date().toISOString().slice(0, 7),
+        // Rutin memakai bulan yang SEDANG DILIHAT (dan rentangnya bila dipilih),
+        // bukan bulan hari ini — dulu ini sumber salah paham.
+        bulan: dari || new Date().toISOString().slice(0, 7),
+        bulanAkhir: sampai || dari || undefined,
         tahun: parseInt(tahun || String(new Date().getFullYear()), 10),
       });
     } catch (e: any) { void beritahu("Gagal export: " + (e?.message ?? e)); }
@@ -149,7 +152,7 @@ function DashboardInner() {
         <>
           {v === "ringkas" && <Ringkasan plafon={plafon} docking={docking} program={program} pengadaan={pengadaan} />}
 
-          {v === "rutin" && <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} onExcel={() => unduhExcel("rutin")} xlsBusy={xlsBusy} />}
+          {v === "rutin" && <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} onExcel={(dari, sampai) => unduhExcel("rutin", dari, sampai)} xlsBusy={xlsBusy} />}
 
           {v === "docking" && <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} onExcel={() => unduhExcel("docking")} xlsBusy={xlsBusy} />}
 
@@ -562,7 +565,7 @@ const TFOOT_ROW = "bg-slate-100 border-t-2 border-slate-300 font-extrabold text-
 const barPct = (pct: number) => (pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500");
 const tintPct = (pct: number) => (pct > 100 ? "text-red-700" : pct >= 80 ? "text-amber-700" : "text-slate-900");
 
-function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon: PlafonRutin[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonRutin[]) => Promise<void>; onExcel?: () => void; xlsBusy?: boolean }) {
+function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon: PlafonRutin[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonRutin[]) => Promise<void>; onExcel?: (dari: string, sampai: string) => void; xlsBusy?: boolean }) {
   const bulanList = useMemo(() => {
     const s = new Set<string>();
     plafon.forEach((p) => p.bulan && s.add(p.bulan));
@@ -571,11 +574,54 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
   }, [plafon, pengadaan]);
   const [bulanSel, setBulanSel] = useState("");
   const bulan = bulanSel || bulanList[0] || new Date().toISOString().slice(0, 7);
+  // bulan akhir rentang; kosong = satu bulan saja. Urutan salah dibetulkan sendiri.
+  const [akhirSel, setAkhirSel] = useState("");
+  const bulanAkhir = akhirSel || bulan;
+  const rentang = useMemo(() => daftarBulan(bulan, bulanAkhir), [bulan, bulanAkhir]);
+  const banyakBulan = rentang.length > 1;
+  const labelPeriode = banyakBulan
+    ? `${bulanTahun(rentang[0] + "-01")} – ${bulanTahun(rentang[rentang.length - 1] + "-01")}`
+    : bulanTahun(bulan + "-01");
 
+  // pagu: satu bulan -> baris apa adanya; rentang -> dijumlahkan per Mata Anggaran
   const entry = plafon.find((p) => p.bulan === bulan);
-  const rows = entry?.rows || [];
-  const real = useMemo(() => realisasiRutin(pengadaan, bulan), [pengadaan, bulan]);
-  const perKapal = useMemo(() => realisasiRutinKapal(pengadaan, bulan), [pengadaan, bulan]);
+  const rows: PlafonRow[] = useMemo(() => {
+    if (!banyakBulan) return entry?.rows || [];
+    const by: Record<string, PlafonRow> = {};
+    rentang.forEach((b) => (plafon.find((p) => p.bulan === b)?.rows || []).forEach((r) => {
+      const k = maKey(r.ma);
+      by[k] = { ma: by[k]?.ma || r.ma, nilai: (by[k]?.nilai || 0) + (r.nilai || 0), addendum: (by[k]?.addendum || 0) + (r.addendum || 0) };
+    }));
+    return Object.values(by);
+  }, [banyakBulan, entry, plafon, rentang]);
+
+  // realisasi: dijumlahkan lewat fungsi per-bulan yang sama dgn tampilan bulanan,
+  // jadi angka rentang mustahil berbeda dari jumlah bulan-bulannya.
+  const real = useMemo(() => {
+    if (!banyakBulan) return realisasiRutin(pengadaan, bulan);
+    const perKey: Record<string, number> = {};
+    const list: ReturnType<typeof realisasiRutin>["list"] = [];
+    let total = 0;
+    rentang.forEach((b) => {
+      const r = realisasiRutin(pengadaan, b);
+      Object.entries(r.perKey).forEach(([k, v]) => { perKey[k] = (perKey[k] || 0) + v; });
+      list.push(...r.list); total += r.total;
+    });
+    list.sort((a, b) => b.nilai - a.nilai);
+    return { perKey, list, total };
+  }, [banyakBulan, pengadaan, bulan, rentang]);
+
+  const perKapal = useMemo(() => {
+    if (!banyakBulan) return realisasiRutinKapal(pengadaan, bulan);
+    const per: Record<string, { kapal: string; nilai: number; pengadaan: any[] }> = {};
+    rentang.forEach((b) => realisasiRutinKapal(pengadaan, b).list.forEach((k) => {
+      const s = (per[k.kapal] ||= { kapal: k.kapal, nilai: 0, pengadaan: [] });
+      s.nilai += k.nilai; s.pengadaan.push(...k.pengadaan);
+    }));
+    const list = Object.values(per).sort((a, b) => b.nilai - a.nilai) as any;
+    list.forEach((k: any) => k.pengadaan.sort((a: any, b: any) => b.nilai - a.nilai));
+    return { list, total: list.reduce((s: number, k: any) => s + k.nilai, 0) };
+  }, [banyakBulan, pengadaan, bulan, rentang]);
 
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState<PlafonRow[]>([]);
@@ -604,7 +650,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
   const proj = useMemo(() => {
     const now = new Date();
     const curYm = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-    if (bulan !== curYm) return { active: false, factor: 1, total: totalPakai, pct: pctTot, dayToday: 0, daysInMonth: 0 };
+    if (banyakBulan || bulan !== curYm) return { active: false, factor: 1, total: totalPakai, pct: pctTot, dayToday: 0, daysInMonth: 0 };
     const dayToday = now.getDate();
     const [y, mo] = bulan.split("-").map(Number);
     const daysInMonth = new Date(y, mo, 0).getDate();
@@ -612,7 +658,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
     const total = totalPakai * factor;
     const pct = totalPagu ? Math.round((total / totalPagu) * 100) : 0;
     return { active: true, factor, total, pct, dayToday, daysInMonth };
-  }, [bulan, totalPakai, totalPagu, pctTot]);
+  }, [banyakBulan, bulan, totalPakai, totalPagu, pctTot]);
 
   const startEdit = () => { setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]); setEdit(true); };
   // siapkan pagu bulan BERIKUTNYA: lompat bulan + salin pagu bulan aktif + langsung mode edit
@@ -651,11 +697,26 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
   };
 
   return (
-    <Card tone="biru" icon="🧭" badge="Bulanan" title="Kendali Anggaran Rutin"
-      sub="Persetujuan Rutin per BULAN · pagu per Mata Anggaran">
+    <Card tone="biru" icon="🧭" badge={banyakBulan ? `${rentang.length} BULAN` : "BULANAN"} title="Kendali Anggaran Rutin"
+      sub={banyakBulan
+        ? `Rekap gabungan ${labelPeriode} · pagu & realisasi dijumlahkan per Mata Anggaran`
+        : "Persetujuan Rutin per BULAN · pagu per Mata Anggaran"}>
       <div className="flex flex-wrap items-center gap-2 mb-3">
         <input type="month" value={bulan} onChange={(e) => setBulanSel(e.target.value)}
-          className="text-xs border px-2.5 py-1.5 rounded-lg bg-white" title="Pilih bulan mana pun (termasuk bulan baru)" />
+          className="text-xs border px-2.5 py-1.5 rounded-lg bg-white" title="Bulan awal — pilih bulan mana pun (termasuk bulan baru)" />
+        <span className="text-[11px] text-slate-400">s.d.</span>
+        <input type="month" value={bulanAkhir} onChange={(e) => setAkhirSel(e.target.value)}
+          className={`text-xs border px-2.5 py-1.5 rounded-lg bg-white ${banyakBulan ? "border-[#1ca3dd] font-semibold text-[#16357f]" : ""}`}
+          title="Bulan akhir — samakan dengan bulan awal untuk melihat satu bulan saja" />
+        {banyakBulan ? (
+          <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-sky-100 text-sky-800 ring-1 ring-sky-300">
+            REKAP {rentang.length} BULAN · {labelPeriode}
+            <button onClick={() => setAkhirSel("")} className="ml-1.5 opacity-70 hover:opacity-100" title="Kembali ke satu bulan">✕</button>
+          </span>
+        ) : (
+          <button onClick={() => setAkhirSel(nextMonth(bulan))} className="text-[10px] font-semibold px-2 py-1 rounded-lg border border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f]"
+            title="Lihat rekap beberapa bulan sekaligus">＋ rentang bulan</button>
+        )}
         {bulanList.length > 0 && (
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-slate-500 font-semibold">ada data:</span>
@@ -672,15 +733,17 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
           {!edit ? (
             <>
               {onExcel && (
-                <button onClick={onExcel} disabled={xlsBusy} className="btn btn-success text-xs disabled:opacity-50"
+                <button onClick={() => onExcel(bulan, bulanAkhir)} disabled={xlsBusy} className="btn btn-success text-xs disabled:opacity-50"
                   title="Unduh Excel berjenjang: ringkasan → per Mata Anggaran → per item pengadaan (bertaut)">
                   {xlsBusy ? "menyiapkan…" : "📊 Export Excel"}
                 </button>
               )}
-              <a href={`/dashboard/cetak?jenis=rutin&bulan=${bulan}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
-              <button onClick={bulanLain} className="btn btn-ghost text-xs" title={`Siapkan pagu ${bulanTahun(nextMonth(bulan) + "-01")} (disalin dari bulan ini)`}>➕ Pagu Bulan Lain</button>
-              <button onClick={startEdit} className="btn btn-ghost text-xs">✏️ Atur Pagu</button>
-              {entry && <button onClick={hapusPagu} disabled={busy} className="btn btn-ghost text-xs text-red-600 disabled:opacity-50" title="Hapus pagu bulan ini (pengadaan tetap ada)">🗑️ Hapus Pagu</button>}
+              <a href={`/dashboard/cetak?jenis=rutin&bulan=${bulan}${banyakBulan ? `&sampai=${bulanAkhir}` : ""}`} target="_blank" rel="noreferrer" className="btn btn-ghost text-xs" title="Buka lembar cetak / simpan PDF">🖨️ Export PDF</a>
+              <button onClick={bulanLain} disabled={banyakBulan} className="btn btn-ghost text-xs disabled:opacity-40"
+                title={banyakBulan ? "Pagu diatur per bulan — samakan bulan awal & akhir dulu" : `Siapkan pagu ${bulanTahun(nextMonth(bulan) + "-01")} (disalin dari bulan ini)`}>➕ Pagu Bulan Lain</button>
+              <button onClick={startEdit} disabled={banyakBulan} className="btn btn-ghost text-xs disabled:opacity-40"
+                title={banyakBulan ? "Pagu diatur per bulan — samakan bulan awal & akhir dulu" : "Ubah pagu bulan ini"}>✏️ Atur Pagu</button>
+              {entry && !banyakBulan && <button onClick={hapusPagu} disabled={busy} className="btn btn-ghost text-xs text-red-600 disabled:opacity-50" title="Hapus pagu bulan ini (pengadaan tetap ada)">🗑️ Hapus Pagu</button>}
             </>
           ) : (
             <>

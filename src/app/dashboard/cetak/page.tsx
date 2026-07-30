@@ -10,6 +10,7 @@
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import Image from "next/image";
+import { daftarBulan } from "@/lib/anggaran/exportTipe";
 import { useAnggaran, realisasiDocking, realisasiRutin, realisasiProgram } from "@/lib/anggaran/store";
 import { maKey, isMaInvestasi, DOCKING_MA, DOCKING_MA_INVESTASI, namaKapalPenuh } from "@/lib/anggaran/types";
 import { ringkasKapal } from "@/lib/kapal/nama";
@@ -23,6 +24,7 @@ function Lembar() {
   const kapal = q.get("kapal") || "";
   const tahun = parseInt(q.get("tahun") || "0", 10) || new Date().getFullYear();
   const bulan = q.get("bulan") || new Date().toISOString().slice(0, 7);
+  const sampai = q.get("sampai") || "";        // rekap rentang bulan (Rutin)
   const programId = q.get("program") || "";
 
   const { loading, pengadaan, plafon, docking, program } = useAnggaran();
@@ -48,15 +50,30 @@ function Lembar() {
       };
     }
     if (jenis === "rutin") {
-      const entry = plafon.find((p) => p.bulan === bulan);
-      const real = realisasiRutin(pengadaan, bulan);
+      // Satu bulan maupun rentang memakai jalur yang sama: rentang cuma berarti
+      // pagu & realisasi tiap bulan dijumlahkan per Mata Anggaran.
+      const rentang = daftarBulan(bulan, sampai || bulan);
+      const periode = rentang.length > 1
+        ? `${bulanTahun(rentang[0] + "-01")} – ${bulanTahun(rentang[rentang.length - 1] + "-01")} (${rentang.length} bulan)`
+        : bulanTahun(bulan + "-01");
       const by: Record<string, Baris> = {};
-      (entry?.rows || []).forEach((r) => { const k = maKey(r.ma); by[k] = { label: r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), add: 0, pakai: by[k]?.pakai || 0, inv: isMaInvestasi(k) }; });
-      Object.entries(real.perKey).forEach(([k, v]) => { if (by[k]) by[k].pakai = v; else by[k] = { label: real.list.find((x) => x.key === k)?.ma || k, pagu: 0, add: 0, pakai: v, inv: isMaInvestasi(k) }; });
+      rentang.forEach((b) => {
+        (plafon.find((p) => p.bulan === b)?.rows || []).forEach((r) => {
+          const k = maKey(r.ma);
+          by[k] = { label: by[k]?.label || r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), add: 0, pakai: by[k]?.pakai || 0, inv: isMaInvestasi(k) };
+        });
+        const rl = realisasiRutin(pengadaan, b);
+        Object.entries(rl.perKey).forEach(([k, v]) => {
+          if (by[k]) by[k].pakai += v;
+          else by[k] = { label: rl.list.find((x) => x.key === k)?.ma || k, pagu: 0, add: 0, pakai: v, inv: isMaInvestasi(k) };
+        });
+      });
       return {
         judul: "LAPORAN KENDALI ANGGARAN RUTIN",
-        sub: `Persetujuan Rutin — ${bulanTahun(bulan + "-01")}`,
-        info: [["Periode", bulanTahun(bulan + "-01")], ["Sumber realisasi", "SPPBJ Pengadaan & SPPBJ Non PR PO (Jenis Anggaran: Rutin)"]] as [string, string][],
+        sub: `Persetujuan Rutin — ${periode}`,
+        info: [["Periode", periode],
+               ...(rentang.length > 1 ? [["Bulan tergabung", rentang.map((b) => bulanTahun(b + "-01")).join(", ")] as [string, string]] : []),
+               ["Sumber realisasi", "SPPBJ Pengadaan & SPPBJ Non PR PO (Jenis Anggaran: Rutin)"]] as [string, string][],
         kolomLabel: "Mata Anggaran",
         baris: Object.values(by),
       };
