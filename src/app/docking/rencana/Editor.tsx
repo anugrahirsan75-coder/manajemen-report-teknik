@@ -12,6 +12,7 @@ import { rupiah, tanggalIndo } from "@/lib/format";
 import { Field, Input, Section } from "@/components/Field";
 import { konfirmasi } from "@/components/Konfirmasi";
 import { useKapalDb } from "@/lib/kapal/store";
+import { paguDocking, TAHUN_RKA, SUMBER_RKA } from "@/lib/anggaran/rka2026";
 import { Ship, slugKapal } from "@/lib/kapal/types";
 import {
   RencanaDocking, totalRencana, rekapPenunjang, totalRl, nilaiBerlaku,
@@ -87,6 +88,22 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [kapalDb]);
   const ambilUlang = () => setR((p) => ({ ...p, ...Object.fromEntries(Object.entries(ukuranDb).filter(([, v]) => v)) }));
+
+  // ── pagu ikut RKA cabang ──────────────────────────────────────────────────
+  // RKA 2026 sudah ada di aplikasi (KONTROL ANGGARAN TERNATE). Begitu kapal
+  // dipilih, pagu tiap kelompok terisi sendiri — yang sudah diisi tangan tidak
+  // ditimpa, dan pengambilan ulang tetap disediakan lewat tombol.
+  const rka = useMemo(() => paguDocking(r.kapal || ""), [r.kapal]);
+  const adaRka = Object.keys(rka.pagu).length > 0 && r.tahun === TAHUN_RKA;
+  useEffect(() => {
+    if (!adaRka) return;
+    const isi: Record<string, number> = { ...(r.pagu || {}) };
+    let berubah = false;
+    for (const [k, v] of Object.entries(rka.pagu)) if (v && !isi[k]) { isi[k] = v; berubah = true; }
+    if (berubah) setR((p) => ({ ...p, pagu: isi }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [adaRka, r.kapal]);
+  const ambilPagu = () => setR((p) => ({ ...p, pagu: { ...(p.pagu || {}), ...rka.pagu } }));
 
   const total = totalRencana(r);
   const hariIni = hariIniLokal();
@@ -215,6 +232,28 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
 
           <Section title="Pagu RKA per Mata Anggaran" icon="💼"
             desc="Angka RKA tahun berjalan sebagai pembanding usulan. Kosongkan bila belum ada.">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px]">
+              {adaRka ? (
+                <>
+                  <span className="text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 rounded-full px-2 py-0.5">
+                    🔗 terisi dari RKA {TAHUN_RKA}
+                  </span>
+                  <span className="text-slate-500">{SUMBER_RKA}</span>
+                  <button onClick={ambilPagu} className="btn btn-ghost text-[11px] py-1"
+                    title="Timpa pagu di bawah dengan angka RKA cabang">↻ Ambil ulang</button>
+                </>
+              ) : r.kapal ? (
+                <span className="text-slate-500">
+                  RKA {TAHUN_RKA} tersedia untuk 13 kapal; tahun rencana ini {r.tahun}, jadi pagunya diisi tangan.
+                </span>
+              ) : null}
+              {adaRka && rka.luarKelompok.length > 0 && (
+                <span className="text-slate-500">
+                  · di luar kelompok penunjang:{" "}
+                  {rka.luarKelompok.map((x) => `${x.label.trim()} ${rupiah(x.rka)}`).join(" · ")}
+                </span>
+              )}
+            </div>
             <div className="grid sm:grid-cols-2 gap-3">
               {KELOMPOK_PENUNJANG.map((k) => (
                 <label key={k.key} className="flex items-center gap-2">

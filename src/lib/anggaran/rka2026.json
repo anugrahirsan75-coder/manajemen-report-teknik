@@ -1,0 +1,4086 @@
+{
+ "tahun": 2026,
+ "sumber": "KONTROL ANGGARAN TERNATE.xlsx (folder Perencanaan Docking 2026)",
+ "docking": {
+  "BUS AIR KM. KOLORAI": {
+   "5010303001": {
+    "rka": 588881,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 186208286,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 23052248,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 22611672,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 77538914,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. ARIWANGAN": {
+   "5010303001": {
+    "rka": 3604259,
+    "tambahan": 3300000,
+    "persetujuan": 6928350,
+    "release": 6876438,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 424048866,
+    "tambahan": 108500000,
+    "persetujuan": 532491155,
+    "release": 524968667,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 73380469,
+    "tambahan": 66500000,
+    "persetujuan": 139817600,
+    "release": 139817600,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 84600711,
+    "tambahan": 0,
+    "persetujuan": 104486040,
+    "release": 102554880,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 69331847,
+    "tambahan": 97500000,
+    "persetujuan": 165000000,
+    "release": 165000000,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 6369345,
+    "tambahan": 5800000,
+    "persetujuan": 12151849,
+    "release": 12151849,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 62874750,
+    "tambahan": 700000,
+    "persetujuan": 63500000,
+    "release": 63500000,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. BARONANG": {
+   "5010303001": {
+    "rka": 14718320,
+    "tambahan": 33000000,
+    "persetujuan": 47718023,
+    "release": 47718320,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1326218419,
+    "tambahan": -128800000,
+    "persetujuan": 723109600,
+    "release": 723109600,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 212995742,
+    "tambahan": 28300000,
+    "persetujuan": 313444020,
+    "release": 241295742,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 253530830,
+    "tambahan": 0,
+    "persetujuan": 204796820,
+    "release": 204796820,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 110452118,
+    "tambahan": 100500000,
+    "persetujuan": 138750000,
+    "release": 210952118,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 25754799,
+    "tambahan": 0,
+    "persetujuan": 25754799,
+    "release": 25754799,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 144758387,
+    "tambahan": -33000000,
+    "persetujuan": 154900000,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. BOBARA": {
+   "5010303001": {
+    "rka": 13490391,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1340179563,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 226763508,
+    "tambahan": 0,
+    "persetujuan": 8500000,
+    "release": 8500000,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 286303813,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 110452118,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 24654799,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 145313387,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. GORANGO": {
+   "5010303001": {
+    "rka": 12505671,
+    "tambahan": 0,
+    "persetujuan": 12105280,
+    "release": 12105280,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1129854187,
+    "tambahan": -284020071,
+    "persetujuan": 668941983,
+    "release": 659875383,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 248251270,
+    "tambahan": -66500000,
+    "persetujuan": 128138100,
+    "release": 128138100,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 304483707,
+    "tambahan": -45200493,
+    "persetujuan": 132770920,
+    "release": 35227500,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 115452118,
+    "tambahan": 0,
+    "persetujuan": 111500000,
+    "release": 111500000,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 27554799,
+    "tambahan": 0,
+    "persetujuan": 22200000,
+    "release": 22200000,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 144458387,
+    "tambahan": -700000,
+    "persetujuan": 86025000,
+    "release": 86025000,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. KERAPU II": {
+   "5010303001": {
+    "rka": 11755708,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1120595491,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 207390325,
+    "tambahan": 0,
+    "persetujuan": 21500000,
+    "release": 21500000,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 245677045,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 110452118,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 16404799,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 146413387,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. LEMA": {
+   "5010303001": {
+    "rka": 25095506,
+    "tambahan": -3300000,
+    "persetujuan": 12105280,
+    "release": 12105280,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1155320939,
+    "tambahan": -200000000,
+    "persetujuan": 815179032,
+    "release": 867604999,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 288314920,
+    "tambahan": 0,
+    "persetujuan": 282466700,
+    "release": 218448333,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 263595668,
+    "tambahan": 0,
+    "persetujuan": 172273000,
+    "release": 51962500,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 115452118,
+    "tambahan": 0,
+    "persetujuan": 134000000,
+    "release": 134000000,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 27656647,
+    "tambahan": -5800000,
+    "persetujuan": 20000000,
+    "release": 20000000,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 146958387,
+    "tambahan": 0,
+    "persetujuan": 88245000,
+    "release": 88245000,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. LOMPA": {
+   "5010303001": {
+    "rka": 12722146,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 675521284,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 114314031,
+    "tambahan": 0,
+    "persetujuan": 20000000,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 153321637,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 250000000,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 15105284,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 75814690,
+    "tambahan": 0,
+    "persetujuan": 55500000,
+    "release": 55500000,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. MAMING": {
+   "5010303001": {
+    "rka": 7708138,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1317392063,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 250775108,
+    "tambahan": 0,
+    "persetujuan": 21000000,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 330757282,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 110452118,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 27479799,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 146403387,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. NGAFI": {
+   "5010303001": {
+    "rka": 6864559,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 506967258,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 76793082,
+    "tambahan": 0,
+    "persetujuan": 19100000,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 112415338,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 125000000,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 10711979,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 64891496,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. PORTLINK VIII": {
+   "5010303001": {
+    "rka": 12481649,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1516894775,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 322453801,
+    "tambahan": 0,
+    "persetujuan": 24000000,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 365240306,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 148952118,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 32356647,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 189158387,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. PULAU SAGORI": {
+   "5010303001": {
+    "rka": 13851707,
+    "tambahan": 0,
+    "persetujuan": 18103580,
+    "release": 18103580,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 792048006,
+    "tambahan": 278020071,
+    "persetujuan": 803464047,
+    "release": 803464047,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 115760038,
+    "tambahan": 21841923,
+    "persetujuan": 151306300,
+    "release": 151306300,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 182519507,
+    "tambahan": 47863257,
+    "persetujuan": 127382585,
+    "release": 53304500,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 160631293,
+    "tambahan": -2662764,
+    "persetujuan": 180000000,
+    "release": 180000000,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 15131728,
+    "tambahan": 0,
+    "persetujuan": 19801849,
+    "release": 19801849,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 89946294,
+    "tambahan": -67206511,
+    "persetujuan": 50500000,
+    "release": 50500000,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  },
+  "KMP. TUNA": {
+   "5010303001": {
+    "rka": 11269061,
+    "tambahan": 25000000,
+    "persetujuan": 35348770,
+    "release": 11269061,
+    "realisasi": 0,
+    "label": "Pelumas"
+   },
+   "5010303002": {
+    "rka": 0,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Pengangkutan Pelumas"
+   },
+   "5010403003": {
+    "rka": 1310886657,
+    "tambahan": -25000000,
+    "persetujuan": 841933073,
+    "release": 866933073,
+    "realisasi": 0,
+    "label": "Kapal RO-RO/Penyebrangan"
+   },
+   "5010403009": {
+    "rka": 260110872,
+    "tambahan": 0,
+    "persetujuan": 183307300,
+    "release": 183307300,
+    "realisasi": 0,
+    "label": "Akomodasi Kapal"
+   },
+   "5010403100": {
+    "rka": 333947966,
+    "tambahan": 0,
+    "persetujuan": 144546074,
+    "release": 44903074,
+    "realisasi": 0,
+    "label": "Permesinan dan Kelistrikan"
+   },
+   "5010302004": {
+    "rka": 115452118,
+    "tambahan": 33000000,
+    "persetujuan": 165000000,
+    "release": 132000000,
+    "realisasi": 0,
+    "label": "Mobilisasi Kapal"
+   },
+   "5010302006": {
+    "rka": 13502950,
+    "tambahan": 0,
+    "persetujuan": 0,
+    "release": 0,
+    "realisasi": 0,
+    "label": "Fumigasi"
+   },
+   "5010318000": {
+    "rka": 145408387,
+    "tambahan": -33000000,
+    "persetujuan": 65700000,
+    "release": 98700000,
+    "realisasi": 0,
+    "label": "Sertifikat Docking Kapal"
+   }
+  }
+ },
+ "investasi": [
+  {
+   "kapal": "KM. KOLORAI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Solar cell dan accu nya",
+   "nilai": 31200000
+  },
+  {
+   "kapal": "KM. KOLORAI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi pnp",
+   "nilai": 15764250
+  },
+  {
+   "kapal": "KM. KOLORAI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Lemari Life Jacket",
+   "nilai": 6500000
+  },
+  {
+   "kapal": "KM. KOLORAI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AC 1 PK",
+   "nilai": 6000000
+  },
+  {
+   "kapal": "KM. KOLORAI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Blower Kerja (jinjing)",
+   "nilai": 5000000
+  },
+  {
+   "kapal": "KM. KOLORAI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HT I-Come",
+   "nilai": 4000000
+  },
+  {
+   "kapal": "KM. KOLORAI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Propeller Motor Tempel 250 Hp",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radar Merk Furuno",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio SSB",
+   "nilai": 75000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AIS Samyung SI-70A",
+   "nilai": 66500000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Sekoci kap 6 orang",
+   "nilai": 65000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "OWS 15 PPM",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Lampu sorot",
+   "nilai": 12500000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AC Cap 1/2 PK Ruang Komando",
+   "nilai": 3500000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "YANMAR 4CHL-N",
+   "nilai": 79660500
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "(kosong)",
+   "nilai": 70000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "YANMAR 6 HA-HTA",
+   "nilai": 38750000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Fresh Water Pump Assy",
+   "nilai": 34200000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Linner Asy",
+   "nilai": 18225000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Fresh Water Pump Assy",
+   "nilai": 17000000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cylinder Head Assy",
+   "nilai": 12550000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 11035000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 6552000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cylinder Head Assy",
+   "nilai": 6500000
+  },
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Linner Asy",
+   "nilai": 4150000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radar Merk Furuno",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "-Resque Boat Cap 6 Orang (Fibre Glass)",
+   "nilai": 65000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Sekoci Penolong Cap 5 Orang",
+   "nilai": 48000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "-Sart Samyung SAR-9 Radar SART SAR9 GMDSS 9GHz",
+   "nilai": 19000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "-Self-Contained Breathing Apparatus (SCBA)",
+   "nilai": 17000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "-Epirb Samyung SEP-500",
+   "nilai": 14000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Electromotor sekoci",
+   "nilai": 12000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "-Fireman Outfit Model DFXF-93-I CCS Certificate",
+   "nilai": 7500000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "-Self ignating and activating smoke signal (MOB)",
+   "nilai": 6500000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604003",
+   "uraian": "Kapal Ro-Ro/Penyeberangan",
+   "program": "Rampdoor Buritan",
+   "nilai": 250000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Rantai dia 24 mm",
+   "nilai": 157500000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Synchronize Mesin Bantu",
+   "nilai": 100000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Jangkar 780 kg",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injector Assy",
+   "nilai": 70400000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Disc Plate Gearbox",
+   "nilai": 70000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Valve Exhaust",
+   "nilai": 60000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Vavle Intake",
+   "nilai": 60000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Kenter sharkle dia 24 mm",
+   "nilai": 27000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cylinder Linner Assy",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "BIG END BEARING US 025",
+   "nilai": 11000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Main Bearing US 0,25",
+   "nilai": 11000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "BIG END BEARING STD",
+   "nilai": 11000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Main Bearing STD",
+   "nilai": 11000000
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Anchore sharkle dia 24 mm",
+   "nilai": 10000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "SRG 3150DN Samyung DSC MF/HF ( Radio SSB) )",
+   "nilai": 75000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AIS Samyung SI-70A",
+   "nilai": 66500000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Two Way Communication",
+   "nilai": 19000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Lemari Life Jacket",
+   "nilai": 15000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Lampu Sorot 9 Inch",
+   "nilai": 12000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Baju Tahan Api",
+   "nilai": 9000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Blower Kerja (jinjing)",
+   "nilai": 4000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604003",
+   "uraian": "Kapal Ro-Ro/Penyeberangan",
+   "program": "Rampdoor Buritan",
+   "nilai": 270000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Liner W/Packing Cyl",
+   "nilai": 111000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 75000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Fuel Injectio Valve",
+   "nilai": 34000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Linner Assy ME",
+   "nilai": 32500000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Inlet Valve",
+   "nilai": 30000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Exhaust Valve",
+   "nilai": 30000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Inlet Valvet",
+   "nilai": 27000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator 24 V",
+   "nilai": 24500000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Exhaust Valve",
+   "nilai": 21000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Main Bearing",
+   "nilai": 17500000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Nozzle",
+   "nilai": 16500000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator AE",
+   "nilai": 13000000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Seat Exhaust Valve",
+   "nilai": 12500000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Seat Inlet Valve",
+   "nilai": 12500000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Sea Water Pump AE",
+   "nilai": 8750000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Dinamo Stater",
+   "nilai": 8350000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Fresh Water Pump AE",
+   "nilai": 8250000
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Thrus Bearing",
+   "nilai": 4400000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio SSB",
+   "nilai": 75000000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AIS Samyung SI-70A",
+   "nilai": 66500000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Sekoci",
+   "nilai": 57000000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Roller Block",
+   "nilai": 52500000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kompas digital (Temuan BKI dan KSOP)",
+   "nilai": 35000000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio VHF",
+   "nilai": 22500000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Anemometer model cliper termasuk pasang",
+   "nilai": 17500000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Marine Wind Clipper",
+   "nilai": 8500000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Core Assy, Cooler",
+   "nilai": 87550000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Nozzele Assy",
+   "nilai": 40500000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injector Assy",
+   "nilai": 39000000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Ring Set Piston",
+   "nilai": 21000000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Linner Assy Cylinder",
+   "nilai": 15550000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 15225000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Valve, Exhaust",
+   "nilai": 11715000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Valve, Intake",
+   "nilai": 11715000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Nozzel Assy",
+   "nilai": 8550000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Road Assy Conneting",
+   "nilai": 8230000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Engine",
+   "nilai": 5000000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Bearing, Con-Road (STD)",
+   "nilai": 4250000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Conecting Road and Piston Assy",
+   "nilai": 3850000
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Set, Piston Ring (STD)",
+   "nilai": 750000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Ruang Penumpang Bahan Polyturan Cap 2 Seed",
+   "nilai": 102621250
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radar Merk Furuno",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Ganti Atap Ruang Penumpang + Rangka (Eksisitng merembes jika hujan)",
+   "nilai": 57150000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Lemari Life Jacket",
+   "nilai": 7000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Blower Kerja (jinjing)",
+   "nilai": 5000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Penggantian Mesin Bantu",
+   "nilai": 425000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injection Pump ME",
+   "nilai": 175000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Panel Instrumen ME",
+   "nilai": 80000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cooler core assy",
+   "nilai": 49000000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Lo cooler gearbox",
+   "nilai": 27500000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Displat Gear Box",
+   "nilai": 26250000
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Kampas Gear Box",
+   "nilai": 17500000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Gyro compass",
+   "nilai": 250000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HT I-Come",
+   "nilai": 90000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radar Merk Furuno",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AIS Samyung SI-70A",
+   "nilai": 66500000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Navtex receiver + Printer",
+   "nilai": 45000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kaca Ruang Eknomi dan VIP",
+   "nilai": 31500000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio VHF",
+   "nilai": 22500000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AC 2 PK Ruang Pnp",
+   "nilai": 20000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "GPS GP-39",
+   "nilai": 16500000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio VHF Marine I-Come IC-340 + Antena",
+   "nilai": 7500000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Auto Shutdown Engine",
+   "nilai": 120000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Boler Kamar Mesin Tekan & Isap",
+   "nilai": 100000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Electrik Handel RPM Anjungan",
+   "nilai": 70000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "METAL ASST, MAIN",
+   "nilai": 63033110
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "METAL ASSY, CRAN",
+   "nilai": 49388400
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Inlet Valve",
+   "nilai": 30000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Exhaust Valve",
+   "nilai": 30000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator, 24 V 80-A",
+   "nilai": 24000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator 12V",
+   "nilai": 22000000
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "PISTON RING SET",
+   "nilai": 19870620
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "METAL ASSY, THRUST",
+   "nilai": 14314510
+  },
+  {
+   "kapal": "KMP. LEMA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator AE",
+   "nilai": 6500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Gyro compass",
+   "nilai": 250000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Vinil Ruang Ekonomi Tengah uk 12 x 20",
+   "nilai": 163200000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Ruang Penumpang Bahan Polyturan Cap 2 Seed",
+   "nilai": 102621250
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radar Merk Furuno",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio SSB",
+   "nilai": 68000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Sart Samyung SAR-9 Radar SART SAR9 GMDSS 9GHz",
+   "nilai": 19000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Fireman outfit",
+   "nilai": 12500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AC Cap 1 PK",
+   "nilai": 10000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pilot ladder",
+   "nilai": 7850000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HT I-Come",
+   "nilai": 5600000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "EEBD",
+   "nilai": 4500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Core Cmp (Cooler Oil)",
+   "nilai": 87500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Auto Shutdown Engine",
+   "nilai": 60000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cooling Water Pump",
+   "nilai": 38425000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Fresh Water Pump",
+   "nilai": 36700000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Engine Turning Device All (Turbo)",
+   "nilai": 36500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Dinamo Stater Assy",
+   "nilai": 27500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternaor 24 V 600W",
+   "nilai": 12835000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Motor Assy (Dinamo Stater)",
+   "nilai": 7500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator 24 V AS 128-55 Amp",
+   "nilai": 6500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Pump Assy (Fresh Water Pump)",
+   "nilai": 6350000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 5000000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Linner Assy",
+   "nilai": 4500000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Oil Cooler",
+   "nilai": 4250000
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Connecting Road",
+   "nilai": 3750000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Ruang Penumpang Bahan Polyturan Cap 4 Seed",
+   "nilai": 81974100
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Lemari Life Jacket",
+   "nilai": 13000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pilot ladder",
+   "nilai": 8500000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AC Cap 1/2 PK",
+   "nilai": 6000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HT I-Come",
+   "nilai": 5600000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604003",
+   "uraian": "Kapal Ro-Ro/Penyeberangan",
+   "program": "Rampdoor Buritan",
+   "nilai": 270000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Auto Shutdown Engine",
+   "nilai": 300000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Synchronize Mesin Bantu",
+   "nilai": 100000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Rantai jangkar dia 24 mm",
+   "nilai": 87500000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy ME",
+   "nilai": 78000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Sea Water Pump ME",
+   "nilai": 75000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Linner Assy ME",
+   "nilai": 62100000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injection Pump",
+   "nilai": 60000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Liner Cylinder Assy",
+   "nilai": 54000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cylinder Head ME",
+   "nilai": 43500000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Fresh Water Pump AE",
+   "nilai": 36500000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Kenter sharkle dia 24 mm",
+   "nilai": 27000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Radiator Cooler AE",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator",
+   "nilai": 8350000
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injector AE",
+   "nilai": 6500000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Ruang Penumpang Bahan Polyturan Cap 2 Seed",
+   "nilai": 102621250
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AIS Samyung 50N",
+   "nilai": 24500000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "CCTV Hikvision 5 Mp 8 Set + Monitor dan Hardis 1 TB",
+   "nilai": 15000000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Blower Kerja (jinjing)",
+   "nilai": 5000000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HT I-Come",
+   "nilai": 4000000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604003",
+   "uraian": "Kapal Ro-Ro/Penyeberangan",
+   "program": "Rampdoor Buritan",
+   "nilai": 270000000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston ME",
+   "nilai": 34000000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Haldel Electrik RPM Anjungan",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Metal Duduk",
+   "nilai": 21600000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Metal Jalan",
+   "nilai": 21600000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Pipe water cooling gearbox",
+   "nilai": 5500000
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "High pressure tube",
+   "nilai": 5000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HT I-Come",
+   "nilai": 90000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radar Merk Furuno",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Ruang Penumpang Bahan Polyturan Cap 4 Seed",
+   "nilai": 58542750
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AC 2 PK Ruang Pnp",
+   "nilai": 20000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "GPS GP-39",
+   "nilai": 16500000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio VHF Marine I-Come IC-340 + Antena",
+   "nilai": 7500000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Turbo Assy ME",
+   "nilai": 250000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Pump assy fresh water",
+   "nilai": 150000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Boler Kamar Mesin Tekan & Isap",
+   "nilai": 100000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Synchronize Mesin Bantu",
+   "nilai": 100000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Electrik Handel RPM Anjungan",
+   "nilai": 70000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Pump Sea water",
+   "nilai": 35000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator, 24 V 80-A",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injector Holder Assy",
+   "nilai": 22995000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Head Exchanger Assy",
+   "nilai": 13005000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Metal Duduk",
+   "nilai": 12600000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Metal Jalan",
+   "nilai": 10800000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Fresh Water Pump Assy",
+   "nilai": 9055700
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Starter Assy",
+   "nilai": 8325000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Sea Water Pump Assy",
+   "nilai": 6215000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator Assy",
+   "nilai": 5532000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Ring Piston Top",
+   "nilai": 5025000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Ring Piston 2ND",
+   "nilai": 5025000
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Ring Piston Oil",
+   "nilai": 5025000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "AIS Samyung SI-70A",
+   "nilai": 66500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Mesin Sekoci 15 Pk",
+   "nilai": 25000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Dewi-dewi/Crane Sekoci Kiri dan Kanan",
+   "nilai": 24000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi sofa ruang VIP kap 4 sheet",
+   "nilai": 22500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Anjungan",
+   "nilai": 16000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Rantai Ramdor Buritan, Panjang 15 Meter",
+   "nilai": 11250000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "CVS (Clear View Screen)",
+   "nilai": 10000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HRU Epirb",
+   "nilai": 8000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radio VHF Marine I-Come IC-340 + Antena",
+   "nilai": 7500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Lemari Life Jacket",
+   "nilai": 6500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Nozzle Pemadam dan Selangnya, Ukuran 2 inch",
+   "nilai": 5000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Nozzle Pemadam dan Selangnya, Ukuran 15 inch",
+   "nilai": 4500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Binocular/Teropong, Triple Tested 7x50 mm",
+   "nilai": 3500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Roda",
+   "nilai": 1500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Tandu/Strecher",
+   "nilai": 1000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Dynamostarter",
+   "nilai": 120000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cylinder Head Assy",
+   "nilai": 85100000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cooler core assy",
+   "nilai": 49000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Displat Gear Box",
+   "nilai": 47250000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injector Assy",
+   "nilai": 45000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Kampas Gear Box",
+   "nilai": 30000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Dynamo starter 12V",
+   "nilai": 30000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Dynamo starter",
+   "nilai": 29000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Lo cooler gearbox",
+   "nilai": 27500000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Turbocharger (Yanmar)",
+   "nilai": 27000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator (12V-60A)",
+   "nilai": 16000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 15050000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Alternator",
+   "nilai": 15000000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Linner Asy",
+   "nilai": 12200000
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Radiator",
+   "nilai": 9500000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Pembuatan Sprinkler System (R Penumpang Anjungan)",
+   "nilai": 200000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Kursi Fix Seat Ruang Ekonomi",
+   "nilai": 97571250
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Radar Merk Furuno",
+   "nilai": 85000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "SRG 3150DN Samyung DSC MF/HF ( Radio SSB) )",
+   "nilai": 75000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "Anemometer model cliper termasuk pasang",
+   "nilai": 17500000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604009",
+   "uraian": "Akomodasi, Peralatan dan Perlengkapan Kapal",
+   "program": "HT I-Come",
+   "nilai": 4000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cooling Water Pump",
+   "nilai": 135000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Main Bearing",
+   "nilai": 76000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Piston Assy",
+   "nilai": 75000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Element FO",
+   "nilai": 60000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Cylinder Liner",
+   "nilai": 40000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Compresor Aingin Starting ME",
+   "nilai": 38700000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injection Nozzle",
+   "nilai": 29100000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Big end Bearing",
+   "nilai": 28500000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Injection Nozzle",
+   "nilai": 27000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Exhaust Valve",
+   "nilai": 24000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Nozzle",
+   "nilai": 18000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Compression Ring",
+   "nilai": 9000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Compression Ring",
+   "nilai": 9000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Compression Ring",
+   "nilai": 9000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Compression Ring",
+   "nilai": 9000000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Kit-Crankshaft Bearing (0,020-In US ID)",
+   "nilai": 3650000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Kit-Crankshaft Bearing (0,010-In US ID)",
+   "nilai": 3650000
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "ma": "1020604010",
+   "uraian": "Permesinan dan Kelistrikan Kapal",
+   "program": "Kit-Crankshaft Bearing (0,030-In US ID)",
+   "nilai": 3650000
+  }
+ ],
+ "rutin": {
+  "BUS AIR KM. KOLORAI": {
+   "5010303001": [
+    3359835,
+    3359835,
+    1771137,
+    1771137,
+    1771137,
+    1771137,
+    3524835,
+    2032335,
+    2032335,
+    2032335,
+    588881,
+    2032335
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    186208286,
+    0
+   ],
+   "5010403009": [
+    13060546,
+    11720546,
+    3418312,
+    1511182,
+    1511182,
+    1511182,
+    8287546,
+    13060546,
+    11720546,
+    8014546,
+    23052248,
+    7937546
+   ],
+   "5010403100": [
+    7803141,
+    7498141,
+    0,
+    1907130,
+    1907130,
+    1907130,
+    6696141,
+    7803141,
+    7498141,
+    8176141,
+    22611672,
+    7406141
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    77538914,
+    0
+   ]
+  },
+  "KMP. ARIWANGAN": {
+   "5010303001": [
+    14247735,
+    10422335,
+    7182209,
+    7182209,
+    7182209,
+    6904259,
+    8300765,
+    7634975,
+    7634975,
+    7634975,
+    7634975,
+    7634975
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    532548866,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    18512546,
+    12432546,
+    5349942,
+    795214,
+    795214,
+    139880469,
+    12432546,
+    13475046,
+    18447546,
+    14721946,
+    12104546,
+    12062546
+   ],
+   "5010403100": [
+    17862641,
+    18055141,
+    1907130,
+    2359471,
+    2359471,
+    84600711,
+    16924141,
+    18106341,
+    17407141,
+    17670901,
+    16966141,
+    16652141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    166831847,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    12169345,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    63574750,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. BARONANG": {
+   "5010303001": [
+    14247735,
+    8002335,
+    19685915,
+    7634975,
+    13687615,
+    7634975,
+    47718320,
+    13687615,
+    13687615,
+    15019196,
+    13687615,
+    13633275
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1197418419,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    18580046,
+    14139546,
+    19745046,
+    15771546,
+    18058946,
+    8104746,
+    241295742,
+    13837546,
+    12452546,
+    17912826,
+    20439546,
+    19227546
+   ],
+   "5010403100": [
+    21449641,
+    18216141,
+    16864141,
+    16601141,
+    21301241,
+    22882141,
+    253530830,
+    17492141,
+    20023141,
+    20064901,
+    18261141,
+    18493141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    210952118,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    25754799,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    111758387,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. BOBARA": {
+   "5010303001": [
+    14247735,
+    8002335,
+    13687615,
+    13687615,
+    7634975,
+    13687615,
+    13687615,
+    13490391,
+    13687615,
+    13687615,
+    13687615,
+    19685915
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1340179563,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    12020046,
+    11941546,
+    25892546,
+    18919082,
+    14537546,
+    12457546,
+    5356546,
+    226763508,
+    14849546,
+    10748546,
+    10752546,
+    10239546
+   ],
+   "5010403100": [
+    19389141,
+    20475141,
+    17599141,
+    13036141,
+    18399541,
+    15959141,
+    20072141,
+    286303813,
+    13220141,
+    16538641,
+    17906141,
+    19436141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    110452118,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    24654799,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    145313387,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. GORANGO": {
+   "5010303001": [
+    14247735,
+    12505671,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    15019196,
+    13687615
+   ],
+   "5010403003": [
+    0,
+    1129854187,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    14401396,
+    248251270,
+    2837546,
+    20109546,
+    10782546,
+    13621546,
+    19621546,
+    15528546,
+    14441546,
+    15663546,
+    15663546,
+    15483546
+   ],
+   "5010403100": [
+    23152641,
+    304483707,
+    13361141,
+    10916141,
+    23333541,
+    25361141,
+    20602141,
+    28153141,
+    17389141,
+    18267641,
+    14624141,
+    23828141
+   ],
+   "5010302004": [
+    0,
+    115452118,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    27554799,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    144458387,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. KERAPU II": {
+   "5010303001": [
+    7915035,
+    8002335,
+    6634975,
+    13687615,
+    7634975,
+    7634975,
+    8300765,
+    7634975,
+    7634975,
+    11755708,
+    13687615,
+    7634975
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1120595491,
+    0,
+    0
+   ],
+   "5010403009": [
+    11482546,
+    12199546,
+    4747546,
+    15097546,
+    10293546,
+    14591546,
+    11073546,
+    14591546,
+    13448546,
+    207390325,
+    13406546,
+    16591546
+   ],
+   "5010403100": [
+    16428841,
+    9763641,
+    15921141,
+    11451141,
+    17799541,
+    13171141,
+    18552141,
+    16406141,
+    17548141,
+    245677045,
+    13422141,
+    16406141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    110452118,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    16404799,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    146413387,
+    0,
+    0
+   ]
+  },
+  "KMP. LEMA": {
+   "5010303001": [
+    25095506,
+    14742335,
+    31845535,
+    13687615,
+    13687615,
+    13687615,
+    19685915,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13634975
+   ],
+   "5010403003": [
+    1155320939,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    288314920,
+    17000546,
+    20224546,
+    28727546,
+    15342546,
+    10312546,
+    10356546,
+    10856546,
+    10964546,
+    10964546,
+    11311546,
+    6354546
+   ],
+   "5010403100": [
+    263595668,
+    23524141,
+    21670141,
+    10858141,
+    2402541,
+    18246141,
+    10666141,
+    10006141,
+    10384141,
+    10076141,
+    15379141,
+    14512141
+   ],
+   "5010302004": [
+    115452118,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    27656647,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    146958387,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. LOMPA": {
+   "5010303001": [
+    33245835,
+    33682335,
+    36029802,
+    36029802,
+    36029802,
+    36029802,
+    13687615,
+    12722146,
+    13687615,
+    19685915,
+    19685915,
+    19740255
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    675521284,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    16107546,
+    14498046,
+    7113116,
+    6442558,
+    6442558,
+    6442558,
+    6336988,
+    114314031,
+    15506546,
+    12402546,
+    10525546,
+    12402546
+   ],
+   "5010403100": [
+    17439141,
+    18559141,
+    10764960,
+    10764960,
+    10764960,
+    10764960,
+    17719141,
+    153321637,
+    14951141,
+    20396141,
+    16742141,
+    18308141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    250000000,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    15105284,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    75814690,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. MAMING": {
+   "5010303001": [
+    14247735,
+    14422335,
+    13687615,
+    13687615,
+    13687615,
+    19685915,
+    7708138,
+    13687615,
+    13687615,
+    13687615,
+    7634975,
+    13687615
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1317392063,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    12676546,
+    11012346,
+    15112546,
+    12412546,
+    18723506,
+    15435546,
+    250775108,
+    14397546,
+    11429546,
+    11788546,
+    20388546,
+    19827546
+   ],
+   "5010403100": [
+    16836141,
+    28901141,
+    17111141,
+    18386541,
+    15596561,
+    16675141,
+    330757282,
+    18796141,
+    16908141,
+    16458691,
+    16023141,
+    20866141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    110452118,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    27479799,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    146403387,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. NGAFI": {
+   "5010303001": [
+    20580435,
+    20842335,
+    20842335,
+    20842335,
+    20842335,
+    20842335,
+    13687615,
+    13687615,
+    6864559,
+    13687615,
+    13687615,
+    7634975
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    506967258,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    15370046,
+    16978546,
+    6727394,
+    2727394,
+    3727394,
+    3727394,
+    12456546,
+    7702546,
+    76793082,
+    15326546,
+    9180546,
+    12732546
+   ],
+   "5010403100": [
+    13947891,
+    15535991,
+    7706536,
+    7706536,
+    7706536,
+    7706536,
+    10391141,
+    15921141,
+    112415338,
+    22891141,
+    18217141,
+    17244141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    125000000,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    10711979,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    64891496,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. PORTLINK VIII": {
+   "5010303001": [
+    32911435,
+    14422335,
+    24933160,
+    27262335,
+    25792895,
+    24791195,
+    31845535,
+    19740255,
+    25912895,
+    12481649,
+    25792895,
+    31791195
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    1516894775,
+    0,
+    0
+   ],
+   "5010403009": [
+    15632046,
+    11467046,
+    23182046,
+    25332046,
+    15011546,
+    14270546,
+    15539546,
+    13059546,
+    14442546,
+    322453801,
+    15441546,
+    15688546
+   ],
+   "5010403100": [
+    16352141,
+    11352141,
+    16617141,
+    15842349,
+    14136031,
+    18291141,
+    24584141,
+    16561141,
+    19525141,
+    365240306,
+    19816141,
+    18703141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    148952118,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    32356647,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    189158387,
+    0,
+    0
+   ]
+  },
+  "KMP. PULAU SAGORI": {
+   "5010303001": [
+    26913135,
+    20842335,
+    19685915,
+    13851707,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    792048006,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    16182546,
+    14665546,
+    8779710,
+    115760038,
+    0,
+    4389855,
+    12101546,
+    15604546,
+    12101546,
+    14770546,
+    12382546,
+    10671546
+   ],
+   "5010403100": [
+    15906641,
+    8146141,
+    9053600,
+    182519507,
+    9053600,
+    9053600,
+    17214141,
+    14326141,
+    17214141,
+    17896141,
+    19903141,
+    17962141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    160631293,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    15131728,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    89946294,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  },
+  "KMP. TUNA": {
+   "5010303001": [
+    20246035,
+    14322335,
+    13685915,
+    12719196,
+    36269061,
+    12887615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    13687615,
+    19740255
+   ],
+   "5010403003": [
+    0,
+    0,
+    0,
+    0,
+    1285886657,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010403009": [
+    14054546,
+    16816546,
+    9919546,
+    19876546,
+    260110872,
+    12546546,
+    15996546,
+    16335546,
+    16796546,
+    11807546,
+    10770546,
+    10771546
+   ],
+   "5010403100": [
+    13305141,
+    20269141,
+    15361641,
+    12920141,
+    333947966,
+    13287141,
+    15900141,
+    12765141,
+    17368141,
+    13565141,
+    17084141,
+    18889141
+   ],
+   "5010302004": [
+    0,
+    0,
+    0,
+    0,
+    148452118,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010302006": [
+    0,
+    0,
+    0,
+    0,
+    13502950,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "5010318000": [
+    0,
+    0,
+    0,
+    0,
+    112408387,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ]
+  }
+ }
+}
