@@ -134,7 +134,7 @@ export default function NonprList() {
                     <td className="px-2 py-2.5">
                       <div className="flex items-start gap-2">
                         <JenisBadge payload={r.payload || {}} program={program} pengadaan={pengadaan} />
-                        <span className="font-medium text-slate-800 leading-snug klip-2" title={r.nama_pengadaan || ""}>{r.nama_pengadaan || "(tanpa nama)"}</span>
+                        <span className="block max-w-[17rem] font-medium text-slate-800 text-[12px] leading-[1.35] break-words" title={r.nama_pengadaan || ""}>{r.nama_pengadaan || "(tanpa nama)"}</span>
                       </div>
                     </td>
                     <td className="px-2 py-2.5"><KapalCell items={r.payload?.items || []} /></td>

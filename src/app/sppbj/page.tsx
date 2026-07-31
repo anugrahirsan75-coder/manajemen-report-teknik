@@ -237,12 +237,12 @@ export default function SppbjList() {
             <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold">
               <tr className="border-b-2 border-slate-200">
                 <th className="px-2 py-2.5 text-center w-8">No</th>
-                <th className="px-2 py-2.5 text-left min-w-[14rem]">Judul SPPBJ</th>
+                <th className="px-2 py-2.5 text-left w-[17rem]">Judul SPPBJ</th>
                 <th className="px-2 py-2.5 text-left w-32">Kapal</th>
                 <th className="px-2 py-2.5 text-left w-28">Nomor</th>
                 <th className="px-2 py-2.5 text-left w-24" title="Nomor PO SAP — terbit bersama SPBJ (Fase 2)">No. PO</th>
                 <th className="px-2 py-2.5 text-left w-28" title="No. GR/SES di SAP. Pekerjaan bertermin (docking) punya 3 nomor dalam 1 SPPBJ.">GR / SES</th>
-                <th className="px-2 py-2.5 text-left w-24">Tanggal</th>
+                <th className="px-2 py-2.5 text-left w-20">Tanggal</th>
                 <th className="px-2 py-2.5 text-left w-28">Status</th>
                 <th className="px-2 py-2.5 text-center w-40">Aksi</th>
               </tr>
@@ -259,11 +259,11 @@ export default function SppbjList() {
                     <td className="px-2 py-2.5">
                       <div className="flex items-start gap-2">
                         <JenisBadge payload={r.payload || {}} program={program} pengadaan={pengadaan} />
-                        <span className="font-medium text-slate-800 leading-snug klip-2" title={r.nama_pengadaan || ""}>{r.nama_pengadaan || "(tanpa nama)"}</span>
+                        <span className="block max-w-[17rem] font-medium text-slate-800 text-[12px] leading-[1.35] break-words" title={r.nama_pengadaan || ""}>{r.nama_pengadaan || "(tanpa nama)"}</span>
                       </div>
                     </td>
                     <td className="px-2 py-2.5"><KapalCell items={r.payload?.items || []} /></td>
-                    <td className="px-2 py-2.5 text-slate-600 tabular-nums whitespace-nowrap">{nomor}</td>
+                    <td className="px-2 py-2.5 text-slate-600 tabular-nums break-words">{nomor}</td>
                     <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       {po ? (
                         <button onClick={() => setSapEdit(r)} className="tabular-nums text-slate-700 hover:text-[#1ca3dd] hover:underline" title="Ubah No. PO SAP">{po}</button>
@@ -281,7 +281,7 @@ export default function SppbjList() {
                         {gr.length > 1 ? `🧾 ${gr.length} termin` : gr.length === 1 ? gr[0].nomor : "— isi"}
                       </button>
                     </td>
-                    <td className="px-2 py-2.5 text-slate-600 whitespace-nowrap">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
+                    <td className="px-2 py-2.5 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className="px-2 py-2.5"><span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
                     <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-1">
