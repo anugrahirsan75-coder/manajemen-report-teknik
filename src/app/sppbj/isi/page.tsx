@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useSppbj } from "@/lib/sppbj/store";
 import { MATA_ANGGARAN, STAF_TEKNIK, KAPAL_LIST, DEPT_HEAD, VENDOR_DB, MATL_GROUP, KATEGORI_REKAP } from "@/lib/sppbj/db";
-import { SppbjItem, GrSes, grSesBaru, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest, fullNoKontrak } from "@/lib/sppbj/types";
+import { SppbjItem, GrSes, grSesBaru, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest, fullNoKontrak, totalSpbj, nilaiGrEfektif, nilaiGrOtomatis } from "@/lib/sppbj/types";
 import { useState, Fragment } from "react";
 import { Field, Input, Section } from "@/components/Field";
 import DrpPicker from "@/components/DrpPicker";
@@ -699,18 +699,23 @@ function SppbjIsiInner() {
         <h2 className="font-bold text-slate-700">FASE 2 — setelah SPBJ (PO) terbit · acuan BSTB &amp; BAPP</h2>
       </div>
 
-      <Section title="Data SPBJ / PO" icon="📥">
+      <Section title="Data SPBJ / PO" icon="📥"
+        desc="Tiga nomor yang berbeda: No. SPBJ (surat dari PBJ) · No. PO SAP (dokumen pembelian di SAP) · No. GR/SES (bukti terima di SAP). Jangan diisi nomor yang sama.">
         <label className="flex items-center gap-2 text-sm mb-3">
           <input type="checkbox" checked={req.status !== "menunggu_spbj"} onChange={(e) => update({ status: e.target.checked ? "spbj_terbit" : "menunggu_spbj" })} />
           SPBJ (PO) sudah terbit — aktifkan BSTB / BAPP
         </label>
         <div className="grid sm:grid-cols-3 gap-4">
-          <Field label="No. SPBJ (angka saja, mis. 3798)"><Input value={req.noSpbjNum || ""} onChange={(e) => update({ noSpbjNum: e.target.value })} placeholder="3798" /></Field>
-          <Field label="Bulan SPBJ (romawi, mis. VI)"><Input value={req.noSpbjBulan || ""} onChange={(e) => update({ noSpbjBulan: e.target.value.toUpperCase() })} placeholder="VI" maxLength={4} /></Field>
+          <Field label="1 · No. SPBJ — angka saja" hint="dari surat PBJ, mis. 3798. Dipakai menyusun No. Kontrak di bawah, BUKAN nomor SAP.">
+            <Input value={req.noSpbjNum || ""} onChange={(e) => update({ noSpbjNum: e.target.value })} placeholder="3798" />
+          </Field>
+          <Field label="2 · Bulan SPBJ — romawi" hint="bulan surat SPBJ, mis. VII untuk Juli">
+            <Input value={req.noSpbjBulan || ""} onChange={(e) => update({ noSpbjBulan: e.target.value.toUpperCase() })} placeholder="VII" maxLength={4} />
+          </Field>
           {/* Field yang SAMA dengan yang di Fase 1 (satu nilai, dua tempat isi) — PO terbit
               bersama SPBJ, jadi lebih enak diisi di sini, berdampingan dengan GR/SES. */}
-          <Field label="No. PO SAP" hint="satu nilai dengan kolom di Fase 1 & di daftar pengadaan">
-            <Input value={req.noPOSAP || ""} onChange={(e) => update({ noPOSAP: e.target.value })} placeholder="45000xxxxx" />
+          <Field label="3 · No. PO SAP" hint="10 digit dari SAP, biasanya diawali 45… · satu nilai dengan kolom di Fase 1 & kolom No. PO di daftar pengadaan">
+            <Input value={req.noPOSAP || ""} onChange={(e) => update({ noPOSAP: e.target.value })} placeholder="4500012345" />
           </Field>
           <div className="sm:col-span-3">
             <label className="block">
@@ -728,8 +733,8 @@ function SppbjIsiInner() {
         {/* ===== GR / SES ===== */}
         <div className="mt-5 rounded-xl ring-1 ring-slate-200 bg-slate-50/70 p-4">
           <div className="flex flex-wrap items-center gap-2 mb-1">
-            <span className="text-xs font-bold text-slate-700">No. GR / SES</span>
-            <span className="text-[11px] text-slate-500">Goods Receipt / Service Entry Sheet di SAP — ikut tampil di preview &amp; di kolom GR/SES daftar pengadaan (bisa diisi dari sana juga)</span>
+            <span className="text-xs font-bold text-slate-700">4 · No. GR / SES</span>
+            <span className="text-[11px] text-slate-500">bukti terima di SAP (Goods Receipt / Service Entry Sheet) — <b>satu baris = satu kali penerimaan</b>. Ikut tampil di preview &amp; di kolom GR/SES daftar pengadaan, jadi bisa diisi dari sana juga.</span>
             <div className="ml-auto flex items-center gap-2">
               <button onClick={() => update({ grSes: [...(req.grSes || []), grSesBaru()] })}
                 className="btn btn-ghost text-xs">＋ Tambah baris</button>
@@ -747,46 +752,58 @@ function SppbjIsiInner() {
               III saat BA Selesai Masa Pemeliharaan.
             </p>
           ) : (
-            <div className="space-y-2 mt-2">
-              {(req.grSes || []).map((g, i) => (
-                <div key={g.id} className="flex flex-wrap items-end gap-2">
-                  <label className="block">
-                    <span className="text-[10px] font-semibold text-slate-500">Termin</span>
+            <>
+            <div className="mt-3 overflow-x-auto">
+              <div className="space-y-2 min-w-[38rem]">
+                {/* judul kolom ditulis sekali di atas — biar tiap baris tidak mengulang label */}
+                <div className="grid grid-cols-[5rem_1fr_9.5rem_9rem_2.25rem] gap-2 text-[10px] font-semibold text-slate-500">
+                  <span>Termin</span><span>No. GR / SES</span><span>Tanggal terima</span><span>Nilai (Rp)</span><span />
+                </div>
+                {(req.grSes || []).map((g) => (
+                  <div key={g.id} className="grid grid-cols-[5rem_1fr_9.5rem_9rem_2.25rem] gap-2 items-center">
                     <select value={g.termin ?? ""} onChange={(e) => update({
                       grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, termin: e.target.value ? +e.target.value : undefined } : x) })}
-                      className="mt-1 w-24 rounded-lg border border-slate-300 px-2 py-2 text-sm bg-white">
+                      title="Kosongkan bila dibayar sekali. Isi I/II/III hanya untuk pekerjaan bertermin."
+                      className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm bg-white">
                       <option value="">—</option><option value="1">I</option><option value="2">II</option><option value="3">III</option>
                     </select>
-                  </label>
-                  <label className="block flex-1 min-w-[11rem]">
-                    <span className="text-[10px] font-semibold text-slate-500">No. GR / SES</span>
                     <Input value={g.nomor} placeholder="mis. 5000123456" onChange={(e) => update({
                       grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, nomor: e.target.value } : x) })} />
-                  </label>
-                  <label className="block">
-                    <span className="text-[10px] font-semibold text-slate-500">Tanggal</span>
                     <Input type="date" value={g.tanggal || ""} onChange={(e) => update({
                       grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, tanggal: e.target.value || undefined } : x) })} />
-                  </label>
-                  <label className="block">
-                    <span className="text-[10px] font-semibold text-slate-500">Nilai (Rp)</span>
-                    <Input type="number" value={g.nilai ?? ""} onChange={(e) => update({
-                      grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, nilai: e.target.value ? +e.target.value : undefined } : x) })} />
-                  </label>
-                  <button onClick={() => update({ grSes: (req.grSes || []).filter((x) => x.id !== g.id) })}
-                    className="h-10 px-2.5 rounded-lg border border-slate-300 text-rose-600 hover:bg-rose-50 text-sm" title="Buang baris ini">✕</button>
-                </div>
-              ))}
+                    {/* satu nomor = sekali terima penuh -> nilainya ikut tabel item SPBJ,
+                        tinggal diketik kalau memang beda */}
+                    <Input type="number" value={nilaiGrEfektif(g, req.grSes, req.items) || ""}
+                      className={nilaiGrOtomatis(g, req.grSes) ? "bg-emerald-50/60 border-emerald-200" : ""}
+                      title={nilaiGrOtomatis(g, req.grSes) ? "Otomatis dari total tabel item SPBJ di bawah. Ketik angka lain untuk menimpa; kosongkan untuk kembali otomatis." : "Nilai termin ini — isi manual karena pembayarannya dipecah."}
+                      onChange={(e) => update({
+                        grSes: (req.grSes || []).map((x) => x.id === g.id ? { ...x, nilai: e.target.value ? +e.target.value : undefined } : x) })} />
+                    <button onClick={() => update({ grSes: (req.grSes || []).filter((x) => x.id !== g.id) })}
+                      className="h-10 w-9 rounded-lg border border-slate-300 text-rose-600 hover:bg-rose-50 text-sm" title="Buang baris ini">✕</button>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2 mt-2">
+              {(req.grSes || []).length === 1 && (
+                <p className="text-[11px] text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-2.5 py-1.5">
+                  Cuma satu nomor → <b>Nilai diisi otomatis</b> sebesar total Tabel Item SPBJ di bawah. Ketik angka
+                  lain kalau memang beda; kosongkan lagi untuk kembali otomatis.
+                </p>
+              )}
               {(() => {
-                const total = (req.grSes || []).reduce((s, g) => s + (g.nilai || 0), 0);
+                const total = (req.grSes || []).reduce((s, g) => s + nilaiGrEfektif(g, req.grSes, req.items), 0);
+                const acuan = totalSpbj(req.items);
+                const selisih = total - acuan;
                 return total ? (
                   <p className="text-[11px] text-slate-600 pt-1">
-                    Total GR/SES <b className="tabular-nums">{rupiah(total)}</b>
-                    {total !== total ? <span className="text-amber-700"> · estimasi pengadaan {rupiah(total)} (selisih {rupiah(Math.abs(total - total))})</span> : " · sama dengan estimasi"}
+                    Total GR/SES <b className="tabular-nums">{rupiah(total)}</b> · tabel SPBJ {rupiah(acuan)}
+                    {selisih ? <span className="text-amber-700"> — selisih {rupiah(Math.abs(selisih))} ({selisih > 0 ? "lebih" : "kurang"})</span> : " · cocok"}
                   </p>
                 ) : null;
               })()}
             </div>
+            </>
           )}
         </div>
 

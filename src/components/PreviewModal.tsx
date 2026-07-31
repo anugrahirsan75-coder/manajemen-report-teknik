@@ -3,7 +3,7 @@
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
-import { fullNoKontrak } from "@/lib/sppbj/types";
+import { fullNoKontrak, nilaiGrEfektif } from "@/lib/sppbj/types";
 
 export interface PreviewModalProps {
   jenis: "SPPBJ" | "Non PR PO";
@@ -43,7 +43,7 @@ export default function PreviewModal({ jenis, payload, onTutup, onBuka }: Previe
           noDRP={p.noDRP}
           noPRSAP={p.noPRSAP}
           noPOSAP={p.noPOSAP}
-          grSes={p.grSes}
+          grSes={/* nilai GR/SES satu-nomor ikut tabel SPBJ — dihitung saat tampil */(p.grSes || []).map((g: any) => ({ ...g, nilai: nilaiGrEfektif(g, p.grSes || [], p.items || []) || undefined }))}
           dasarPelimpahan={p.dasarPelimpahan}
           namaPengadaan={p.namaPengadaan || ""}
           mataAnggaran={Array.isArray(p.mataAnggaran) ? p.mataAnggaran : p.mataAnggaran ? [p.mataAnggaran] : []}

@@ -66,6 +66,25 @@ export interface GrSes {
   catatan?: string;
 }
 
+/** total tabel item SPBJ — harga SPBJ final bila sudah diisi, kalau belum pakai estimasi */
+export const totalSpbj = (items: SppbjItem[] = []) =>
+  items.reduce((s, i) => s + hargaSpbjOf(i) * (i.jumlah || 0), 0);
+
+/**
+ * Nilai sebuah baris GR/SES yang berlaku.
+ *
+ * Kalau pengadaan cuma punya SATU nomor GR/SES, seluruh pekerjaan diterima
+ * sekali — nilainya pasti sebesar tabel item SPBJ, jadi tak perlu diketik ulang.
+ * Begitu dibayar bertermin, tiap termin nilainya sendiri-sendiri dan harus
+ * diisi manual. Nilai yang diketik pengguna selalu menang.
+ */
+export const nilaiGrEfektif = (g: GrSes, semua: GrSes[] = [], items: SppbjItem[] = []): number =>
+  typeof g.nilai === "number" ? g.nilai : semua.length === 1 ? totalSpbj(items) : 0;
+
+/** nilai baris ini datang dari tabel SPBJ (bukan ketikan pengguna)? */
+export const nilaiGrOtomatis = (g: GrSes, semua: GrSes[] = []) =>
+  typeof g.nilai !== "number" && semua.length === 1;
+
 export const grSesBaru = (termin?: number): GrSes => ({
   id: globalThis.crypto?.randomUUID?.() ?? String(Math.random()),
   termin, nomor: "",

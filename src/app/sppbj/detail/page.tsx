@@ -8,7 +8,7 @@ import { sppbjTotal, kapalUnik, STATUS_LABEL, STATUS_COLOR } from "@/lib/sppbj/t
 import { rupiahRp, bulanTahun } from "@/lib/format";
 import { generateSppbjDoc, generateSppbjAll } from "@/lib/sppbj/generateClient";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
-import { fullNoKontrak } from "@/lib/sppbj/types";
+import { fullNoKontrak, nilaiGrEfektif } from "@/lib/sppbj/types";
 import { beritahu } from "@/components/Konfirmasi";
 
 export default function SppbjDetail() {
@@ -102,7 +102,7 @@ export default function SppbjDetail() {
           noDRP={req.noDRP}
           noPRSAP={req.noPRSAP}
           noPOSAP={req.noPOSAP}
-          grSes={req.grSes}
+          grSes={/* nilai GR/SES satu-nomor mengikuti tabel SPBJ — dihitung saat tampil */(req.grSes || []).map((g) => ({ ...g, nilai: nilaiGrEfektif(g, req.grSes || [], req.items || []) || undefined }))}
           dasarPelimpahan={req.dasarPelimpahan}
           namaPengadaan={req.namaPengadaan}
           mataAnggaran={req.mataAnggaran || []}

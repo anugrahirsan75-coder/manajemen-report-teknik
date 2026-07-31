@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
-import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak, GrSes, grSesBaru } from "@/lib/sppbj/types";
+import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak, GrSes, grSesBaru, nilaiGrEfektif, nilaiGrOtomatis } from "@/lib/sppbj/types";
 import { tanggalIndo, bulanTahun, rupiah } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
@@ -339,7 +339,7 @@ function SapModal({ baris, docking, onTutup, onBuka, onSimpan }: {
   const [galat, setGalat] = useState("");
 
   const ubah = (id: string, patch: Partial<GrSes>) => setGr((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)));
-  const total = gr.reduce((s, g) => s + (g.nilai || 0), 0);
+  const total = gr.reduce((s, g) => s + nilaiGrEfektif(g, gr, p.items), 0);
   const bertermin = gr.some((g) => g.termin);
 
   const simpan = async () => {
@@ -423,8 +423,11 @@ function SapModal({ baris, docking, onTutup, onBuka, onSimpan }: {
                         className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 outline-none" />
                       <input type="date" value={g.tanggal || ""} onChange={(e) => ubah(g.id, { tanggal: e.target.value || undefined })}
                         className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm bg-white" />
-                      <input type="number" value={g.nilai ?? ""} onChange={(e) => ubah(g.id, { nilai: e.target.value ? +e.target.value : undefined })}
-                        className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm tabular-nums" />
+                      {/* satu nomor = sekali terima penuh -> nilainya ikut tabel item SPBJ */}
+                      <input type="number" value={nilaiGrEfektif(g, gr, p.items) || ""}
+                        title={nilaiGrOtomatis(g, gr) ? "Otomatis dari total tabel item SPBJ. Ketik angka lain untuk menimpa." : undefined}
+                        onChange={(e) => ubah(g.id, { nilai: e.target.value ? +e.target.value : undefined })}
+                        className={`w-full rounded-lg border px-2 py-2 text-sm tabular-nums ${nilaiGrOtomatis(g, gr) ? "border-emerald-200 bg-emerald-50/60" : "border-slate-300"}`} />
                       <button onClick={() => setGr((l) => l.filter((x) => x.id !== g.id))}
                         className="h-9 w-8 rounded-lg border border-slate-300 text-rose-600 hover:bg-rose-50 text-sm" title="Buang baris ini">✕</button>
                     </div>
