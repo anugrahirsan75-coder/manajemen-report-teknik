@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ocrTableItems, ParsedItem } from "@/lib/sppbj/ocrTable";
-import { scanWithAI, scanWithOllama, probeOllama, NoAIKeyError, NoOllamaError } from "@/lib/sppbj/scanAI";
+import { scanWithAI, scanWithOllama, probeOllama, jalurOllama, NoAIKeyError, NoOllamaError } from "@/lib/sppbj/scanAI";
 import { ShipLoader } from "@/components/MaritimeFx";
 
 type Eng = "ollama" | "ai" | "ocr";
@@ -93,6 +93,7 @@ export default function ScanSppbj({ open, onClose, onAdd }: {
         {engineUsed && (
           <div className="px-5 py-1.5 text-[11px] border-b bg-white flex items-center gap-2">
             {engineUsed === "ollama" && <span className="text-emerald-700 bg-emerald-50 rounded px-1.5 py-0.5 font-semibold">🖥️ Dibaca pakai AI Lokal (Ollama, privat)</span>}
+            {engineUsed === "ollama" && jalurOllama === "peramban" && <span className="text-slate-400">gambar dikirim dari peramban langsung ke Ollama di laptop — tidak lewat server</span>}
             {engineUsed === "ai" && <span className="text-emerald-700 bg-emerald-50 rounded px-1.5 py-0.5 font-semibold">☁️ Dibaca pakai AI Cloud (Gemini)</span>}
             {engineUsed === "ocr" && <span className="text-sky-700 bg-sky-50 rounded px-1.5 py-0.5 font-semibold">🔤 Dibaca pakai OCR lokal</span>}
             {engineUsed === "ocr" && <span className="text-slate-400">gambar buram? akurasi tertinggi pakai engine AI (Gemini / Ollama vision)</span>}
