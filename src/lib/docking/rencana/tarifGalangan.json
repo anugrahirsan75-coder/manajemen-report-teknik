@@ -1,0 +1,6592 @@
+{
+ "sumber": "List Pekerjaan Docking PT IKI UGB - Rev.xlsx",
+ "catatan": "Tarif baku galangan — dipakai sebagai harga acuan penyusunan Repair List. Harga belum termasuk PPN.",
+ "kelompok": [
+  {
+   "kode": "A",
+   "nama": "PELAYANAN UMUM (GENERAL SERVICE)",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Bantuan kapal pandu/tug boat dari / ke areal galangan.",
+     "item": [
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 4750000,
+       "grup": "",
+       "ket": "",
+       "baris": 11
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 6000000,
+       "grup": "",
+       "ket": "",
+       "baris": 12
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "",
+       "baris": 13
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 9250000,
+       "grup": "",
+       "ket": "",
+       "baris": 14
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 9250000,
+       "grup": "",
+       "ket": "",
+       "baris": 15
+      },
+      {
+       "uraian": "3001 - 8000 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 16
+      },
+      {
+       "uraian": "8001 - 14000 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 17
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Supply Aliran listrik dari darat",
+     "item": [
+      {
+       "uraian": "a. Penyambungan dan pelepasan aliran listrik darat (Connet - Disconnet aliran listrik)",
+       "spek": "",
+       "satuan": "Per-Line",
+       "jml": 1.0,
+       "harga": 850000,
+       "grup": "",
+       "ket": "",
+       "baris": 20
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-hari",
+       "jml": 1.0,
+       "harga": 850000,
+       "grup": "Penggunaan aliran listrik",
+       "ket": "",
+       "baris": 23
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-hari",
+       "jml": 1.0,
+       "harga": 900000,
+       "grup": "Penggunaan aliran listrik",
+       "ket": "",
+       "baris": 24
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-hari",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "Penggunaan aliran listrik",
+       "ket": "",
+       "baris": 25
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-hari",
+       "jml": 1.0,
+       "harga": 1250000,
+       "grup": "Penggunaan aliran listrik",
+       "ket": "",
+       "baris": 26
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-hari",
+       "jml": 1.0,
+       "harga": 1750000,
+       "grup": "Penggunaan aliran listrik",
+       "ket": "",
+       "baris": 27
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Supply air tawar",
+     "item": [
+      {
+       "uraian": "Supply air tawar include penyambungan dan pelepasan selang air tawar",
+       "spek": "",
+       "satuan": "Per-ton",
+       "jml": 1.0,
+       "harga": 125000,
+       "grup": "",
+       "ket": "",
+       "baris": 30
+      },
+      {
+       "uraian": "Sambung lepas selang air tawar",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 31
+      },
+      {
+       "uraian": "4. Diberikan tenaga pemadam berikut peralatan pemadam (PMK) selama kapal diatas dock dan selama floating repair",
+       "spek": "",
+       "satuan": "Org/Hari",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 33
+      },
+      {
+       "uraian": "5. Diberikan tenaga keamanan selama kapal diatas dock dan selama floating repair",
+       "spek": "",
+       "satuan": "Hari",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 35
+      },
+      {
+       "uraian": "6. Pemberian bak sampah dan pembuangan sampah secara teratur dari kapal selama kapal di atas dock dan selama floating repair.",
+       "spek": "",
+       "satuan": "Hari",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 37
+      },
+      {
+       "uraian": "7. Diberikan fasilitas MCK untuk ABK selama kapal docking & floating repair",
+       "spek": "",
+       "satuan": "Per Hari",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 39
+      },
+      {
+       "uraian": "8. Disediakan dokumen proyek berupa :",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "",
+       "ket": "Laporan Dock (5 rangkap)",
+       "baris": 41
+      },
+      {
+       "uraian": "Pemeriksaan free gas pada tangki",
+       "spek": "",
+       "satuan": "Per Tangki",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "",
+       "baris": 47
+      },
+      {
+       "uraian": "Penyimpanan BBM di tangki penampungan galangan (selama kapal docking)",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 49
+      }
+     ],
+     "catatan": [
+      "- Master Schedule dan S Curva termasuk pembobotan progres",
+      "- Inspection Test Plan untuk disepakati stakeholder terkait",
+      "- Man Power Planning selama pekerjaan",
+      "- Laporan progres pekerjaan"
+     ]
+    }
+   ]
+  },
+  {
+   "kode": "B",
+   "nama": "DOCKAGE",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Kapal Docking dan Undocking untuk inspection dan perbaikan. (termasuk diberikan asistensi line handler pada waktu kapal naik dan turun dock)",
+     "item": [
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 27500000,
+       "grup": "",
+       "ket": "",
+       "baris": 53
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 27500000,
+       "grup": "",
+       "ket": "",
+       "baris": 54
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 37500000,
+       "grup": "",
+       "ket": "",
+       "baris": 55
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 37500000,
+       "grup": "",
+       "ket": "",
+       "baris": 56
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 42500000,
+       "grup": "",
+       "ket": "",
+       "baris": 57
+      },
+      {
+       "uraian": "3001 - 5000",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 58
+      },
+      {
+       "uraian": "5001 - 7000",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 59
+      },
+      {
+       "uraian": "7001 - 9000",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 60
+      },
+      {
+       "uraian": "9001 - 11000",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 61
+      },
+      {
+       "uraian": "11001 - 13000",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 62
+      },
+      {
+       "uraian": "13001 - 15000",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 63
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Docking repair ( kapal diatas dock )",
+     "item": [
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 1750000,
+       "grup": "",
+       "ket": "",
+       "baris": 67
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 2250000,
+       "grup": "",
+       "ket": "",
+       "baris": 68
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "",
+       "ket": "",
+       "baris": 69
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "",
+       "ket": "",
+       "baris": 70
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 4250000,
+       "grup": "",
+       "ket": "",
+       "baris": 71
+      },
+      {
+       "uraian": "3001 - 5000",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 72
+      },
+      {
+       "uraian": "5001 - 7000",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 73
+      },
+      {
+       "uraian": "7001 - 9000",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 74
+      },
+      {
+       "uraian": "9001 - 11000",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 75
+      },
+      {
+       "uraian": "11001 - 13000",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 76
+      },
+      {
+       "uraian": "13001 - 15000",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 77
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Sewa dermaga / Kade untuk floating repair",
+     "item": [
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "",
+       "ket": "",
+       "baris": 80
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "",
+       "ket": "",
+       "baris": 81
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "",
+       "baris": 82
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "",
+       "baris": 83
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-Hari",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "",
+       "baris": 84
+      },
+      {
+       "uraian": "4. Sewa crane",
+       "spek": "",
+       "satuan": "Per-Jam",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 86
+      },
+      {
+       "uraian": "Kapasitas 10 ton/jam",
+       "spek": "",
+       "satuan": "Per-Jam",
+       "jml": 1.0,
+       "harga": 650000,
+       "grup": "",
+       "ket": "",
+       "baris": 87
+      },
+      {
+       "uraian": "Kapasitas 20 ton sd 25 ton/jam",
+       "spek": "",
+       "satuan": "Per-Jam",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 88
+      },
+      {
+       "uraian": "Kapasitas 50 ton sd 75 ton/jam",
+       "spek": "",
+       "satuan": "Per-Jam",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 89
+      },
+      {
+       "uraian": "Kapasitas 100 ton/jam",
+       "spek": "",
+       "satuan": "Per-Jam",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 90
+      },
+      {
+       "uraian": "Tower staging",
+       "spek": "",
+       "satuan": "M3",
+       "jml": 1.0,
+       "harga": 150000,
+       "grup": "",
+       "ket": "",
+       "baris": 93
+      },
+      {
+       "uraian": "Hanging stagging",
+       "spek": "",
+       "satuan": "M3",
+       "jml": 1.0,
+       "harga": 250000,
+       "grup": "",
+       "ket": "",
+       "baris": 94
+      }
+     ],
+     "catatan": [
+      "Scafolding"
+     ]
+    }
+   ]
+  },
+  {
+   "kode": "C",
+   "nama": "PERAWATAN LAMBUNG",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Pembersihan Lambung Kapal",
+     "item": [
+      {
+       "uraian": "a. Scraping",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 21000,
+       "grup": "",
+       "ket": "",
+       "baris": 98
+      },
+      {
+       "uraian": "b. Cleaning dengan air tawar menggunakan Water Jet",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 45000,
+       "grup": "",
+       "ket": "Tekanan Tinggi",
+       "baris": 99
+      },
+      {
+       "uraian": "c. Sweep blast",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 67500,
+       "grup": "",
+       "ket": "",
+       "baris": 100
+      },
+      {
+       "uraian": "d. Spot Blasting",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 90000,
+       "grup": "",
+       "ket": "",
+       "baris": 101
+      },
+      {
+       "uraian": "e. Sand blasting SA 2.0",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 85000,
+       "grup": "",
+       "ket": "",
+       "baris": 102
+      },
+      {
+       "uraian": "f. Cuci air tawar pada lambung",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 25000,
+       "grup": "",
+       "ket": "Tekanan Rendah",
+       "baris": 103
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Pengecatan",
+     "item": [
+      {
+       "uraian": "- Primer Coating",
+       "spek": "",
+       "satuan": "Per-M2/Layer",
+       "jml": 1.0,
+       "harga": 12500,
+       "grup": "Pengecatan lambung di bawah garis air",
+       "ket": "Material Cat Owner Supply",
+       "baris": 108
+      },
+      {
+       "uraian": "- AC  Marine Paint",
+       "spek": "",
+       "satuan": "Per-M2/Layer",
+       "jml": 1.0,
+       "harga": 12500,
+       "grup": "Pengecatan lambung di bawah garis air",
+       "ket": "Material Cat Owner Supply",
+       "baris": 109
+      },
+      {
+       "uraian": "- AF  Marine Paint",
+       "spek": "",
+       "satuan": "Per-M2/Layer",
+       "jml": 1.0,
+       "harga": 12500,
+       "grup": "Pengecatan lambung di bawah garis air",
+       "ket": "Material Cat Owner Supply",
+       "baris": 110
+      },
+      {
+       "uraian": "-Primer Coating",
+       "spek": "",
+       "satuan": "Per-M2/Layer",
+       "jml": 1.0,
+       "harga": 12500,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "Material Cat Owner Supply",
+       "baris": 113
+      },
+      {
+       "uraian": "-AC  Marine Paint",
+       "spek": "",
+       "satuan": "Per-M2/Layer",
+       "jml": 1.0,
+       "harga": 12500,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "Material Cat Owner Supply",
+       "baris": 114
+      },
+      {
+       "uraian": "-Top/finishing Coating",
+       "spek": "",
+       "satuan": "Per-M2/Layer",
+       "jml": 1.0,
+       "harga": 12500,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "Material Cat Owner Supply",
+       "baris": 115
+      },
+      {
+       "uraian": "c. Pengecatan Car Deck dan Ramp Door",
+       "spek": "",
+       "satuan": "Per-M2/Layer",
+       "jml": 1.0,
+       "harga": 12500,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "Material Cat Owner Supply",
+       "baris": 116
+      },
+      {
+       "uraian": "d. Pengecatan Draft, Plimsoll Mark dan Nama Kapal (material Galangan Supply)",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "",
+       "baris": 118
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "",
+       "baris": 119
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "",
+       "baris": 120
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 2250000,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "",
+       "baris": 121
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "",
+       "baris": 122
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "",
+       "baris": 123
+      },
+      {
+       "uraian": "3001 - 3500",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 124
+      },
+      {
+       "uraian": "3501 keatas",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Pengecatan lambung di atas garis air",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 125
+      }
+     ],
+     "catatan": [
+      "Jasa Pengecatan :",
+      "Jasa Pengecatan :"
+     ]
+    },
+    {
+     "no": "3",
+     "nama": "Anode, ( Material Owner suplay )",
+     "item": [
+      {
+       "uraian": "- Pemasangan baru  :   s/d 3,8 Kg",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 150000,
+       "grup": "",
+       "ket": "",
+       "baris": 129
+      },
+      {
+       "uraian": "- Pemasangan baru  :   3,9 s/d 5 Kg",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 150000,
+       "grup": "",
+       "ket": "",
+       "baris": 130
+      },
+      {
+       "uraian": "- Pemasangan baru  :   5,1 s/d 8 Kg",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 175000,
+       "grup": "",
+       "ket": "",
+       "baris": 131
+      },
+      {
+       "uraian": "3. Hose Test dan Water Test",
+       "spek": "",
+       "satuan": "Unit",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "",
+       "baris": 133
+      }
+     ],
+     "catatan": [
+      "Anode yang lama dilepas dan pemasangan Anode baru"
+     ]
+    }
+   ]
+  },
+  {
+   "kode": "D",
+   "nama": "REPLATING",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Pengukuran Ketebalan Plat",
+     "item": [
+      {
+       "uraian": "- Pelat Lambung di bawah garis air",
+       "spek": "",
+       "satuan": "Per-Titik",
+       "jml": 1.0,
+       "harga": 65000,
+       "grup": "Pengukuran ketebalan pelat dengan ultrasonic test;",
+       "ket": "",
+       "baris": 138
+      },
+      {
+       "uraian": "- Pelat Geladak kendaraan",
+       "spek": "",
+       "satuan": "Per-Titik",
+       "jml": 1.0,
+       "harga": 65000,
+       "grup": "Pengukuran ketebalan pelat dengan ultrasonic test;",
+       "ket": "",
+       "baris": 139
+      },
+      {
+       "uraian": "- Pelat sekat - sekat",
+       "spek": "",
+       "satuan": "Per-Titik",
+       "jml": 1.0,
+       "harga": 65000,
+       "grup": "Pengukuran ketebalan pelat dengan ultrasonic test;",
+       "ket": "",
+       "baris": 140
+      },
+      {
+       "uraian": "b. Dibuatkan gambar dan record UT ( gambar bukaan kulit ), dibuat dalam rangkap 6 (enam)",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "Pengukuran ketebalan pelat dengan ultrasonic test;",
+       "ket": "",
+       "baris": 141
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Penggantian Pelat",
+     "item": [
+      {
+       "uraian": "a. Penggantian Pelat Material Galangan",
+       "spek": "",
+       "satuan": "Per-kg",
+       "jml": 1.0,
+       "harga": 42500,
+       "grup": "",
+       "ket": "",
+       "baris": 144
+      },
+      {
+       "uraian": "b. Penggantian Pelat Material Owner",
+       "spek": "",
+       "satuan": "Per-Kg",
+       "jml": 1.0,
+       "harga": 25000,
+       "grup": "",
+       "ket": "",
+       "baris": 145
+      },
+      {
+       "uraian": "- berat Plat kurang dari 5Kg",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 147
+      },
+      {
+       "uraian": "- berat Plat kurang dari 8Kg",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 148
+      },
+      {
+       "uraian": "- Dilakukan vacum Test (Min. 8 tempat)",
+       "spek": "",
+       "satuan": "Tempat",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 149
+      },
+      {
+       "uraian": "Bending Plat",
+       "spek": "",
+       "satuan": "Mtr",
+       "jml": 1.0,
+       "harga": 250000,
+       "grup": "",
+       "ket": "",
+       "baris": 151
+      }
+     ],
+     "catatan": [
+      "Catatan:"
+     ]
+    },
+    {
+     "no": "3",
+     "nama": "Pengelasan",
+     "item": [
+      {
+       "uraian": "a. Pengelasan sambungan  Pitting :",
+       "spek": "",
+       "satuan": "Per-Titik",
+       "jml": 1.0,
+       "harga": 75000,
+       "grup": "",
+       "ket": "Jika kurang dari 50 titik maka akan dikenakan tarif Rp. 100.000/titik",
+       "baris": 154
+      },
+      {
+       "uraian": "b. Pengelasan sambungan plat / meter / layer",
+       "spek": "",
+       "satuan": "Per-Meter",
+       "jml": 1.0,
+       "harga": 175000,
+       "grup": "",
+       "ket": "",
+       "baris": 158
+      }
+     ],
+     "catatan": [
+      "Catatan  :",
+      "Diameter 1 cm & minimum 50 titik. Untuk diameter yang lebih besar",
+      "dihitung tersendiri.",
+      "Catatan  :",
+      "Minimal 1 meter per tempat.",
+      "Pekerjaan horizontal / vertikal tarif ditambah 120%.",
+      "Pekerjaan overhead tarif ditambah 130%."
+     ]
+    },
+    {
+     "no": "3",
+     "nama": "Penggantian Manhole pada Car Deck dengan menggunakan Baut Stainless",
+     "item": [
+      {
+       "uraian": "Ganti Baru Manhole dengan mateial :",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "Jika tutupnya saja Rp. 3.000.000 (termasuk handle)",
+       "baris": 165
+      },
+      {
+       "uraian": "- Ganti baru packing man hole karet 5 mm",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "Untuk BBM dan Oli pakai Packing Tombo 3 mm Rp. 1.500.000/unit",
+       "baris": 169
+      },
+      {
+       "uraian": "- Buka/pasang prop dasar & ditutup Semen",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 170
+      },
+      {
+       "uraian": "- Ganti baru baut prop bahan bronze ( termasuk material )",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "",
+       "ket": "",
+       "baris": 171
+      },
+      {
+       "uraian": "- Ganti baru Mur Baut man hole ( material Supply Galangan ) untuk yang sistim Baut tanam / pengelasan.",
+       "spek": "",
+       "satuan": "pcs",
+       "jml": 1.0,
+       "harga": 65000,
+       "grup": "",
+       "ket": "Stainles steel 3/4\"",
+       "baris": 172
+      },
+      {
+       "uraian": "Bongkar pasang manhole (tidak termasuk perbaikan, ganti packing dan baut)",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 800000,
+       "grup": "",
+       "ket": "Bongkar pasang termasuk ring / ambang menhole",
+       "baris": 173
+      }
+     ],
+     "catatan": [
+      "- Plat 10 mm",
+      "- Baut stainless steel uk. Dia 7/8\" x 32 buah",
+      "- Buka/pasang manhole"
+     ]
+    },
+    {
+     "no": "4",
+     "nama": "Penggantian Pisang-pisang",
+     "item": [
+      {
+       "uraian": "-Pipa Diameter 6\" sch 40",
+       "spek": "",
+       "satuan": "meter",
+       "jml": 1.0,
+       "harga": 1850000,
+       "grup": "",
+       "ket": "",
+       "baris": 177
+      },
+      {
+       "uraian": "-Pipa Diameter 8\" sch 40",
+       "spek": "",
+       "satuan": "meter",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "",
+       "ket": "",
+       "baris": 178
+      },
+      {
+       "uraian": "-Pipa Diameter 10\" sch 40",
+       "spek": "",
+       "satuan": "meter",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 179
+      },
+      {
+       "uraian": "-Pipa Diameter 12\" sch 40",
+       "spek": "",
+       "satuan": "meter",
+       "jml": 1.0,
+       "harga": 4850000,
+       "grup": "",
+       "ket": "",
+       "baris": 180
+      }
+     ],
+     "catatan": [
+      "Pisang-pisang pada lambung ki/ka dengan diameter:"
+     ]
+    },
+    {
+     "no": "5",
+     "nama": "Ganti baru pin engsel rampdoor haluan material Stainless Steel",
+     "item": [
+      {
+       "uraian": "- Diameter Ukuran 2\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 183
+      },
+      {
+       "uraian": "- Diameter Ukuran 2 1/2\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 184
+      },
+      {
+       "uraian": "- Diameter Ukuran 3\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 185
+      },
+      {
+       "uraian": "- Diameter Ukuran 3 1/2\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 186
+      },
+      {
+       "uraian": "- Diameter Ukuran 4\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 187
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Ganti baru pin engsel rampdoor haluan material Baja ST60/80 (belum termasuk Sock engsel)",
+     "item": [
+      {
+       "uraian": "- Diameter Ukuran 2\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3200000,
+       "grup": "",
+       "ket": "",
+       "baris": 190
+      },
+      {
+       "uraian": "- Diameter Ukuran 2 1/2\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3200000,
+       "grup": "",
+       "ket": "",
+       "baris": 191
+      },
+      {
+       "uraian": "- Diameter Ukuran 3\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3200000,
+       "grup": "",
+       "ket": "",
+       "baris": 192
+      },
+      {
+       "uraian": "- Diameter Ukuran 3 1/2\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 193
+      },
+      {
+       "uraian": "- Diameter Ukuran 4\"",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 194
+      },
+      {
+       "uraian": "- Buat baru sock engsel rampdoor tengah",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "Bronze",
+       "baris": 196
+      },
+      {
+       "uraian": "- Buat baru sock engsel rampdoor samping kanan - kiri",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "Bronze",
+       "baris": 197
+      },
+      {
+       "uraian": "- Buat baru Ring Penahan engsel rampdoor",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 198
+      },
+      {
+       "uraian": "- NDT pada engsel rampdoor",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "",
+       "baris": 199
+      },
+      {
+       "uraian": "- Ganti baru rollblock dewi - dewi rampdoor",
+       "spek": "",
+       "satuan": "Per - buah",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "Tanpa Bushing Bronze",
+       "baris": 200
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "E",
+   "nama": "PEMBERSIHAN DAN PERAWATAN TANGKI",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Pembersihan Tangki Ballast:",
+     "item": [
+      {
+       "uraian": "- Buka tutup manhole",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 204
+      },
+      {
+       "uraian": "- Cleaning tangki",
+       "spek": "",
+       "satuan": "Per-M3",
+       "jml": 1.0,
+       "harga": 125000,
+       "grup": "",
+       "ket": "Minimal perhitungan cap. 20 M3",
+       "baris": 205
+      },
+      {
+       "uraian": "- Ganti packing karet",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "uk. 5 mm",
+       "baris": 206
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Pembersihan Tangki Air Tawar:",
+     "item": [
+      {
+       "uraian": "- Buka tutup manhole",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 209
+      },
+      {
+       "uraian": "- Cleaning tangki",
+       "spek": "",
+       "satuan": "Per-M3",
+       "jml": 1.0,
+       "harga": 125000,
+       "grup": "",
+       "ket": "Minimal perhitungan cap. 20 M3",
+       "baris": 210
+      },
+      {
+       "uraian": "- Ganti packing karet",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "uk. 5 mm",
+       "baris": 211
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Pembersihan Tangki Bahan Bakar:",
+     "item": [
+      {
+       "uraian": "- Buka tutup manhole",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 214
+      },
+      {
+       "uraian": "- Cleaning tangki",
+       "spek": "",
+       "satuan": "Per-M3",
+       "jml": 1.0,
+       "harga": 175000,
+       "grup": "",
+       "ket": "Minimal perhitungan  cap. 20 M3",
+       "baris": 215
+      },
+      {
+       "uraian": "- Ganti packing firefly",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "Packing Tombo 3 mm",
+       "baris": 216
+      },
+      {
+       "uraian": "Buka tutup manhole",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 219
+      },
+      {
+       "uraian": "Cleaning tangki",
+       "spek": "",
+       "satuan": "Per-Tangki",
+       "jml": 1.0,
+       "harga": 175000,
+       "grup": "",
+       "ket": "Minimal perhitungan cap. 20 M3",
+       "baris": 220
+      },
+      {
+       "uraian": "Ganti packing firefly",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "Packing Tombo 3 mm",
+       "baris": 221
+      }
+     ],
+     "catatan": [
+      "Pembersihan Tangki Bahan Bakar:"
+     ]
+    },
+    {
+     "no": "4",
+     "nama": "Pembersihan Got Kamar Mesin:",
+     "item": [
+      {
+       "uraian": "- Cleaning tangki",
+       "spek": "",
+       "satuan": "Per-M3",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 224
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 16000000,
+       "grup": "",
+       "ket": "",
+       "baris": 225
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 17500000,
+       "grup": "",
+       "ket": "",
+       "baris": 226
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 20000000,
+       "grup": "",
+       "ket": "",
+       "baris": 227
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 22500000,
+       "grup": "",
+       "ket": "",
+       "baris": 228
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 229
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Pembersihan Tangki Void:",
+     "item": [
+      {
+       "uraian": "- Buka tutup manhole",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 232
+      },
+      {
+       "uraian": "- Cleaning tangki",
+       "spek": "",
+       "satuan": "Per-M3",
+       "jml": 1.0,
+       "harga": 125000,
+       "grup": "",
+       "ket": "Minimal perhitungan cap. 20 M3",
+       "baris": 233
+      },
+      {
+       "uraian": "- Ganti packing karet",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "uk. 5 mm",
+       "baris": 234
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Pembersihan Ruang Kemudi:",
+     "item": [
+      {
+       "uraian": "- Buka tutup manhole",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 237
+      },
+      {
+       "uraian": "- Cleaning tangki",
+       "spek": "",
+       "satuan": "Per-M3",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 238
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 13000000,
+       "grup": "",
+       "ket": "",
+       "baris": 239
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 15000000,
+       "grup": "",
+       "ket": "",
+       "baris": 240
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 17500000,
+       "grup": "",
+       "ket": "",
+       "baris": 241
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 18500000,
+       "grup": "",
+       "ket": "",
+       "baris": 242
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Ls",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 243
+      },
+      {
+       "uraian": "- Ganti packing karet",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "uk. 5 mm",
+       "baris": 244
+      },
+      {
+       "uraian": "7. Pengelolaan Limbah B3",
+       "spek": "",
+       "satuan": "Per-M3",
+       "jml": 1.0,
+       "harga": 1750000,
+       "grup": "",
+       "ket": "",
+       "baris": 246
+      },
+      {
+       "uraian": "Bongkar Pasang Bottom Plug",
+       "spek": "",
+       "satuan": "Buah",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 248
+      },
+      {
+       "uraian": "Pengetesan Tangki / Pressure Test",
+       "spek": "",
+       "satuan": "Tangki",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "",
+       "baris": 250
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "F",
+   "nama": "ANCHOR, CABLES AND CHAIN LOCKER",
+   "sub": [
+    {
+     "no": "",
+     "nama": "ANCHOR, CABLES AND CHAIN LOCKER",
+     "item": [
+      {
+       "uraian": "1. Jangkar kiri/kanan berikut rantainya diturunkan, direntangkan, dibersihkan, Swivel/Kili-kili dilancarkan, diambil recordnya dan dibuatkan laporan rangkap 6 (enam), disiapkan untuk pemeriksaan klass, di cat 1 x bituministic black, tiap segel diberikan tanda cat putih (Material cat galangan supply)",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 254
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 4750000,
+       "grup": "",
+       "ket": "",
+       "baris": 255
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 256
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "",
+       "baris": 257
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 7500000,
+       "grup": "",
+       "ket": "",
+       "baris": 258
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 259
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Penggantian rantai jangkar (material owner supply)",
+     "item": [
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-Segel",
+       "jml": 1.0,
+       "harga": 1250000,
+       "grup": "",
+       "ket": "",
+       "baris": 262
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-Segel",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "",
+       "baris": 263
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-Segel",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "",
+       "ket": "",
+       "baris": 264
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-Segel",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "",
+       "ket": "",
+       "baris": 265
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-Segel",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 266
+      },
+      {
+       "uraian": "3. Ceruk rantai/Chain Locker dibersihkan dan di cat bitumistic 2x lapis berikut pembuangan lumpur (material galangan supply)",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 268
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "",
+       "ket": "",
+       "baris": 269
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "",
+       "ket": "",
+       "baris": 270
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "",
+       "ket": "",
+       "baris": 271
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 272
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-set",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 273
+      },
+      {
+       "uraian": "Melancarkan kili-kili jangkar",
+       "spek": "",
+       "satuan": "Per-unit",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "",
+       "baris": 275
+      },
+      {
+       "uraian": "Ganti baru kili-kili/segel rantai jangkar (Material Owner supply)",
+       "spek": "",
+       "satuan": "Per-unit",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "",
+       "baris": 276
+      },
+      {
+       "uraian": "Ganti baru kampas winch haluan kiri",
+       "spek": "",
+       "satuan": "Per-unit",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "Kanvas Winch Haluan Buritan",
+       "baris": 277
+      },
+      {
+       "uraian": "Ganti dudukan stoper jangkar",
+       "spek": "",
+       "satuan": "Per-unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 278
+      },
+      {
+       "uraian": "Dilakukan Penimbagan jangkar",
+       "spek": "",
+       "satuan": "Per-unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 279
+      },
+      {
+       "uraian": "Pengelasan (tambah daging) pada Gypsi winch jangkar",
+       "spek": "",
+       "satuan": "Per-unit",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 280
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "G",
+   "nama": "SEA CHEST, SEA VALVES dan VALVES",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Sea Chests & Sea Grating (Dibuka, dibersihkan, dirawat, dicat dan dipasang)",
+     "item": [
+      {
+       "uraian": "Sea Chests & Sea Grating  =  6 Inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "",
+       "ket": "",
+       "baris": 284
+      },
+      {
+       "uraian": "Sea Chests & Sea Grating  =  8 Inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 285
+      },
+      {
+       "uraian": "Sea Chests & Sea Grating  =  10 Inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 4250000,
+       "grup": "",
+       "ket": "",
+       "baris": 286
+      },
+      {
+       "uraian": "Sea Chests & Sea Grating  =  12 Inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 5500000,
+       "grup": "",
+       "ket": "",
+       "baris": 287
+      },
+      {
+       "uraian": "Sea Chests & Sea Grating  =  14 Inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 5750000,
+       "grup": "",
+       "ket": "",
+       "baris": 288
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Sea Valves (Dibuka, dibersihkan, dirawat, dicat dan dipasang)",
+     "item": [
+      {
+       "uraian": "S/d dia. 1/2 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 291
+      },
+      {
+       "uraian": "S/d dia. 1 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 292
+      },
+      {
+       "uraian": "S/d dia. 1 1/2 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 293
+      },
+      {
+       "uraian": "S/d dia. 2 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 294
+      },
+      {
+       "uraian": "S/d dia. 2 1/2 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 600000,
+       "grup": "",
+       "ket": "",
+       "baris": 295
+      },
+      {
+       "uraian": "S/d dia. 3 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 800000,
+       "grup": "",
+       "ket": "",
+       "baris": 296
+      },
+      {
+       "uraian": "S/d dia. 4 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "",
+       "ket": "",
+       "baris": 297
+      },
+      {
+       "uraian": "S/d dia. 5 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 1200000,
+       "grup": "",
+       "ket": "",
+       "baris": 298
+      },
+      {
+       "uraian": "S/d dia. 6 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 1400000,
+       "grup": "",
+       "ket": "",
+       "baris": 299
+      },
+      {
+       "uraian": "S/d dia. 8 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 1600000,
+       "grup": "",
+       "ket": "",
+       "baris": 300
+      },
+      {
+       "uraian": "S/d dia. 10 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "",
+       "baris": 301
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "H",
+   "nama": "TAIL SHAFT",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Pengukuran clearance as propeller berikut recordnya rangkap 6 (enam) berdasarkan:",
+     "item": [
+      {
+       "uraian": "Bongkar Pasang Skerm S/d Shaft dia: 4\"",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "",
+       "ket": "",
+       "baris": 305
+      },
+      {
+       "uraian": "Bongkar Pasang Skerm S/d Shaft dia: 5\"",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3250000,
+       "grup": "",
+       "ket": "",
+       "baris": 306
+      },
+      {
+       "uraian": "Bongkar Pasang Skerm S/d Shaft dia: 6\"",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 307
+      },
+      {
+       "uraian": "Bongkar Pasang Skerm S/d Shaft dia: 8\"",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 308
+      },
+      {
+       "uraian": "Bongkar Pasang Skerm S/d Shaft dia: 10\"",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "",
+       "baris": 309
+      },
+      {
+       "uraian": "Bongkar Pasang Skerm S/d Shaft dia: 12\"",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 310
+      },
+      {
+       "uraian": "2. Ganti remes packing",
+       "spek": "",
+       "satuan": "Meter",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "Jika menggunakan satuan unit maka di hitung 3 meter Rp. 4.500.000",
+       "baris": 312
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Cabut As Propeller (bongkar-pasang)",
+     "item": [
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5500000,
+       "grup": "",
+       "ket": "",
+       "baris": 315
+      },
+      {
+       "uraian": "dia as propeller : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 6000000,
+       "grup": "",
+       "ket": "",
+       "baris": 316
+      },
+      {
+       "uraian": "dia as propeller : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "",
+       "baris": 317
+      },
+      {
+       "uraian": "dia as propeller : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 8500000,
+       "grup": "",
+       "ket": "",
+       "baris": 318
+      },
+      {
+       "uraian": "dia as propeller : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 10500000,
+       "grup": "",
+       "ket": "",
+       "baris": 319
+      },
+      {
+       "uraian": "dia as propeller : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 13000000,
+       "grup": "",
+       "ket": "",
+       "baris": 320
+      },
+      {
+       "uraian": "dia as propeller : 12 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 14000000,
+       "grup": "",
+       "ket": "",
+       "baris": 321
+      },
+      {
+       "uraian": "dia as propeller : 14 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 15000000,
+       "grup": "",
+       "ket": "",
+       "baris": 322
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "As Propeller (dibawa ke bengkel dan dicenter)",
+     "item": [
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 325
+      },
+      {
+       "uraian": "dia as propeller : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "",
+       "baris": 326
+      },
+      {
+       "uraian": "dia as propeller : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 327
+      },
+      {
+       "uraian": "dia as propeller : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5500000,
+       "grup": "",
+       "ket": "",
+       "baris": 328
+      },
+      {
+       "uraian": "dia as propeller : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 6000000,
+       "grup": "",
+       "ket": "",
+       "baris": 329
+      },
+      {
+       "uraian": "dia as propeller : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 7000000,
+       "grup": "",
+       "ket": "",
+       "baris": 330
+      },
+      {
+       "uraian": "dia as propeller : 12 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 7500000,
+       "grup": "",
+       "ket": "",
+       "baris": 331
+      },
+      {
+       "uraian": "dia as propeller : 14 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 8500000,
+       "grup": "",
+       "ket": "",
+       "baris": 332
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Rekondisi As Propeller",
+     "item": [
+      {
+       "uraian": "dia as propeller : 3 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 335
+      },
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 336
+      },
+      {
+       "uraian": "dia as propeller : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 337
+      },
+      {
+       "uraian": "dia as propeller : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 6000000,
+       "grup": "",
+       "ket": "",
+       "baris": 338
+      },
+      {
+       "uraian": "dia as propeller : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 8500000,
+       "grup": "",
+       "ket": "",
+       "baris": 339
+      },
+      {
+       "uraian": "dia as propeller : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 9500000,
+       "grup": "",
+       "ket": "",
+       "baris": 340
+      },
+      {
+       "uraian": "dia as propeller : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 11000000,
+       "grup": "",
+       "ket": "",
+       "baris": 341
+      },
+      {
+       "uraian": "dia as propeller : 12 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 12500000,
+       "grup": "",
+       "ket": "",
+       "baris": 342
+      },
+      {
+       "uraian": "dia as propeller : 14 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 14500000,
+       "grup": "",
+       "ket": "",
+       "baris": 343
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Aligment Mesin Induk terhadap as propeller",
+     "item": [
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "",
+       "baris": 346
+      },
+      {
+       "uraian": "dia as propeller : 5 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 7500000,
+       "grup": "",
+       "ket": "",
+       "baris": 347
+      },
+      {
+       "uraian": "dia as propeller : 6 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 8500000,
+       "grup": "",
+       "ket": "",
+       "baris": 348
+      },
+      {
+       "uraian": "dia as propeller : 8 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 9500000,
+       "grup": "",
+       "ket": "",
+       "baris": 349
+      },
+      {
+       "uraian": "dia as propeller : 9 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 11000000,
+       "grup": "",
+       "ket": "",
+       "baris": 350
+      },
+      {
+       "uraian": "dia as propeller : 10 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 12000000,
+       "grup": "",
+       "ket": "",
+       "baris": 351
+      },
+      {
+       "uraian": "dia as propeller : 12 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 14500000,
+       "grup": "",
+       "ket": "",
+       "baris": 352
+      },
+      {
+       "uraian": "dia as propeller : 14 inch",
+       "spek": "",
+       "satuan": "Per unit",
+       "jml": 1.0,
+       "harga": 16500000,
+       "grup": "",
+       "ket": "",
+       "baris": 353
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "7",
+     "nama": "Penggantian bantalan as propeller untuk instalasi termasuk fabrikasi (bila record clearence telah melampaui batas toleransi , (Material owner supply)",
+     "item": [
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 356
+      },
+      {
+       "uraian": "dia as propeller : 5 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "",
+       "baris": 357
+      },
+      {
+       "uraian": "dia as propeller : 6 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 358
+      },
+      {
+       "uraian": "dia as propeller : 8 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 5500000,
+       "grup": "",
+       "ket": "",
+       "baris": 359
+      },
+      {
+       "uraian": "dia as propeller : 9 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 6000000,
+       "grup": "",
+       "ket": "",
+       "baris": 360
+      },
+      {
+       "uraian": "dia as propeller : 10 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 7500000,
+       "grup": "",
+       "ket": "",
+       "baris": 361
+      },
+      {
+       "uraian": "dia as propeller : 12 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 8500000,
+       "grup": "",
+       "ket": "",
+       "baris": 362
+      },
+      {
+       "uraian": "dia as propeller : 14 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 10000000,
+       "grup": "",
+       "ket": "",
+       "baris": 363
+      },
+      {
+       "uraian": "dia as propeller : 2 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 10000000,
+       "grup": "",
+       "ket": "NL 9",
+       "baris": 366
+      },
+      {
+       "uraian": "dia as propeller : 3 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 14500000,
+       "grup": "",
+       "ket": "NL 11",
+       "baris": 367
+      },
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 16500000,
+       "grup": "",
+       "ket": "NL 12",
+       "baris": 368
+      },
+      {
+       "uraian": "dia as propeller : 4.1 - 6 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 30000000,
+       "grup": "",
+       "ket": "NL17",
+       "baris": 369
+      },
+      {
+       "uraian": "dia as propeller : 6.1 - 8 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 45000000,
+       "grup": "",
+       "ket": "NL 21",
+       "baris": 370
+      },
+      {
+       "uraian": "dia as propeller : 8.1 - 10 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 371
+      },
+      {
+       "uraian": "dia as propeller : 10.1 - 12 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 372
+      },
+      {
+       "uraian": "dia as propeller : 12.1 - 16 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 373
+      },
+      {
+       "uraian": "dia as propeller : 16.1 - 20 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 374
+      },
+      {
+       "uraian": "dia as propeller : 2 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 377
+      },
+      {
+       "uraian": "dia as propeller : 3 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 11500000,
+       "grup": "",
+       "ket": "",
+       "baris": 378
+      },
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 16000000,
+       "grup": "",
+       "ket": "",
+       "baris": 379
+      },
+      {
+       "uraian": "dia as propeller : 4.1 - 6 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 45000000,
+       "grup": "",
+       "ket": "",
+       "baris": 380
+      },
+      {
+       "uraian": "dia as propeller : 6.1 - 8 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 75000000,
+       "grup": "",
+       "ket": "",
+       "baris": 381
+      },
+      {
+       "uraian": "dia as propeller : 8.1 - 10 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 382
+      },
+      {
+       "uraian": "dia as propeller : 10.1 - 12 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 383
+      },
+      {
+       "uraian": "dia as propeller : 12.1 - 16 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 384
+      },
+      {
+       "uraian": "dia as propeller : 16.1 - 20 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 385
+      },
+      {
+       "uraian": "dia as propeller : 2 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 388
+      },
+      {
+       "uraian": "dia as propeller : 3 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 389
+      },
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 390
+      },
+      {
+       "uraian": "dia as propeller : 4.1 - 6 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 391
+      },
+      {
+       "uraian": "dia as propeller : 6.1 - 8 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 392
+      },
+      {
+       "uraian": "dia as propeller : 8.1 - 10 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 393
+      },
+      {
+       "uraian": "dia as propeller : 10.1 - 12 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 394
+      },
+      {
+       "uraian": "dia as propeller : 12.1 - 16 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 395
+      },
+      {
+       "uraian": "dia as propeller : 16.1 - 20 inch",
+       "spek": "",
+       "satuan": "Per-Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 396
+      }
+     ],
+     "catatan": [
+      "Material Kayu Pokhout:",
+      "Material Cuttless Bearing:",
+      "Material Thordon:"
+     ]
+    },
+    {
+     "no": "8",
+     "nama": "Cek kelurusan as propeller diatas Meja bubut",
+     "item": [
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 399
+      },
+      {
+       "uraian": "dia as propeller : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 400
+      },
+      {
+       "uraian": "dia as propeller : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "",
+       "baris": 401
+      },
+      {
+       "uraian": "dia as propeller : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 402
+      },
+      {
+       "uraian": "dia as propeller : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 6000000,
+       "grup": "",
+       "ket": "",
+       "baris": 403
+      },
+      {
+       "uraian": "dia as propeller : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 7000000,
+       "grup": "",
+       "ket": "",
+       "baris": 404
+      },
+      {
+       "uraian": "dia as propeller : 12 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 8000000,
+       "grup": "",
+       "ket": "",
+       "baris": 405
+      },
+      {
+       "uraian": "dia as propeller : 14 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 10500000,
+       "grup": "",
+       "ket": "",
+       "baris": 406
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "9",
+     "nama": "Pengujian NDT",
+     "item": [
+      {
+       "uraian": "1. Poros Propeller",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 409
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "I",
+   "nama": "PROPELLER",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Cabut dan pasang propeller, termasuk pembersihan dan polish :",
+     "item": [
+      {
+       "uraian": "Diameter propeller : sampai dengan 2 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 7500000,
+       "grup": "",
+       "ket": "",
+       "baris": 413
+      },
+      {
+       "uraian": "Diameter propeller : antara 2,1 sampai 3 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 10500000,
+       "grup": "",
+       "ket": "",
+       "baris": 414
+      },
+      {
+       "uraian": "Diameter propeller : antara 3,1 sampai 4 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 11500000,
+       "grup": "",
+       "ket": "",
+       "baris": 415
+      },
+      {
+       "uraian": "0 - 1 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 417
+      },
+      {
+       "uraian": "1.1 - 1.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 418
+      },
+      {
+       "uraian": "1.6 - 2 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 419
+      },
+      {
+       "uraian": "2.1 - 2.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 420
+      },
+      {
+       "uraian": "2.6 - 3 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 421
+      },
+      {
+       "uraian": "3.1 - 3.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 422
+      },
+      {
+       "uraian": "3.6 - 4 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 423
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Dibersihkan dan dipolish ditempat, tanpa dicabut :",
+     "item": [
+      {
+       "uraian": "Diameter propeller : sampai dengan 2 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 426
+      },
+      {
+       "uraian": "Diameter propeller : antara 2,1 sampai 3 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 427
+      },
+      {
+       "uraian": "Diameter propeller : antara 3,1 sampai 4 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "",
+       "baris": 428
+      },
+      {
+       "uraian": "0 - 1 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 430
+      },
+      {
+       "uraian": "1.1 - 1.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 431
+      },
+      {
+       "uraian": "1.6 - 2 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 432
+      },
+      {
+       "uraian": "2.1 - 2.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 433
+      },
+      {
+       "uraian": "2.6 - 3 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 434
+      },
+      {
+       "uraian": "3.1 - 3.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 435
+      },
+      {
+       "uraian": "3.6 - 4 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 436
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Rekondisi propeller",
+     "item": [
+      {
+       "uraian": "Diameter propeller : sampai dengan 2 meter",
+       "spek": "",
+       "satuan": "Per-Daun",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 440
+      },
+      {
+       "uraian": "Diameter propeller : antara 2,1 sampai 3 meter",
+       "spek": "",
+       "satuan": "Per-Daun",
+       "jml": 1.0,
+       "harga": 7000000,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 441
+      },
+      {
+       "uraian": "Diameter propeller : antara 3,1 sampai 4 meter",
+       "spek": "",
+       "satuan": "Per-Daun",
+       "jml": 1.0,
+       "harga": 7500000,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 442
+      },
+      {
+       "uraian": "0 - 1 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 443
+      },
+      {
+       "uraian": "1.1 - 1.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 444
+      },
+      {
+       "uraian": "1.6 - 2 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 445
+      },
+      {
+       "uraian": "2.1 - 2.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 446
+      },
+      {
+       "uraian": "2.6 - 3 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 447
+      },
+      {
+       "uraian": "3.1 - 3.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 448
+      },
+      {
+       "uraian": "3.6 - 4 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller yang bengkok (max. 30%)",
+       "ket": "",
+       "baris": 449
+      },
+      {
+       "uraian": "Diameter propeller : sampai dengan 2 meter",
+       "spek": "",
+       "satuan": "Per-Daun",
+       "jml": 1.0,
+       "harga": 14500000,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 452
+      },
+      {
+       "uraian": "Diameter propeller : antara 2,1 sampai 3 meter",
+       "spek": "",
+       "satuan": "Per-Daun",
+       "jml": 1.0,
+       "harga": 16500000,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 453
+      },
+      {
+       "uraian": "Diameter propeller : antara 3,1 sampai 4 meter",
+       "spek": "",
+       "satuan": "Per-Daun",
+       "jml": 1.0,
+       "harga": 18500000,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 454
+      },
+      {
+       "uraian": "0 - 1 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 456
+      },
+      {
+       "uraian": "1.1 - 1.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 457
+      },
+      {
+       "uraian": "1.6 - 2 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 458
+      },
+      {
+       "uraian": "2.1 - 2.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 459
+      },
+      {
+       "uraian": "2.6 - 3 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 460
+      },
+      {
+       "uraian": "3.1 - 3.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 461
+      },
+      {
+       "uraian": "3.6 - 4 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Perbaikan kerusakan daun propeller s/d 30% untuk jenis kerusakan : retak atau keropos.",
+       "ket": "",
+       "baris": 462
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Balancing propeller",
+     "item": [
+      {
+       "uraian": "Diameter propeller : sampai dengan 2 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 465
+      },
+      {
+       "uraian": "Diameter propeller : antara 2,1 sampai 3 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 466
+      },
+      {
+       "uraian": "Diameter propeller : antara 3,1 sampai 4 meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 467
+      },
+      {
+       "uraian": "0 - 1 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 469
+      },
+      {
+       "uraian": "1.1 - 1.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 470
+      },
+      {
+       "uraian": "1.6 - 2 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 471
+      },
+      {
+       "uraian": "2.1 - 2.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 472
+      },
+      {
+       "uraian": "2.6 - 3 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 473
+      },
+      {
+       "uraian": "3.1 - 3.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 474
+      },
+      {
+       "uraian": "3.6 - 4 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 475
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Contact fit propeller",
+     "item": [
+      {
+       "uraian": "0 - 1 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "",
+       "ket": "",
+       "baris": 478
+      },
+      {
+       "uraian": "1.1 - 1.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "",
+       "ket": "",
+       "baris": 479
+      },
+      {
+       "uraian": "1.6 - 2 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "",
+       "ket": "",
+       "baris": 480
+      },
+      {
+       "uraian": "2.1 - 2.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 481
+      },
+      {
+       "uraian": "2.6 - 3 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 482
+      },
+      {
+       "uraian": "3.1 - 3.5 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 483
+      },
+      {
+       "uraian": "3.6 - 4 Meter",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 484
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Pengujian NDT",
+     "item": [
+      {
+       "uraian": "1. Hub Propeller",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 487
+      },
+      {
+       "uraian": "2. Daun Propeller",
+       "spek": "",
+       "satuan": "Per-daun",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "",
+       "baris": 488
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "J",
+   "nama": "RUDDER",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Pengukuran clearance tongkat kemudi berikut recordnya.",
+     "item": [
+      {
+       "uraian": "dia as kemudi : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 1750000,
+       "grup": "",
+       "ket": "",
+       "baris": 492
+      },
+      {
+       "uraian": "dia as kemudi : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "",
+       "baris": 493
+      },
+      {
+       "uraian": "dia as kemudi : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2250000,
+       "grup": "",
+       "ket": "",
+       "baris": 494
+      },
+      {
+       "uraian": "dia as kemudi : 7 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "",
+       "ket": "",
+       "baris": 495
+      },
+      {
+       "uraian": "dia as kemudi : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "",
+       "ket": "",
+       "baris": 496
+      },
+      {
+       "uraian": "dia as kemudi : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "",
+       "ket": "",
+       "baris": 497
+      },
+      {
+       "uraian": "dia as kemudi : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "",
+       "ket": "",
+       "baris": 498
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 500
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 501
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 502
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 503
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 504
+      },
+      {
+       "uraian": "3001 - 5000 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 505
+      },
+      {
+       "uraian": "2. Ganti remeirs packing",
+       "spek": "",
+       "satuan": "Meter",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "Jika menggunakan satuan unit maka di hitung 3 meter Rp. 4.500.000",
+       "baris": 507
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Cabut tongkat kemudi",
+     "item": [
+      {
+       "uraian": "dia as kemudi : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "",
+       "baris": 510
+      },
+      {
+       "uraian": "dia as kemudi : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4750000,
+       "grup": "",
+       "ket": "",
+       "baris": 511
+      },
+      {
+       "uraian": "dia as kemudi : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 512
+      },
+      {
+       "uraian": "dia as kemudi : 7 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5500000,
+       "grup": "",
+       "ket": "",
+       "baris": 513
+      },
+      {
+       "uraian": "dia as kemudi : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 514
+      },
+      {
+       "uraian": "dia as kemudi : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 515
+      },
+      {
+       "uraian": "dia as kemudi : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 516
+      },
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 518
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 519
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 520
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 521
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 522
+      },
+      {
+       "uraian": "3001 - 5000 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 523
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Cabut daun kemudi",
+     "item": [
+      {
+       "uraian": "S.d. 300 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "",
+       "ket": "",
+       "baris": 526
+      },
+      {
+       "uraian": "301 -  600   GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "",
+       "ket": "",
+       "baris": 527
+      },
+      {
+       "uraian": "601 - 900  GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3250000,
+       "grup": "",
+       "ket": "",
+       "baris": 528
+      },
+      {
+       "uraian": "901 - 1500  GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "",
+       "ket": "",
+       "baris": 529
+      },
+      {
+       "uraian": "1501 - 3000 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 530
+      },
+      {
+       "uraian": "3001 - 5000 GRT",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "Fasilitas dock terbatas",
+       "baris": 531
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Rekondisi tongkat kemudi",
+     "item": [
+      {
+       "uraian": "dia as kemudi : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5500000,
+       "grup": "",
+       "ket": "",
+       "baris": 534
+      },
+      {
+       "uraian": "dia as kemudi : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 6500000,
+       "grup": "",
+       "ket": "",
+       "baris": 535
+      },
+      {
+       "uraian": "dia as kemudi : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 7500000,
+       "grup": "",
+       "ket": "",
+       "baris": 536
+      },
+      {
+       "uraian": "dia as kemudi : 7 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 8500000,
+       "grup": "",
+       "ket": "",
+       "baris": 537
+      },
+      {
+       "uraian": "dia as kemudi : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 538
+      },
+      {
+       "uraian": "dia as kemudi : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 539
+      },
+      {
+       "uraian": "dia as kemudi : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 540
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Cek kelurusan as propeller diatas Meja bubut",
+     "item": [
+      {
+       "uraian": "dia as propeller : 4 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 543
+      },
+      {
+       "uraian": "dia as propeller : 5 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "",
+       "ket": "",
+       "baris": 544
+      },
+      {
+       "uraian": "dia as propeller : 6 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 4500000,
+       "grup": "",
+       "ket": "",
+       "baris": 545
+      },
+      {
+       "uraian": "dia as propeller : 8 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 5000000,
+       "grup": "",
+       "ket": "",
+       "baris": 546
+      },
+      {
+       "uraian": "dia as propeller : 9 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 6000000,
+       "grup": "",
+       "ket": "",
+       "baris": 547
+      },
+      {
+       "uraian": "dia as propeller : 10 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 7000000,
+       "grup": "",
+       "ket": "",
+       "baris": 548
+      },
+      {
+       "uraian": "dia as propeller : 12 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 8000000,
+       "grup": "",
+       "ket": "",
+       "baris": 549
+      },
+      {
+       "uraian": "dia as propeller : 14 inch",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 10500000,
+       "grup": "",
+       "ket": "",
+       "baris": 550
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "7",
+     "nama": "Pengujian NDT",
+     "item": [
+      {
+       "uraian": "Poros Kemudi",
+       "spek": "",
+       "satuan": "Per-Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "",
+       "ket": "",
+       "baris": 553
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "K",
+   "nama": "MESIN PENGGERAK",
+   "sub": [
+    {
+     "no": "",
+     "nama": "MESIN PENGGERAK",
+     "item": [
+      {
+       "uraian": "S.d. 100 HP",
+       "spek": "",
+       "satuan": "Per-HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 557
+      },
+      {
+       "uraian": "101 - 200 HP",
+       "spek": "",
+       "satuan": "Per-HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 558
+      },
+      {
+       "uraian": "210 - 500 HP",
+       "spek": "",
+       "satuan": "Per-HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 559
+      },
+      {
+       "uraian": "501 - 1000 HP",
+       "spek": "",
+       "satuan": "Per-HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 560
+      },
+      {
+       "uraian": "1001 - 2500 HP",
+       "spek": "",
+       "satuan": "Per-HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 561
+      },
+      {
+       "uraian": "2501 - 3500 HP",
+       "spek": "",
+       "satuan": "Per-HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 562
+      },
+      {
+       "uraian": "3501 - 5000 HP",
+       "spek": "",
+       "satuan": "Per-HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 563
+      }
+     ],
+     "catatan": [
+      "Perbaikan General Overhaul"
+     ]
+    }
+   ]
+  },
+  {
+   "kode": "L",
+   "nama": "ELEKTRIK",
+   "sub": [
+    {
+     "no": "",
+     "nama": "ELEKTRIK",
+     "item": [
+      {
+       "uraian": "1. Megger test seluruh instalasi listrik, electro motor dan generator",
+       "spek": "",
+       "satuan": "Per-kapal",
+       "jml": 1.0,
+       "harga": 11500000,
+       "grup": "",
+       "ket": "",
+       "baris": 566
+      },
+      {
+       "uraian": "2. Service (bongkar pasang, cleaning, insulation dan oven) dan rewinding electro motor atau alternator",
+       "spek": "",
+       "satuan": "Per-Kw",
+       "jml": 1.0,
+       "harga": 550000,
+       "grup": "",
+       "ket": "",
+       "baris": 567
+      }
+     ],
+     "catatan": []
+    }
+   ]
+  },
+  {
+   "kode": "M",
+   "nama": "PIPA - PIPA (SEAMLESS)",
+   "sub": [
+    {
+     "no": "1",
+     "nama": "Penggantian dan Pemasangan Pipa Galvanis",
+     "item": [
+      {
+       "uraian": "Galvanized Pipe  1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 425000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 572
+      },
+      {
+       "uraian": "Galvanized Pipe  3/4  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 475000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 573
+      },
+      {
+       "uraian": "Galvanized Pipe  1  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 525000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 574
+      },
+      {
+       "uraian": "Galvanized Pipe  1 1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 575000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 575
+      },
+      {
+       "uraian": "Galvanized Pipe  2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 675000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 576
+      },
+      {
+       "uraian": "Galvanized Pipe  2 1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 775000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 577
+      },
+      {
+       "uraian": "Galvanized Pipe  3  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 875000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 578
+      },
+      {
+       "uraian": "Galvanized Pipe  3 1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 975000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 579
+      },
+      {
+       "uraian": "Galvanized Pipe  4  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 580
+      },
+      {
+       "uraian": "Galvanized Pipe  5  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 581
+      },
+      {
+       "uraian": "Galvanized Pipe  6  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 582
+      },
+      {
+       "uraian": "Galvanized Pipe  1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 600000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 584
+      },
+      {
+       "uraian": "Galvanized Pipe  3/4  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 650000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 585
+      },
+      {
+       "uraian": "Galvanized Pipe  1  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 700000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 586
+      },
+      {
+       "uraian": "Galvanized Pipe  1 1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 587
+      },
+      {
+       "uraian": "Galvanized Pipe  2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 588
+      },
+      {
+       "uraian": "Galvanized Pipe  2 1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 589
+      },
+      {
+       "uraian": "Galvanized Pipe  3  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 2250000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 590
+      },
+      {
+       "uraian": "Galvanized Pipe  3 1/2  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 3000000,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 591
+      },
+      {
+       "uraian": "Galvanized Pipe  4  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 592
+      },
+      {
+       "uraian": "Galvanized Pipe  5  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 593
+      },
+      {
+       "uraian": "Galvanized Pipe  6  inch",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 594
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Penggantian dan Pemasangan Pipa Stainless",
+     "item": [
+      {
+       "uraian": "- Sch 40;  1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 598
+      },
+      {
+       "uraian": "- Sch 40;  3/4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 599
+      },
+      {
+       "uraian": "- Sch 40;  1\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 600
+      },
+      {
+       "uraian": "- Sch 40;  1 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 601
+      },
+      {
+       "uraian": "- Sch 40;  2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 602
+      },
+      {
+       "uraian": "- Sch 40;  2 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 603
+      },
+      {
+       "uraian": "- Sch 40;  3\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 604
+      },
+      {
+       "uraian": "- Sch 40;  3 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 605
+      },
+      {
+       "uraian": "- Sch 40;  4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 606
+      },
+      {
+       "uraian": "- Sch 40;  5\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 607
+      },
+      {
+       "uraian": "- Sch 40;  6\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 608
+      },
+      {
+       "uraian": "- Sch 40;  8\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 609
+      },
+      {
+       "uraian": "- Sch 40;  10\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 610
+      },
+      {
+       "uraian": "- Sch 80;  1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 612
+      },
+      {
+       "uraian": "- Sch 80;  3/4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 613
+      },
+      {
+       "uraian": "- Sch 80;  1\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 614
+      },
+      {
+       "uraian": "- Sch 80;  11/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 615
+      },
+      {
+       "uraian": "- Sch 80;  2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 616
+      },
+      {
+       "uraian": "- Sch 80;  2 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 617
+      },
+      {
+       "uraian": "- Sch 80;  3\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 618
+      },
+      {
+       "uraian": "- Sch 80;  3 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 619
+      },
+      {
+       "uraian": "- Sch 80;  4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 620
+      },
+      {
+       "uraian": "- Sch 80;  5\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 621
+      },
+      {
+       "uraian": "- Sch 80;  6\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 622
+      },
+      {
+       "uraian": "- Sch 80;  8\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 623
+      },
+      {
+       "uraian": "- Sch 80;  10\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 80",
+       "ket": "",
+       "baris": 624
+      },
+      {
+       "uraian": "- Sch 40;  1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 450000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 628
+      },
+      {
+       "uraian": "- Sch 40;  3/4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 629
+      },
+      {
+       "uraian": "- Sch 40;  1\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 550000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 630
+      },
+      {
+       "uraian": "- Sch 40;  1 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 600000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 631
+      },
+      {
+       "uraian": "- Sch 40;  2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 700000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 632
+      },
+      {
+       "uraian": "- Sch 40;  2 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 800000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 633
+      },
+      {
+       "uraian": "- Sch 40;  3\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 900000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 634
+      },
+      {
+       "uraian": "- Sch 40;  3 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 635
+      },
+      {
+       "uraian": "- Sch 40;  4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 1525000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 636
+      },
+      {
+       "uraian": "- Sch 40;  5\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 2750000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 637
+      },
+      {
+       "uraian": "- Sch 40;  6\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 4000000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 638
+      },
+      {
+       "uraian": "- Sch 40;  8\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 639
+      },
+      {
+       "uraian": "- Sch 40;  10\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 640
+      },
+      {
+       "uraian": "- Sch 40;  1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 643
+      },
+      {
+       "uraian": "- Sch 40;  3/4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 800000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 644
+      },
+      {
+       "uraian": "- Sch 40;  1\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 850000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 645
+      },
+      {
+       "uraian": "- Sch 40;  1 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 900000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 646
+      },
+      {
+       "uraian": "- Sch 40;  2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 647
+      },
+      {
+       "uraian": "- Sch 40;  2 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 1650000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 648
+      },
+      {
+       "uraian": "- Sch 40;  3\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 2500000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 649
+      },
+      {
+       "uraian": "- Sch 40;  3 1/2\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 3250000,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 650
+      },
+      {
+       "uraian": "- Sch 40;  4\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 651
+      },
+      {
+       "uraian": "- Sch 40;  5\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 652
+      },
+      {
+       "uraian": "- Sch 40;  6\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 653
+      },
+      {
+       "uraian": "- Sch 40;  8\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 654
+      },
+      {
+       "uraian": "- Sch 40;  10\"",
+       "spek": "",
+       "satuan": "Per-meter",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Sch. 40",
+       "ket": "",
+       "baris": 655
+      }
+     ],
+     "catatan": [
+      "Penggantian dan Pemasangan Pipa Hitam (Biasa)",
+      "Sch. 80"
+     ]
+    },
+    {
+     "no": "3",
+     "nama": "Bending Pipa",
+     "item": [
+      {
+       "uraian": "Ukr :  1/2 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 75000,
+       "grup": "",
+       "ket": "",
+       "baris": 658
+      },
+      {
+       "uraian": "Ukr :  3/4 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 100000,
+       "grup": "",
+       "ket": "",
+       "baris": 659
+      },
+      {
+       "uraian": "Ukr :  1 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 125000,
+       "grup": "",
+       "ket": "",
+       "baris": 660
+      },
+      {
+       "uraian": "Ukr :  11/2 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 150000,
+       "grup": "",
+       "ket": "",
+       "baris": 661
+      },
+      {
+       "uraian": "Ukr :  2 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 175000,
+       "grup": "",
+       "ket": "",
+       "baris": 662
+      },
+      {
+       "uraian": "Ukr :  2 1/2 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 200000,
+       "grup": "",
+       "ket": "",
+       "baris": 663
+      },
+      {
+       "uraian": "Ukr :  3 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 225000,
+       "grup": "",
+       "ket": "",
+       "baris": 664
+      },
+      {
+       "uraian": "Ukr :  4 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 250000,
+       "grup": "",
+       "ket": "",
+       "baris": 665
+      },
+      {
+       "uraian": "Ukr :  6 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 300000,
+       "grup": "",
+       "ket": "",
+       "baris": 666
+      },
+      {
+       "uraian": "Ukr :  8 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 667
+      },
+      {
+       "uraian": "Ukr :  10 \"",
+       "spek": "",
+       "satuan": "Per-Bend",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 668
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Penggantian dan pemasangan Elbow sch. 40",
+     "item": [
+      {
+       "uraian": "Elbow Ukr: 1/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 200000,
+       "grup": "",
+       "ket": "",
+       "baris": 671
+      },
+      {
+       "uraian": "Elbow Ukr: 3/4\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 200000,
+       "grup": "",
+       "ket": "",
+       "baris": 672
+      },
+      {
+       "uraian": "Elbow Ukr: 1\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 250000,
+       "grup": "",
+       "ket": "",
+       "baris": 673
+      },
+      {
+       "uraian": "Elbow Ukr: 11/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 300000,
+       "grup": "",
+       "ket": "",
+       "baris": 674
+      },
+      {
+       "uraian": "Elbow Ukr: 2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 675
+      },
+      {
+       "uraian": "Elbow Ukr: 2 1/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 676
+      },
+      {
+       "uraian": "Elbow Ukr: 3\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 450000,
+       "grup": "",
+       "ket": "",
+       "baris": 677
+      },
+      {
+       "uraian": "Elbow Ukr: 3 1/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 500000,
+       "grup": "",
+       "ket": "",
+       "baris": 678
+      },
+      {
+       "uraian": "Elbow Ukr: 4\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 600000,
+       "grup": "",
+       "ket": "",
+       "baris": 679
+      },
+      {
+       "uraian": "Elbow Ukr: 6\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 700000,
+       "grup": "",
+       "ket": "",
+       "baris": 680
+      },
+      {
+       "uraian": "Elbow Ukr: 8\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 800000,
+       "grup": "",
+       "ket": "",
+       "baris": 681
+      },
+      {
+       "uraian": "Elbow Ukr: 10\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 682
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Penggantian dan pemasangan Elbow sch. 80",
+     "item": [
+      {
+       "uraian": "Elbow Ukr: 1/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 275000,
+       "grup": "",
+       "ket": "",
+       "baris": 685
+      },
+      {
+       "uraian": "Elbow Ukr: 3/4\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 275000,
+       "grup": "",
+       "ket": "",
+       "baris": 686
+      },
+      {
+       "uraian": "Elbow Ukr: 1\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 687
+      },
+      {
+       "uraian": "Elbow Ukr: 11/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 425000,
+       "grup": "",
+       "ket": "",
+       "baris": 688
+      },
+      {
+       "uraian": "Elbow Ukr: 2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 550000,
+       "grup": "",
+       "ket": "",
+       "baris": 689
+      },
+      {
+       "uraian": "Elbow Ukr: 2 1/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 625000,
+       "grup": "",
+       "ket": "",
+       "baris": 690
+      },
+      {
+       "uraian": "Elbow Ukr: 3\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "",
+       "baris": 691
+      },
+      {
+       "uraian": "Elbow Ukr: 3 1/2\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 825000,
+       "grup": "",
+       "ket": "",
+       "baris": 692
+      },
+      {
+       "uraian": "Elbow Ukr: 4\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "",
+       "ket": "",
+       "baris": 693
+      },
+      {
+       "uraian": "Elbow Ukr: 6\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 1250000,
+       "grup": "",
+       "ket": "",
+       "baris": 694
+      },
+      {
+       "uraian": "Elbow Ukr: 8\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 1500000,
+       "grup": "",
+       "ket": "",
+       "baris": 695
+      },
+      {
+       "uraian": "Elbow Ukr: 10\"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 696
+      }
+     ],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Penggantian dan Pemasangan Flange",
+     "item": [
+      {
+       "uraian": "Ukr :  1/2 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 250000,
+       "grup": "",
+       "ket": "",
+       "baris": 699
+      },
+      {
+       "uraian": "Ukr :  3/4 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 250000,
+       "grup": "",
+       "ket": "",
+       "baris": 700
+      },
+      {
+       "uraian": "Ukr :  1 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 275000,
+       "grup": "",
+       "ket": "",
+       "baris": 701
+      },
+      {
+       "uraian": "Ukr :  11/2 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 702
+      },
+      {
+       "uraian": "Ukr :  2 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 350000,
+       "grup": "",
+       "ket": "",
+       "baris": 703
+      },
+      {
+       "uraian": "Ukr :  2 1/2 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 375000,
+       "grup": "",
+       "ket": "",
+       "baris": 704
+      },
+      {
+       "uraian": "Ukr :  3 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 400000,
+       "grup": "",
+       "ket": "",
+       "baris": 705
+      },
+      {
+       "uraian": "Ukr :  3 1/2 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 450000,
+       "grup": "",
+       "ket": "",
+       "baris": 706
+      },
+      {
+       "uraian": "Ukr :  4 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 600000,
+       "grup": "",
+       "ket": "",
+       "baris": 707
+      },
+      {
+       "uraian": "Ukr :  6 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 750000,
+       "grup": "",
+       "ket": "",
+       "baris": 708
+      },
+      {
+       "uraian": "Ukr :  8 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 709
+      },
+      {
+       "uraian": "Ukr :  10 \"",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 710
+      },
+      {
+       "uraian": "7.  Penggantian dan Pemasangan Mur Baut",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 75000,
+       "grup": "",
+       "ket": "",
+       "baris": 712
+      },
+      {
+       "uraian": "8.  Penggantian dan Pemasangan Packing Karet",
+       "spek": "",
+       "satuan": "Per - Buah",
+       "jml": 1.0,
+       "harga": 100000,
+       "grup": "",
+       "ket": "",
+       "baris": 714
+      }
+     ],
+     "catatan": [
+      "N. PERMESINAN"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Mesin Induk",
+     "item": [
+      {
+       "uraian": "0 - 500 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline General Overhaul",
+       "ket": "",
+       "baris": 719
+      },
+      {
+       "uraian": "500 - 1000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline General Overhaul",
+       "ket": "",
+       "baris": 720
+      },
+      {
+       "uraian": "1000 - 2000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline General Overhaul",
+       "ket": "",
+       "baris": 721
+      },
+      {
+       "uraian": "0 - 500 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 723
+      },
+      {
+       "uraian": "500 - 1000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 724
+      },
+      {
+       "uraian": "1000 - 2000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 725
+      },
+      {
+       "uraian": "0 - 500 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type V-form General Overhaul",
+       "ket": "",
+       "baris": 727
+      },
+      {
+       "uraian": "500 - 1000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type V-form General Overhaul",
+       "ket": "",
+       "baris": 728
+      },
+      {
+       "uraian": "1000 - 2000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type V-form General Overhaul",
+       "ket": "",
+       "baris": 729
+      },
+      {
+       "uraian": "0 - 500 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 731
+      },
+      {
+       "uraian": "500 - 1000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 732
+      },
+      {
+       "uraian": "1000 - 2000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 733
+      },
+      {
+       "uraian": "1. Defleksi sebelum dan sesudah Overhaul",
+       "spek": "",
+       "satuan": "Per -mesin",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 736
+      },
+      {
+       "uraian": "2. Jasa kalibrasi boshpump",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 3750000,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 737
+      },
+      {
+       "uraian": "3. Jasa kalibrasi Turbocharger",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 738
+      },
+      {
+       "uraian": "4. Jasa Test Injector",
+       "spek": "",
+       "satuan": "Per -Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 739
+      },
+      {
+       "uraian": "5. Service Pendingin air tawar/tangki expansi",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 740
+      },
+      {
+       "uraian": "6. Service Oil Cooler",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 741
+      },
+      {
+       "uraian": "7. Service Intercooler",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 742
+      },
+      {
+       "uraian": "8. Service pompa sea water/Fresh water/oli",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "TypeV-form Top Overhaul",
+       "ket": "",
+       "baris": 743
+      }
+     ],
+     "catatan": [
+      "Pendukung Lainnya:",
+      "Keterangan Tambahan:"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Tarif minimum dihitung daya mesin 500HP",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Jasa Alligment mesin utama adalah 40% dari nilai GO",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Safety device, ecu dan kelistrikan dhitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Mesin merk MTU, MWM & Caterpillar dihitung dengan Penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Perbengkelan diluar uraian dihitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "spare part owner supply",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "7",
+     "nama": "Pelaksanaan di areal surabaya",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "8",
+     "nama": "Apabila dilakukan diluar areal diatas, penambahan biaya",
+     "item": [],
+     "catatan": [
+      "akomadasi yang disesuaikan"
+     ]
+    },
+    {
+     "no": "2",
+     "nama": "Gearbox",
+     "item": [
+      {
+       "uraian": "0 - 500 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 758
+      },
+      {
+       "uraian": "500 - 1000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 759
+      },
+      {
+       "uraian": "1000 - 2000 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 760
+      }
+     ],
+     "catatan": [
+      "General Overhaul",
+      "Keterangan Tambahan:"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Tarif minimum dihitung daya mesin 500HP",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Jasa Alligment mesin utama adalah 40% dari nilai GO",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Perbengkelan diluar uraian dihitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "spare part owner supply",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Pelaksanaan di areal surabaya",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Apabila dilakukan diluar areal diatas, penambahan biaya  akomadasi yang disesuaikan",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Mesin Bantu / Genset",
+     "item": [
+      {
+       "uraian": "0 - 200 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline General Overhaul",
+       "ket": "",
+       "baris": 772
+      },
+      {
+       "uraian": "201 - 300 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline General Overhaul",
+       "ket": "",
+       "baris": 773
+      },
+      {
+       "uraian": "0 - 200 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 775
+      },
+      {
+       "uraian": "201 - 300 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 776
+      },
+      {
+       "uraian": "1. Jasa kalibrasi boshpump",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 3500000,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 779
+      },
+      {
+       "uraian": "2. Jasa kalibrasi Turbocharger",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 780
+      },
+      {
+       "uraian": "3. Jasa Test Injector",
+       "spek": "",
+       "satuan": "Per -Buah",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 781
+      },
+      {
+       "uraian": "4. Service Pendingin air tawar/tangki expansi",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 782
+      },
+      {
+       "uraian": "5. Service Oil Cooler",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 783
+      },
+      {
+       "uraian": "6. Service Intercooler",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 784
+      },
+      {
+       "uraian": "7. Service pompa sea water/Fresh water/oli",
+       "spek": "",
+       "satuan": "Per -Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "Type Inline Top Overhaul",
+       "ket": "",
+       "baris": 785
+      }
+     ],
+     "catatan": [
+      "Pendukung Lainnya:",
+      "Keterangan Tambahan:"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Tarif minimum dihitung daya mesin 200HP",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Safety device, ecu dan kelistrikan dhitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Mesin merk MTU, MWM & Caterpillar dihitung dengan Penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Perbengkelan diluar uraian dihitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "spare part owner supply",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Pelaksanaan di areal surabaya",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "7",
+     "nama": "Apabila dilakukan diluar areal diatas, penambahan biaya  akomadasi yang disesuaikan",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Service Alternator Genset",
+     "item": [
+      {
+       "uraian": "50 - 150 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 798
+      },
+      {
+       "uraian": "151 - 300 HP",
+       "spek": "",
+       "satuan": "Per - HP",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 799
+      }
+     ],
+     "catatan": [
+      "General Overhaul",
+      "Keterangan Tambahan:"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Tarif minimum dihitung daya mesin 50HP",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Tidak termasuk gulung baru",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Mesin merk MTU, MWM & Caterpillar dihitung dengan Penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Perbengkelan diluar uraian dihitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "spare part owner supply",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Pelaksanaan di areal surabaya",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "7",
+     "nama": "Apabila dilakukan diluar areal diatas, penambahan biaya akomadasi yang disesuaikan",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Service Electromotor",
+     "item": [
+      {
+       "uraian": "0 - 1",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 811
+      },
+      {
+       "uraian": "1.1 - 2",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 812
+      },
+      {
+       "uraian": "2.1 - 5",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 813
+      },
+      {
+       "uraian": "5.1 - 7.5",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 814
+      },
+      {
+       "uraian": "7.6 - 10",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 815
+      },
+      {
+       "uraian": "10.1 - 20",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 816
+      },
+      {
+       "uraian": "20.1 - 30",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 817
+      },
+      {
+       "uraian": "30.1 - 40",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 818
+      },
+      {
+       "uraian": "40.1 - 50",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 819
+      },
+      {
+       "uraian": "50.1 - 60",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 820
+      },
+      {
+       "uraian": "60.1 - 70",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 821
+      },
+      {
+       "uraian": "70.1 - 80",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 822
+      },
+      {
+       "uraian": "80.1 - 90",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 823
+      },
+      {
+       "uraian": "90.1 - 100",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 824
+      },
+      {
+       "uraian": "100.1 -200",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 825
+      }
+     ],
+     "catatan": [
+      "Keterangan Tambahan:"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Tidak termasuk gulung baru",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "spare part owner supply",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Pelaksanaan di areal surabaya",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Apabila dilakukan diluar areal diatas, penambahan biaya  akomadasi yang disesuaikan",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "6",
+     "nama": "Overhaul Centrifugal pump",
+     "item": [
+      {
+       "uraian": "0 - 10",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 833
+      },
+      {
+       "uraian": "11 - 25",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 834
+      },
+      {
+       "uraian": "26- 50",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 835
+      },
+      {
+       "uraian": "51 - 100",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 836
+      },
+      {
+       "uraian": "101 - 150",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 837
+      },
+      {
+       "uraian": "151 - 300",
+       "spek": "",
+       "satuan": "Per - Unit",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 838
+      }
+     ],
+     "catatan": [
+      "Keterangan Tambahan:"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Tarif minimum dihitung capasitas 10m3/jam",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "Perbengkelan diluar uraian dihitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "spare part owner supply",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Pelaksanaan di areal surabaya",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "5",
+     "nama": "Apabila dilakukan diluar areal diatas, penambahan biaya",
+     "item": [],
+     "catatan": [
+      "akomadasi yang disesuaikan"
+     ]
+    },
+    {
+     "no": "7",
+     "nama": "Radial Piston Pump/ Pompa Bintang",
+     "item": [
+      {
+       "uraian": "0 - 200",
+       "spek": "",
+       "satuan": "Per - Pompa",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 849
+      },
+      {
+       "uraian": "201 - 400",
+       "spek": "",
+       "satuan": "Per - Pompa",
+       "jml": 1.0,
+       "harga": 0,
+       "grup": "",
+       "ket": "",
+       "baris": 850
+      }
+     ],
+     "catatan": [
+      "Keterangan Tambahan:"
+     ]
+    },
+    {
+     "no": "1",
+     "nama": "Perbengkelan diluar uraian dihitung dengan penyesuaian",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "2",
+     "nama": "spare part owner supply",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "3",
+     "nama": "Pelaksanaan di areal surabaya",
+     "item": [],
+     "catatan": []
+    },
+    {
+     "no": "4",
+     "nama": "Apabila dilakukan diluar areal diatas, penambahan biaya",
+     "item": [],
+     "catatan": [
+      "akomadasi yang disesuaikan"
+     ]
+    }
+   ]
+  },
+  {
+   "kode": "M",
+   "nama": "PEKERJAAN LAIN-LAIN",
+   "sub": [
+    {
+     "no": "",
+     "nama": "PEKERJAAN LAIN-LAIN",
+     "item": [
+      {
+       "uraian": "Penggantian lantai Vynil",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 1000000,
+       "grup": "",
+       "ket": "",
+       "baris": 861
+      },
+      {
+       "uraian": "Penggantian atap ceiling",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "",
+       "baris": 863
+      },
+      {
+       "uraian": "Penggantian dinding",
+       "spek": "",
+       "satuan": "Per-M2",
+       "jml": 1.0,
+       "harga": 2000000,
+       "grup": "",
+       "ket": "",
+       "baris": 869
+      }
+     ],
+     "catatan": [
+      "Keterangan Tambahan:",
+      "- Belum termasuk penggantian rangka hollow, siku ataupun list aluminium",
+      "- Rangka Hollow, Siku ataupun list aluminium akan dihitung terpisah",
+      "Keterangan Tambahan:",
+      "- Belum termasuk penggantian rangka hollow, siku ataupun list aluminium",
+      "- Rangka Hollow, Siku ataupun list aluminium akan dihitung terpisah"
+     ]
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,2422 @@
+{
+ "sumber": "REPAIR LIST DOCKING KMP GORANGO TAHUN 2025.xlsx",
+ "catatan": "Kerangka baku Repair List (tanpa harga). Kode OM/CM mengikuti Docking Code ASDP.",
+ "dok": [
+  {
+   "romawi": "I",
+   "kode": "OM - 01",
+   "nama": "GENERAL SERVICE",
+   "item": [
+    {
+     "kode": "OM - 01",
+     "sub": "01",
+     "grup": "General Service",
+     "uraian": "Pelayanan jasa pandu dan tug boat pada waktu kapal tiba /berangkat dan dari areal galangan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "02",
+     "grup": "General Service",
+     "uraian": "a. Selama kapal di atas dock dan telah turun dock floating repair,sebelum generator kapal berfungsi supaly aliran listrik dari darat",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "",
+     "grup": "General Service",
+     "uraian": "AC 220/380 V 10 KW 50 HZ",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "02",
+     "grup": "General Service",
+     "uraian": "b. Buka/pasang Shore power = 2 kali",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "03",
+     "grup": "General Service",
+     "uraian": "Disediakan tempat sampah dan pembuangan air kapal secara teratur",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "",
+     "grup": "General Service",
+     "uraian": "Disiapkan fire hydrant selama docking repair termasuk penjagaan keamanan diatas dock",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "04",
+     "grup": "General Service",
+     "uraian": "a. Diberikan 1 orang Tenaga Pemadam",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "04",
+     "grup": "General Service",
+     "uraian": "b. Diberikan 1 orang Penjaga keamanan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "",
+     "grup": "General Service",
+     "uraian": "Supply air tawar untuk keperluan kapal :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "05",
+     "grup": "General Service",
+     "uraian": "- Penyambungan dan pelepasan selang air tawar (STD / pelayanan umum docking)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "05",
+     "grup": "General Service",
+     "uraian": "- Selama Kapal dalam pelaksanakan docking",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "05",
+     "grup": "General Service",
+     "uraian": "- Untuk persiapan berlayar",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "06",
+     "grup": "General Service",
+     "uraian": "Diberikan fasilitas MCK untuk ABK selama kapal docking & foating repair",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "08",
+     "grup": "Docking & Undocking",
+     "uraian": "Diberikan asistensi line handler pada waktu kapal naik dan turun dock serta inspection & perbaikan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "",
+     "grup": "Docking & Undocking",
+     "uraian": "Kapal melaksanakan docking floating",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "08",
+     "grup": "Docking & Undocking",
+     "uraian": "- Kapal naik / Turun",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "08",
+     "grup": "Docking & Undocking",
+     "uraian": "- Docking / fasilitas healing",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 01",
+     "sub": "08",
+     "grup": "Docking & Undocking",
+     "uraian": "- Floating",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    }
+   ]
+  },
+  {
+   "romawi": "II",
+   "kode": "OM - 02",
+   "nama": "BLASTING, PAINTING & HULL PROTECTION",
+   "item": [
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "Lambung kapal dari lunas sampai ke batas Main Deck/Car deck ( termasuk Pisang-pisang, kotak sea chest dan daun kemudi ) dibersihkan dan disiapkan untuk pemeriksaan Klas",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "01",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "- Disekrap",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "01",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "- Dicuci air tawar",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "04",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "- Sand Blasting lambung BGA",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "04",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "- Sand Blasting Ramp door haluan dan buritan sisi luar",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "04",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "-Sand Blasting Cardeck",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "Dibuat Recort Ultrasonic Test (Gambar bukaan kulit), Dibuatkan dalam rangkap 6 (enam) sbb;",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "Dilakukan pengecatan lambung mulai dari lunas sampai pada batas main deck 2 x AC dan 1 x AF",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "(Material Cat Owner Supply)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 09",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "a. Bottom + Bottop (BGA Area)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "b. Top side (AGA Area)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "c. Rampdoor haluan dan buritan (sisi luar dan dalam)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "d. Pengecatan Cardeck",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "07",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "Draft Kapal, lambung timbul / plimsol mark, nama kapal dan register port dicat sesuai dengan warna aslinya (Mat. Owner supply)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "Ganti Baru zinc anodes t(Mat. Owner Supply)  :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "09",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "09",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "09",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "Roster( saringan laut) dibuka ,dibersihkan,dicat 2 X AC dan 1 X AF dan disiapkan untuk pemeriksaan Klass setelah dipasang kembali (material cat Owner Suply)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Bawah Garis Air (BGA)",
+     "uraian": "Perawatan Rudder area ,Skeg, Sirip disekrap,disandblast dan dicat 1 X AF (Material cat Owner Suply)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "Pasang baru instalasi lampu ditangki ruang - void lambung kiri kanan haluan buritan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "uk,panjang kabel 15 meter, keranjang lampu 3 buah, lampu 3 buah(void kiri haluan)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "uk,panjang kabel 15 meter, keranjang lampu 5 buah, lampu 5 buah(void kiri buritan)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "uk,panjang kabel 15 meter, keranjang lampu 3 buah,lampu 5 buah(void kanan buritan)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "uk,panjang kabel 15 meter, keranjang lampu 3 buah,lampu 3 buah(void kiri buritan)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "Panel /Saklar On/Off",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "Pasang Baru Instalasi lampu diatas tangki air tawar dan tangki BBM",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "uk,panjang kabel 10 meter, keranjang lampu 6 buah, lampu 6 buah(Atas tangki air tawar)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "uk,panjang kabel 10 meter, keranjang lampu 6 buah, lampu 6 buah(Atas tangki BBM)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "Panel /Saklar  On/Off",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "-Cleaning tangki air tawar, Pembersihan, semen ulang",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "-Cleaning tangki void, pembersihan, pengetokan dan cat ulang",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "-Cleaning tangki ballast, pembersihan, pengetokan dan cat ulang",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tanki Deck",
+     "uraian": "-Repleting plat sekat antara angki ballast dan ruang kemudi buritan kiri",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tangki Mesin",
+     "uraian": "Bersihkan tangki induk bahan bakar minyak kiri-kanan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tangki Mesin",
+     "uraian": "Cleaning Got Kamar Mesin",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "Tanki-Tangki Mesin",
+     "uraian": "Cleaning Ruang Kemudi, ketok dan cat ulang",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "ATAS GARIS AIR, KERJAAN PISANG-PISANG",
+     "uraian": "Penambahan plat pisang-pisang lambung kiri dan kanan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "ATAS GARIS AIR, KERJAAN PISANG-PISANG",
+     "uraian": "Repliting pisang-pisang area kiri dan kanan haluan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 02",
+     "sub": "08",
+     "grup": "ATAS GARIS AIR, KERJAAN PISANG-PISANG",
+     "uraian": "Repliting plat area pisang-pisang kiri kanan buritan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    }
+   ]
+  },
+  {
+   "romawi": "III",
+   "kode": "OM - 03",
+   "nama": "AKOMODASI & INTERIOR",
+   "item": [
+    {
+     "kode": "OM - 03",
+     "sub": "",
+     "grup": "Pekerjaan Di Ruang VIP",
+     "uraian": "Perbaikan Instalasi Pipa dari Tanki air tawar di Top Deck",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "",
+     "grup": "Pekerjaan Di Ruang VIP",
+     "uraian": "-Pipa 5/8\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "",
+     "grup": "Pekerjaan Di Ruang VIP",
+     "uraian": "-Elbow",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "01",
+     "grup": "Pekerjaan Di Ruang Ekonomi A",
+     "uraian": "Ganti Plapon kamar mandi sebelah kiri, ukuran : 1,5 x 1,25 m",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "01",
+     "grup": "Pekerjaan Di Ruang Ekonomi A",
+     "uraian": "Ganti Plapon kamar mandi sebelah kiri, ukuran : 1,5 x 1,25 m",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "01",
+     "grup": "Pekerjaan Di Ruang Ekonomi A",
+     "uraian": "kipas angin 18 inch",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "05",
+     "grup": "Pekerjaan Di Ruang Ekonomi A",
+     "uraian": "Ganti Baru penutup jendela dari bahan terpal , ukuran : P=1,5 m X L= 1,5 m",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "05",
+     "grup": "Pekerjaan Di Ruang Ekonomi A",
+     "uraian": "Perbaiki dinding depan toilet kiri ukuran :P = 1,8 m X 1,2 m",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "03",
+     "grup": "Pekerjaan Di Ruang Ekonomi B",
+     "uraian": "Perbaiki lemari baju tahan api",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "OM - 03",
+     "sub": "05",
+     "grup": "Pekerjaan Di Tatami",
+     "uraian": "Perbaiki saluran air pembungan  diarea tatami,tambah pipa 2 inch ,panjang 15 cm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    }
+   ]
+  },
+  {
+   "romawi": "IV",
+   "kode": "CM - 04",
+   "nama": "PIPING",
+   "item": [
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa Tekan sirkulasi pendingin air laut motor bantu I (Kiri)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 2,5\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Flens 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Baut 19 mm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti Hose pipa Pendingin Isap dan Buang Motor Bantu I UK. 2”",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa buang sirkulasi pendingin air laut motor bantu II ( Kanan)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Flens 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Baut 19 mm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti Hose Pendingin Isap dan Buang Motor Bantu II UK. 2”",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa sirkulasi pendingin cooler Gearbox motor Induk I ( Kiri )",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti Hose Pipa buang pendingin Motor induk I ( Kiri ) Uk. 3”",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa udara sirkulasi Seechast Kiri",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Flens 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa udara sirkulasi bantuan Seachast induk Kiri",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Flens 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa udara sirkulasi Seachast Induk Kiri",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Flens 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa Air tawar Uk 1”",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa udara sirkulasi Seachast Induk Kanan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Flens 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa sewage sebelah kiri/ pipa tinja",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 6\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Globe Valve 6\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 6\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa buang pompa GS",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Flens 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa udara sirkulasi Seachast",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti pipa air tawar",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Pipa ukuran 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "- Elbow 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti baru kran tanki harian BBM Ki/Ka",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Ganti baru pipa pendingin air laut AS Propeller ME Ka/Ki",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "Pipa 1/2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Dibuatkan baru strainer Uk. 2,5 Inch berikut saringannya.",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Supply hose hidrolik winch haluan Ka/Ki",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Buat baru bolder Buritan :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "04",
+     "grup": "Pipa-Pipa",
+     "uraian": "Buat baru plate Bordes yang sudah korosi Uk.",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Pipa-Pipa",
+     "uraian": "P : 1000 mm x L : 1000 mm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran-kran air laut, dibuka, dibersihkan, disekir dan packing - packing diganti baru, dicat dan disiapkan untuk pemeriksaan klass, uk sbb :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Box Strainer/ Saringan Sea Chest di bersihkan dan di cat primer diameter 12\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran induk sea chest uk. 6\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran Isap ME Kiri-kanan U. 4\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran Isap Generator Pump Uk. 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran Buang Pompa Ballast Uk. 2,5\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran Penguapan Uk. 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran Fire Pump 2,5\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran isap air got ruang kuadran Uk. 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Kran Pemadam Uk. 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Ganti baru rumah kran isap air laut AE kanan Ukuran 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Ganti baru rumah kran isap BBM ukuran 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 04",
+     "sub": "16",
+     "grup": "Sea Chest & Sea Valve",
+     "uraian": "Ganti saringan seachest Induk kiri dan Kanan dari stainless",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    }
+   ]
+  },
+  {
+   "romawi": "V",
+   "kode": "CM - 06",
+   "nama": "HULL",
+   "item": [
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Estimasi Replating BGA,, Lambung dan Car Deck",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti plat lantai cardeck bagian haluan yang sudah keropos, bergelombang bagian Haluan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti pipa elbow diatas kamar ABK kiri (pipa pembuangan WC Eknomi A)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti pipa hydrant yang bocor diarea ruang void kiri Uk :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Pipa Uk. 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Bongkar dan pasang tehel yang baru dikamar mandi ABK bagian sebelah kanan, Uk :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Luas : 118 cm x 56 cm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Uk tehel : 30 cm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Bongkar dan pasang tehel yang bari dikamar mandi abk bagian kiri, Uk :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Luasan 118 cm x 56 cm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Ukuran tehel 30 cm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti Ventilasi udara bahan bakar haluan kanan kiri yang sudah patah akibar keropos Uk :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Pipa Uk. 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Panjang 100 cm",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Potong dan ganti anak tangga yang sudah keropos (tangga bagian sebelah kiri) buritan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti pipa air tawar area ruang CO2 pakai pipa besi (Eksisting memakai pipa paralon)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Pipa Uk. 3/4\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Buatkan pintu lemari pakaian ( Kamar ABK)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "T :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "L :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti jendela marine bulat 1 set (bull's eye)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti baru AC kamar abk kiri, 1/2 Pk",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti baru pipa pembunangan yang bocor (kamar mandi) diatas kamar ABK, Uk:",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Pipa Uk. 3\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Panjang 1 m",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti pipa pembuangan yang bocor (dapur) di atas",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti pipa pembuangan yang bocor (dapur) di atas kamar ABK",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "RAMPDOOR DAN DECK WINCH",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti railing haluan deck winch kanan dengan plat agar safety, Uk:",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Pipa Uk. 1,5\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti railing haluan deck winch kanan dengan plat agar safety, Uk:",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Pipa Uk. 1,5\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Buat baru railing Deck winch buritan kanan,",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Pipa Uk. 1,5 \"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti baru safety chain rampdoor haluan ka/ki,",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Buat kupingan rantai rampdoor haluan dan Buritan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti pipa hydrant yang bocor area deck winch Kanan/Kiri",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Pipa Uk. 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Panjang 1 meter",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Gate Valve 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Elbow 2\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Ganti baru stopper jangkar kiri/kanan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Perbaiki dan tambahkan gading-gading rampdoor buritan yang mulai deformasi",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Fr Memanjang H Beam (200 x 200) x",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Fr Melintang H Beam (200 x 200) x",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Besi H Beam (200 x 200) x",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Besi H Beam (200 x 200) x",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Penahan air Plat",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Bracket diamond plat",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Bracket diamond plat",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "- Bracket dalam plat",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-Anti selip pipa sch 80 Φ 3\" x 405 cm x 1 bh",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Potong dan ganti anak tangga yang sudah keropos (tangga bagian sebelah kanan) buritan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "01",
+     "grup": "",
+     "uraian": "Buat baru tangga naik dari cardeck ke deck winch haluan kiri/kanan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Ganti elbow pipa hydrant ukuran 2,5\" di cardeck",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Ganti baru pipa Sprinkler ukuran 1\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Replating pelat corner lambung kanan buritan bagian atas yang robek",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Replating Plat rampdoor buritan kanan yang deformasi",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Replating Frame Rampdoor Buritan Bagian Luar Kiri Kanan Yang Keropos",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Ganti baru Lidah-lidah Rampdoor haluan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Ganti baru Lidah-lidah Rampdoor buritan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "-",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "16",
+     "grup": "",
+     "uraian": "Ganti Fender/pisang-pisang lambung kanan yang deformasi Pipa SCH 40 dia. 10 \" termasuk frame",
+     "satuan": "-",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Ganti Pisang- Pisang lambung kanan kapal yang sudah keropos dan deformasi sbb :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "1",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "2",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "3",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "4",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "5",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "16",
+     "grup": "",
+     "uraian": "Ganti Fender/pisang-pisang lambung kiri yang deformasi Pipa SCH 40 dia. 10 \" termasuk frame",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "Ganti Pisang- Pisang lambung kanan kapal yang sudah keropos dan deformasi sbb :",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "1",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "2",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "3",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "4",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "",
+     "grup": "",
+     "uraian": "5",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "05",
+     "grup": "",
+     "uraian": "Buat Baru Cincin Lashing Di Cardeck, Round bar diameter 10 mm,",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    }
+   ]
+  },
+  {
+   "romawi": "VI",
+   "kode": "CM - 08",
+   "nama": "OUTFITTING",
+   "item": [
+    {
+     "kode": "CM - 08",
+     "sub": "10",
+     "grup": "Jangkar, Rantai Jangkar & Ceruk Jangkar",
+     "uraian": "Jangkar kiri / kanan berikut rantainya diturunkan, direntangkan, dibersihkan, swievel/kili-kili dilancarkan diambil recordnya dan dibuatkan laporan rangkap 6 (enam) dicat 1 x bitouminus, tiap segel diberikan tanda cat pu",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "10",
+     "grup": "Jangkar, Rantai Jangkar & Ceruk Jangkar",
+     "uraian": "Ceruk rantai/chain locker dibersihkan dan dicat bitouminstic atau galvanis 2 lapis berikut pembuangan lumpur (Material cat galangan supply)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "03",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti relling haluan deck winch kanan dengan plat ,ukuran ; Tinggi = 105 cm , Panjang =850 cm ( Plat 8 mm)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "03",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti relling haluan deck winch kiri dengan plat ,ukuran ; Tinggi = 105 cm , Panjang =850 cm ( Plat 8 mm)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "03",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Repleting relling buritan Kanan  ,ukuran ; Tinggi = 105 cm , Panjang =105 cm ( Plat 8 mm)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "03",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti safety chain ramdoor haluan , kanan kiri ukuran 4 meter",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "04",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti kupingan rantai ramdoor haluan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 09",
+     "sub": "05",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti pipa hydrant area deck winch kiri haluan , ukuran 2 inch",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "06",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti pipa hydrant area deck winch kanan haluan , ukuran 2 inch",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "07",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti stoper jangkar kiri",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "08",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Tambahkan gading-gading ramdor haluan ( habim)",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 06",
+     "sub": "08",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Ganti wire sekoci kiri kanan ukuran ; 8 mm atau 3/8",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 08",
+     "sub": "08",
+     "grup": "Deck Winch & Rampdoor",
+     "uraian": "Tambah engsel lidah-lidah ramdoor buritan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    }
+   ]
+  },
+  {
+   "romawi": "VII",
+   "kode": "CM - 10",
+   "nama": "PROPULSION",
+   "item": [
+    {
+     "kode": "CM - 10",
+     "sub": "04",
+     "grup": "Propeller",
+     "uraian": "Baling-baling kiri/kanan diperbaiki di poles dan di balancing",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "03",
+     "grup": "Propeller",
+     "uraian": "Ganti baru gland packing (remes packing) pada shaft propeller kiri/kanan (Material galangan supply) ukuran 7/8\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "01",
+     "grup": "As Propeller",
+     "uraian": "Clearene AS propeller kiri/kanan kemudian dibuat rekordnya dan disiapkan untuk pemeriksaan klas.",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "01",
+     "grup": "As Propeller",
+     "uraian": "As Propeller Di cabut untuk pemeriksaan kondisi dan cek kelurusan dan di pasang kembali",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "01",
+     "grup": "As Propeller",
+     "uraian": "Ganti bantalan pokhout As propeller kiri-kanan",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "01",
+     "grup": "As Propeller",
+     "uraian": "Ganti baut penekan reimes packing as propeller material stainless, ukuran 5/8",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "05",
+     "grup": "Daun Kemudi dan As Kemudi",
+     "uraian": "Clearene AS kemudi kiri/kanan kemudian dibuat rekordnya dan disiapkan untuk pemeriksaan klas.",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "03",
+     "grup": "Daun Kemudi dan As Kemudi",
+     "uraian": "Ganti baru gland packing (remes packing) pada shaft kemudi kiri/kanan (Material galangan supply) ukuran 7/8\"",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    },
+    {
+     "kode": "CM - 10",
+     "sub": "03",
+     "grup": "Daun Kemudi dan As Kemudi",
+     "uraian": "Ganti baut penekan reimes packing as kemudi material stainless, ukuran 5/8",
+     "satuan": "",
+     "vol": null,
+     "ket": "Docking Repair"
+    }
+   ]
+  }
+ ],
+ "floating": [
+  {
+   "romawi": "III",
+   "kode": "OM",
+   "nama": "AKOMODASI & INTERIOR",
+   "item": [
+    {
+     "kode": "OM",
+     "sub": "03",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "Replating plat lantai tiang must yang keropos Uk : 550 x 1500 x 8 mm",
+     "satuan": "Floating Repair",
+     "vol": 3250000,
+     "ket": "Floating Repair"
+    },
+    {
+     "kode": "OM",
+     "sub": "01",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "Potong ganti baru tiang radio VHF bahan pipa",
+     "satuan": "",
+     "vol": null,
+     "ket": "Floating Repair"
+    },
+    {
+     "kode": "OM",
+     "sub": "",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "-Uk :",
+     "satuan": "Floating Repair",
+     "vol": 450000,
+     "ket": "Floating Repair"
+    },
+    {
+     "kode": "OM",
+     "sub": "01",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "Ganti baru tiang antena GPS bahan pipa",
+     "satuan": "",
+     "vol": null,
+     "ket": "Floating Repair"
+    },
+    {
+     "kode": "OM",
+     "sub": "",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "-Uk :",
+     "satuan": "Floating Repair",
+     "vol": 450000,
+     "ket": "Floating Repair"
+    },
+    {
+     "kode": "OM",
+     "sub": "06",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "Potong dan ganti baru dudukan lampur sorot",
+     "satuan": "",
+     "vol": null,
+     "ket": "Floating Repair"
+    },
+    {
+     "kode": "OM",
+     "sub": "",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "-Uk :",
+     "satuan": "Floating Repair",
+     "vol": 1250000,
+     "ket": "Floating Repair"
+    },
+    {
+     "kode": "OM",
+     "sub": "06",
+     "grup": "Pekerjaan Di Top Deck",
+     "uraian": "Service dan ganti karet kedap tuas lampu sorot yang bocor",
+     "satuan": "Floating Repair",
+     "vol": 2500000,
+     "ket": "Floating Repair"
+    }
+   ]
+  }
+ ]
+}
