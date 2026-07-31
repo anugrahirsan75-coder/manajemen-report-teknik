@@ -18,6 +18,7 @@ import {
 } from "@/lib/docking/rencana/types";
 import CariHarga from "./CariHarga";
 import PilihPekerjaan from "./PilihPekerjaan";
+import ImporBorang from "./ImporBorang";
 
 export default function TabRepairList({ r, ubah }: {
   r: RencanaDocking;
@@ -25,6 +26,7 @@ export default function TabRepairList({ r, ubah }: {
 }) {
   const [jenis, setJenis] = useState<"dok" | "floating">("dok");
   const [pilih, setPilih] = useState(false);
+  const [impor, setImpor] = useState(false);
   const [cariUntuk, setCariUntuk] = useState<ItemRl | null>(null);
 
   const list = useMemo(() => (r.rl || []).filter((x) => x.jenis === jenis), [r.rl, jenis]);
@@ -59,7 +61,8 @@ export default function TabRepairList({ r, ubah }: {
             </button>
           ))}
         </div>
-        <button onClick={() => setPilih(true)} className="btn btn-primary text-xs">＋ Tambah dari tarif / kerangka RL</button>
+        <button onClick={() => setImpor(true)} className="btn btn-primary text-xs" title="Unggah PDF Daftar Pekerjaan Docking / Permintaan Pengadaan dari kapal">📄 Baca permintaan kapal</button>
+        <button onClick={() => setPilih(true)} className="btn btn-ghost text-xs">＋ Tambah dari tarif / kerangka RL</button>
         <button onClick={() => tambah([rlBaru({ jenis })])} className="btn btn-ghost text-xs">＋ Baris kosong</button>
         <span className="flex-1" />
         {belumHarga > 0 && <span className="text-[11px] text-slate-500">{belumHarga} baris belum berharga</span>}
@@ -165,6 +168,11 @@ export default function TabRepairList({ r, ubah }: {
       )}
 
       {pilih && <PilihPekerjaan onTutup={() => setPilih(false)} onTambah={tambah} />}
+      {impor && (
+        <ImporBorang onTutup={() => setImpor(false)}
+          onRl={(items) => ubah({ rl: [...(r.rl || []), ...items] })}
+          onPenunjang={(items) => ubah({ penunjang: [...(r.penunjang || []), ...items] })} />
+      )}
       {cariUntuk && (
         <CariHarga awal={cariUntuk.uraian.slice(0, 40)} onTutup={() => setCariUntuk(null)}
           onPilih={(p) => {
