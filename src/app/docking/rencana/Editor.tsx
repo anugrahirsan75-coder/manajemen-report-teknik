@@ -22,8 +22,9 @@ import { susunJadwal, ringkasJadwal, geser, hariIniLokal } from "@/lib/docking/r
 import TabRepairList from "./TabRepairList";
 import TabPenunjang from "./TabPenunjang";
 import TabJadwal from "./TabJadwal";
-import BacaBorang from "./BacaBorang";
+import ImporBorang from "./ImporBorang";
 import { unduhRencana } from "@/lib/docking/rencana/ekspor";
+import { unduhSmartsheet } from "@/lib/docking/rencana/eksporSmartsheet";
 
 const TAB = [
   { key: "ringkas", label: "Ringkasan" },
@@ -44,6 +45,8 @@ const ukuranDariShip = (k?: Ship) => ({
   loa: angkaKapal(k?.dimension?.loa),
   lbp: angkaKapal(k?.dimension?.lbp),
   tinggi: angkaKapal(k?.dimension?.h),
+  lebar: angkaKapal(k?.dimension?.b),
+  sarat: angkaKapal(k?.dimension?.t),
 });
 
 export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup }: {
@@ -137,7 +140,9 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
               {" · "}usulan {rupiah(total.total)}
             </p>
           </div>
-          <button onClick={() => unduhRencana(r)} className="btn btn-ghost text-xs">📤 Excel</button>
+          <button onClick={() => unduhRencana(r)} className="btn btn-ghost text-xs" title="Excel kerja cabang: Repair List, Penunjang, Kontrol Anggaran, Jadwal, Sumber Harga">📤 Excel</button>
+          <button onClick={() => unduhSmartsheet(r)} className="btn btn-ghost text-xs"
+            title="Excel format PUSAT — 25 kolom persis unduhan Smartsheet (Klasifikasi GS/OM/CM, bagian romawi, kolom evaluasi kosong utk pusat)">🏛️ Format Pusat</button>
           <button onClick={simpan} disabled={sibuk} className="btn btn-primary text-xs px-4">{sibuk ? "…" : "💾 Simpan"}</button>
         </div>
       </div>
@@ -231,6 +236,15 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
               <Field label="Tinggi (m)" hint={ukuranDb.tinggi && ukuranDb.tinggi !== r.tinggi ? `Ship Database: ${ukuranDb.tinggi}` : undefined}>
                 <Input type="number" step="0.01" value={r.tinggi || ""} onChange={(e) => ubah({ tinggi: +e.target.value || undefined })} />
               </Field>
+              <Field label="Lebar / B (m)" hint={ukuranDb.lebar && ukuranDb.lebar !== r.lebar ? `Ship Database: ${ukuranDb.lebar}` : undefined}>
+                <Input type="number" step="0.01" value={r.lebar || ""} onChange={(e) => ubah({ lebar: +e.target.value || undefined })} />
+              </Field>
+              <Field label="Sarat / T (m)" hint={ukuranDb.sarat && ukuranDb.sarat !== r.sarat ? `Ship Database: ${ukuranDb.sarat}` : undefined}>
+                <Input type="number" step="0.01" value={r.sarat || ""} onChange={(e) => ubah({ sarat: +e.target.value || undefined })} />
+              </Field>
+              <Field label="Cb (koef. blok)" hint="baku 0,80 — berkas cat cabang memakai 0,75-0,80">
+                <Input type="number" step="0.01" value={r.cb || ""} onChange={(e) => ubah({ cb: +e.target.value || undefined })} placeholder="0.80" />
+              </Field>
             </div>
           </Section>
 
@@ -303,11 +317,9 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
       {tab === "kontrol" && <Kontrol r={r} />}
 
       {baca && (
-        <BacaBorang onTutup={() => setBaca(false)}
-          onTerap={(rlBaris, penunjangBaris) => ubah({
-            rl: [...(r.rl || []), ...rlBaris],
-            penunjang: [...(r.penunjang || []), ...penunjangBaris],
-          })} />
+        <ImporBorang onTutup={() => setBaca(false)}
+          onRl={(items) => ubah({ rl: [...(r.rl || []), ...items] })}
+          onPenunjang={(items) => ubah({ penunjang: [...(r.penunjang || []), ...items] })} />
       )}
     </div>
   );

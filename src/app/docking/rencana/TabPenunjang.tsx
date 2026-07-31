@@ -14,6 +14,7 @@ import {
   KELOMPOK_PENUNJANG, STATUS_USULAN, StatusUsulan, SUMBER_LABEL, PPN_BAKU,
 } from "@/lib/docking/rencana/types";
 import CariHarga from "./CariHarga";
+import PanelCat from "./PanelCat";
 
 export default function TabPenunjang({ r, ubah }: {
   r: RencanaDocking;
@@ -21,7 +22,34 @@ export default function TabPenunjang({ r, ubah }: {
 }) {
   const [buka, setBuka] = useState<Record<string, boolean>>({ roro: true });
   const [cariUntuk, setCariUntuk] = useState<ItemPenunjang | null>(null);
+  const [otomatis, setOtomatis] = useState("");
   const rekap = rekapPenunjang(r);
+  const belumHarga = (r.penunjang || []).filter((x) => !x.harga && x.uraian.trim().length >= 6);
+
+  const isiOtomatis = async () => {
+    if (!belumHarga.length) return;
+    setOtomatis("jalan");
+    try {
+      const res = await fetch("/api/harga/cocok", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: belumHarga.map((x) => ({ id: x.id, teks: `${x.uraian} ${x.spek || ""} ${x.grup}` })) }),
+      });
+      const d = await res.json();
+      if (!d.ok) { setOtomatis("Gagal: " + (d.error || res.status)); return; }
+      let terisi = 0, ragu = 0;
+      ubah({
+        penunjang: (r.penunjang || []).map((x) => {
+          const c = d.hasil[x.id];
+          if (!c || x.harga) return x;
+          if (!c.yakin) { ragu++; return x; }
+          terisi++;
+          return { ...x, harga: c.harga, sumber: "database" as const, refHarga: c.kode };
+        }),
+      });
+      setOtomatis(`Terisi ${terisi} dari ${belumHarga.length} baris` +
+        (ragu ? ` · ${ragu} tak cukup yakin (dibiarkan kosong)` : ""));
+    } catch (e: any) { setOtomatis("Gagal: " + (e?.message || e)); }
+  };
 
   const setItem = (id: string, patch: Partial<ItemPenunjang>) =>
     ubah({ penunjang: (r.penunjang || []).map((x) => (x.id === id ? { ...x, ...patch } : x)) });
@@ -31,6 +59,22 @@ export default function TabPenunjang({ r, ubah }: {
 
   return (
     <div className="space-y-3">
+      {belumHarga.length > 0 && (
+        <div className="flex items-center gap-2">
+          <button onClick={isiOtomatis} disabled={otomatis === "jalan"}
+            className="btn btn-success text-xs disabled:opacity-50"
+            title="Cocokkan baris tanpa harga dengan database realisasi 2024-2026">
+            {otomatis === "jalan" ? "mencocokkan…" : `💰 Isi harga otomatis (${belumHarga.length})`}
+          </button>
+          {otomatis && otomatis !== "jalan" && (
+            <span className="text-[11px] text-slate-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-3 py-1.5">
+              {otomatis} <button onClick={() => setOtomatis("")} className="ml-1 text-slate-400 hover:text-slate-700">✕</button>
+            </span>
+          )}
+        </div>
+      )}
+      <PanelCat r={r} ubah={ubah} />
+
       {rekap.map((k) => {
         const items = (r.penunjang || []).filter((x) => x.kelompok === k.key);
         const terbuka = buka[k.key] ?? false;

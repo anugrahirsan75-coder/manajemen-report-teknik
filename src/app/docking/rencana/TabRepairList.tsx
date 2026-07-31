@@ -18,7 +18,6 @@ import {
 } from "@/lib/docking/rencana/types";
 import CariHarga from "./CariHarga";
 import PilihPekerjaan from "./PilihPekerjaan";
-import ImporBorang from "./ImporBorang";
 
 export default function TabRepairList({ r, ubah, onBaca }: {
   r: RencanaDocking;
@@ -28,8 +27,8 @@ export default function TabRepairList({ r, ubah, onBaca }: {
 }) {
   const [jenis, setJenis] = useState<"dok" | "floating">("dok");
   const [pilih, setPilih] = useState(false);
-  const [impor, setImpor] = useState(false);
   const [cariUntuk, setCariUntuk] = useState<ItemRl | null>(null);
+  const [otomatis, setOtomatis] = useState("");   // "" | "jalan" | laporan hasil
 
   const list = useMemo(() => (r.rl || []).filter((x) => x.jenis === jenis), [r.rl, jenis]);
   const grup = useMemo(() => {
@@ -47,6 +46,35 @@ export default function TabRepairList({ r, ubah, onBaca }: {
   const buang = (id: string) => ubah({ rl: (r.rl || []).filter((x) => x.id !== id) });
   const tambah = (items: ItemRl[]) => ubah({ rl: [...(r.rl || []), ...items.map((x) => ({ ...x, jenis }))] });
 
+  // Isi harga borongan untuk baris yang masih 0 — dari database realisasi.
+  // Hanya pasangan yang YAKIN yang dipakai; sisanya dibiarkan kosong dan
+  // dilaporkan, karena salah harga lebih mahal daripada kosong.
+  const isiOtomatis = async () => {
+    const kosong = list.filter((x) => !x.harga && x.uraian.trim().length >= 6);
+    if (!kosong.length) return;
+    setOtomatis("jalan");
+    try {
+      const res = await fetch("/api/harga/cocok", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: kosong.map((x) => ({ id: x.id, teks: `${x.uraian} ${x.grup}` })) }),
+      });
+      const d = await res.json();
+      if (!d.ok) { setOtomatis("Gagal: " + (d.error || res.status)); return; }
+      let terisi = 0, ragu = 0;
+      ubah({
+        rl: (r.rl || []).map((x) => {
+          const c = d.hasil[x.id];
+          if (!c || x.harga) return x;
+          if (!c.yakin) { ragu++; return x; }
+          terisi++;
+          return { ...x, harga: c.harga, sumber: "database" as const, refHarga: c.kode, bandingLo: c.lo, bandingHi: c.hi };
+        }),
+      });
+      setOtomatis(`Terisi ${terisi} dari ${kosong.length} baris` +
+        (ragu ? ` · ${ragu} tak cukup yakin (dibiarkan kosong — isi lewat "cari harga acuan")` : ""));
+    } catch (e: any) { setOtomatis("Gagal: " + (e?.message || e)); }
+  };
+
   const sub = list.reduce((s, x) => s + nilaiRl(x), 0);
   const ppn = ppnDari(sub, r.ppn ?? PPN_BAKU);
   const ragu = list.filter((x) => periksaHarga(x)?.nada === "tinggi").length;
@@ -63,13 +91,26 @@ export default function TabRepairList({ r, ubah, onBaca }: {
             </button>
           ))}
         </div>
-        <button onClick={() => setImpor(true)} className="btn btn-primary text-xs" title="Unggah PDF Daftar Pekerjaan Docking / Permintaan Pengadaan dari kapal">📄 Baca permintaan kapal</button>
+        <button onClick={onBaca} className="btn btn-primary text-xs" title="Unggah PDF Daftar Pekerjaan Docking / Permintaan Pengadaan dari kapal — dibaca di laptop, bisa dikecilkan sambil jalan">📄 Baca permintaan kapal</button>
         <button onClick={() => setPilih(true)} className="btn btn-ghost text-xs">＋ Tambah dari tarif / kerangka RL</button>
         <button onClick={() => tambah([rlBaru({ jenis })])} className="btn btn-ghost text-xs">＋ Baris kosong</button>
+        {belumHarga > 0 && (
+          <button onClick={isiOtomatis} disabled={otomatis === "jalan"}
+            className="btn btn-success text-xs disabled:opacity-50"
+            title="Cocokkan tiap baris tanpa harga dengan database realisasi 2024-2026; hanya pasangan yang yakin yang diisi">
+            {otomatis === "jalan" ? "mencocokkan…" : `💰 Isi harga otomatis (${belumHarga})`}
+          </button>
+        )}
         <span className="flex-1" />
         {belumHarga > 0 && <span className="text-[11px] text-slate-500">{belumHarga} baris belum berharga</span>}
         {ragu > 0 && <span className="text-[11px] text-amber-800 bg-amber-50 ring-1 ring-amber-200 rounded-full px-2 py-0.5">{ragu} baris di atas rentang pembanding</span>}
       </div>
+
+      {otomatis && otomatis !== "jalan" && (
+        <p className="text-[11px] text-slate-700 bg-emerald-50 ring-1 ring-emerald-200 rounded-lg px-3 py-2">
+          {otomatis} <button onClick={() => setOtomatis("")} className="ml-1 text-slate-400 hover:text-slate-700">✕</button>
+        </p>
+      )}
 
       {!list.length ? (
         <div className="text-center bg-white rounded-2xl ring-line elev-sm p-8">
@@ -170,11 +211,6 @@ export default function TabRepairList({ r, ubah, onBaca }: {
       )}
 
       {pilih && <PilihPekerjaan onTutup={() => setPilih(false)} onTambah={tambah} />}
-      {impor && (
-        <ImporBorang onTutup={() => setImpor(false)}
-          onRl={(items) => ubah({ rl: [...(r.rl || []), ...items] })}
-          onPenunjang={(items) => ubah({ penunjang: [...(r.penunjang || []), ...items] })} />
-      )}
       {cariUntuk && (
         <CariHarga awal={cariUntuk.uraian.slice(0, 40)} onTutup={() => setCariUntuk(null)}
           onPilih={(p) => {

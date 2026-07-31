@@ -9,7 +9,7 @@
  */
 import { useState } from "react";
 import { BarisBorang, HasilBorang, golongkan } from "@/lib/docking/rencana/borang";
-import { bacaBorang, jalurBaca, OllamaBelumSiap } from "@/lib/docking/rencana/bacaBorang";
+import { bacaBorang, jalurBaca, OllamaBelumSiap, PilihModel } from "@/lib/docking/rencana/bacaBorang";
 import { ItemRl, ItemPenunjang, rlBaru, penunjangBaru } from "@/lib/docking/rencana/types";
 
 type Pilihan = Record<number, boolean>;
@@ -25,6 +25,11 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
   const [maju, setMaju] = useState("");
   const [galat, setGalat] = useState("");
   const [namaBerkas, setNamaBerkas] = useState("");
+  const [model, setModel] = useState<PilihModel>("teliti");
+  const [dari, setDari] = useState("");
+  const [sampai, setSampai] = useState("");
+  const [halaman, setHalaman] = useState<{ h: number; t: number } | null>(null);
+  const [kecil, setKecil] = useState(false);
 
   const muat = async (files: FileList | null) => {
     if (!files?.length) return;
@@ -33,7 +38,9 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
       const kumpul: HasilBorang[] = [];
       for (const f of Array.from(files)) {
         setNamaBerkas(f.name);
-        kumpul.push(await bacaBorang(f, (k) => setMaju(`${f.name} — halaman ${k.halaman}/${k.total}`)));
+        kumpul.push(await bacaBorang(f,
+          (k) => { setHalaman({ h: k.halaman, t: k.total }); setMaju(`${f.name} — halaman ${k.halaman}/${k.total}`); },
+          { model, dari: +dari || undefined, sampai: +sampai || undefined }));
       }
       const gab: HasilBorang = {
         jenis: kumpul.find((k) => k.jenis)?.jenis || "",
@@ -48,10 +55,42 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
       setGalat(e instanceof OllamaBelumSiap
         ? `${e.message}\n\nPemindaian memakai AI lokal (Ollama) di laptop ini. Lihat docs/OLLAMA.md.`
         : (e?.message || String(e)));
-    } finally { setSibuk(false); setMaju(""); }
+    } finally { setSibuk(false); setMaju(""); setHalaman(null); setKecil(false); }
   };
 
   const terpilih = (hasil?.baris || []).filter((_, i) => pilih[i]);
+
+  // Menutup jendela membongkar komponennya — pembacaan yang sedang jalan ikut
+  // mati di tengah. Selama sibuk, "tutup" diarahkan jadi "kecilkan".
+  const tutupAman = () => { if (sibuk) setKecil(true); else onTutup(); };
+  const persen = halaman && halaman.t ? Math.round((halaman.h / halaman.t) * 100) : 0;
+
+  if (kecil) {
+    return (
+      <div className="fixed bottom-4 right-4 z-[60] w-80 bg-white rounded-2xl elev-lg ring-line overflow-hidden">
+        <div className="px-4 py-3">
+          <div className="flex items-center gap-2">
+            <span className="h-7 w-7 rounded-lg asdp-gradient text-white grid place-items-center text-xs shrink-0">📄</span>
+            <span className="flex-1 min-w-0">
+              <span className="block text-xs font-bold text-slate-800 truncate">
+                {sibuk ? "Membaca permintaan kapal…" : "Bacaan selesai — tinggal diperiksa"}
+              </span>
+              <span className="block text-[10px] text-slate-500 truncate" title={maju || namaBerkas}>{maju || namaBerkas}</span>
+            </span>
+            <button onClick={() => setKecil(false)} className="text-[11px] font-semibold text-[#1ca3dd] hover:underline shrink-0">Buka</button>
+          </div>
+          {halaman && (
+            <>
+              <div className="h-1.5 bg-slate-100 rounded-full overflow-hidden mt-2">
+                <div className="h-full asdp-gradient transition-all" style={{ width: `${persen}%` }} />
+              </div>
+              <p className="text-[10px] text-slate-500 mt-1 tabular-nums">halaman {halaman.h} dari {halaman.t} · {persen}%</p>
+            </>
+          )}
+        </div>
+      </div>
+    );
+  }
 
   const keRl = () => {
     onRl(terpilih.map((b) => {
@@ -76,7 +115,7 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-[2px] p-4 overflow-y-auto" onClick={onTutup}>
+    <div className="fixed inset-0 z-[60] bg-slate-900/50 backdrop-blur-[2px] p-4 overflow-y-auto" onClick={tutupAman}>
       <div className="max-w-4xl mx-auto my-6 bg-white rounded-2xl elev-lg ring-line overflow-hidden flex flex-col max-h-[88vh]" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-4 border-b border-slate-200 flex items-center gap-3">
           <span className="h-9 w-9 rounded-xl asdp-gradient text-white grid place-items-center text-sm shrink-0">📄</span>
@@ -86,10 +125,42 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
               Daftar Pekerjaan Docking (TF-102.01.01) atau Permintaan Pengadaan (HP-103.00.01) — PDF pindaian atau foto
             </p>
           </div>
-          <button onClick={onTutup} className="text-slate-400 hover:text-slate-700 text-lg px-1">✕</button>
+          {sibuk && (
+            <button onClick={() => setKecil(true)} className="btn btn-ghost text-xs shrink-0"
+              title="Kecilkan — pembacaan tetap jalan, kemajuannya tampil di gelembung kanan bawah">— Kecilkan</button>
+          )}
+          <button onClick={tutupAman} className="text-slate-400 hover:text-slate-700 text-lg px-1"
+            title={sibuk ? "Kecilkan (pembacaan masih jalan)" : "Tutup"}>✕</button>
         </div>
 
         <div className="p-5 space-y-3 flex-1 overflow-y-auto">
+          {!hasil && !sibuk && (
+            <div className="flex flex-wrap items-end gap-3">
+              <label className="block">
+                <span className="text-[11px] font-semibold text-slate-600">Cara baca</span>
+                <select value={model} onChange={(e) => setModel(e.target.value as PilihModel)}
+                  className="mt-1 block rounded-lg border border-slate-300 px-2 py-2 text-sm bg-white">
+                  <option value="teliti">Teliti — ± 9 mnt/halaman, paling tepat</option>
+                  <option value="cepat">Cepat — ± 20 dtk/halaman</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="text-[11px] font-semibold text-slate-600">Halaman (kosong = semua)</span>
+                <span className="mt-1 flex items-center gap-1">
+                  <input value={dari} onChange={(e) => setDari(e.target.value)} placeholder="dari"
+                    className="w-16 rounded-lg border border-slate-300 px-2 py-2 text-sm tabular-nums" />
+                  <span className="text-slate-400 text-xs">-</span>
+                  <input value={sampai} onChange={(e) => setSampai(e.target.value)} placeholder="s.d."
+                    className="w-16 rounded-lg border border-slate-300 px-2 py-2 text-sm tabular-nums" />
+                </span>
+              </label>
+              <p className="text-[11px] text-slate-500 flex-1 min-w-[13rem] pb-1.5">
+                <b>Teliti</b> untuk Permintaan Pengadaan (kolomnya banyak). <b>Cepat</b> memadai untuk
+                Daftar Pekerjaan Docking. Berkas RL sering berlampiran foto — batasi halamannya.
+              </p>
+            </div>
+          )}
+
           {!hasil && (
             <label className={`block rounded-xl border-2 border-dashed p-8 text-center cursor-pointer ${sibuk ? "border-slate-200 bg-slate-50" : "border-slate-300 hover:border-[#1ca3dd] hover:bg-sky-50/40"}`}>
               <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={sibuk}
@@ -98,8 +169,16 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
                 <>
                   <p className="text-sm font-semibold text-slate-700">Sedang dibaca…</p>
                   <p className="text-xs text-slate-500 mt-1">{maju || namaBerkas}</p>
+                  {halaman && (
+                    <span className="block max-w-xs mx-auto mt-3">
+                      <span className="block h-1.5 bg-slate-200 rounded-full overflow-hidden">
+                        <span className="block h-full asdp-gradient transition-all" style={{ width: `${persen}%` }} />
+                      </span>
+                      <span className="block text-[11px] text-slate-500 mt-1 tabular-nums">{persen}%</span>
+                    </span>
+                  )}
                   <p className="text-[11px] text-slate-400 mt-2">
-                    Dibaca AI lokal di laptop ini, satu halaman sekali jalan. RL 19 halaman perlu beberapa menit.
+                    Dibaca AI lokal di laptop ini, satu halaman sekali jalan — boleh <b>dikecilkan</b>, bacaan tetap jalan.
                   </p>
                 </>
               ) : (
@@ -188,7 +267,7 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
           <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center gap-2">
             <span className="text-xs text-slate-500">{terpilih.length} baris dipilih</span>
             <span className="flex-1" />
-            <button onClick={onTutup} className="btn btn-ghost text-xs">Batal</button>
+            <button onClick={tutupAman} className="btn btn-ghost text-xs">Batal</button>
             <button disabled={!terpilih.length} onClick={kePenunjang} className="btn btn-ghost text-xs disabled:opacity-40">
               → RAB Penunjang
             </button>

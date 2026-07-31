@@ -101,6 +101,7 @@ export interface RencanaDocking {
   tahun: number;
   /** identitas kapal — dipakai memilih tarif bertingkat (GRT) & luas pengecatan */
   grt?: number; loa?: number; lbp?: number; tinggi?: number;
+  lebar?: number; sarat?: number; cb?: number;   // utk kalkulator cat (B, T, koef. blok)
   galangan?: string;
   lokasi?: string;
   naikDok?: string;           // ISO — patokan seluruh jadwal

@@ -13,6 +13,7 @@ const nextConfig = {
       "/api/nonpr/generate": ["./templates/nonpr/**/*"],
       // indeks harga (60 ribu item) dibaca di sisi server, tidak dikirim ke peramban
       "/api/harga/cari": ["./data/hargaIndex.json"],
+      "/api/harga/cocok": ["./data/hargaIndex.json"],
     },
   },
 };
