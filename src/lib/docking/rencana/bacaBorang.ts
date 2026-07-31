@@ -12,6 +12,7 @@
 import { extractJson } from "@/lib/sppbj/scanPrompt";
 import { ollamaHost } from "@/lib/sppbj/scanAI";
 import { PROMPT_BORANG, HasilBorang, rapikanBorang, gabungHalaman } from "./borang";
+import { bacaDocx, berkasWord, wordLama } from "./bacaWord";
 
 export class OllamaBelumSiap extends Error {}
 
@@ -109,6 +110,19 @@ export async function bacaBorang(
   onMaju?: (k: KemajuanBaca) => void,
   opsi: { model?: PilihModel; dari?: number; sampai?: number } = {},
 ): Promise<HasilBorang> {
+  // Word masih punya lapisan teks — dibaca langsung dari XML-nya, seketika dan
+  // tanpa Ollama. Hanya PDF pindaian & foto yang perlu model bervisi.
+  if (wordLama(file)) {
+    throw new Error(
+      `"${file.name}" berformat Word lama (.doc). Buka di Word lalu simpan sebagai .docx, ` +
+      "atau cetak jadi PDF — dua-duanya bisa dibaca di sini.",
+    );
+  }
+  if (berkasWord(file)) {
+    onMaju?.({ halaman: 1, total: 1 });
+    return bacaDocx(await file.arrayBuffer());
+  }
+
   const pdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name);
   let gambar = pdf ? await halamanPdf(file) : [await gambarKeBase64(file)];
   // rentang halaman: berkas RL kerap berisi lampiran/foto yang tak perlu dibaca

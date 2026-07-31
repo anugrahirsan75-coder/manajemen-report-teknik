@@ -122,7 +122,7 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
           <div className="flex-1 min-w-0">
             <h3 className="font-bold text-slate-800 leading-tight">Baca permintaan dari kapal</h3>
             <p className="text-xs text-slate-500">
-              Daftar Pekerjaan Docking (TF-102.01.01) atau Permintaan Pengadaan (HP-103.00.01) — PDF pindaian atau foto
+              Daftar Pekerjaan Docking (TF-102.01.01) atau Permintaan Pengadaan (HP-103.00.01) — Word, PDF pindaian, atau foto
             </p>
           </div>
           {sibuk && (
@@ -155,15 +155,17 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
                 </span>
               </label>
               <p className="text-[11px] text-slate-500 flex-1 min-w-[13rem] pb-1.5">
-                <b>Teliti</b> untuk Permintaan Pengadaan (kolomnya banyak). <b>Cepat</b> memadai untuk
-                Daftar Pekerjaan Docking. Berkas RL sering berlampiran foto — batasi halamannya.
+                Pilihan ini hanya berlaku untuk PDF pindaian &amp; foto — berkas <b>Word</b> dibaca
+                langsung tanpa AI. <b>Teliti</b> untuk Permintaan Pengadaan (kolomnya banyak),
+                <b>Cepat</b> memadai untuk Daftar Pekerjaan Docking. Berkas RL sering berlampiran foto —
+                batasi halamannya.
               </p>
             </div>
           )}
 
           {!hasil && (
             <label className={`block rounded-xl border-2 border-dashed p-8 text-center cursor-pointer ${sibuk ? "border-slate-200 bg-slate-50" : "border-slate-300 hover:border-[#1ca3dd] hover:bg-sky-50/40"}`}>
-              <input type="file" accept="application/pdf,image/*" multiple className="hidden" disabled={sibuk}
+              <input type="file" accept="application/pdf,image/*,.docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" multiple className="hidden" disabled={sibuk}
                 onChange={(e) => muat(e.target.files)} />
               {sibuk ? (
                 <>
@@ -183,8 +185,9 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
                 </>
               ) : (
                 <>
-                  <p className="text-sm font-semibold text-slate-700">Pilih berkas PDF / foto</p>
+                  <p className="text-sm font-semibold text-slate-700">Pilih berkas Word / PDF / foto</p>
                   <p className="text-xs text-slate-500 mt-1">boleh beberapa sekaligus — RL Deck &amp; RL Mesin, permintaan cat, alat kerja</p>
+                  <p className="text-[11px] text-emerald-700 mt-1">Word (.docx) dibaca seketika tanpa AI — paling tepat bila kapal punya berkasnya</p>
                   <p className="text-[11px] text-slate-400 mt-2">Isi dokumen tidak keluar dari laptop ini.</p>
                 </>
               )}
