@@ -101,6 +101,23 @@ export const daftarKapalRka = () => Object.keys(RKA.docking).sort();
  * pembanding: pagu di sana adalah Persetujuan Pusat, RKA adalah rencana awal —
  * dua angka berbeda yang memang perlu dilihat berdampingan.
  */
+/**
+ * M.A. yang di sheet RUTIN sebenarnya berisi anggaran DOCKING.
+ *
+ * Diperiksa dari datanya sendiri: keempat pos ini terisi tepat SATU bulan per
+ * kapal — bulan rencana docking-nya — dan angkanya sama dengan RKA docking
+ * kapal itu (mis. KERAPU II Ro-Ro 1.120.595.491 di Oktober). Berkas cabang
+ * memang menyebar anggaran docking ke bulan pelaksanaannya. Kendali Anggaran
+ * Rutin memisahkan docking, jadi pos-pos ini tak boleh ikut dibandingkan di
+ * sana — kalau ikut, RKA bulan docking melonjak miliaran tanpa pagu rutinnya.
+ */
+const MA_DOCKING_DI_SHEET_RUTIN = new Set([
+  "5010403003", // Kapal Ro-Ro (docking repair)
+  "5010302004", // Mobilisasi Docking
+  "5010302006", // Fumigasi
+  "5010318000", // Sertifikat Docking Kapal
+]);
+
 export function rutinRentang(bulanYm: string[]): { perMa: Record<string, number>; total: number } {
   const perMa: Record<string, number> = {};
   for (const ym of bulanYm) {
@@ -108,6 +125,7 @@ export function rutinRentang(bulanYm: string[]): { perMa: Record<string, number>
     if (th !== RKA.tahun || !bl) continue;
     for (const kapal of Object.values(RKA.rutin)) {
       for (const [ma, arr] of Object.entries(kapal)) {
+        if (MA_DOCKING_DI_SHEET_RUTIN.has(ma)) continue;
         const v = arr[bl - 1] || 0;
         if (v) perMa[ma] = (perMa[ma] || 0) + v;
       }
