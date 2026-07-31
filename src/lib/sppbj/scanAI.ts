@@ -13,6 +13,7 @@ const toBase64 = (file: Blob): Promise<{ base64: string; mime: string }> =>
 export class NoAIKeyError extends Error {}     // Gemini key belum diset
 export class NoOllamaError extends Error {}     // Ollama tak terjangkau / tak ada model vision
 
+
 async function postScan(endpoint: string, file: Blob): Promise<ParsedItem[]> {
   const { base64, mime } = await toBase64(file);
   const res = await fetch(endpoint, {

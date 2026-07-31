@@ -29,8 +29,18 @@ Ada dua jenis borang. Kenali dari kop kanan atas ("No. Dokumen"):
 - "TF-102.01.01" atau judul "DAFTAR PEKERJAAN DOCKING"  -> jenis "rl"
 - "HP-103.00.01" atau judul "PERMINTAAN PENGADAAN BARANG/JASA KAPAL" -> jenis "permintaan"
 
-Untuk jenis "rl", kolomnya: NO. | URAIAN | VOLUME (Qty | Unit) | HARGA SATUAN | KETERANGAN.
-Untuk jenis "permintaan", kolomnya: No | Jumlah | Satuan | Merk/Katalog | Uraian/Spesifikasi Barang.
+Untuk jenis "rl", kolomnya BERURUTAN dari kiri:
+  NO. | URAIAN | VOLUME (Qty | Unit) | HARGA SATUAN | KETERANGAN
+Untuk jenis "permintaan", kolomnya BERURUTAN dari kiri:
+  No | Jumlah | Satuan | Merk/Katalog | Uraian/Spesifikasi Barang
+  -> "Merk/Katalog" (mis. JOTUN) masuk ke "merk", BUKAN ke "uraian".
+  -> "Uraian/Spesifikasi Barang" (mis. SIGMARINE 48-700 (WHITE)) masuk ke "uraian".
+
+"noSurat" diambil dari kepala surat "No. SPPB/J" (mis. 049/D/KRP II/VII/ASDP-TTE/2026),
+BUKAN dari "No. Dokumen" (HP-103.00.01 / TF-102.01.01) — itu kode borangnya, bukan nomor surat.
+"kapal" diambil dari baris "Dari : NAHKODA KMP ..." atau judul di kepala tabel; tulis nama kapalnya
+saja (mis. "KMP. KERAPU II"), bukan "PT ASDP".
+Baris kepala surat (Kepada, Dari, Tanggal, Tanggal dibutuhkan) BUKAN item — jangan dimasukkan ke "baris".
 
 Aturan:
 - Baris judul bagian ditulis huruf besar dan biasanya bernomor romawi (I, II, III, IV, V ...)
@@ -46,6 +56,9 @@ Aturan:
 - "merk" hanya untuk jenis "permintaan" (kolom Merk/Katalog), selain itu "".
 - JANGAN mengarang harga. Kolom harga pada borang ini memang kosong.
 - Kalau satu sel tak terbaca jelas, isi apa adanya yang terbaca dan beri tanda "?" di akhir.
+- Nomor romawi HANYA ditulis kalau memang tercetak di kertas. Jangan menomori sendiri
+  baris item dengan I, II, III — biarkan "romawi" kosong bila tidak ada.
+- Baca SELURUH baris pada halaman itu sampai habis, jangan berhenti di tengah tabel.
 
 Keluarkan HANYA JSON valid:
 {"jenis":"rl","kapal":"","noSurat":"","tanggal":"","baris":[{"romawi":"","bagian":"","no":"","uraian":"","qty":0,"unit":"","merk":"","ket":""}]}`;

@@ -37,10 +37,10 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const { imageBase64 } = (await req.json()) as { imageBase64: string };
+    const { imageBase64, model: minta } = (await req.json()) as { imageBase64: string; model?: string };
     if (!imageBase64) return NextResponse.json({ error: "gambar kosong" }, { status: 400 });
 
-    let model = ENV_MODEL;
+    let model = minta || ENV_MODEL;
     if (!model) {
       try { model = pilihVision(await daftarModel()); }
       catch { return NextResponse.json({ error: "Ollama tak terjangkau" }, { status: 501 }); }
@@ -51,7 +51,10 @@ export async function POST(req: NextRequest) {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         model, prompt: PROMPT_BORANG, images: [imageBase64], stream: false,
-        format: "json", options: { temperature: 0, num_ctx: 8192 },
+        format: "json",
+        // num_predict jadi rem: model kecil kadang mengulang baris tanpa henti —
+        // lebih baik satu halaman gagal cepat daripada seluruh berkas menggantung
+        options: { temperature: 0, num_ctx: 8192, num_predict: 4096 },
       }),
     });
     if (!res.ok) {

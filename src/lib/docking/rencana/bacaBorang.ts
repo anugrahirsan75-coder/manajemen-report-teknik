@@ -47,26 +47,27 @@ export const gambarKeBase64 = (file: Blob): Promise<string> =>
     r.readAsDataURL(file);
   });
 
-async function bacaLewatServer(base64: string): Promise<any> {
+async function bacaLewatServer(base64: string, model?: string): Promise<any> {
   const r = await fetch("/api/docking/baca-borang", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ imageBase64: base64 }),
+    body: JSON.stringify({ imageBase64: base64, model }),
   });
   if (r.status === 501) throw new OllamaBelumSiap((await r.json().catch(() => ({}))).error || "Ollama belum siap");
   if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `server ${r.status}`);
   return (await r.json()).hasil;
 }
 
-async function bacaLangsung(base64: string): Promise<any> {
+async function bacaLangsung(base64: string, minta?: string): Promise<any> {
   const t = await fetch(`${ollamaHost()}/api/tags`, { cache: "no-store" });
   if (!t.ok) throw new OllamaBelumSiap("Ollama tak terjangkau dari peramban");
-  const model = ((await t.json()).models || []).map((m: any) => m.name).find((m: string) => VISION_RE.test(m));
+  const ada: string[] = ((await t.json()).models || []).map((m: any) => String(m.name));
+  const model = (minta && ada.includes(minta)) ? minta : ada.find((m) => VISION_RE.test(m));
   if (!model) throw new OllamaBelumSiap("Tak ada model vision. Jalankan: ollama pull qwen2.5vl:7b");
   const r = await fetch(`${ollamaHost()}/api/generate`, {
     method: "POST", headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       model, prompt: PROMPT_BORANG, images: [base64], stream: false,
-      format: "json", options: { temperature: 0, num_ctx: 8192 },
+      format: "json", options: { temperature: 0, num_ctx: 8192, num_predict: 4096 },
     }),
   });
   if (!r.ok) throw new Error(`Ollama ${r.status}`);
@@ -76,15 +77,27 @@ async function bacaLangsung(base64: string): Promise<any> {
 /** jalur yang dipakai terakhir — ditampilkan supaya jelas ke mana gambarnya pergi */
 export let jalurBaca: "server" | "peramban" | "" = "";
 
-async function bacaSatu(base64: string): Promise<any> {
-  try { const h = await bacaLewatServer(base64); jalurBaca = "server"; return h; }
+async function bacaSatu(base64: string, model?: string): Promise<any> {
+  try { const h = await bacaLewatServer(base64, model); jalurBaca = "server"; return h; }
   catch (e) {
     if (!(e instanceof OllamaBelumSiap)) throw e;
-    const h = await bacaLangsung(base64); jalurBaca = "peramban"; return h;
+    const h = await bacaLangsung(base64, model); jalurBaca = "peramban"; return h;
   }
 }
 
 export interface KemajuanBaca { halaman: number; total: number; }
+
+/**
+ * Model bervisi yang dipakai.
+ *   teliti — qwen2.5vl:7b, bacaannya paling tepat. Bobotnya 6 GB, lebih besar
+ *            dari memori kartu grafis, jadi sebagian jalan di prosesor:
+ *            ± 9 menit per halaman.
+ *   cepat  — qwen2.5vl:3b, muat penuh di kartu grafis (± 20 detik per halaman),
+ *            cukup untuk Daftar Pekerjaan Docking, tapi sering keliru pada
+ *            borang Permintaan Pengadaan yang berkolom banyak.
+ */
+export const MODEL_BACA = { teliti: "qwen2.5vl:7b", cepat: "qwen2.5vl:3b" } as const;
+export type PilihModel = keyof typeof MODEL_BACA;
 
 /**
  * Baca satu berkas (PDF berhalaman banyak atau satu gambar) sampai selesai.
@@ -94,13 +107,20 @@ export interface KemajuanBaca { halaman: number; total: number; }
 export async function bacaBorang(
   file: File,
   onMaju?: (k: KemajuanBaca) => void,
+  opsi: { model?: PilihModel; dari?: number; sampai?: number } = {},
 ): Promise<HasilBorang> {
   const pdf = /pdf$/i.test(file.type) || /\.pdf$/i.test(file.name);
-  const gambar = pdf ? await halamanPdf(file) : [await gambarKeBase64(file)];
+  let gambar = pdf ? await halamanPdf(file) : [await gambarKeBase64(file)];
+  // rentang halaman: berkas RL kerap berisi lampiran/foto yang tak perlu dibaca
+  const dari = Math.max(1, opsi.dari || 1);
+  const sampai = Math.min(gambar.length, opsi.sampai || gambar.length);
+  const geser = dari - 1;
+  gambar = gambar.slice(geser, sampai);
+  const nama = MODEL_BACA[opsi.model || "teliti"];
   const hasil: HasilBorang[] = [];
   for (let i = 0; i < gambar.length; i++) {
-    onMaju?.({ halaman: i + 1, total: gambar.length });
-    try { hasil.push(rapikanBorang(await bacaSatu(gambar[i]), i + 1)); }
+    onMaju?.({ halaman: i + 1 + geser, total: sampai });
+    try { hasil.push(rapikanBorang(await bacaSatu(gambar[i], nama), i + 1 + geser)); }
     catch (e) {
       if (e instanceof OllamaBelumSiap && i === 0) throw e;   // gagal sejak awal -> hentikan
       // halaman yang gagal dilewati; sisanya tetap dibaca supaya kerja tak hangus
