@@ -22,6 +22,7 @@ import { susunJadwal, ringkasJadwal, geser, hariIniLokal } from "@/lib/docking/r
 import TabRepairList from "./TabRepairList";
 import TabPenunjang from "./TabPenunjang";
 import TabJadwal from "./TabJadwal";
+import BacaBorang from "./BacaBorang";
 import { unduhRencana } from "@/lib/docking/rencana/ekspor";
 
 const TAB = [
@@ -56,6 +57,9 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
   const [tab, setTab] = useState<TabKey>("ringkas");
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
+  // Pembaca borang hidup di tingkat ini, bukan di dalam tab: pindah tab
+  // membongkar tab lamanya, dan pembacaan yang sedang jalan akan ikut berhenti.
+  const [baca, setBaca] = useState(false);
 
   const ubah = (patch: Partial<RencanaDocking>) => { setR((p) => ({ ...p, ...patch })); setPesan(""); };
 
@@ -293,10 +297,18 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
         </div>
       )}
 
-      {tab === "rl" && <TabRepairList r={r} ubah={ubah} />}
+      {tab === "rl" && <TabRepairList r={r} ubah={ubah} onBaca={() => setBaca(true)} />}
       {tab === "penunjang" && <TabPenunjang r={r} ubah={ubah} />}
       {tab === "jadwal" && <TabJadwal r={r} ubah={ubah} />}
       {tab === "kontrol" && <Kontrol r={r} />}
+
+      {baca && (
+        <BacaBorang onTutup={() => setBaca(false)}
+          onTerap={(rlBaris, penunjangBaris) => ubah({
+            rl: [...(r.rl || []), ...rlBaris],
+            penunjang: [...(r.penunjang || []), ...penunjangBaris],
+          })} />
+      )}
     </div>
   );
 }

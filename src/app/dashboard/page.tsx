@@ -632,6 +632,11 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
   const [tampil, setTampil] = useState<"ma" | "kapal">("ma"); // rincian per Mata Anggaran / per Kapal
 
   // gabung pagu + realisasi (termasuk realisasi tanpa pagu)
+  // RKA cabang sebagai pembanding — mengikuti bulan / rentang bulan yang dilihat
+  const rka = useMemo(() => rutinRentang(rentang), [rentang]);
+  const rkaPerMa = rka.perMa;
+  const adaRka = rka.total > 0;
+
   const merged = useMemo(() => {
     const by: Record<string, { key: string; ma: string; pagu: number; pakai: number }> = {};
     rows.forEach((r) => { const k = maKey(r.ma); by[k] = { key: k, ma: r.ma, pagu: (by[k]?.pagu || 0) + (r.nilai || 0), pakai: by[k]?.pakai || 0 }; });
@@ -639,12 +644,14 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
       if (by[k]) by[k].pakai = v;
       else { const lbl = real.list.find((x) => x.key === k)?.ma || k; by[k] = { key: k, ma: lbl, pagu: 0, pakai: v }; }
     });
+    // Mata Anggaran yang punya RKA tapi belum ada pagu/realisasi tetap ditampilkan
+    // — kalau disembunyikan, jumlah RKA di baris TOTAL tak akan sama dengan
+    // penjumlahan barisnya, dan angkanya jadi tak bisa ditelusuri.
+    Object.entries(rkaPerMa).forEach(([k, v]) => {
+      if (!by[k] && v) by[k] = { key: k, ma: fullMA(k), pagu: 0, pakai: 0 };
+    });
     return Object.values(by).sort((x, y) => (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)));
-  }, [rows, real]);
-
-  // RKA cabang sebagai pembanding — pagu di sini = Persetujuan Pusat, bukan RKA
-  const rka = useMemo(() => rutinRentang(rentang), [rentang]);
-  const adaRka = rka.total > 0;
+  }, [rows, real, rkaPerMa]);
 
   const totalPagu = rows.reduce((s, r) => s + (r.nilai || 0), 0);
   const totalPakai = real.total;

@@ -18,16 +18,16 @@ import {
 } from "@/lib/docking/rencana/types";
 import CariHarga from "./CariHarga";
 import PilihPekerjaan from "./PilihPekerjaan";
-import BacaBorang from "./BacaBorang";
 import ImporBorang from "./ImporBorang";
 
-export default function TabRepairList({ r, ubah }: {
+export default function TabRepairList({ r, ubah, onBaca }: {
   r: RencanaDocking;
   ubah: (patch: Partial<RencanaDocking>) => void;
+  /** buka pembaca borang — dipasang di Editor supaya pindah tab tak memutus bacaan */
+  onBaca: () => void;
 }) {
   const [jenis, setJenis] = useState<"dok" | "floating">("dok");
   const [pilih, setPilih] = useState(false);
-  const [baca, setBaca] = useState(false);
   const [impor, setImpor] = useState(false);
   const [cariUntuk, setCariUntuk] = useState<ItemRl | null>(null);
 
@@ -170,13 +170,6 @@ export default function TabRepairList({ r, ubah }: {
       )}
 
       {pilih && <PilihPekerjaan onTutup={() => setPilih(false)} onTambah={tambah} />}
-      {baca && (
-        <BacaBorang onTutup={() => setBaca(false)}
-          onTerap={(rlBaris, penunjangBaris) => ubah({
-            rl: [...(r.rl || []), ...rlBaris],
-            penunjang: [...(r.penunjang || []), ...penunjangBaris],
-          })} />
-      )}
       {impor && (
         <ImporBorang onTutup={() => setImpor(false)}
           onRl={(items) => ubah({ rl: [...(r.rl || []), ...items] })}
