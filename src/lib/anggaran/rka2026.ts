@@ -118,14 +118,29 @@ const MA_DOCKING_DI_SHEET_RUTIN = new Set([
   "5010318000", // Sertifikat Docking Kapal
 ]);
 
+/**
+ * Bulan docking sebuah kapal pada sheet RUTIN = bulan tempat pos Kapal Ro-Ro
+ * terisi (tiap kapal tepat satu bulan). Pada bulan itu, NILAI SEMUA POS kapal
+ * tsb adalah anggaran docking — dibuktikan angka per angka: nilai bulan docking
+ * untuk Pelumas/Akomodasi/Permesinan = RKA docking + anggaran tambahan persis
+ * (MAMING & KERAPU II selisih 0; BARONANG selisih 0 setelah tambahannya ikut).
+ * Jadi seluruh bulan docking kapal itu dilewati saat menjumlah RKA rutin.
+ */
+function bulanDocking(kapal: Record<string, number[]>): number {
+  const arr = kapal["5010403003"] || [];
+  for (let i = 0; i < arr.length; i++) if (arr[i]) return i + 1;
+  return 0;
+}
+
 export function rutinRentang(bulanYm: string[]): { perMa: Record<string, number>; total: number } {
   const perMa: Record<string, number> = {};
   for (const ym of bulanYm) {
     const [th, bl] = ym.split("-").map(Number);
     if (th !== RKA.tahun || !bl) continue;
     for (const kapal of Object.values(RKA.rutin)) {
+      if (bulanDocking(kapal) === bl) continue;          // bulan docking = anggaran docking
       for (const [ma, arr] of Object.entries(kapal)) {
-        if (MA_DOCKING_DI_SHEET_RUTIN.has(ma)) continue;
+        if (MA_DOCKING_DI_SHEET_RUTIN.has(ma)) continue; // jaga-jaga bila polanya berubah
         const v = arr[bl - 1] || 0;
         if (v) perMa[ma] = (perMa[ma] || 0) + v;
       }
