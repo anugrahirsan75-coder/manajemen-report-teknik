@@ -94,3 +94,24 @@ export function rutinBulan(kapal: string, bulan: number): Record<string, number>
 }
 
 export const daftarKapalRka = () => Object.keys(RKA.docking).sort();
+
+/**
+ * Pagu RKA rutin seluruh kapal untuk sederet bulan ("2026-03" dst.),
+ * dijumlahkan per Mata Anggaran. Dipakai Kendali Anggaran Rutin sebagai
+ * pembanding: pagu di sana adalah Persetujuan Pusat, RKA adalah rencana awal —
+ * dua angka berbeda yang memang perlu dilihat berdampingan.
+ */
+export function rutinRentang(bulanYm: string[]): { perMa: Record<string, number>; total: number } {
+  const perMa: Record<string, number> = {};
+  for (const ym of bulanYm) {
+    const [th, bl] = ym.split("-").map(Number);
+    if (th !== RKA.tahun || !bl) continue;
+    for (const kapal of Object.values(RKA.rutin)) {
+      for (const [ma, arr] of Object.entries(kapal)) {
+        const v = arr[bl - 1] || 0;
+        if (v) perMa[ma] = (perMa[ma] || 0) + v;
+      }
+    }
+  }
+  return { perMa, total: Object.values(perMa).reduce((s, v) => s + v, 0) };
+}

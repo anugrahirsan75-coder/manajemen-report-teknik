@@ -8,6 +8,7 @@ import {
   MATA_ANGGARAN, kategoriPengadaan, kodeMA, KAPAL_ANGGARAN, DOCKING_MA_INVESTASI, isMaInvestasi, rupiahShort,
   namaKapalPenuh, RKA, PlafonRutin, PlafonDocking, PlafonRow, maKey, fullMA, DOCKING_MA,
 } from "@/lib/anggaran/types";
+import { rutinRentang, TAHUN_RKA } from "@/lib/anggaran/rka2026";
 import { rupiah, bulanTahun, tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
 import ProgramLainnya from "@/components/anggaran/ProgramLainnya";
@@ -641,6 +642,10 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
     return Object.values(by).sort((x, y) => (y.pakai / (y.pagu || 1)) - (x.pakai / (x.pagu || 1)));
   }, [rows, real]);
 
+  // RKA cabang sebagai pembanding — pagu di sini = Persetujuan Pusat, bukan RKA
+  const rka = useMemo(() => rutinRentang(rentang), [rentang]);
+  const adaRka = rka.total > 0;
+
   const totalPagu = rows.reduce((s, r) => s + (r.nilai || 0), 0);
   const totalPakai = real.total;
   const sisa = totalPagu - totalPakai;
@@ -728,6 +733,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
             ))}
           </div>
         )}
+        {adaRka && <span className="text-[11px] text-indigo-800 bg-indigo-50 ring-1 ring-indigo-200 rounded-full px-2 py-0.5">RKA {TAHUN_RKA} ikut ditampilkan · pagu tetap dari Persetujuan Pusat</span>}
         <span className="text-[11px] text-slate-500">realisasi = SPPBJ + Non PR PO ber-<b className="text-slate-700">Jenis Anggaran: Rutin</b>, per Mata Anggaran (Docking terpisah, tak overlap)</span>
         <div className="ml-auto flex items-center gap-2">
           {!edit ? (
@@ -760,7 +766,8 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
       <RutinSetahun plafon={plafon} pengadaan={pengadaan} bulanAktif={bulan} onPilihBulan={setBulanSel} />
 
       {/* KPI mini */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mb-3">
+      <div className={`grid grid-cols-2 ${adaRka ? "sm:grid-cols-5" : "sm:grid-cols-4"} gap-2 mb-3`}>
+        {adaRka && <MiniStat label={`RKA ${TAHUN_RKA}`} val={rupiah(rka.total)} tint="text-indigo-800" bar="bg-indigo-500" />}
         <MiniStat label="Total Pagu" val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-slate-400" />
         <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-800" bar="bg-blue-600" />
         <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-700" : "text-emerald-800"} bar={sisa < 0 ? "bg-red-500" : "bg-emerald-500"} />
@@ -809,7 +816,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className={TBL_HEAD}>
-              <tr><th className="p-2 text-left">Mata Anggaran</th><th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
+              <tr><th className="p-2 text-left">Mata Anggaran</th>{adaRka && <th className="p-2 text-right" title={`RKA ${TAHUN_RKA} cabang — rencana awal, dibanding pagu Persetujuan Pusat`}>RKA</th>}<th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
             </thead>
             <tbody>
               {merged.map((m) => {
@@ -828,6 +835,11 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
                           {rinci.length > 0 && <span className="text-[10px] font-bold text-sky-800 bg-sky-100 rounded-full px-1.5 py-px">{rinci.length}</span>}
                         </span>
                       </td>
+                      {adaRka && (
+                        <td className="p-2 text-right tabular-nums text-indigo-800">
+                          {rka.perMa[m.key] ? rupiah(rka.perMa[m.key]) : <span className="text-slate-300">—</span>}
+                        </td>
+                      )}
                       <td className={TD_PAGU}>{m.pagu ? rupiah(m.pagu) : <span className="text-slate-500 italic font-normal">tanpa pagu</span>}</td>
                       <td className={TD_PAKAI}>{rupiah(m.pakai)}</td>
                       <td className={tdSisa(sisaM)}>{rupiah(sisaM)}</td>
@@ -849,7 +861,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
                     </tr>
                     {isOpen && (
                       <tr className="bg-sky-50/50">
-                        <td colSpan={6} className="px-3 py-2">
+                        <td colSpan={adaRka ? 7 : 6} className="px-3 py-2">
                           <MaDetailList list={rinci} />
                         </td>
                       </tr>
@@ -861,6 +873,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
             <tfoot>
               <tr className={TFOOT_ROW}>
                 <td className="p-2">TOTAL</td>
+                {adaRka && <td className="p-2 text-right tabular-nums text-indigo-800">{rupiah(rka.total)}</td>}
                 <td className="p-2 text-right tabular-nums">{rupiah(totalPagu)}</td>
                 <td className="p-2 text-right tabular-nums">{rupiah(totalPakai)}</td>
                 <td className={`p-2 text-right tabular-nums ${sisa < 0 ? "text-red-700" : "text-emerald-700"}`}>{rupiah(sisa)}</td>
