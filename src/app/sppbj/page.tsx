@@ -5,8 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
-import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak } from "@/lib/sppbj/types";
-import { tanggalIndo, bulanTahun } from "@/lib/format";
+import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak, GrSes, grSesBaru } from "@/lib/sppbj/types";
+import { tanggalIndo, bulanTahun, rupiah } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import KapalCell, { kapalDariItems } from "@/components/KapalCell";
@@ -17,13 +17,14 @@ import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 export default function SppbjList() {
-  const { listRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
+  const { listRemote, patchRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
   const router = useRouter();
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [bulan, setBulan] = useState(""); // "" = semua bulan, else "YYYY-MM"
   const [query, setQuery] = useState("");
   const [preview, setPreview] = useState<any | null>(null); // baris yang sedang dilihat
+  const [sapEdit, setSapEdit] = useState<any | null>(null); // baris yang sedang diisi No. PO / GR-SES
   const { program, pengadaan } = useAnggaran(); // utk isi popover badge jenis anggaran
 
   // daftar bulan unik dari tanggal SPPBJ (desc)
@@ -34,8 +35,10 @@ export default function SppbjList() {
   const matchTokens = (r: any, q: string): boolean => {
     if (!q) return true;
     const items: any[] = r.payload?.items || [];
+    const gr: any[] = r.payload?.grSes || [];
     const hay = [
       r.nama_pengadaan, r.payload?.noSPPBJ, r.payload?.noKontrak, r.payload?.status,
+      r.payload?.noPRSAP, r.payload?.noPOSAP, ...gr.map((g) => g.nomor),
       ...items.map((i) => i.kapal), ...items.map((i) => i.nama), ...kapalDariItems(items),
     ].filter(Boolean).join(" ").toLowerCase();
     return q.toLowerCase().split(/\s+/).filter(Boolean).every((t) => hay.includes(t));
@@ -66,6 +69,13 @@ export default function SppbjList() {
     else setBukaGagal("Pengadaan yang dituju tak ditemukan — mungkin sudah dihapus.");
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bukaId, rows, loading]);
+  // simpan No. PO SAP / GR-SES dari daftar; baris lokal ikut diperbarui supaya
+  // tabel tak perlu dimuat ulang seluruhnya
+  const simpanSap = async (id: string, patch: { noPOSAP?: string; grSes?: GrSes[] }) => {
+    await patchRemote(id, patch);
+    setRows((p) => p.map((r) => (r.id === id ? { ...r, payload: { ...r.payload, ...patch } } : r)));
+  };
+
   const hapus = async (id: string, nama: string) => {
     if (!(await konfirmasi({
       nada: "bahaya", judul: "Hapus pengadaan ini?", pesan: nama,
@@ -223,22 +233,26 @@ export default function SppbjList() {
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto bg-white rounded-2xl elev-md ring-line anim-in">
-          <table className="w-full text-sm min-w-[70rem]">
+          <table className="w-full text-sm min-w-[68rem]">
             <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold">
               <tr className="border-b-2 border-slate-200">
-                <th className="px-2 py-2.5 text-center w-10">No</th>
-                <th className="px-2 py-2.5 text-left min-w-[17rem]">Judul SPPBJ</th>
-                <th className="px-2 py-2.5 text-left w-40">Kapal</th>
-                <th className="px-2 py-2.5 text-left w-32">Nomor</th>
-                <th className="px-2 py-2.5 text-left w-28">Tanggal</th>
-                <th className="px-2 py-2.5 text-left w-32">Status</th>
-                <th className="px-2 py-2.5 text-center w-44">Aksi</th>
+                <th className="px-2 py-2.5 text-center w-8">No</th>
+                <th className="px-2 py-2.5 text-left min-w-[14rem]">Judul SPPBJ</th>
+                <th className="px-2 py-2.5 text-left w-32">Kapal</th>
+                <th className="px-2 py-2.5 text-left w-28">Nomor</th>
+                <th className="px-2 py-2.5 text-left w-24" title="Nomor PO SAP — terbit bersama SPBJ (Fase 2)">No. PO</th>
+                <th className="px-2 py-2.5 text-left w-28" title="No. GR/SES di SAP. Pekerjaan bertermin (docking) punya 3 nomor dalam 1 SPPBJ.">GR / SES</th>
+                <th className="px-2 py-2.5 text-left w-24">Tanggal</th>
+                <th className="px-2 py-2.5 text-left w-28">Status</th>
+                <th className="px-2 py-2.5 text-center w-40">Aksi</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((r, i) => {
                 const st = (r.status as SppbjStatus) || "menunggu_spbj";
                 const nomor = r.payload?.noSPPBJ || r.payload?.noKontrak || "-";
+                const po = (r.payload?.noPOSAP || "").trim();
+                const gr: GrSes[] = (r.payload?.grSes || []).filter((g: GrSes) => (g.nomor || "").trim());
                 return (
                   <tr key={r.id} className="border-b border-slate-200 last:border-0 row-hover cursor-pointer align-middle even:bg-slate-50/50" onClick={() => buka(r)}>
                     <td className="px-2 py-2.5 text-center text-xs text-slate-400 tabular-nums">{i + 1}</td>
@@ -250,6 +264,23 @@ export default function SppbjList() {
                     </td>
                     <td className="px-2 py-2.5"><KapalCell items={r.payload?.items || []} /></td>
                     <td className="px-2 py-2.5 text-slate-600 tabular-nums whitespace-nowrap">{nomor}</td>
+                    <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      {po ? (
+                        <button onClick={() => setSapEdit(r)} className="tabular-nums text-slate-700 hover:text-[#1ca3dd] hover:underline" title="Ubah No. PO SAP">{po}</button>
+                      ) : (
+                        <button onClick={() => setSapEdit(r)} className="text-[11px] text-slate-400 hover:text-[#1ca3dd]" title="Belum ada No. PO SAP — klik untuk isi">— isi</button>
+                      )}
+                    </td>
+                    <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                      <button onClick={() => setSapEdit(r)}
+                        title={gr.length ? gr.map((g) => `${g.termin ? `Termin ${"I".repeat(g.termin)} · ` : ""}${g.nomor}`).join("\n") : "Belum ada No. GR/SES — klik untuk isi"}
+                        className={`text-[11px] font-semibold px-2 py-1 rounded-lg ring-1 ${
+                          gr.length > 1 ? "bg-amber-50 text-amber-800 ring-amber-200 hover:bg-amber-100"
+                            : gr.length === 1 ? "bg-slate-50 text-slate-700 ring-slate-200 hover:bg-slate-100 tabular-nums font-normal"
+                            : "text-slate-400 ring-slate-200 hover:bg-slate-50"}`}>
+                        {gr.length > 1 ? `🧾 ${gr.length} termin` : gr.length === 1 ? gr[0].nomor : "— isi"}
+                      </button>
+                    </td>
                     <td className="px-2 py-2.5 text-slate-600 whitespace-nowrap">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className="px-2 py-2.5"><span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
                     <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -270,7 +301,129 @@ export default function SppbjList() {
         <PreviewModal jenis="SPPBJ" payload={preview.payload} onTutup={() => setPreview(null)}
           onBuka={() => { const r = preview; setPreview(null); buka(r); }} />
       )}
+      {sapEdit && (
+        <SapModal baris={sapEdit} onTutup={() => setSapEdit(null)}
+          onSimpan={async (patch) => { await simpanSap(sapEdit.id, patch); setSapEdit(null); }} />
+      )}
     </main>
+  );
+}
+
+/**
+ * Isi cepat No. PO SAP & No. GR/SES dari daftar — tanpa membuka seluruh form.
+ * Satu SPPBJ pekerjaan docking dibayar 3 termin, jadi barisnya boleh lebih dari
+ * satu; tombol "Siapkan 3 termin" mengisi kerangkanya sekaligus.
+ */
+function SapModal({ baris, onTutup, onSimpan }: {
+  baris: any;
+  onTutup: () => void;
+  onSimpan: (patch: { noPOSAP: string; grSes: GrSes[] }) => Promise<void>;
+}) {
+  const p = baris.payload || {};
+  const [po, setPo] = useState<string>(p.noPOSAP || "");
+  const [gr, setGr] = useState<GrSes[]>(() => (p.grSes || []).map((g: GrSes) => ({ ...g })));
+  const [sibuk, setSibuk] = useState(false);
+  const [galat, setGalat] = useState("");
+
+  const ubah = (id: string, patch: Partial<GrSes>) => setGr((l) => l.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  const total = gr.reduce((s, g) => s + (g.nilai || 0), 0);
+  const bertermin = gr.some((g) => g.termin);
+
+  const simpan = async () => {
+    setSibuk(true); setGalat("");
+    try {
+      await onSimpan({ noPOSAP: po.trim(), grSes: gr.filter((g) => (g.nomor || "").trim() || g.termin) });
+    } catch (e: any) { setGalat(e?.message || String(e)); setSibuk(false); }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/50 backdrop-blur-[2px] p-4 overflow-y-auto" onClick={onTutup}>
+      <div className="max-w-2xl mx-auto my-8 bg-white rounded-2xl elev-lg ring-line overflow-hidden" onClick={(e) => e.stopPropagation()}>
+        <div className="px-5 py-4 border-b border-slate-200 flex items-start gap-3">
+          <span className="h-9 w-9 rounded-xl asdp-gradient text-white grid place-items-center text-sm shrink-0">🧾</span>
+          <div className="flex-1 min-w-0">
+            <h3 className="font-bold text-slate-800 leading-tight">Nomor SAP pengadaan ini</h3>
+            <p className="text-xs text-slate-500 truncate" title={baris.nama_pengadaan}>{baris.nama_pengadaan || "(tanpa nama)"}</p>
+          </div>
+          <button onClick={onTutup} className="text-slate-400 hover:text-slate-700 text-lg leading-none px-1">✕</button>
+        </div>
+
+        <div className="p-5 space-y-4">
+          <div className="grid sm:grid-cols-2 gap-3">
+            <label className="block">
+              <span className="text-[11px] font-semibold text-slate-500">No. PR SAP</span>
+              <input readOnly value={p.noPRSAP || p.noSPPBJ || "—"}
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-500 tabular-nums" />
+            </label>
+            <label className="block">
+              <span className="text-[11px] font-semibold text-slate-500">No. PO SAP</span>
+              <input value={po} onChange={(e) => setPo(e.target.value)} placeholder="45000xxxxx" autoFocus
+                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 outline-none" />
+            </label>
+          </div>
+
+          <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50/70 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-xs font-bold text-slate-700">No. GR / SES</span>
+              <span className="text-[11px] text-slate-500">bukti penerimaan di SAP</span>
+              <div className="ml-auto flex items-center gap-2">
+                <button onClick={() => setGr((l) => [...l, grSesBaru()])} className="btn btn-ghost text-xs">＋ Tambah nomor</button>
+                <button onClick={() => setGr([1, 2, 3].map((t) => grSesBaru(t)))}
+                  className="btn btn-primary text-xs"
+                  title="Pekerjaan docking: 1 SPPBJ dibayar 3 termin — Termin I saat BA Naik Dok, II saat BA Selesai Pekerjaan, III saat BA Selesai Masa Pemeliharaan">
+                  🛠️ Punya termin (3 nomor)
+                </button>
+              </div>
+            </div>
+
+            {!gr.length ? (
+              <p className="mt-2 text-[11px] text-slate-500">
+                Belum ada. Pengadaan biasa cukup <b>satu</b> nomor. Untuk <b>Pekerjaan Docking</b> tekan
+                &ldquo;Punya termin&rdquo; — nanti terisi 3 baris, satu per termin.
+              </p>
+            ) : (
+              <div className="mt-3 overflow-x-auto">
+                <div className="space-y-2 min-w-[32rem]">
+                  {/* satu baris = satu nomor GR/SES; kolomnya tetap sejajar dari atas ke bawah */}
+                  <div className="grid grid-cols-[4rem_1fr_8.5rem_7rem_2rem] gap-2 text-[10px] font-semibold text-slate-500">
+                    <span>Termin</span><span>Nomor</span><span>Tanggal</span><span>Nilai (Rp)</span><span />
+                  </div>
+                  {gr.map((g) => (
+                    <div key={g.id} className="grid grid-cols-[4rem_1fr_8.5rem_7rem_2rem] gap-2 items-center">
+                      <select value={g.termin ?? ""} onChange={(e) => ubah(g.id, { termin: e.target.value ? +e.target.value : undefined })}
+                        className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm bg-white">
+                        <option value="">—</option><option value="1">I</option><option value="2">II</option><option value="3">III</option>
+                      </select>
+                      <input value={g.nomor} placeholder="mis. 5000123456" onChange={(e) => ubah(g.id, { nomor: e.target.value })}
+                        className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 outline-none" />
+                      <input type="date" value={g.tanggal || ""} onChange={(e) => ubah(g.id, { tanggal: e.target.value || undefined })}
+                        className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm bg-white" />
+                      <input type="number" value={g.nilai ?? ""} onChange={(e) => ubah(g.id, { nilai: e.target.value ? +e.target.value : undefined })}
+                        className="w-full rounded-lg border border-slate-300 px-2 py-2 text-sm tabular-nums" />
+                      <button onClick={() => setGr((l) => l.filter((x) => x.id !== g.id))}
+                        className="h-9 w-8 rounded-lg border border-slate-300 text-rose-600 hover:bg-rose-50 text-sm" title="Buang baris ini">✕</button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {gr.length > 0 && (
+              <p className="text-[11px] text-slate-600 pt-2">
+                {gr.length} nomor{bertermin ? " · bertermin" : ""}
+                {total ? <> · total GR/SES <b className="tabular-nums">{rupiah(total)}</b></> : null}
+              </p>
+            )}
+          </div>
+
+          {galat && <p className="text-xs text-rose-800 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">Gagal simpan: {galat}</p>}
+        </div>
+
+        <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+          <button onClick={onTutup} className="btn btn-ghost text-xs">Batal</button>
+          <button onClick={simpan} disabled={sibuk} className="btn btn-primary text-xs px-4">{sibuk ? "Menyimpan…" : "Simpan"}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 

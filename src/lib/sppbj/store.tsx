@@ -37,6 +37,8 @@ interface Ctx {
   saveRemote: () => Promise<void>;
   loadRemote: () => Promise<void>;
   listRemote: () => Promise<any[]>;
+  /** ubah sebagian field satu pengadaan langsung dari daftar, tanpa membuka detailnya */
+  patchRemote: (id: string, patch: Partial<SppbjRequest>) => Promise<any>;
   deleteRemote: (id: string) => Promise<void>;
   loadById: (row: any) => void;
   newDraft: () => void;
@@ -93,6 +95,25 @@ export function SppbjProvider({ children }: { children: React.ReactNode }) {
     if (error) { void beritahu("Gagal muat riwayat: " + error.message); return []; }
     return (data ?? []).map((r: any) => ({ id: r.id, nama_pengadaan: r.nama_kapal, status: r.payload?.status, payload: r.payload, created_at: r.created_at }));
   };
+  /**
+   * Ubah beberapa field satu pengadaan tanpa memuatnya jadi draft.
+   * Payload lama dibaca dulu lalu ditimpa sebagian — supaya field lain (items,
+   * status, dst.) tidak hilang. Bila baris itu kebetulan sedang jadi draft yang
+   * terbuka, draft-nya ikut disegarkan agar tak ada dua versi berbeda.
+   */
+  const patchRemote = async (id: string, patch: Partial<SppbjRequest>) => {
+    if (!supabase) throw new Error("Supabase belum aktif");
+    const { data: cur, error: e1 } = await supabase.from("projects")
+      .select("payload,nama_kapal").eq("id", id).single();
+    if (e1) throw e1;
+    const payload = { ...(cur?.payload || {}), ...patch, kind: "sppbj" };
+    const { error } = await supabase.from("projects").update({ payload }).eq("id", id);
+    if (error) throw error;
+    catatBackup("sppbj", id, payload, cur?.nama_kapal || payload.namaPengadaan || "");
+    setReq((p) => { if (p.id !== id) return p; const n = { ...p, ...patch }; persist(n); return n; });
+    return payload;
+  };
+
   const deleteRemote = async (id: string) => {
     if (!supabase) return;
     const { error } = await supabase.from("projects").delete().eq("id", id);
@@ -101,7 +122,7 @@ export function SppbjProvider({ children }: { children: React.ReactNode }) {
   const loadById = (row: any) => { const n = { ...defaultReq(), ...row.payload, id: row.id }; if (!Array.isArray(n.items)) n.items = []; setReq(n); persist(n); };
   const newDraft = () => { const n = defaultReq(); setReq(n); persist(n); };
 
-  return <C.Provider value={{ req, update, setItem, addItem, delItem, setItems, saveRemote, loadRemote, listRemote, deleteRemote, loadById, newDraft, supabaseReady: isSupabaseReady, saving, lastSaved }}>{children}</C.Provider>;
+  return <C.Provider value={{ req, update, setItem, addItem, delItem, setItems, saveRemote, loadRemote, listRemote, patchRemote, deleteRemote, loadById, newDraft, supabaseReady: isSupabaseReady, saving, lastSaved }}>{children}</C.Provider>;
 }
 
 export function useSppbj() {
