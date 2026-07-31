@@ -6,10 +6,13 @@
  * susun Repair List galangan → susun RAB penunjang per Mata Anggaran → jadwal
  * tahapan → kontrol anggaran saat pusat sudah menjawab.
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import { rupiah, tanggalIndo } from "@/lib/format";
 import { Field, Input, Section } from "@/components/Field";
 import { konfirmasi } from "@/components/Konfirmasi";
+import { useKapalDb } from "@/lib/kapal/store";
+import { Ship, slugKapal } from "@/lib/kapal/types";
 import {
   RencanaDocking, totalRencana, rekapPenunjang, totalRl, nilaiBerlaku,
   KELOMPOK_PENUNJANG, PPN_BAKU, ppnDari,
@@ -29,6 +32,18 @@ const TAB = [
 ] as const;
 type TabKey = (typeof TAB)[number]["key"];
 
+/** ukuran di Ship Database disimpan sebagai teks bergaya Indonesia ("29,05") */
+const angkaKapal = (s?: string): number | undefined => {
+  const n = parseFloat((s || "").replace(/\./g, "").replace(",", "."));
+  return isFinite(n) && n > 0 ? n : undefined;
+};
+const ukuranDariShip = (k?: Ship) => ({
+  grt: angkaKapal(k?.dimension?.gt),
+  loa: angkaKapal(k?.dimension?.loa),
+  lbp: angkaKapal(k?.dimension?.lbp),
+  tinggi: angkaKapal(k?.dimension?.h),
+});
+
 export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup }: {
   awal: RencanaDocking;
   kapalTersedia: string[];
@@ -42,6 +57,37 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
   const [pesan, setPesan] = useState("");
 
   const ubah = (patch: Partial<RencanaDocking>) => { setR((p) => ({ ...p, ...patch })); setPesan(""); };
+
+  // ── ukuran kapal menempel ke Ship Database ────────────────────────────────
+  // Satu sumber data: begitu kapal dipilih, GRT/LOA/LBP/tinggi diambil dari
+  // sana. Yang sudah diisi tangan TIDAK ditimpa — pengisian otomatis hanya
+  // mengisi yang masih kosong, sisanya lewat tombol "Ambil ulang".
+  const { ships } = useKapalDb();
+  const kapalDb = useMemo(
+    () => ships.find((s) => s.id === slugKapal(r.kapal || "")),
+    [ships, r.kapal],
+  );
+  const ukuranDb = ukuranDariShip(kapalDb);
+  const adaUkuranDb = Object.values(ukuranDb).some(Boolean);
+  const kapalTerakhir = useRef<string>("");
+  useEffect(() => {
+    if (!kapalDb) return;
+    // Saat rencana lama dibuka: hanya isi yang masih kosong (jangan menimpa
+    // ukuran yang sudah disesuaikan tangan). Saat kapalnya DIGANTI di layar ini:
+    // ambil ulang semuanya, karena ukuran lama milik kapal sebelumnya.
+    const pertamaKali = kapalTerakhir.current === "";
+    const gantiKapal = !pertamaKali && kapalTerakhir.current !== kapalDb.id;
+    kapalTerakhir.current = kapalDb.id;
+    const isi: Partial<RencanaDocking> = {};
+    (Object.keys(ukuranDb) as (keyof typeof ukuranDb)[]).forEach((k) => {
+      const v = ukuranDb[k];
+      if (v && (gantiKapal || !r[k])) isi[k] = v;
+    });
+    if (Object.keys(isi).length) setR((p) => ({ ...p, ...isi }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kapalDb]);
+  const ambilUlang = () => setR((p) => ({ ...p, ...Object.fromEntries(Object.entries(ukuranDb).filter(([, v]) => v)) }));
+
   const total = totalRencana(r);
   const hariIni = hariIniLokal();
   const jadwal = useMemo(
@@ -99,9 +145,14 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
           <Section title="Sasaran docking" icon="🎯"
             desc="Tanggal naik dok adalah patokan seluruh jadwal — begitu diubah, semua tenggat tahapan ikut bergeser.">
             <div className="grid sm:grid-cols-3 gap-4">
-              <Field label="Kapal">
+              {/* daftar kapal digabung dengan Ship Database supaya nama yang dipilih
+                  selalu cocok dengan catatan ukurannya di sana */}
+              <Field label="Kapal" hint={kapalDb ? "cocok dengan Ship Database" : undefined}>
                 <Input list="kapalRencana" value={r.kapal} onChange={(e) => ubah({ kapal: e.target.value })} placeholder="KMP. ..." />
-                <datalist id="kapalRencana">{kapalTersedia.map((k) => <option key={k} value={k} />)}</datalist>
+                <datalist id="kapalRencana">
+                  {Array.from(new Set([...ships.map((s) => s.nama), ...kapalTersedia])).sort()
+                    .map((k) => <option key={k} value={k} />)}
+                </datalist>
               </Field>
               <Field label="Tahun docking">
                 <Input type="number" value={r.tahun} onChange={(e) => ubah({ tahun: +e.target.value || r.tahun })} />
@@ -122,11 +173,43 @@ export default function Editor({ awal, kapalTersedia, onSimpan, onHapus, onTutup
           </Section>
 
           <Section title="Ukuran kapal" icon="📐" desc="Dipakai memilih tarif galangan bertingkat (GRT) dan menghitung luas pengecatan.">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px]">
+              {kapalDb && adaUkuranDb ? (
+                <>
+                  <span className="text-emerald-800 bg-emerald-50 ring-1 ring-emerald-200 rounded-full px-2 py-0.5">
+                    🔗 terisi dari Ship Database
+                  </span>
+                  <span className="text-slate-500">
+                    {kapalDb.nama}
+                    {kapalDb.general?.registerBKI ? ` · Reg. BKI ${kapalDb.general.registerBKI}` : ""}
+                    {kapalDb.general?.tahun ? ` · buatan ${kapalDb.general.tahun}` : ""}
+                    {kapalDb.dimension?.b ? ` · lebar ${kapalDb.dimension.b} m` : ""}
+                  </span>
+                  <button onClick={ambilUlang} className="btn btn-ghost text-[11px] py-1"
+                    title="Timpa isian di bawah dengan ukuran terbaru dari Ship Database">↻ Ambil ulang</button>
+                </>
+              ) : r.kapal ? (
+                <span className="text-amber-800 bg-amber-50 ring-1 ring-amber-200 rounded-full px-2 py-0.5">
+                  Ukuran <b>{r.kapal}</b> belum ada di Ship Database — isi tangan, atau lengkapi di sana supaya semua modul ikut benar
+                </span>
+              ) : (
+                <span className="text-slate-500">Pilih kapal dulu, ukurannya diambil sendiri dari Ship Database.</span>
+              )}
+              <Link href="/kapal" className="text-[11px] text-[#1ca3dd] hover:underline">buka Ship Database →</Link>
+            </div>
             <div className="grid sm:grid-cols-4 gap-4">
-              <Field label="GRT"><Input type="number" value={r.grt || ""} onChange={(e) => ubah({ grt: +e.target.value || undefined })} /></Field>
-              <Field label="LOA (m)"><Input type="number" step="0.01" value={r.loa || ""} onChange={(e) => ubah({ loa: +e.target.value || undefined })} /></Field>
-              <Field label="LBP (m)"><Input type="number" step="0.01" value={r.lbp || ""} onChange={(e) => ubah({ lbp: +e.target.value || undefined })} /></Field>
-              <Field label="Tinggi (m)"><Input type="number" step="0.01" value={r.tinggi || ""} onChange={(e) => ubah({ tinggi: +e.target.value || undefined })} /></Field>
+              <Field label="GRT" hint={ukuranDb.grt && ukuranDb.grt !== r.grt ? `Ship Database: ${ukuranDb.grt}` : undefined}>
+                <Input type="number" value={r.grt || ""} onChange={(e) => ubah({ grt: +e.target.value || undefined })} />
+              </Field>
+              <Field label="LOA (m)" hint={ukuranDb.loa && ukuranDb.loa !== r.loa ? `Ship Database: ${ukuranDb.loa}` : undefined}>
+                <Input type="number" step="0.01" value={r.loa || ""} onChange={(e) => ubah({ loa: +e.target.value || undefined })} />
+              </Field>
+              <Field label="LBP (m)" hint={ukuranDb.lbp && ukuranDb.lbp !== r.lbp ? `Ship Database: ${ukuranDb.lbp}` : undefined}>
+                <Input type="number" step="0.01" value={r.lbp || ""} onChange={(e) => ubah({ lbp: +e.target.value || undefined })} />
+              </Field>
+              <Field label="Tinggi (m)" hint={ukuranDb.tinggi && ukuranDb.tinggi !== r.tinggi ? `Ship Database: ${ukuranDb.tinggi}` : undefined}>
+                <Input type="number" step="0.01" value={r.tinggi || ""} onChange={(e) => ubah({ tinggi: +e.target.value || undefined })} />
+              </Field>
             </div>
           </Section>
 
