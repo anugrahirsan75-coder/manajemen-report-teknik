@@ -219,7 +219,15 @@ export default function ImporBorang({ onRl, onPenunjang, onTutup }: {
 
               {!hasil.baris.length && (
                 <p className="text-xs text-amber-800 bg-amber-50 ring-1 ring-amber-200 rounded-lg px-3 py-2">
-                  Tak ada baris yang terbaca. Pindaian mungkin terlalu miring atau buram — coba foto ulang lebih tegak, atau naikkan mutu pindaian.
+                  Tak ada baris yang terbaca.
+                  {/^\.docx$/i.test(namaBerkas.slice(namaBerkas.lastIndexOf("."))) ? (
+                    <> Berkas Word ini terbaca isinya, tapi daftarnya tak berbentuk tabel yang bisa diurai —
+                      biasanya karena daftarnya ditempel sebagai gambar, atau ditulis sebagai paragraf biasa.
+                      Cetak jadi PDF lalu unggah ulang: jalur pindaian bisa membacanya.</>
+                  ) : (
+                    <> Pindaian mungkin terlalu miring atau buram — coba foto ulang lebih tegak, naikkan mutu
+                      pindaiannya, atau pakai cara baca <b>Teliti</b>.</>
+                  )}
                 </p>
               )}
 

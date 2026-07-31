@@ -82,13 +82,13 @@ function petaKolom(baris: string[][]): { peta: PetaKolom; mulai: number; jenis: 
       const a = gabung.findIndex((x) => re.test(x));
       return a >= 0 ? a : rapat.findIndex((x) => re.test(x));
     };
-    const uraian = cari(/uraian|deskripsi|nama barang/);
+    const uraian = cari(/uraian|deskripsi|nama barang|nama pekerjaan|jenis pekerjaan|pekerjaan|rincian|item/);
     if (uraian < 0) continue;
-    const qty = cari(/qty|jumlah|volume/);
-    const unit = cari(/unit|satuan/);
+    const qty = cari(/qty|jumlah|volume|vol|banyak/);
+    const unit = cari(/unit|satuan|sat\.?$/);
     const merk = cari(/merk|katalog/);
-    const ket = cari(/keterangan/);
-    const no = cari(/^no\.?$|^no /);
+    const ket = cari(/keterangan|ket\.?$/);
+    const no = cari(/^no\.?$|^no |^nomor/);
     // borang permintaan punya kolom Merk/Katalog; RL punya kolom Harga Satuan
     const jenis: JenisBorang = merk >= 0 ? "permintaan" : "rl";
     // kepala dua baris: lompati baris kedua bila memang bagian dari kepala
@@ -100,6 +100,45 @@ function petaKolom(baris: string[][]): { peta: PetaKolom; mulai: number; jenis: 
     };
   }
   return null;
+}
+
+/**
+ * Kalau kepala tabelnya tak dikenali (kapal kerap memakai judul kolom sendiri,
+ * atau tabelnya tanpa kepala sama sekali), susunan kolom ditebak dari ISI
+ * barisnya: kolom mana yang teksnya paling panjang = uraian, kolom mana yang
+ * isinya satuan baku = unit, angka di sebelah kirinya = volume.
+ */
+const SATUAN_BAKU = /^(ls|bh|buah|unit|set|pcs|pcs\.|hari|ton|liter|ltr|lbr|lembar|kg|m|m2|m²|m3|m³|meter|btg|batang|roll|kaleng|paket|pkt|orang|org|titik|ea)$/i;
+
+function tebakKolom(baris: string[][]): { peta: PetaKolom; mulai: number } | null {
+  const data = baris.filter((r) => r.filter(Boolean).length >= 3);
+  if (data.length < 3) return null;
+  const lebar = Math.max(...data.map((r) => r.length));
+  const nilai = (k: number) => data.map((r) => (r[k] || "").trim());
+
+  let uraian = -1, panjangTerbaik = 0;
+  let unit = -1, satuanTerbanyak = 0;
+  for (let k = 0; k < lebar; k++) {
+    const isi = nilai(k).filter(Boolean);
+    if (!isi.length) continue;
+    const rata = isi.reduce((s2, x) => s2 + x.length, 0) / isi.length;
+    if (rata > panjangTerbaik && rata > 12) { panjangTerbaik = rata; uraian = k; }
+    const satuan = isi.filter((x) => SATUAN_BAKU.test(x)).length / isi.length;
+    if (satuan > satuanTerbanyak && satuan > 0.4) { satuanTerbanyak = satuan; unit = k; }
+  }
+  if (uraian < 0) return null;
+
+  // volume: kolom angka terdekat di kiri kolom satuan (kalau satuannya ketemu)
+  let qty = -1;
+  const angkaBanyak = (k: number) => {
+    const isi = nilai(k).filter(Boolean);
+    return isi.length ? isi.filter((x) => /^[\d.,]+$/.test(x)).length / isi.length : 0;
+  };
+  if (unit > 0 && angkaBanyak(unit - 1) > 0.4) qty = unit - 1;
+  else for (let k = uraian + 1; k < lebar; k++) if (angkaBanyak(k) > 0.5) { qty = k; break; }
+
+  const no = uraian > 0 ? uraian - 1 : -1;
+  return { peta: { no, uraian, qty, unit, merk: -1, ket: -1 }, mulai: 0 };
 }
 
 /** baris judul bagian: sel terisi cuma satu-dua & bertulisan huruf besar */
@@ -133,11 +172,17 @@ export function bacaDocx(buf: ArrayBuffer): HasilBorang {
   const baris: BarisBorang[] = [];
   let jenis: JenisBorang = jenisDoc;
 
-  potongSemua(xml, "w:tbl").forEach((tbl) => {
+  const tabel = potongSemua(xml, "w:tbl");
+  const bukti: string[] = [];   // kepala tabel yang terlihat, untuk pesan galat
+
+  tabel.forEach((tbl) => {
     const isi = tabelJadiBaris(tbl);
-    const kepala = petaKolom(isi);
+    if (isi.length) bukti.push(isi[0].filter(Boolean).join(" | ").slice(0, 90));
+    // tabel kecil (identitas kapal, tanda tangan) tak perlu diurai
+    if (isi.length < 4) return;
+    const kepala = petaKolom(isi) || tebakKolom(isi);
     if (!kepala) return;
-    if (!jenis) jenis = kepala.jenis;
+    if (!jenis && "jenis" in kepala) jenis = (kepala as any).jenis;
     const { peta } = kepala;
     let bagian = "", romawi = "";
 
@@ -179,6 +224,18 @@ export function bacaDocx(buf: ArrayBuffer): HasilBorang {
     }
   });
 
+  if (!baris.length) {
+    throw new Error(
+      `Berkas Word terbaca, tapi tak ada tabel yang berbentuk daftar pekerjaan/permintaan.
+` +
+      `Ditemukan ${tabel.length} tabel. Kepala tabelnya: ` +
+      (bukti.length ? bukti.map((x) => `"${x}"`).join(" · ") : "(kosong)") +
+      `
+
+Pastikan daftarnya memang berbentuk tabel Word (bukan gambar hasil tempel), ` +
+      `dan ada kolom uraian pekerjaan beserta volume/satuannya.`,
+    );
+  }
   return { jenis, kapal, noSurat, tanggal, baris };
 }
 
