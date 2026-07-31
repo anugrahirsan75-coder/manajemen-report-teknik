@@ -392,7 +392,7 @@ function SppbjIsiInner() {
             <Input value={req.noPRSAP || ""} onChange={(e) => update({ noPRSAP: e.target.value })}
               placeholder={(req.noSPPBJ || "").trim() ? `↳ ${req.noSPPBJ}` : "2000xxxxxx"} />
           </Field>
-          <Field label="No. PO SAP" hint="terbit setelah PR disetujui — ikut tampil di preview">
+          <Field label="No. PO SAP" hint="terbit setelah PR disetujui — bisa juga diisi di Fase 2 atau dari daftar pengadaan">
             <Input value={req.noPOSAP || ""} onChange={(e) => update({ noPOSAP: e.target.value })} placeholder="45000xxxxx" />
           </Field>
           <Field label="Kategori Rekap (KET. di spreadsheet)">
@@ -693,7 +693,8 @@ function SppbjIsiInner() {
       </Section>
 
       {/* ===== FASE 2 ===== */}
-      <div className="mt-8 mb-3 flex items-center gap-2">
+      {/* anchor #spbj — dituju tombol "Isi dari dalam form" pada dialog Nomor SAP di daftar */}
+      <div id="spbj" className="mt-8 mb-3 flex items-center gap-2 scroll-mt-6">
         <span className="h-7 w-7 rounded-lg asdp-gradient text-white grid place-items-center text-xs font-bold">2</span>
         <h2 className="font-bold text-slate-700">FASE 2 — setelah SPBJ (PO) terbit · acuan BSTB &amp; BAPP</h2>
       </div>
@@ -706,6 +707,11 @@ function SppbjIsiInner() {
         <div className="grid sm:grid-cols-3 gap-4">
           <Field label="No. SPBJ (angka saja, mis. 3798)"><Input value={req.noSpbjNum || ""} onChange={(e) => update({ noSpbjNum: e.target.value })} placeholder="3798" /></Field>
           <Field label="Bulan SPBJ (romawi, mis. VI)"><Input value={req.noSpbjBulan || ""} onChange={(e) => update({ noSpbjBulan: e.target.value.toUpperCase() })} placeholder="VI" maxLength={4} /></Field>
+          {/* Field yang SAMA dengan yang di Fase 1 (satu nilai, dua tempat isi) — PO terbit
+              bersama SPBJ, jadi lebih enak diisi di sini, berdampingan dengan GR/SES. */}
+          <Field label="No. PO SAP" hint="satu nilai dengan kolom di Fase 1 & di daftar pengadaan">
+            <Input value={req.noPOSAP || ""} onChange={(e) => update({ noPOSAP: e.target.value })} placeholder="45000xxxxx" />
+          </Field>
           <div className="sm:col-span-3">
             <label className="block">
               <span className="text-xs font-semibold text-slate-600">No. Kontrak (otomatis)</span>
@@ -723,7 +729,7 @@ function SppbjIsiInner() {
         <div className="mt-5 rounded-xl ring-1 ring-slate-200 bg-slate-50/70 p-4">
           <div className="flex flex-wrap items-center gap-2 mb-1">
             <span className="text-xs font-bold text-slate-700">No. GR / SES</span>
-            <span className="text-[11px] text-slate-500">Goods Receipt / Service Entry Sheet di SAP — ikut tampil di preview</span>
+            <span className="text-[11px] text-slate-500">Goods Receipt / Service Entry Sheet di SAP — ikut tampil di preview &amp; di kolom GR/SES daftar pengadaan (bisa diisi dari sana juga)</span>
             <div className="ml-auto flex items-center gap-2">
               <button onClick={() => update({ grSes: [...(req.grSes || []), grSesBaru()] })}
                 className="btn btn-ghost text-xs">＋ Tambah baris</button>

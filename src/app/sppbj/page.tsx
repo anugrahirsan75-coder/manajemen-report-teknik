@@ -302,7 +302,9 @@ export default function SppbjList() {
           onBuka={() => { const r = preview; setPreview(null); buka(r); }} />
       )}
       {sapEdit && (
-        <SapModal baris={sapEdit} onTutup={() => setSapEdit(null)}
+        <SapModal baris={sapEdit} docking={jenisOf(sapEdit) === "docking"}
+          onTutup={() => setSapEdit(null)}
+          onBuka={() => { const r = sapEdit; setSapEdit(null); loadById(r); router.push("/sppbj/isi#spbj"); }}
           onSimpan={async (patch) => { await simpanSap(sapEdit.id, patch); setSapEdit(null); }} />
       )}
     </main>
@@ -311,17 +313,28 @@ export default function SppbjList() {
 
 /**
  * Isi cepat No. PO SAP & No. GR/SES dari daftar — tanpa membuka seluruh form.
- * Satu SPPBJ pekerjaan docking dibayar 3 termin, jadi barisnya boleh lebih dari
- * satu; tombol "Siapkan 3 termin" mengisi kerangkanya sekaligus.
+ *
+ * Field-nya SAMA PERSIS dengan yang ada di form (Fase 2 — Data SPBJ / PO), bukan
+ * salinan: isi dari luar (dialog ini) atau dari dalam (form), yang terbaca tetap
+ * satu nilai. Untuk pekerjaan docking — 1 SPPBJ dibayar 3 termin — kerangka
+ * Termin I/II/III disiapkan otomatis saat masih kosong, tinggal ditulis nomornya.
  */
-function SapModal({ baris, onTutup, onSimpan }: {
+function SapModal({ baris, docking, onTutup, onBuka, onSimpan }: {
   baris: any;
+  docking: boolean;
   onTutup: () => void;
+  onBuka: () => void;
   onSimpan: (patch: { noPOSAP: string; grSes: GrSes[] }) => Promise<void>;
 }) {
   const p = baris.payload || {};
+  const adaGr = (p.grSes || []).length > 0;
   const [po, setPo] = useState<string>(p.noPOSAP || "");
-  const [gr, setGr] = useState<GrSes[]>(() => (p.grSes || []).map((g: GrSes) => ({ ...g })));
+  // pekerjaan docking yang belum punya GR/SES langsung dapat 3 baris termin
+  const [gr, setGr] = useState<GrSes[]>(() =>
+    adaGr ? (p.grSes || []).map((g: GrSes) => ({ ...g }))
+      : docking ? [1, 2, 3].map((t) => grSesBaru(t))
+      : [grSesBaru()]);
+  const disiapkan = !adaGr; // kerangka, belum pernah tersimpan
   const [sibuk, setSibuk] = useState(false);
   const [galat, setGalat] = useState("");
 
@@ -361,6 +374,10 @@ function SapModal({ baris, onTutup, onSimpan }: {
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 outline-none" />
             </label>
           </div>
+          <p className="text-[11px] text-slate-500 -mt-1">
+            🔗 Kolom ini <b>sama</b> dengan yang di form <b>Fase 2 — Data SPBJ / PO</b>. Diisi dari sini atau
+            dari dalam form, nilainya satu.
+          </p>
 
           <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50/70 p-4">
             <div className="flex flex-wrap items-center gap-2">
@@ -375,6 +392,14 @@ function SapModal({ baris, onTutup, onSimpan }: {
                 </button>
               </div>
             </div>
+
+            {disiapkan && gr.length > 0 && (
+              <p className="mt-2 text-[11px] text-slate-500">
+                {docking
+                  ? <>Pengadaan ini <b>Docking</b> — 3 baris termin sudah disiapkan otomatis (I: BA Naik Dok · II: BA Selesai Pekerjaan · III: BA Selesai Masa Pemeliharaan). Tinggal isi nomornya; baris yang tak dipakai boleh dibuang.</>
+                  : <>Satu baris disiapkan otomatis. Baris kosong tidak ikut tersimpan.</>}
+              </p>
+            )}
 
             {!gr.length ? (
               <p className="mt-2 text-[11px] text-slate-500">
@@ -418,7 +443,11 @@ function SapModal({ baris, onTutup, onSimpan }: {
           {galat && <p className="text-xs text-rose-800 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">Gagal simpan: {galat}</p>}
         </div>
 
-        <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-end gap-2">
+        <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center gap-2">
+          <button onClick={onBuka} className="btn btn-ghost text-xs" title="Buka form lengkap (Fase 2 — Data SPBJ / PO), tempat kolom yang sama bisa diisi dari dalam">
+            Isi dari dalam form →
+          </button>
+          <span className="flex-1" />
           <button onClick={onTutup} className="btn btn-ghost text-xs">Batal</button>
           <button onClick={simpan} disabled={sibuk} className="btn btn-primary text-xs px-4">{sibuk ? "Menyimpan…" : "Simpan"}</button>
         </div>
