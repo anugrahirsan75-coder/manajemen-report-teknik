@@ -46,7 +46,38 @@ export default function SppbjList() {
   // saring per jenis anggaran (Rutin/Docking/Lainnya) — pakai aturan yang sama dgn Dashboard
   const [jenis, setJenis] = useState<"" | "rutin" | "docking" | "lainnya">("");
   const jenisOf = (r: any) => jenisAnggaranOf(r.payload || {});
-  const filtered = rows.filter((r) => (!bulan || ym(r) === bulan) && (!jenis || jenisOf(r) === jenis) && matchTokens(r, query));
+  const disaring = rows.filter((r) => (!bulan || ym(r) === bulan) && (!jenis || jenisOf(r) === jenis) && matchTokens(r, query));
+
+  // Urutan tampil. Bawaannya tanggal dokumen terbaru — bukan waktu simpan,
+  // karena pengadaan sering dimasukkan belakangan sehingga urutan simpan
+  // membuat tanggalnya tampak lompat-lompat.
+  const URUTAN = [
+    ["tgl-baru", "Tanggal terbaru"],
+    ["tgl-lama", "Tanggal terlama"],
+    ["nomor", "Nomor"],
+    ["judul", "Judul A-Z"],
+    ["kapal", "Kapal A-Z"],
+  ] as const;
+  type Urutan = (typeof URUTAN)[number][0];
+  const [urut, setUrut] = useState<Urutan>("tgl-baru");
+
+  const tgl = (r: any) => r.payload?.tanggal || (r.created_at || "").slice(0, 10) || "";
+  const kapalNama = (r: any) => kapalDariItems(r.payload?.items || []).join(", ");
+  const filtered = [...disaring].sort((a, b) => {
+    switch (urut) {
+      case "tgl-lama": return (tgl(a) || "9999").localeCompare(tgl(b) || "9999");
+      case "nomor": return String(a.payload?.noSPPBJ || "").localeCompare(String(b.payload?.noSPPBJ || ""), "id", { numeric: true });
+      case "judul": return String(a.nama_pengadaan || "").localeCompare(String(b.nama_pengadaan || ""), "id");
+      // pengadaan tanpa kapal (mis. investasi cabang) ditaruh di belakang,
+      // bukan menumpuk di depan karena namanya kosong
+      case "kapal": {
+        const ka = kapalNama(a), kb = kapalNama(b);
+        if (!ka !== !kb) return ka ? -1 : 1;
+        return ka.localeCompare(kb, "id") || String(a.nama_pengadaan || "").localeCompare(String(b.nama_pengadaan || ""), "id");
+      }
+      default: return (tgl(b) || "").localeCompare(tgl(a) || "");   // terbaru dulu
+    }
+  });
   const hitungJenis = (j: "rutin" | "docking" | "lainnya") =>
     rows.filter((r) => (!bulan || ym(r) === bulan) && jenisOf(r) === j && matchTokens(r, query)).length;
 
@@ -208,6 +239,13 @@ export default function SppbjList() {
               </button>
             ))}
           </div>
+          <label className="flex items-center gap-1 text-[11px] text-slate-500">
+            <span>Urutkan</span>
+            <select value={urut} onChange={(e) => setUrut(e.target.value as Urutan)}
+              className="text-xs border px-2 py-1.5 rounded-lg bg-white" title="Urutan tampil daftar">
+              {URUTAN.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </select>
+          </label>
           <Link href="/dashboard" className="btn btn-ghost text-xs">📊 Dashboard Anggaran</Link>
           {supabaseReady && <button onClick={syncRekap} disabled={rekapBusy} className="btn btn-ghost text-xs" title="Kirim semua pengadaan (filter ini) ke spreadsheet REKAP PJK, per tab bulan">{rekapBusy ? "…" : "📊 Sync ke Rekap"}</button>}
           {supabaseReady && <button onClick={exportUsulan} disabled={exporting} className="btn btn-ghost text-xs" title="Excel usulan update harga Riil ke RAB master dari realisasi SPPBJ">{exporting ? "…" : "📤 Usulan Harga Riil"}</button>}
