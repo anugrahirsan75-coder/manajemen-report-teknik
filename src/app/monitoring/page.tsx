@@ -188,7 +188,7 @@ export default function MonitoringPengadaan() {
                 <th className="px-2 py-2.5 text-right w-32">Nilai PR</th>
                 <th className="px-2 py-2.5 text-right w-32">Nilai SPBJ</th>
                 <th className="px-2 py-2.5 text-left w-28">Status</th>
-                <th className="px-2 py-2.5 text-center w-40">Rincian</th>
+                <th className="px-2 py-2.5 text-center w-52">Rincian &amp; Isi Nomor</th>
               </tr>
             </thead>
             <tbody>
@@ -221,7 +221,7 @@ export default function MonitoringPengadaan() {
                     {b.nilaiSpbj ? <b className="text-[#16357f]">{rupiah(b.nilaiSpbj)}</b> : <span className="text-slate-300">belum</span>}
                   </td>
                   <td className="px-2 py-2">
-                    <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS[b.status]?.kelas || STATUS.menunggu_spbj.kelas}`}>
+                    <span className={`inline-block whitespace-nowrap text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS[b.status]?.kelas || STATUS.menunggu_spbj.kelas}`}>
                       {STATUS[b.status]?.label || b.status}
                     </span>
                   </td>
@@ -232,9 +232,9 @@ export default function MonitoringPengadaan() {
                       className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
                       title="Unduh Excel pengadaan ini berikut seluruh itemnya">
                       {unduh === b.id ? "…" : "📊 Excel"}</button>
-                    {bolehUbah && (
-                      <button onClick={() => setUbah(b)} className="ml-1 text-[11px] text-[#1ca3dd] hover:underline">ubah</button>
-                    )}
+                    <button onClick={() => setUbah(b)}
+                      className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-sky-200 text-[#16357f] hover:bg-sky-50"
+                      title="Isi / ubah No. PO SAP dan No. GR/SES pengadaan ini">✏️ Isi Nomor</button>
                   </td>
                 </tr>
               ))}
@@ -265,7 +265,8 @@ export default function MonitoringPengadaan() {
         </p>
         <p className="text-[11px] text-slate-400 mt-1.5">
           Halaman ini hanya memuat <b>SPPBJ Pengadaan</b> (SPPBJ Non PR PO tidak termasuk).
-          Petugas teknik dapat mengubah nomor SAP lewat tombol <i>ubah</i>, atau masuk ke{" "}
+          Petugas teknik dapat mengisi No. PO SAP &amp; No. GR/SES lewat tombol <b>✏️ Isi Nomor</b>
+          (perlu kode), atau masuk ke{" "}
           <a href="/login" className="text-[#1ca3dd] hover:underline">aplikasi Manajemen Report Teknik</a>{" "}
           untuk input lengkap.
         </p>
@@ -273,7 +274,7 @@ export default function MonitoringPengadaan() {
 
       {lihat && <DialogLihat baris={lihat} onTutup={() => setLihat(null)} />}
 
-      {ubah && <DialogUbah baris={ubah} onTutup={() => setUbah(null)} onSelesai={(b) => {
+      {ubah && <DialogUbah baris={ubah} bolehUbah={bolehUbah} onTutup={() => setUbah(null)} onSelesai={(b) => {
         setBaris((p) => p.map((x) => (x.id === b.id ? b : x)));
         setUbah(null);
       }} />}
@@ -354,8 +355,8 @@ function Kartu({ label, nilai, ket, warna = "text-slate-800" }: { label: string;
  * masih dibuka. Yang boleh diubah hanya nomor-nomor SAP dan status — nilai
  * rupiah tetap ikut item di aplikasi supaya tak bisa dikarang dari luar.
  */
-function DialogUbah({ baris, onTutup, onSelesai }: {
-  baris: Baris; onTutup: () => void; onSelesai: (b: Baris) => void;
+function DialogUbah({ baris, bolehUbah, onTutup, onSelesai }: {
+  baris: Baris; bolehUbah: boolean; onTutup: () => void; onSelesai: (b: Baris) => void;
 }) {
   const [kode, setKode] = useState(() => {
     try { return sessionStorage.getItem("monitor_kode") || ""; } catch { return ""; }
@@ -386,14 +387,24 @@ function DialogUbah({ baris, onTutup, onSelesai }: {
     <div className="fixed inset-0 z-50 bg-slate-900/50 p-4 overflow-y-auto" onClick={onTutup}>
       <div className="max-w-xl mx-auto my-8 bg-white rounded-2xl elev-lg ring-line overflow-hidden" onClick={(e) => e.stopPropagation()}>
         <div className="px-5 py-4 border-b border-slate-200">
-          <h3 className="font-bold text-slate-800">Ubah nomor SAP</h3>
+          <h3 className="font-bold text-slate-800">Isi No. PO SAP &amp; No. GR/SES</h3>
           <p className="text-xs text-slate-500 truncate" title={baris.nama}>{baris.nama}</p>
         </div>
 
         <div className="p-5 space-y-3">
+          {!bolehUbah && (
+            <div className="text-[11px] text-amber-900 bg-amber-50 ring-1 ring-amber-200 rounded-lg px-3 py-2.5 leading-relaxed">
+              <b>Pengisian dari halaman ini belum diaktifkan.</b> Yang perlu dilakukan sekali saja oleh
+              pengelola: di Vercel → project → Settings → Environment Variables, tambah{" "}
+              <code className="bg-white px-1 rounded">MONITOR_EDIT_CODE</code> berisi kode pilihan sendiri,
+              lalu Redeploy. Sesudah itu tombol ini langsung bisa dipakai.
+              <br />Sementara itu, pengisian tetap bisa lewat aplikasi Manajemen Report Teknik →
+              SPPBJ Pengadaan — hasilnya otomatis tampil di halaman ini.
+            </div>
+          )}
           <label className="block">
             <span className="text-[11px] font-semibold text-slate-600">Kode ubah</span>
-            <input type="password" value={kode} onChange={(e) => setKode(e.target.value)} autoFocus
+            <input type="password" value={kode} onChange={(e) => setKode(e.target.value)} autoFocus disabled={!bolehUbah}
               placeholder="minta ke Manajer Teknik"
               className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
           </label>
@@ -455,7 +466,7 @@ function DialogUbah({ baris, onTutup, onSelesai }: {
 
         <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
           <button onClick={onTutup} className="btn btn-ghost text-xs">Batal</button>
-          <button onClick={simpan} disabled={sibuk || !kode} className="btn btn-primary text-xs px-4 disabled:opacity-40">
+          <button onClick={simpan} disabled={sibuk || !kode || !bolehUbah} className="btn btn-primary text-xs px-4 disabled:opacity-40">
             {sibuk ? "Menyimpan…" : "Simpan"}
           </button>
         </div>

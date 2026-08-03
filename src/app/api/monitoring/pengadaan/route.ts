@@ -80,8 +80,13 @@ export async function GET() {
     .select("id,nama_kapal,payload")
     .filter("payload->>kind", "eq", "sppbj");
   if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
-  const baris = (data || []).map(keRekap)
-    .sort((a, b) => (b.tanggal || "").localeCompare(a.tanggal || ""));
+  // Urutan harus tetap sama tiap kali dimuat. Tanggal saja tak cukup — banyak
+  // pengadaan bertanggal sama, dan urutan Supabase tidak dijamin, sehingga
+  // baris bisa berpindah-pindah di layar. Disamakan dengan nama lalu id.
+  const baris = (data || []).map(keRekap).sort((a, b) =>
+    (b.tanggal || "").localeCompare(a.tanggal || "")
+    || a.nama.localeCompare(b.nama, "id")
+    || a.id.localeCompare(b.id));
   return NextResponse.json({ ok: true, baris, bolehUbah: !!KODE_UBAH });
 }
 
