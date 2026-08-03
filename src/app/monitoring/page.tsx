@@ -10,9 +10,11 @@
  * hal: No. PR SAP, No. PO SAP, No. GR/SES, dan status. Menambah atau menghapus
  * pengadaan tetap hanya lewat aplikasi.
  */
+import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { rupiah, tanggalIndo } from "@/lib/format";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
+import { unduhMonitoring } from "@/lib/monitoring/ekspor";
 
 interface GrSesRekap { termin: number | null; nomor: string; tanggal: string }
 interface Baris {
@@ -45,6 +47,8 @@ export default function MonitoringPengadaan() {
   const [bulan, setBulan] = useState("");
   const [ubah, setUbah] = useState<Baris | null>(null);
   const [lihat, setLihat] = useState<Baris | null>(null);
+  const [unduh, setUnduh] = useState("");
+  const [waktuMuat, setWaktuMuat] = useState("");
 
   const ambil = async () => {
     setMuat(true); setGalat("");
@@ -52,11 +56,29 @@ export default function MonitoringPengadaan() {
       const r = await fetch("/api/monitoring/pengadaan", { cache: "no-store" });
       const d = await r.json();
       if (!d.ok) setGalat(d.error || "Gagal memuat");
-      else { setBaris(d.baris); setBolehUbah(!!d.bolehUbah); }
+      else {
+        setBaris(d.baris); setBolehUbah(!!d.bolehUbah);
+        setWaktuMuat(new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
+      }
     } catch (e: any) { setGalat(e?.message || String(e)); }
     finally { setMuat(false); }
   };
   useEffect(() => { ambil(); }, []);
+
+  // Ekspor mengambil jalur tersendiri yang membawa seluruh item — supaya
+  // berkasnya utuh sampai rincian, bukan hanya yang tampak di layar.
+  const ekspor = async () => {
+    setUnduh("siap");
+    try {
+      const r = await fetch("/api/monitoring/pengadaan/ekspor", { cache: "no-store" });
+      const d = await r.json();
+      if (!d.ok) { setUnduh("Gagal: " + (d.error || r.status)); return; }
+      const pilih = new Set(tampil.map((x) => x.id));
+      const isi = d.baris.filter((x: any) => pilih.has(x.id));
+      await unduhMonitoring(isi, `${isi.length} pengadaan${saringanAktif ? " — " + labelSaringan : " (seluruhnya)"}`);
+      setUnduh("");
+    } catch (e: any) { setUnduh("Gagal: " + (e?.message || e)); }
+  };
 
   const bulanAda = useMemo(
     () => Array.from(new Set(baris.map((b) => (b.tanggal || "").slice(0, 7)).filter(Boolean))).sort().reverse(),
@@ -72,6 +94,15 @@ export default function MonitoringPengadaan() {
     return cari.toLowerCase().split(/\s+/).filter(Boolean).every((k) => teks.includes(k));
   }), [baris, cari, jenis, status, bulan]);
 
+  const saringanAktif = !!(cari || jenis || status || bulan);
+  const labelSaringan = [
+    jenis && JENIS[jenis].label,
+    status && STATUS[status].label,
+    bulan && tanggalIndo(bulan + "-01").replace(/^\d+\s/, ""),
+    cari && `"${cari}"`,
+  ].filter(Boolean).join(" · ");
+  const bersihkan = () => { setCari(""); setJenis(""); setStatus(""); setBulan(""); };
+
   const jml = {
     pr: tampil.reduce((s, b) => s + b.nilaiPr, 0),
     spbj: tampil.reduce((s, b) => s + (b.nilaiSpbj || 0), 0),
@@ -81,14 +112,25 @@ export default function MonitoringPengadaan() {
   return (
     <main className="max-w-7xl mx-auto px-4 py-6">
       <header className="asdp-gradient rounded-3xl p-[1.5px] elev-lg">
-        <div className="glass rounded-3xl px-6 py-5">
-          <p className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
-            PT. ASDP Indonesia Ferry (Persero) · Cabang Ternate
-          </p>
-          <h1 className="text-2xl font-extrabold asdp-text-gradient">Monitoring Pengadaan Teknik</h1>
-          <p className="text-slate-500 text-sm">
-            Rekap SPPBJ Pengadaan — dapat dilihat terbuka, angkanya mengikuti aplikasi Manajemen Report Teknik
-          </p>
+        <div className="glass rounded-3xl px-6 py-5 flex flex-wrap items-center gap-4">
+          <div className="bg-white rounded-2xl p-2 shadow-md shrink-0">
+            <Image src="/logo-asdp.png" alt="ASDP" width={54} height={36} className="object-contain" />
+          </div>
+          <div className="flex-1 min-w-[16rem]">
+            <p className="text-[11px] font-semibold tracking-wide text-slate-500 uppercase">
+              PT. ASDP Indonesia Ferry (Persero) · Cabang Ternate
+            </p>
+            <h1 className="text-2xl font-extrabold asdp-text-gradient leading-tight">Monitoring Pengadaan Teknik</h1>
+            <p className="text-slate-500 text-sm">
+              Rekap SPPBJ Pengadaan — terbuka untuk umum, angkanya mengikuti aplikasi Manajemen Report Teknik
+            </p>
+          </div>
+          <div className="flex flex-col items-end gap-1.5">
+            <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200">
+              ● DATA LANGSUNG
+            </span>
+            <span className="text-[10px] text-slate-400">diperbarui {waktuMuat || "…"}</span>
+          </div>
         </div>
       </header>
 
@@ -116,16 +158,33 @@ export default function MonitoringPengadaan() {
           {bulanAda.map((b) => <option key={b} value={b}>{tanggalIndo(b + "-01").replace(/^\d+\s/, "")}</option>)}
         </select>
         <button onClick={ambil} className="btn btn-ghost text-xs">↻ Muat ulang</button>
+        <button onClick={ekspor} disabled={unduh === "siap" || !tampil.length}
+          className="btn btn-success text-xs disabled:opacity-50"
+          title="Unduh Excel: lembar REKAP + lembar RINCIAN ITEM (seluruh item, tidak dipotong)">
+          {unduh === "siap" ? "menyiapkan…" : "📊 Export Excel"}
+        </button>
       </div>
+
+      {saringanAktif && (
+        <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+          <span className="text-slate-500">Saringan aktif:</span>
+          <span className="font-semibold text-[#16357f] bg-sky-50 ring-1 ring-sky-200 rounded-full px-2 py-0.5">{labelSaringan}</span>
+          <span className="text-slate-500">→ {tampil.length} dari {baris.length} pengadaan</span>
+          <button onClick={bersihkan} className="text-slate-400 hover:text-slate-700 underline">bersihkan</button>
+        </div>
+      )}
+      {unduh && unduh !== "siap" && (
+        <p className="mt-2 text-xs text-rose-800 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">{unduh}</p>
+      )}
 
       {galat && <p className="mt-3 text-sm text-rose-800 bg-rose-50 ring-1 ring-rose-200 rounded-xl px-3 py-2">{galat}</p>}
 
       {muat && !baris.length ? (
         <p className="mt-4 text-sm text-slate-400">Memuat…</p>
       ) : (
-        <div className="mt-3 overflow-x-auto bg-white rounded-2xl elev-md ring-line">
+        <div className="mt-3 overflow-auto max-h-[70vh] bg-white rounded-2xl elev-md ring-line">
           <table className="w-full text-sm min-w-[72rem]">
-            <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold">
+            <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold sticky top-0 z-10 shadow-[0_1px_0_rgba(0,0,0,0.08)]">
               <tr className="border-b-2 border-slate-200">
                 <th className="px-2 py-2.5 text-center w-8">No</th>
                 <th className="px-2 py-2.5 text-left min-w-[15rem]">Nama Pengadaan</th>
@@ -141,7 +200,7 @@ export default function MonitoringPengadaan() {
             </thead>
             <tbody>
               {tampil.map((b, i) => (
-                <tr key={b.id} className="border-b border-slate-200 last:border-0 even:bg-slate-50/50 align-top">
+                <tr key={b.id} className="border-b border-slate-200 last:border-0 even:bg-slate-50/50 align-top hover:bg-sky-50/60 transition-colors">
                   <td className="px-2 py-2 text-center text-xs text-slate-400 tabular-nums">{i + 1}</td>
                   <td className="px-2 py-2">
                     <span className="block text-[12px] leading-[1.35] text-slate-800">{b.nama || "(tanpa nama)"}</span>
@@ -188,7 +247,7 @@ export default function MonitoringPengadaan() {
                 </td></tr>
               )}
             </tbody>
-            <tfoot className="bg-slate-50 font-bold">
+            <tfoot className="bg-slate-50 font-bold sticky bottom-0 shadow-[0_-1px_0_rgba(0,0,0,0.08)]">
               <tr>
                 <td className="px-2 py-2.5" colSpan={6}>JUMLAH {tampil.length} pengadaan</td>
                 <td className="px-2 py-2.5 text-right tabular-nums">{rupiah(jml.pr)}</td>
@@ -200,10 +259,20 @@ export default function MonitoringPengadaan() {
         </div>
       )}
 
-      <p className="mt-4 text-[11px] text-slate-400">
-        Nilai PR = jumlah harga usulan tiap item. Nilai SPBJ = harga final setelah PO terbit, tampil setelah
-        harga SPBJ-nya diisi di aplikasi. Halaman ini hanya menampilkan SPPBJ Pengadaan.
-      </p>
+      <footer className="mt-5 rounded-2xl ring-line bg-white/70 px-4 py-3">
+        <p className="text-[11px] text-slate-500 leading-relaxed">
+          <b className="text-slate-700">Cara membaca:</b> <b>Nilai PR</b> = jumlah harga usulan tiap item.
+          <b> Nilai SPBJ</b> = harga final setelah PO terbit — tampil setelah harga SPBJ-nya diisi di aplikasi,
+          selama belum diisi tertulis &ldquo;belum&rdquo;. Tombol <b>👁 Lihat</b> membuka rincian item tiap pengadaan,
+          <b> Export Excel</b> mengunduh rekap sekaligus seluruh rinciannya.
+        </p>
+        <p className="text-[11px] text-slate-400 mt-1.5">
+          Halaman ini hanya memuat <b>SPPBJ Pengadaan</b> (SPPBJ Non PR PO tidak termasuk).
+          Petugas teknik dapat mengubah nomor SAP lewat tombol <i>ubah</i>, atau masuk ke{" "}
+          <a href="/login" className="text-[#1ca3dd] hover:underline">aplikasi Manajemen Report Teknik</a>{" "}
+          untuk input lengkap.
+        </p>
+      </footer>
 
       {lihat && <DialogLihat baris={lihat} onTutup={() => setLihat(null)} />}
 
