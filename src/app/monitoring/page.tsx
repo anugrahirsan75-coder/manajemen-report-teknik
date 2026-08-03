@@ -12,6 +12,7 @@
  */
 import { useEffect, useMemo, useState } from "react";
 import { rupiah, tanggalIndo } from "@/lib/format";
+import PreviewPengadaan from "@/components/PreviewPengadaan";
 
 interface GrSesRekap { termin: number | null; nomor: string; tanggal: string }
 interface Baris {
@@ -43,6 +44,7 @@ export default function MonitoringPengadaan() {
   const [status, setStatus] = useState("");
   const [bulan, setBulan] = useState("");
   const [ubah, setUbah] = useState<Baris | null>(null);
+  const [lihat, setLihat] = useState<Baris | null>(null);
 
   const ambil = async () => {
     setMuat(true); setGalat("");
@@ -134,7 +136,7 @@ export default function MonitoringPengadaan() {
                 <th className="px-2 py-2.5 text-right w-32">Nilai PR</th>
                 <th className="px-2 py-2.5 text-right w-32">Nilai SPBJ</th>
                 <th className="px-2 py-2.5 text-left w-28">Status</th>
-                {bolehUbah && <th className="px-2 py-2.5 w-16" />}
+                <th className="px-2 py-2.5 text-center w-24">Rincian</th>
               </tr>
             </thead>
             <tbody>
@@ -171,15 +173,17 @@ export default function MonitoringPengadaan() {
                       {STATUS[b.status]?.label || b.status}
                     </span>
                   </td>
-                  {bolehUbah && (
-                    <td className="px-2 py-2 text-center">
-                      <button onClick={() => setUbah(b)} className="text-[11px] text-[#1ca3dd] hover:underline">ubah</button>
-                    </td>
-                  )}
+                  <td className="px-2 py-2 text-center whitespace-nowrap">
+                    <button onClick={() => setLihat(b)} className="text-[11px] px-2 py-1 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50"
+                      title="Lihat rincian item pengadaan">👁 Lihat</button>
+                    {bolehUbah && (
+                      <button onClick={() => setUbah(b)} className="ml-1 text-[11px] text-[#1ca3dd] hover:underline">ubah</button>
+                    )}
+                  </td>
                 </tr>
               ))}
               {!tampil.length && (
-                <tr><td colSpan={bolehUbah ? 10 : 9} className="px-4 py-8 text-center text-sm text-slate-400">
+                <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-slate-400">
                   Tak ada pengadaan pada saringan ini.
                 </td></tr>
               )}
@@ -189,7 +193,7 @@ export default function MonitoringPengadaan() {
                 <td className="px-2 py-2.5" colSpan={6}>JUMLAH {tampil.length} pengadaan</td>
                 <td className="px-2 py-2.5 text-right tabular-nums">{rupiah(jml.pr)}</td>
                 <td className="px-2 py-2.5 text-right tabular-nums text-[#16357f]">{rupiah(jml.spbj)}</td>
-                <td colSpan={bolehUbah ? 2 : 1} />
+                <td />
               </tr>
             </tfoot>
           </table>
@@ -201,11 +205,69 @@ export default function MonitoringPengadaan() {
         harga SPBJ-nya diisi di aplikasi. Halaman ini hanya menampilkan SPPBJ Pengadaan.
       </p>
 
+      {lihat && <DialogLihat baris={lihat} onTutup={() => setLihat(null)} />}
+
       {ubah && <DialogUbah baris={ubah} onTutup={() => setUbah(null)} onSelesai={(b) => {
         setBaris((p) => p.map((x) => (x.id === b.id ? b : x)));
         setUbah(null);
       }} />}
     </main>
+  );
+}
+
+/**
+ * Pratinjau rincian — memakai tampilan dokumen yang sama dengan di aplikasi,
+ * tapi diisi dari jalur terbuka yang hanya membawa tabel itemnya. Vendor,
+ * penerima BSTB, foto, dan nama penanda tangan tidak ikut ke sini.
+ */
+function DialogLihat({ baris, onTutup }: { baris: Baris; onTutup: () => void }) {
+  const [dok, setDok] = useState<any>(null);
+  const [galat, setGalat] = useState("");
+
+  useEffect(() => {
+    let batal = false;
+    (async () => {
+      try {
+        const r = await fetch(`/api/monitoring/pengadaan/${baris.id}`, { cache: "no-store" });
+        const d = await r.json();
+        if (batal) return;
+        if (!d.ok) setGalat(d.error || "Gagal memuat rincian");
+        else setDok(d.dok);
+      } catch (e: any) { if (!batal) setGalat(e?.message || String(e)); }
+    })();
+    return () => { batal = true; };
+  }, [baris.id]);
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/60 p-4 overflow-y-auto" onMouseDown={onTutup}>
+      <div className="max-w-[210mm] mx-auto mb-2 flex flex-wrap items-center gap-2 no-print" onMouseDown={(e) => e.stopPropagation()}>
+        <span className="text-white font-bold text-sm truncate flex-1">{baris.nama}</span>
+        <button onClick={() => window.print()} className="btn btn-ghost text-xs">🖨️ Cetak</button>
+        <button onClick={onTutup} className="btn btn-ghost text-xs">✕ Tutup</button>
+      </div>
+      <div className="w-fit mx-auto" onMouseDown={(e) => e.stopPropagation()}>
+        {galat ? (
+          <p className="bg-white rounded-xl px-4 py-3 text-sm text-rose-700">{galat}</p>
+        ) : !dok ? (
+          <p className="bg-white rounded-xl px-4 py-3 text-sm text-slate-500">Memuat rincian…</p>
+        ) : (
+          <PreviewPengadaan
+            jenis="SPPBJ"
+            judul="Daftar Kebutuhan Pengadaan Barang/Jasa"
+            nomor={dok.nomor || dok.noPr}
+            tanggal={dok.tanggal}
+            noPRSAP={dok.noPr}
+            noPOSAP={dok.noPo}
+            grSes={dok.grSes}
+            dasarPelimpahan={dok.dasarPelimpahan}
+            namaPengadaan={dok.namaPengadaan}
+            mataAnggaran={dok.mataAnggaran}
+            jenisAnggaran={JENIS[baris.jenis].label}
+            items={dok.items}
+          />
+        )}
+      </div>
+    </div>
   );
 }
 
