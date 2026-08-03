@@ -14,7 +14,7 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { rupiah, tanggalIndo } from "@/lib/format";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
-import { unduhMonitoring } from "@/lib/monitoring/ekspor";
+import { unduhSatuPengadaan } from "@/lib/monitoring/ekspor";
 
 interface GrSesRekap { termin: number | null; nomor: string; tanggal: string }
 interface Baris {
@@ -65,17 +65,15 @@ export default function MonitoringPengadaan() {
   };
   useEffect(() => { ambil(); }, []);
 
-  // Ekspor mengambil jalur tersendiri yang membawa seluruh item — supaya
-  // berkasnya utuh sampai rincian, bukan hanya yang tampak di layar.
-  const ekspor = async () => {
-    setUnduh("siap");
+  // Ekspor SATU pengadaan — rinciannya diambil saat tombolnya ditekan, jadi
+  // tabel di layar tak perlu memikul ribuan item hanya untuk berjaga-jaga.
+  const eksporSatu = async (b: Baris) => {
+    setUnduh(b.id);
     try {
-      const r = await fetch("/api/monitoring/pengadaan/ekspor", { cache: "no-store" });
+      const r = await fetch(`/api/monitoring/pengadaan/${b.id}`, { cache: "no-store" });
       const d = await r.json();
       if (!d.ok) { setUnduh("Gagal: " + (d.error || r.status)); return; }
-      const pilih = new Set(tampil.map((x) => x.id));
-      const isi = d.baris.filter((x: any) => pilih.has(x.id));
-      await unduhMonitoring(isi, `${isi.length} pengadaan${saringanAktif ? " — " + labelSaringan : " (seluruhnya)"}`);
+      await unduhSatuPengadaan(d.dok, JENIS[b.jenis].label);
       setUnduh("");
     } catch (e: any) { setUnduh("Gagal: " + (e?.message || e)); }
   };
@@ -158,11 +156,6 @@ export default function MonitoringPengadaan() {
           {bulanAda.map((b) => <option key={b} value={b}>{tanggalIndo(b + "-01").replace(/^\d+\s/, "")}</option>)}
         </select>
         <button onClick={ambil} className="btn btn-ghost text-xs">↻ Muat ulang</button>
-        <button onClick={ekspor} disabled={unduh === "siap" || !tampil.length}
-          className="btn btn-success text-xs disabled:opacity-50"
-          title="Unduh Excel: lembar REKAP + lembar RINCIAN ITEM (seluruh item, tidak dipotong)">
-          {unduh === "siap" ? "menyiapkan…" : "📊 Export Excel"}
-        </button>
       </div>
 
       {saringanAktif && (
@@ -173,7 +166,7 @@ export default function MonitoringPengadaan() {
           <button onClick={bersihkan} className="text-slate-400 hover:text-slate-700 underline">bersihkan</button>
         </div>
       )}
-      {unduh && unduh !== "siap" && (
+      {unduh && unduh.startsWith("Gagal") && (
         <p className="mt-2 text-xs text-rose-800 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">{unduh}</p>
       )}
 
@@ -195,7 +188,7 @@ export default function MonitoringPengadaan() {
                 <th className="px-2 py-2.5 text-right w-32">Nilai PR</th>
                 <th className="px-2 py-2.5 text-right w-32">Nilai SPBJ</th>
                 <th className="px-2 py-2.5 text-left w-28">Status</th>
-                <th className="px-2 py-2.5 text-center w-24">Rincian</th>
+                <th className="px-2 py-2.5 text-center w-40">Rincian</th>
               </tr>
             </thead>
             <tbody>
@@ -235,6 +228,10 @@ export default function MonitoringPengadaan() {
                   <td className="px-2 py-2 text-center whitespace-nowrap">
                     <button onClick={() => setLihat(b)} className="text-[11px] px-2 py-1 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50"
                       title="Lihat rincian item pengadaan">👁 Lihat</button>
+                    <button onClick={() => eksporSatu(b)} disabled={unduh === b.id}
+                      className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                      title="Unduh Excel pengadaan ini berikut seluruh itemnya">
+                      {unduh === b.id ? "…" : "📊 Excel"}</button>
                     {bolehUbah && (
                       <button onClick={() => setUbah(b)} className="ml-1 text-[11px] text-[#1ca3dd] hover:underline">ubah</button>
                     )}
@@ -264,7 +261,7 @@ export default function MonitoringPengadaan() {
           <b className="text-slate-700">Cara membaca:</b> <b>Nilai PR</b> = jumlah harga usulan tiap item.
           <b> Nilai SPBJ</b> = harga final setelah PO terbit — tampil setelah harga SPBJ-nya diisi di aplikasi,
           selama belum diisi tertulis &ldquo;belum&rdquo;. Tombol <b>👁 Lihat</b> membuka rincian item tiap pengadaan,
-          <b> Export Excel</b> mengunduh rekap sekaligus seluruh rinciannya.
+          <b> 📊 Excel</b> mengunduh pengadaan itu saja berikut seluruh itemnya.
         </p>
         <p className="text-[11px] text-slate-400 mt-1.5">
           Halaman ini hanya memuat <b>SPPBJ Pengadaan</b> (SPPBJ Non PR PO tidak termasuk).
@@ -311,6 +308,8 @@ function DialogLihat({ baris, onTutup }: { baris: Baris; onTutup: () => void }) 
     <div className="fixed inset-0 z-50 bg-slate-900/60 p-4 overflow-y-auto" onMouseDown={onTutup}>
       <div className="max-w-[210mm] mx-auto mb-2 flex flex-wrap items-center gap-2 no-print" onMouseDown={(e) => e.stopPropagation()}>
         <span className="text-white font-bold text-sm truncate flex-1">{baris.nama}</span>
+        <button onClick={() => dok && unduhSatuPengadaan(dok, JENIS[baris.jenis].label)}
+          disabled={!dok} className="btn btn-ghost text-xs disabled:opacity-40">📊 Excel</button>
         <button onClick={() => window.print()} className="btn btn-ghost text-xs">🖨️ Cetak</button>
         <button onClick={onTutup} className="btn btn-ghost text-xs">✕ Tutup</button>
       </div>
