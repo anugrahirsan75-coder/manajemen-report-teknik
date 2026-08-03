@@ -127,6 +127,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <SectionLabel>Data Kapal</SectionLabel>
         <NavLink href="/docking/rencana" icon="🗓️" label="Perencanaan Docking" desc="Repair List, RAB penunjang &amp; jadwal tahapan" active={path.startsWith("/docking/rencana")} onNavigate={onNavigate} />
         <NavLink href="/docking" icon="🛠️" label="Monitoring Docking" desc="Lama docking, berita acara &amp; kelas BKI" active={path === "/docking" || (path.startsWith("/docking") && !path.startsWith("/docking/rencana"))} onNavigate={onNavigate} />
+        <NavLink href="/monitoring" icon="🌐" label="Monitoring Pengadaan Teknik" desc="Halaman terbuka — rekap SPPBJ untuk umum" active={path.startsWith("/monitoring")} onNavigate={onNavigate} />
         <NavLink href="/sensor" icon="📡" label="Monitoring Sensor" desc="Data sensor kapal Regional 4 (Looker)" active={path.startsWith("/sensor")} onNavigate={onNavigate} />
         <NavLink href="/armada" icon="⚓" label="Profil Armada" desc="Lihat spesifikasi & inventaris" active={path.startsWith("/armada")} onNavigate={onNavigate} />
         <NavLink href="/kapal" icon="🚢" label="Ship Database" desc="Isi & edit data kapal" active={path.startsWith("/kapal")} onNavigate={onNavigate} />

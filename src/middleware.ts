@@ -15,5 +15,8 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   // lindungi semua KECUALI: /login, /api/auth/*, aset next, favicon, logo
-  matcher: ["/((?!login|api/auth|_next/static|_next/image|favicon.ico|logo-asdp.png).*)"],
+  // /monitoring + api/monitoring SENGAJA terbuka: halaman pemantauan pengadaan
+  // untuk orang banyak. Route API-nya sendiri yang membatasi — hanya kolom
+  // rekap yang keluar, dan mengubah data menuntut kode ubah.
+  matcher: ["/((?!login|monitoring|api/auth|api/monitoring|_next/static|_next/image|favicon.ico|logo-asdp.png).*)"],
 };

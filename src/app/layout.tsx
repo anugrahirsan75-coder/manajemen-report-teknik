@@ -7,6 +7,7 @@ import { SppbjProvider } from "@/lib/sppbj/store";
 import { NonprProvider } from "@/lib/nonpr/store";
 import { ServisProvider } from "@/lib/servis/store";
 import Sidebar from "@/components/Sidebar";
+import RangkaAplikasi from "@/components/RangkaAplikasi";
 import { PenyediaDialog } from "@/components/Konfirmasi";
 import LonengPengingat from "@/components/LonengPengingat";
 
@@ -33,12 +34,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SppbjProvider>
               <NonprProvider>
                 <ServisProvider>
-                  <div className="md:flex min-h-screen">
-                    <Sidebar />
-                    <div className="flex-1 min-w-0">{children}</div>
-                  </div>
-                  {/* lonceng pengingat mengapung di kanan atas seluruh halaman */}
-                  <LonengPengingat />
+                  <RangkaAplikasi sidebar={<Sidebar />} loneng={<LonengPengingat />}>
+                    {children}
+                  </RangkaAplikasi>
                   {/* satu dialog untuk seluruh aplikasi — dipakai konfirmasi() & beritahu() */}
                   <PenyediaDialog />
                 </ServisProvider>
