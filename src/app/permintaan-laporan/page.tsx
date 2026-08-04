@@ -15,6 +15,7 @@ import {
   JENIS_LAPOR, KirimanLapor, STATUS_LAPOR, bulanIndo, labelJenis, singkatJenis,
   tautanWa, ukuranSingkat,
 } from "@/lib/lapor/types";
+import { konfirmasi } from "@/components/Konfirmasi";
 
 const kelasStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.kelas || "bg-slate-100 text-slate-700 ring-slate-200";
 const labelStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.label || s;
@@ -81,7 +82,12 @@ export default function PermintaanLaporanKapal() {
   };
 
   const hapus = async (b: KirimanLapor) => {
-    if (!confirm(`Hapus catatan kiriman ${singkatJenis(b.jenis)} ${b.kapal} (${bulanIndo(b.periode)})?\n\nBerkas di Google Drive TIDAK ikut terhapus.`)) return;
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "🗂️", judul: "Hapus catatan kiriman?",
+      pesan: `${singkatJenis(b.jenis)} · ${b.kapal} · ${bulanIndo(b.periode)}`,
+      rincian: ["Catatan kiriman akan dihapus dari rekap kantor.", "Berkas di Google Drive tidak ikut terhapus."],
+      tombolYa: "Hapus catatan",
+    }))) return;
     const r = await fetch(`/api/lapor/daftar?id=${b.id}`, { method: "DELETE" });
     const d = await r.json();
     if (!d.ok) { setGalat(d.error || "Gagal menghapus"); return; }
@@ -96,127 +102,234 @@ export default function PermintaanLaporanKapal() {
     setTimeout(() => setSalin(""), 4000);
   };
 
-  const belum = KAPAL_ANGGARAN.filter((k) => !JENIS_LAPOR.some((j) => matriks.get(`${k}|${j.id}`)?.length));
+  const ringkas = useMemo(() => {
+    const kiriman = baris.filter((b) => b.periode === periodeMatriks);
+    let kapalMengirim = 0;
+    let kapalLengkap = 0;
+    let slotTerisi = 0;
+    for (const k of KAPAL_ANGGARAN) {
+      const isi = JENIS_LAPOR.filter((j) => matriks.get(`${k}|${j.id}`)?.length).length;
+      if (isi > 0) kapalMengirim++;
+      if (isi === JENIS_LAPOR.length) kapalLengkap++;
+      slotTerisi += isi;
+    }
+    const totalSlot = KAPAL_ANGGARAN.length * JENIS_LAPOR.length;
+    return {
+      kiriman: kiriman.length,
+      kapalMengirim,
+      kapalLengkap,
+      slotTerisi,
+      totalSlot,
+      persen: totalSlot ? Math.round((slotTerisi / totalSlot) * 100) : 0,
+      berkas: kiriman.reduce((s, b) => s + b.berkas.length, 0),
+    };
+  }, [baris, matriks, periodeMatriks]);
+
+  const saringanAktif = !!(cari || kapal || jenis || status || periode);
+  const bersihkanSaringan = () => { setCari(""); setKapal(""); setJenis(""); setStatus(""); setPeriode(""); };
 
   return (
-    <main className="max-w-7xl mx-auto px-4 py-6">
-      <header className="flex flex-wrap items-start justify-between gap-3 mb-5">
-        <div>
-          <h1 className="text-2xl font-extrabold asdp-text-gradient leading-tight">Permintaan &amp; Laporan Kapal</h1>
-          <p className="text-sm text-slate-500">
-            Kiriman ABK dari halaman terbuka · berkas tersimpan di Google Drive kantor
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button onClick={salinTautan} className="rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-sm font-bold px-4 py-2.5">
-            🔗 Salin tautan untuk ABK
-          </button>
-          <Link href="/lapor" target="_blank" className="rounded-xl bg-white ring-1 ring-slate-300 hover:bg-slate-50 text-sm font-bold px-4 py-2.5">
-            👁 Lihat halaman kirim
-          </Link>
-          <button onClick={ambil} className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2.5">
-            ⟳ Muat ulang
-          </button>
+    <main className="mx-auto max-w-7xl px-4 py-6">
+      <header className="asdp-gradient mb-5 rounded-[1.75rem] p-[1.5px] elev-lg anim-in">
+        <div className="glass hero-glow flex flex-wrap items-center gap-4 rounded-[calc(1.75rem-1.5px)] px-5 py-5 sm:px-6">
+          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-cyan-400 via-sky-500 to-blue-800 text-2xl text-white shadow-lg shadow-sky-900/20">📨</div>
+          <div className="min-w-[16rem] flex-1">
+            <div className="mb-1 flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-sky-800 ring-1 ring-sky-200">Pusat Laporan Armada</span>
+              <span className="text-[10px] font-medium text-slate-400">Google Drive tersinkron</span>
+            </div>
+            <h1 className="text-2xl font-extrabold asdp-text-gradient leading-tight">Permintaan &amp; Laporan Kapal</h1>
+            <p className="mt-0.5 text-sm text-slate-500">Pantau kelengkapan kiriman ABK, tindak lanjut, dan berkas kapal dalam satu rekap.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={salinTautan} className="btn bg-slate-900 text-xs text-white shadow-lg shadow-slate-900/15 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600">
+              🔗 Salin tautan ABK
+            </button>
+            <Link href="/lapor" target="_blank" className="btn btn-ghost text-xs">👁 Halaman kirim</Link>
+            <button onClick={ambil} disabled={muat} className="btn btn-primary text-xs disabled:opacity-50">
+              {muat ? "Memuat…" : "⟳ Muat ulang"}
+            </button>
+          </div>
         </div>
       </header>
-      {salin && <div className="mb-4 rounded-xl bg-emerald-50 ring-1 ring-emerald-200 text-emerald-800 text-sm px-3 py-2">{salin}</div>}
-      {galat && <div className="mb-4 rounded-xl bg-rose-50 ring-1 ring-rose-200 text-rose-800 text-sm px-3 py-2">{galat}</div>}
+      {salin && <div className="anim-in mb-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">✓ {salin}</div>}
+      {galat && <div className="anim-in mb-4 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-rose-200">{galat}</div>}
 
       {/* ── matriks kelengkapan ───────────────────────────────────────────── */}
-      <section className="rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm p-4 mb-5">
-        <div className="flex flex-wrap items-center justify-between gap-2 mb-3">
-          <h2 className="font-extrabold text-slate-800">Kelengkapan {bulanIndo(periodeMatriks)}</h2>
-          <span className="text-xs text-slate-500">
-            {KAPAL_ANGGARAN.length - belum.length} dari {KAPAL_ANGGARAN.length} kapal sudah mengirim
-          </span>
+      <section className="mb-5 overflow-hidden rounded-3xl bg-white elev-md ring-line anim-in dark:bg-slate-900">
+        <div className="border-b border-slate-200 bg-gradient-to-r from-slate-50 via-white to-sky-50/70 px-4 py-4 sm:px-5 dark:border-slate-700 dark:from-slate-900 dark:via-slate-900 dark:to-sky-950/30">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="grid h-8 w-8 place-items-center rounded-xl bg-[#16357f] text-sm text-white shadow-sm">✓</span>
+                <div>
+                  <h2 className="font-extrabold text-slate-900">Rekap Kelengkapan Armada</h2>
+                  <p className="text-[11px] text-slate-500">Empat dokumen wajib untuk setiap kapal dan periode laporan.</p>
+                </div>
+              </div>
+            </div>
+            <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 shadow-sm dark:bg-slate-800 dark:ring-slate-700">
+              <span className="text-slate-400">Periode</span>
+              <select value={periodeMatriks} onChange={(e) => setPeriode(e.target.value)} className="bg-transparent font-bold text-[#16357f] outline-none dark:text-sky-300">
+                {periodeAda.length ? periodeAda.map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>) : <option value={periodeMatriks}>{bulanIndo(periodeMatriks)}</option>}
+              </select>
+            </label>
+          </div>
+
+          <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
+            <KpiRekap ikon="🚢" label="Kapal Mengirim" nilai={`${ringkas.kapalMengirim}/${KAPAL_ANGGARAN.length}`} ket={`${ringkas.kapalLengkap} kapal lengkap`} warna="sky" />
+            <KpiRekap ikon="✓" label="Dokumen Diterima" nilai={`${ringkas.slotTerisi}/${ringkas.totalSlot}`} ket={`${ringkas.persen}% kelengkapan`} warna="emerald" />
+            <KpiRekap ikon="📨" label="Kiriman Masuk" nilai={String(ringkas.kiriman)} ket={bulanIndo(periodeMatriks)} warna="indigo" />
+            <KpiRekap ikon="📎" label="Berkas Drive" nilai={String(ringkas.berkas)} ket="lampiran tersimpan" warna="amber" />
+          </div>
+
+          <div className="mt-3 flex items-center gap-3">
+            <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 dark:bg-slate-700 dark:ring-slate-600">
+              <div className="h-full rounded-full bg-gradient-to-r from-[#14b8c4] via-[#1ca3dd] to-[#16357f] transition-all duration-500" style={{ width: `${ringkas.persen}%` }} />
+            </div>
+            <span className="min-w-[5.5rem] text-right text-[10px] font-bold tabular-nums text-slate-600 dark:text-slate-300">{ringkas.slotTerisi} dari {ringkas.totalSlot} slot</span>
+          </div>
         </div>
+
         <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="text-left text-xs uppercase tracking-wide text-slate-500">
-                <th className="py-2 pr-3">Kapal</th>
-                {JENIS_LAPOR.map((j) => <th key={j.id} className="py-2 px-2 text-center whitespace-nowrap">{j.ikon} {j.singkat}</th>)}
+          <table className="w-full min-w-[68rem] border-separate border-spacing-0 text-sm">
+            <thead className="bg-slate-100/90 text-[10px] font-extrabold uppercase tracking-[0.09em] text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+              <tr>
+                <th className="sticky left-0 z-10 min-w-[12rem] border-b border-slate-200 bg-slate-100 px-4 py-3 text-left dark:border-slate-700 dark:bg-slate-800">Kapal</th>
+                <th className="w-28 border-b border-slate-200 px-3 py-3 text-left dark:border-slate-700">Progres</th>
+                {JENIS_LAPOR.map((j) => <th key={j.id} className="min-w-[11rem] border-b border-slate-200 px-3 py-3 text-center dark:border-slate-700"><span className="mr-1">{j.ikon}</span>{j.singkat}</th>)}
               </tr>
             </thead>
             <tbody>
-              {KAPAL_ANGGARAN.map((k) => (
-                <tr key={k} className="border-t border-slate-100">
-                  <td className="py-2 pr-3 font-semibold text-slate-800 whitespace-nowrap">{k}</td>
-                  {JENIS_LAPOR.map((j) => {
-                    const isi = matriks.get(`${k}|${j.id}`) || [];
-                    return (
-                      <td key={j.id} className="py-2 px-2 text-center">
-                        {isi.length ? (
-                          <button onClick={() => setBuka(isi[0])}
-                            className="inline-flex items-center gap-1 rounded-lg bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200 px-2 py-0.5 text-xs font-bold hover:bg-emerald-200">
-                            ✓ {isi.length > 1 ? `${isi.length}×` : "ada"}
-                          </button>
-                        ) : <span className="text-slate-300">—</span>}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))}
+              {KAPAL_ANGGARAN.map((k, index) => {
+                const jumlahIsi = JENIS_LAPOR.filter((j) => matriks.get(`${k}|${j.id}`)?.length).length;
+                const lengkap = jumlahIsi === JENIS_LAPOR.length;
+                return (
+                  <tr key={k} className="group hover:bg-sky-50/60 dark:hover:bg-sky-950/25">
+                    <td className={`sticky left-0 z-[5] border-b border-slate-100 px-4 py-2.5 font-bold text-slate-800 group-hover:bg-sky-50 dark:border-slate-800 dark:text-slate-100 dark:group-hover:bg-sky-950 ${index % 2 ? "bg-slate-50/95 dark:bg-slate-900" : "bg-white dark:bg-slate-900"}`}>
+                      <span className="mr-2 text-[10px] font-medium tabular-nums text-slate-400">{String(index + 1).padStart(2, "0")}</span>{k}
+                    </td>
+                    <td className="border-b border-slate-100 px-3 py-2.5 dark:border-slate-800">
+                      <div className="flex items-center gap-2">
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                          <div className={`h-full rounded-full ${lengkap ? "bg-emerald-500" : jumlahIsi ? "bg-sky-500" : "bg-slate-300 dark:bg-slate-600"}`} style={{ width: `${(jumlahIsi / JENIS_LAPOR.length) * 100}%` }} />
+                        </div>
+                        <span className={`w-7 text-right text-[10px] font-extrabold tabular-nums ${lengkap ? "text-emerald-700 dark:text-emerald-300" : "text-slate-500"}`}>{jumlahIsi}/4</span>
+                      </div>
+                    </td>
+                    {JENIS_LAPOR.map((j) => {
+                      const isi = matriks.get(`${k}|${j.id}`) || [];
+                      return (
+                        <td key={j.id} className="border-b border-slate-100 px-3 py-2 text-center dark:border-slate-800">
+                          {isi.length ? (
+                            <button onClick={() => setBuka(isi[0])}
+                              className="inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[10px] font-extrabold text-emerald-700 ring-1 ring-emerald-200 transition hover:-translate-y-0.5 hover:bg-emerald-100 hover:shadow-sm dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800">
+                              <span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-[9px] text-white">✓</span>
+                              {isi.length > 1 ? `${isi.length} kiriman` : "Diterima"}
+                            </button>
+                          ) : (
+                            <span className="inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
+                              <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600" /> Belum
+                            </span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50/80 px-4 py-3 text-[10px] text-slate-500 dark:bg-slate-900 dark:text-slate-400">
+          <span><b className="text-slate-700 dark:text-slate-200">Diterima</b> dapat diklik untuk membuka kiriman terbaru pada slot tersebut.</span>
+          <span className={`rounded-full px-2 py-0.5 font-bold ring-1 ${ringkas.kapalLengkap === KAPAL_ANGGARAN.length ? "bg-emerald-100 text-emerald-700 ring-emerald-200" : "bg-amber-50 text-amber-700 ring-amber-200"}`}>
+            {KAPAL_ANGGARAN.length - ringkas.kapalLengkap} kapal belum lengkap
+          </span>
         </div>
       </section>
 
       {/* ── saringan ──────────────────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm p-3 mb-4 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-        <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari nama, catatan, berkas…"
-          className="rounded-xl ring-1 ring-slate-300 px-3 py-2 text-sm lg:col-span-2" />
-        <select value={kapal} onChange={(e) => setKapal(e.target.value)} className="rounded-xl ring-1 ring-slate-300 px-3 py-2 text-sm bg-white">
-          <option value="">Semua kapal</option>
-          {KAPAL_ANGGARAN.map((k) => <option key={k} value={k}>{k}</option>)}
-        </select>
-        <select value={jenis} onChange={(e) => setJenis(e.target.value)} className="rounded-xl ring-1 ring-slate-300 px-3 py-2 text-sm bg-white">
-          <option value="">Semua jenis</option>
-          {JENIS_LAPOR.map((j) => <option key={j.id} value={j.id}>{j.singkat}</option>)}
-        </select>
-        <div className="grid grid-cols-2 gap-2">
-          <select value={periode} onChange={(e) => setPeriode(e.target.value)} className="rounded-xl ring-1 ring-slate-300 px-2 py-2 text-sm bg-white">
+      <section className="mb-4 rounded-2xl bg-white p-3 elev-sm ring-line dark:bg-slate-900">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
+          <div>
+            <h2 className="text-sm font-extrabold text-slate-800">Daftar Kiriman</h2>
+            <p className="text-[10px] text-slate-500">Telusuri kiriman, berkas, status, dan tindak lanjut ABK.</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:ring-sky-800">{tampil.length} dari {baris.length} kiriman</span>
+            {saringanAktif && <button onClick={bersihkanSaringan} className="text-[10px] font-bold text-slate-500 hover:text-rose-600">✕ Reset filter</button>}
+          </div>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-12">
+          <label className="relative lg:col-span-4">
+            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-sm text-slate-400">⌕</span>
+            <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari nama, catatan, atau berkas…"
+              className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm transition focus:border-sky-400 focus:ring-4 focus:ring-sky-100 dark:border-slate-700" />
+          </label>
+          <select value={kapal} onChange={(e) => setKapal(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm lg:col-span-2 dark:border-slate-700">
+            <option value="">Semua kapal</option>
+            {KAPAL_ANGGARAN.map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+          <select value={jenis} onChange={(e) => setJenis(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm lg:col-span-2 dark:border-slate-700">
+            <option value="">Semua jenis</option>
+            {JENIS_LAPOR.map((j) => <option key={j.id} value={j.id}>{j.singkat}</option>)}
+          </select>
+          <select value={periode} onChange={(e) => setPeriode(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm lg:col-span-2 dark:border-slate-700">
             <option value="">Semua bulan</option>
             {periodeAda.map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>)}
           </select>
-          <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-xl ring-1 ring-slate-300 px-2 py-2 text-sm bg-white">
+          <select value={status} onChange={(e) => setStatus(e.target.value)} className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm lg:col-span-2 dark:border-slate-700">
             <option value="">Semua status</option>
             {STATUS_LAPOR.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
           </select>
         </div>
-      </div>
+      </section>
 
       {/* ── daftar kiriman ────────────────────────────────────────────────── */}
       {muat ? (
-        <p className="text-slate-500 py-10 text-center">Memuat…</p>
+        <div className="grid gap-2" aria-label="Memuat daftar kiriman">
+          {[0, 1, 2].map((i) => <div key={i} className="h-24 animate-pulse rounded-2xl bg-white/75 ring-1 ring-slate-200 dark:bg-slate-900/75 dark:ring-slate-800" />)}
+        </div>
       ) : !tampil.length ? (
-        <div className="rounded-2xl bg-white ring-1 ring-slate-200 p-10 text-center text-slate-500">
-          Belum ada kiriman{baris.length ? " yang cocok dengan saringan" : ""}.
-          {!baris.length && <> Bagikan tautan <b>{tautanLapor}</b> ke ABK kapal.</>}
+        <div className="rounded-3xl bg-white p-10 text-center elev-sm ring-line dark:bg-slate-900">
+          <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-slate-100 text-xl dark:bg-slate-800">📭</div>
+          <p className="mt-3 font-bold text-slate-700">Belum ada kiriman{baris.length ? " yang cocok" : ""}</p>
+          <p className="mt-1 text-xs text-slate-500">
+            {baris.length ? "Ubah atau reset filter untuk melihat data lainnya." : "Bagikan tautan pengiriman kepada ABK kapal untuk mulai menerima laporan."}
+          </p>
+          {saringanAktif && <button onClick={bersihkanSaringan} className="btn btn-ghost mt-3 text-xs">Reset filter</button>}
         </div>
       ) : (
-        <div className="space-y-2">
-          {tampil.map((b) => (
-            <div key={b.id} className="rounded-2xl bg-white ring-1 ring-slate-200 shadow-sm p-4 flex flex-wrap items-center gap-3">
-              <div className="min-w-[220px] flex-1">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <span className="font-extrabold text-slate-900">{b.kapal}</span>
-                  <span className="text-xs rounded-lg bg-slate-100 text-slate-700 ring-1 ring-slate-200 px-2 py-0.5 font-semibold">
-                    {singkatJenis(b.jenis)}
-                  </span>
-                  <span className={`text-xs rounded-lg ring-1 px-2 py-0.5 font-semibold ${kelasStatus(b.status)}`}>{labelStatus(b.status)}</span>
+        <div className="grid gap-2.5 stagger">
+          {tampil.map((b) => {
+            const metaJenis = JENIS_LAPOR.find((j) => j.id === b.jenis);
+            return (
+              <article key={b.id} className="group relative overflow-hidden rounded-2xl bg-white p-4 elev-sm ring-line transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900">
+                <span className={`absolute inset-y-0 left-0 w-1 ${b.status === "selesai" ? "bg-emerald-500" : b.status === "baru" ? "bg-rose-500" : b.status === "ditindaklanjuti" ? "bg-amber-500" : "bg-slate-300"}`} />
+                <div className="flex flex-wrap items-center gap-3">
+                  <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">{metaJenis?.ikon || "📄"}</div>
+                  <div className="min-w-[220px] flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="font-extrabold text-slate-900">{b.kapal}</h3>
+                      <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">{singkatJenis(b.jenis)}</span>
+                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${kelasStatus(b.status)}`}>{labelStatus(b.status)}</span>
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+                      <span className="font-semibold text-slate-700">📅 {bulanIndo(b.periode)}</span>
+                      <span>👤 {b.pengirim}{b.jabatan ? ` · ${b.jabatan}` : ""}</span>
+                      <span>🕘 {waktuSingkat(b.dikirimPada)}</span>
+                    </div>
+                    {b.catatan && <p className="mt-1.5 line-clamp-1 text-xs text-slate-500">{b.catatan}</p>}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">📎 {b.berkas.length} berkas</span>
+                    <button onClick={() => setBuka(b)} className="btn btn-primary text-xs">Buka detail →</button>
+                  </div>
                 </div>
-                <p className="text-sm text-slate-600 mt-0.5">
-                  {bulanIndo(b.periode)} · {b.pengirim}{b.jabatan ? ` (${b.jabatan})` : ""} · {waktuSingkat(b.dikirimPada)}
-                </p>
-                {b.catatan && <p className="text-sm text-slate-500 mt-1 line-clamp-2">{b.catatan}</p>}
-              </div>
-              <div className="text-sm text-slate-600 whitespace-nowrap">📎 {b.berkas.length} berkas</div>
-              <button onClick={() => setBuka(b)} className="rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold px-4 py-2">
-                Buka
-              </button>
-            </div>
-          ))}
+              </article>
+            );
+          })}
         </div>
       )}
 
@@ -300,5 +413,28 @@ export default function PermintaanLaporanKapal() {
         </div>
       )}
     </main>
+  );
+}
+
+function KpiRekap({ ikon, label, nilai, ket, warna }: {
+  ikon: string; label: string; nilai: string; ket: string; warna: "sky" | "emerald" | "indigo" | "amber";
+}) {
+  const tema = {
+    sky: "bg-sky-100 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300",
+    emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300",
+    indigo: "bg-indigo-100 text-indigo-700 dark:bg-indigo-950/50 dark:text-indigo-300",
+    amber: "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300",
+  }[warna];
+  return (
+    <div className="flex items-center gap-3 rounded-xl bg-white/85 px-3 py-2.5 ring-1 ring-slate-200 shadow-sm dark:bg-slate-800/80 dark:ring-slate-700">
+      <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-lg text-sm font-black ${tema}`}>{ikon}</span>
+      <div className="min-w-0">
+        <p className="text-[9px] font-extrabold uppercase tracking-[0.11em] text-slate-400">{label}</p>
+        <div className="flex items-baseline gap-1.5">
+          <strong className="text-lg font-extrabold leading-none tabular-nums text-slate-900">{nilai}</strong>
+          <span className="truncate text-[9px] text-slate-400">{ket}</span>
+        </div>
+      </div>
+    </div>
   );
 }
