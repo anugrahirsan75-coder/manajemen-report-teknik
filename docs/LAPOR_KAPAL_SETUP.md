@@ -66,9 +66,16 @@ supaya isi folder tetap terbaca walau dibuka langsung dari Drive.
   tautan.
 - Menghapus kiriman dari aplikasi **tidak** menghapus berkas di Drive —
   disengaja, supaya salah pencet tidak menghilangkan dokumen asli kapal.
+- Tombol **Hapus** pada satu dokumen memindahkan dokumen tersebut ke Sampah
+  Google Drive dan menghapus tautannya dari rekap. Penghapusan dibatasi hanya
+  untuk dokumen yang berada di bawah `ROOT_FOLDER_ID`.
 - Batas: 12 berkas per kiriman, 12 MB per berkas, dan 15 kiriman per 10 menit
   dari satu alamat IP. Foto dikecilkan otomatis di HP pengirim (sisi lebar
   maks 1600 px) supaya hemat kuota kapal.
 - Konfirmasi ABK diarahkan ke WhatsApp kantor (+62 819-9489-2686) dengan pesan
   yang sudah terisi otomatis. Nomornya diatur di `src/lib/lapor/types.ts`
   (`WA_KONFIRMASI`).
+
+> Setelah memperbarui `docs/lapor-apps-script.gs`, pilih **Deploy → Manage
+> deployments → Edit → New version → Deploy**. URL `/exec` tetap sama, tetapi
+> versi baru wajib diterbitkan agar tombol hapus dokumen dapat bekerja.

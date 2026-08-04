@@ -12,7 +12,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import {
-  JENIS_LAPOR, KirimanLapor, STATUS_LAPOR, bulanIndo, labelJenis, singkatJenis,
+  BerkasLapor, JENIS_LAPOR, KirimanLapor, STATUS_LAPOR, bulanIndo, labelJenis, singkatJenis,
   tautanWa, ukuranSingkat,
 } from "@/lib/lapor/types";
 import { konfirmasi } from "@/components/Konfirmasi";
@@ -32,6 +32,7 @@ export default function PermintaanLaporanKapal() {
   const [periode, setPeriode] = useState("");
   const [cari, setCari] = useState("");
   const [buka, setBuka] = useState<KirimanLapor | null>(null);
+  const [hapusBerkasId, setHapusBerkasId] = useState("");
   const [salin, setSalin] = useState("");
 
   const ambil = async () => {
@@ -111,6 +112,37 @@ export default function PermintaanLaporanKapal() {
     if (!d.ok) { setGalat(d.error || "Gagal menghapus"); return; }
     setBaris((l) => l.filter((x) => x.id !== b.id));
     setBuka(null);
+  };
+
+  const hapusDokumen = async (b: KirimanLapor, f: BerkasLapor) => {
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "🗑️", judul: "Hapus dokumen dari Google Drive?",
+      pesan: f.nama,
+      rincian: [
+        `${singkatJenis(b.jenis)} · ${b.kapal} · ${bulanIndo(b.periode)}`,
+        `Ukuran dokumen ${ukuranSingkat(f.ukuran)}.`,
+      ],
+      tegasan: "Dokumen akan dipindahkan ke Sampah Google Drive dan dihapus dari rekap ini.",
+      tombolYa: "Hapus dokumen",
+    }))) return;
+
+    setHapusBerkasId(f.fileId);
+    setGalat("");
+    try {
+      const r = await fetch("/api/lapor/daftar/berkas", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: b.id, fileId: f.fileId }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setGalat(d.error || "Gagal menghapus dokumen"); return; }
+      setBaris((l) => l.map((x) => (x.id === b.id ? { ...x, berkas: d.berkas } : x)));
+      setBuka((x) => (x?.id === b.id ? { ...x, berkas: d.berkas } : x));
+    } catch (e: any) {
+      setGalat(e?.message || "Gagal menghapus dokumen");
+    } finally {
+      setHapusBerkasId("");
+    }
   };
 
   const tautanLapor = typeof window !== "undefined" ? `${window.location.origin}/lapor` : "/lapor";
@@ -413,12 +445,25 @@ export default function PermintaanLaporanKapal() {
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Berkas di Google Drive</div>
                 {!buka.berkas.length ? <p className="text-sm text-slate-500">Tidak ada berkas.</p> : (
                   <ul className="space-y-1.5">
-                    {buka.berkas.map((f, i) => (
-                      <li key={i} className="flex items-center gap-2 bg-slate-50 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm">
+                    {buka.berkas.map((f) => (
+                      <li key={f.fileId} className="flex items-center gap-2 bg-slate-50 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm">
                         <span className="truncate flex-1">{f.nama}</span>
                         <span className="text-xs text-slate-500 shrink-0">{ukuranSingkat(f.ukuran)}</span>
                         <a href={f.url} target="_blank" rel="noopener noreferrer"
                            className="shrink-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5">Buka</a>
+                        <button type="button" onClick={() => hapusDokumen(buka, f)}
+                          disabled={Boolean(hapusBerkasId)}
+                          aria-label={`Hapus dokumen ${f.nama}`}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-xs font-bold text-rose-700 ring-1 ring-rose-200 transition hover:bg-rose-50 hover:ring-rose-300 disabled:cursor-wait disabled:opacity-50">
+                          {hapusBerkasId === f.fileId ? (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-rose-200 border-t-rose-600" aria-hidden="true" />
+                          ) : (
+                            <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+                              <path d="M4 7h16M9 7V4h6v3m-8 0 1 13h8l1-13M10 11v5m4-5v5" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                          {hapusBerkasId === f.fileId ? "Menghapus…" : "Hapus"}
+                        </button>
                       </li>
                     ))}
                   </ul>

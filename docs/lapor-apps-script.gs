@@ -46,6 +46,7 @@ function doPost(e) {
     // hosting aplikasi jauh lebih kecil dari berkas kapal). Potongan disimpan
     // sementara, lalu disatukan saat potongan terakhir tiba.
     if (body.aksi === "potongan") return terimaPotongan(body);
+    if (body.aksi === "hapus") return hapusBerkas(body);
 
     var b64 = String(body.dataBase64 || "");
     if (!b64) return json({ ok: false, error: "berkas kosong" });
@@ -72,6 +73,42 @@ function doPost(e) {
   } catch (err) {
     return json({ ok: false, error: String(err) });
   }
+}
+
+/**
+ * Pindahkan satu berkas ke Sampah. Pemeriksaan induk mencegah fileId dari luar
+ * folder laporan ikut terhapus walaupun seseorang mengetahui ID berkasnya.
+ */
+function hapusBerkas(body) {
+  var fileId = String(body.fileId || "").trim();
+  if (!fileId) return json({ ok: false, error: "fileId kosong" });
+
+  var file = DriveApp.getFileById(fileId);
+  if (!beradaDiFolderLaporan(file)) {
+    return json({ ok: false, error: "berkas berada di luar folder laporan" });
+  }
+  file.setTrashed(true);
+  return json({ ok: true, fileId: fileId });
+}
+
+/** telusuri semua folder induk sampai ROOT_FOLDER_ID, dengan batas aman */
+function beradaDiFolderLaporan(file) {
+  var antrean = [];
+  var induk = file.getParents();
+  while (induk.hasNext()) antrean.push(induk.next());
+
+  var dilihat = {};
+  var langkah = 0;
+  while (antrean.length && langkah++ < 100) {
+    var folder = antrean.shift();
+    var id = folder.getId();
+    if (id === ROOT_FOLDER_ID) return true;
+    if (dilihat[id]) continue;
+    dilihat[id] = true;
+    var atas = folder.getParents();
+    while (atas.hasNext()) antrean.push(atas.next());
+  }
+  return false;
 }
 
 /**
