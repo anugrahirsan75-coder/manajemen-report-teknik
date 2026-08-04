@@ -321,6 +321,12 @@ export default function MonitoringPengadaan() {
           <a href="/login" className="text-[#1ca3dd] hover:underline">aplikasi Manajemen Report Teknik</a>{" "}
           untuk input lengkap.
         </p>
+        <div className="mt-3 flex justify-end border-t border-slate-200 pt-3 dark:border-slate-700">
+          <p className="inline-flex items-center gap-2 text-[10px] font-medium tracking-wide text-slate-500">
+            <span className="h-1.5 w-1.5 rounded-full bg-gradient-to-r from-[#7cc242] to-[#1ca3dd] shadow-[0_0_0_3px_rgba(28,163,221,0.10)]" aria-hidden="true" />
+            Dibuat oleh <strong className="font-bold text-slate-700 dark:text-slate-200">Irsan Anugrah - Teknik ASDP Ternate</strong>
+          </p>
+        </div>
       </footer>
 
       {lihat && <DialogLihat baris={lihat} onTutup={() => setLihat(null)} />}
