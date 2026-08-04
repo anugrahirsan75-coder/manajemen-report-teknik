@@ -39,8 +39,8 @@ export default function LonengPengingat() {
   const isi = (
     <>
       <button ref={btn} onClick={() => setBuka((v) => !v)}
-        title={mendesak ? `${mendesak} pekerjaan mendesak — klik untuk melihat` : "Pengingat pekerjaan"}
-        aria-label={`Pengingat pekerjaan${r.total ? `, ${r.total} hal` : ""}`}
+        title={r.notifikasi ? `${r.notifikasi} kiriman kapal baru — klik untuk melihat` : mendesak ? `${mendesak} pekerjaan mendesak — klik untuk melihat` : "Notifikasi dan pengingat"}
+        aria-label={`Notifikasi dan pengingat${r.total ? `, ${r.total} hal` : ""}`}
         className="no-print fixed top-3 right-4 z-[45] h-11 w-11 grid place-items-center rounded-full bg-white ring-1 ring-slate-300 shadow-lg hover:ring-[#1ca3dd] hover:shadow-xl transition">
         <span className="text-lg leading-none">🔔</span>
         {r.total > 0 && (
@@ -55,7 +55,7 @@ export default function LonengPengingat() {
           className="no-print fixed top-16 right-4 z-[46] w-[min(24rem,calc(100vw-2rem))] bg-white rounded-2xl ring-1 ring-slate-300 shadow-2xl overflow-hidden"
           style={{ animation: "popIn 0.14s ease-out both" }}>
           <div className="px-4 py-3 bg-slate-50 border-b border-slate-200 flex items-center gap-2">
-            <span className="font-extrabold text-slate-800 text-sm">Outstanding pekerjaan</span>
+            <span className="font-extrabold text-slate-800 text-sm">Notifikasi &amp; pekerjaan</span>
             <span className="text-[11px] text-slate-500">{r.total} hal</span>
             <button onClick={muatUlang} title="Periksa ulang" className="ml-auto text-[11px] font-bold text-[#1ca3dd] hover:text-[#16357f]">
               {loading ? "…" : "↻"}
@@ -65,11 +65,12 @@ export default function LonengPengingat() {
 
           {r.total === 0 ? (
             <p className="px-4 py-6 text-sm text-slate-500 text-center">
-              {loading ? "Memeriksa…" : "Tidak ada yang lewat tenggat. 👍"}
+              {loading ? "Memeriksa…" : "Tidak ada kiriman baru atau pekerjaan outstanding. 👍"}
             </p>
           ) : (
             <>
               <div className="px-4 py-2 flex flex-wrap gap-1.5 border-b border-slate-100">
+                {r.notifikasi > 0 && <span className="text-[10px] font-bold px-2 py-0.5 rounded ring-1 bg-emerald-100 text-emerald-800 ring-emerald-300">📨 {r.notifikasi} kiriman baru</span>}
                 {r.lewat > 0 && <span className={`text-[10px] font-bold px-2 py-0.5 rounded ring-1 ${GAYA_TINGKAT.lewat.chip}`}>{r.lewat} lewat tenggat</span>}
                 {r.mendesak > 0 && <span className={`text-[10px] font-bold px-2 py-0.5 rounded ring-1 ${GAYA_TINGKAT.mendesak.chip}`}>{r.mendesak} mendesak</span>}
                 {r.dekat > 0 && <span className={`text-[10px] font-bold px-2 py-0.5 rounded ring-1 ${GAYA_TINGKAT.dekat.chip}`}>{r.dekat} segera</span>}
@@ -81,7 +82,10 @@ export default function LonengPengingat() {
                     <div className="flex items-start gap-2">
                       <span className={`mt-1 w-1.5 h-1.5 rounded-full shrink-0 ${GAYA_TINGKAT[p.tingkat].bar}`} />
                       <div className="min-w-0 flex-1">
-                        <p className="text-[12px] font-bold text-slate-800 leading-snug">{p.ikon} {p.judul}</p>
+                        <p className="text-[12px] font-bold text-slate-800 leading-snug">
+                          {p.ikon} {p.judul}
+                          {p.jenis === "notifikasi" && <span className="ml-1.5 rounded bg-emerald-100 px-1.5 py-px text-[8px] font-extrabold text-emerald-700 ring-1 ring-emerald-200">BARU</span>}
+                        </p>
                         {p.rincian && <p className="text-[11px] text-slate-500 truncate">{p.rincian}</p>}
                         <p className="text-[10px] text-slate-400">{p.modul}{p.sisaHari != null ? ` · ${teksSisa(p.sisaHari)}` : ""}</p>
                       </div>

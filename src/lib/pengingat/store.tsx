@@ -20,7 +20,7 @@ import {
 } from "./kumpul";
 
 const LS = "pengingat_cache";
-const KINDS = ["rr", "docking_jadwal", "kelas_bki", "servis", "kerusakan", "anggaran"];
+const KINDS = ["rr", "docking_jadwal", "kelas_bki", "servis", "kerusakan", "anggaran", "lapor_kapal"];
 
 const isoDari = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -41,7 +41,7 @@ export function usePengingat() {
     try {
       const { data } = await supabase.from("projects").select("id,payload")
         .or(KINDS.map((k) => `payload->>kind.eq.${k}`).join(","));
-      const rows = (data || []).map((r: any) => r.payload).filter(Boolean);
+      const rows = (data || []).map((r: any) => r.payload ? { ...r.payload, __rowId: r.id } : null).filter(Boolean);
       const hasil = susun(rows);
       setList(hasil);
       setWaktu(new Date().toLocaleTimeString("id-ID"));
@@ -51,7 +51,19 @@ export function usePengingat() {
     } finally { setLoading(false); }
   }, []);
 
-  useEffect(() => { muat(); }, [muat]);
+  useEffect(() => {
+    muat();
+    const timer = window.setInterval(muat, 60_000);
+    const saatAktif = () => { if (document.visibilityState === "visible") muat(); };
+    const dimintaUlang = () => muat();
+    document.addEventListener("visibilitychange", saatAktif);
+    window.addEventListener("pengingat:muat-ulang", dimintaUlang);
+    return () => {
+      window.clearInterval(timer);
+      document.removeEventListener("visibilitychange", saatAktif);
+      window.removeEventListener("pengingat:muat-ulang", dimintaUlang);
+    };
+  }, [muat]);
 
   return { ready, loading, list, waktu, muatUlang: muat };
 }
@@ -70,6 +82,19 @@ function susun(rows: any[]): Pengingat[] {
   const servis = rows.filter((r) => r.kind === "servis");
   const rusak = rows.filter((r) => r.kind === "kerusakan").map((r) => r.doc).filter(Boolean);
   const anggaran = rows.find((r) => r.kind === "anggaran");
+  const laporanBaru = rows.filter((r) => r.kind === "lapor_kapal" && r.status === "baru");
+
+  // ---------- 0. Kiriman baru dari ABK kapal ----------
+  laporanBaru.forEach((l: any) => {
+    const id = l.__rowId || `${l.kapal}-${l.jenis}-${l.dikirimPada || "baru"}`;
+    const jenis = String(l.jenis || "laporan").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
+    tambah({
+      id: `lapor-${id}`, jenis: "notifikasi", modul: "Permintaan & Laporan Kapal", ikon: "📨", tingkat: "info",
+      judul: `${ringkasKapal(l.kapal || "Kapal")} baru mengirim ${jenis}`,
+      rincian: `${l.pengirim || "ABK kapal"} · ${l.periode ? namaBulan(l.periode) : "tanpa periode"} · ${(l.berkas || []).length} berkas`,
+      href: `/permintaan-laporan?buka=${encodeURIComponent(id)}`,
+    });
+  });
 
   // ---------- 1. Lampiran 3: rencana & realisasi ----------
   const per = periodeAktif(now);

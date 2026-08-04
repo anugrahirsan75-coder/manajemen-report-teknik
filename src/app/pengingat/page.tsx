@@ -24,7 +24,7 @@ export default function PengingatPage() {
           <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-rose-500 to-amber-500 grid place-items-center text-2xl text-white shadow-md shrink-0">🔔</div>
           <div className="flex-1 min-w-0">
             <h1 className="text-2xl font-extrabold asdp-text-gradient tracking-tight">Pengingat Pekerjaan</h1>
-            <p className="text-slate-500 text-sm">Outstanding lintas modul — tenggat Lampiran 3, termin docking, servis bengkel, kelas BKI, kerusakan</p>
+            <p className="text-slate-500 text-sm">Kiriman kapal baru dan outstanding lintas modul — tenggat, docking, servis, kelas BKI, kerusakan</p>
           </div>
           <button onClick={muatUlang} className="btn btn-ghost text-xs">{loading ? "memeriksa…" : "↻ Periksa ulang"}</button>
         </div>
@@ -36,11 +36,12 @@ export default function PengingatPage() {
         </p>
       )}
 
-      <section className="mt-4 grid grid-cols-2 lg:grid-cols-4 gap-3">
-        <Kartu label="Total outstanding" nilai={String(r.total)} bar="bg-slate-500" tint="text-slate-900" aktif={!saring} onClick={() => setSaring("")} />
-        <Kartu label="Lewat tenggat" nilai={String(r.lewat)} bar="bg-red-500" tint="text-red-700" aktif={saring === "lewat"} onClick={() => setSaring(saring === "lewat" ? "" : "lewat")} />
-        <Kartu label="Mendesak (≤3 hari)" nilai={String(r.mendesak)} bar="bg-amber-500" tint="text-amber-700" aktif={saring === "mendesak"} onClick={() => setSaring(saring === "mendesak" ? "" : "mendesak")} />
-        <Kartu label="Segera (≤7 hari)" nilai={String(r.dekat)} bar="bg-sky-500" tint="text-sky-700" aktif={saring === "dekat"} onClick={() => setSaring(saring === "dekat" ? "" : "dekat")} />
+      <section className="mt-4 grid grid-cols-2 lg:grid-cols-5 gap-3">
+        <Kartu label="Semua perhatian" nilai={String(r.total)} bar="bg-slate-500" tint="text-slate-900" aktif={!saring && !modul} onClick={() => { setSaring(""); setModul(""); }} />
+        <Kartu label="Kiriman kapal baru" nilai={String(r.notifikasi)} bar="bg-emerald-500" tint="text-emerald-700" aktif={modul === "Permintaan & Laporan Kapal"} onClick={() => { setSaring(""); setModul(modul === "Permintaan & Laporan Kapal" ? "" : "Permintaan & Laporan Kapal"); }} />
+        <Kartu label="Lewat tenggat" nilai={String(r.lewat)} bar="bg-red-500" tint="text-red-700" aktif={saring === "lewat" && !modul} onClick={() => { setModul(""); setSaring(saring === "lewat" ? "" : "lewat"); }} />
+        <Kartu label="Mendesak (≤3 hari)" nilai={String(r.mendesak)} bar="bg-amber-500" tint="text-amber-700" aktif={saring === "mendesak" && !modul} onClick={() => { setModul(""); setSaring(saring === "mendesak" ? "" : "mendesak"); }} />
+        <Kartu label="Segera (≤7 hari)" nilai={String(r.dekat)} bar="bg-sky-500" tint="text-sky-700" aktif={saring === "dekat" && !modul} onClick={() => { setModul(""); setSaring(saring === "dekat" ? "" : "dekat"); }} />
       </section>
 
       {modulList.length > 1 && (
@@ -77,7 +78,10 @@ export default function PengingatPage() {
               <div className="pl-2.5 flex flex-wrap items-start gap-x-4 gap-y-1.5">
                 <span className="text-xl shrink-0">{p.ikon}</span>
                 <div className="flex-1 min-w-[14rem]">
-                  <p className="font-bold text-slate-800 leading-snug">{p.judul}</p>
+                  <p className="font-bold text-slate-800 leading-snug">
+                    {p.judul}
+                    {p.jenis === "notifikasi" && <span className="ml-2 rounded bg-emerald-100 px-1.5 py-0.5 text-[9px] font-extrabold text-emerald-700 ring-1 ring-emerald-200">BARU</span>}
+                  </p>
                   {p.rincian && <p className="text-[12px] text-slate-600 mt-0.5">{p.rincian}</p>}
                   <p className="text-[11px] text-slate-400 mt-0.5">{p.modul}</p>
                 </div>

@@ -15,6 +15,8 @@ export type TingkatPengingat = "lewat" | "mendesak" | "dekat" | "info";
 export interface Pengingat {
   id: string;
   tingkat: TingkatPengingat;
+  /** Notifikasi kejadian baru dibedakan dari pekerjaan/tenggat biasa. */
+  jenis?: "notifikasi" | "pekerjaan";
   modul: string;          // label modul, mis. "Rencana & Realisasi"
   ikon: string;
   judul: string;
@@ -54,13 +56,15 @@ export function tingkatDariSisa(sisa: number | null | undefined): TingkatPenging
   return "info";
 }
 
-/** urut paling mendesak dulu, lalu tenggat terdekat */
+/** Kejadian baru tampil paling atas, lalu pekerjaan paling mendesak. */
 const BOBOT: Record<TingkatPengingat, number> = { lewat: 0, mendesak: 1, dekat: 2, info: 3 };
 export const urutPengingat = (a: Pengingat, b: Pengingat) =>
-  BOBOT[a.tingkat] - BOBOT[b.tingkat] || (a.sisaHari ?? 9999) - (b.sisaHari ?? 9999);
+  (a.jenis === "notifikasi" ? -1 : BOBOT[a.tingkat]) - (b.jenis === "notifikasi" ? -1 : BOBOT[b.tingkat])
+  || (a.sisaHari ?? 9999) - (b.sisaHari ?? 9999);
 
 export const ringkasTingkat = (list: Pengingat[]) => ({
   total: list.length,
+  notifikasi: list.filter((x) => x.jenis === "notifikasi").length,
   lewat: list.filter((x) => x.tingkat === "lewat").length,
   mendesak: list.filter((x) => x.tingkat === "mendesak").length,
   dekat: list.filter((x) => x.tingkat === "dekat").length,

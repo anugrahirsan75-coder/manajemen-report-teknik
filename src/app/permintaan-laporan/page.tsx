@@ -79,7 +79,25 @@ export default function PermintaanLaporanKapal() {
     if (!d.ok) { setGalat(d.error || "Gagal menyimpan"); return; }
     setBaris((l) => l.map((x) => (x.id === id ? d.baris : x)));
     setBuka((x) => (x && x.id === id ? d.baris : x));
+    window.dispatchEvent(new Event("pengingat:muat-ulang"));
   };
+
+  const bukaKiriman = (b: KirimanLapor) => {
+    setBuka(b);
+    if (b.status === "baru") void ubah(b.id, { status: "dibaca" });
+  };
+
+  // Klik notifikasi lonceng membawa pengguna langsung ke kiriman yang tepat.
+  useEffect(() => {
+    const id = new URLSearchParams(window.location.search).get("buka");
+    if (!id) return;
+    const ditemukan = baris.find((b) => b.id === id);
+    if (!ditemukan) return;
+    window.history.replaceState({}, "", window.location.pathname);
+    bukaKiriman(ditemukan);
+    // URL dibersihkan sebelum status diperbarui, sehingga efek tidak berulang.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [baris]);
 
   const hapus = async (b: KirimanLapor) => {
     if (!(await konfirmasi({
@@ -124,6 +142,7 @@ export default function PermintaanLaporanKapal() {
       berkas: kiriman.reduce((s, b) => s + b.berkas.length, 0),
     };
   }, [baris, matriks, periodeMatriks]);
+  const jumlahBaru = baris.filter((b) => b.status === "baru").length;
 
   const saringanAktif = !!(cari || kapal || jenis || status || periode);
   const bersihkanSaringan = () => { setCari(""); setKapal(""); setJenis(""); setStatus(""); setPeriode(""); };
@@ -137,6 +156,7 @@ export default function PermintaanLaporanKapal() {
             <div className="mb-1 flex flex-wrap items-center gap-2">
               <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-sky-800 ring-1 ring-sky-200">Pusat Laporan Armada</span>
               <span className="text-[10px] font-medium text-slate-400">Google Drive tersinkron</span>
+              {jumlahBaru > 0 && <span className="rounded-full bg-rose-100 px-2 py-0.5 text-[9px] font-extrabold text-rose-700 ring-1 ring-rose-200">● {jumlahBaru} KIRIMAN BARU</span>}
             </div>
             <h1 className="text-2xl font-extrabold asdp-text-gradient leading-tight">Permintaan &amp; Laporan Kapal</h1>
             <p className="mt-0.5 text-sm text-slate-500">Pantau kelengkapan kiriman ABK, tindak lanjut, dan berkas kapal dalam satu rekap.</p>
@@ -154,6 +174,18 @@ export default function PermintaanLaporanKapal() {
       </header>
       {salin && <div className="anim-in mb-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">✓ {salin}</div>}
       {galat && <div className="anim-in mb-4 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-rose-200">{galat}</div>}
+      {jumlahBaru > 0 && (
+        <button onClick={() => { setStatus("baru"); window.setTimeout(() => document.getElementById("daftar-kiriman")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }} className="anim-in mb-4 flex w-full flex-wrap items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/95 px-4 py-3 text-left shadow-sm transition hover:border-emerald-300 hover:shadow-md dark:border-emerald-800 dark:bg-emerald-950/35">
+          <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-emerald-500 text-lg text-white shadow-sm">
+            📨<span className="absolute -right-1 -top-1 grid h-4 min-w-4 place-items-center rounded-full bg-rose-500 px-1 text-[8px] font-extrabold text-white ring-2 ring-emerald-50">{jumlahBaru}</span>
+          </span>
+          <span className="flex-1">
+            <span className="block text-xs font-extrabold text-emerald-900 dark:text-emerald-200">Ada {jumlahBaru} kiriman kapal baru</span>
+            <span className="block text-[10px] text-emerald-700 dark:text-emerald-400">Buka kiriman untuk menandainya sudah dibaca dan menindaklanjuti berkas.</span>
+          </span>
+          <span className="text-[10px] font-extrabold text-emerald-700 dark:text-emerald-300">LIHAT SEKARANG →</span>
+        </button>
+      )}
 
       {/* ── matriks kelengkapan ───────────────────────────────────────────── */}
       <section className="mb-5 overflow-hidden rounded-3xl bg-white elev-md ring-line anim-in dark:bg-slate-900">
@@ -219,13 +251,16 @@ export default function PermintaanLaporanKapal() {
                     </td>
                     {JENIS_LAPOR.map((j) => {
                       const isi = matriks.get(`${k}|${j.id}`) || [];
+                      const adaBaru = isi.some((x) => x.status === "baru");
+                      const utama = isi.find((x) => x.status === "baru") || isi[0];
                       return (
                         <td key={j.id} className="border-b border-slate-100 px-3 py-2 text-center dark:border-slate-800">
                           {isi.length ? (
-                            <button onClick={() => setBuka(isi[0])}
-                              className="inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg bg-emerald-50 px-2.5 py-1.5 text-[10px] font-extrabold text-emerald-700 ring-1 ring-emerald-200 transition hover:-translate-y-0.5 hover:bg-emerald-100 hover:shadow-sm dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800">
-                              <span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-500 text-[9px] text-white">✓</span>
-                              {isi.length > 1 ? `${isi.length} kiriman` : "Diterima"}
+                            <button onClick={() => bukaKiriman(utama)}
+                              className={`relative inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold ring-1 transition hover:-translate-y-0.5 hover:shadow-sm ${adaBaru ? "bg-rose-50 text-rose-700 ring-rose-200 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-800" : "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800"}`}>
+                              <span className={`grid h-4 w-4 place-items-center rounded-full text-[9px] text-white ${adaBaru ? "bg-rose-500" : "bg-emerald-500"}`}>{adaBaru ? "!" : "✓"}</span>
+                              {adaBaru ? "Baru" : isi.length > 1 ? `${isi.length} kiriman` : "Diterima"}
+                              {adaBaru && <span className="absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />}
                             </button>
                           ) : (
                             <span className="inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
@@ -250,7 +285,7 @@ export default function PermintaanLaporanKapal() {
       </section>
 
       {/* ── saringan ──────────────────────────────────────────────────────── */}
-      <section className="mb-4 rounded-2xl bg-white p-3 elev-sm ring-line dark:bg-slate-900">
+      <section id="daftar-kiriman" className="mb-4 scroll-mt-4 rounded-2xl bg-white p-3 elev-sm ring-line dark:bg-slate-900">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2 px-1">
           <div>
             <h2 className="text-sm font-extrabold text-slate-800">Daftar Kiriman</h2>
@@ -324,7 +359,7 @@ export default function PermintaanLaporanKapal() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">📎 {b.berkas.length} berkas</span>
-                    <button onClick={() => setBuka(b)} className="btn btn-primary text-xs">Buka detail →</button>
+                    <button onClick={() => bukaKiriman(b)} className="btn btn-primary text-xs">Buka detail →</button>
                   </div>
                 </div>
               </article>
