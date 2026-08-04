@@ -16,7 +16,13 @@ import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import { JENIS_LAPOR, JenisLapor, bulanIndo, labelJenis, tautanWa, ukuranSingkat, WA_KONFIRMASI } from "@/lib/lapor/types";
 
 const MAKS_BERKAS = 12;
-const BATAS_BYTE = 12 * 1024 * 1024;
+const BATAS_BYTE = 50 * 1024 * 1024;
+/**
+ * Berkas dikirim sepotong-sepotong: satu permintaan ke hosting dibatasi ~4,5 MB,
+ * jauh di bawah ukuran laporan kapal yang biasa. Potongan disatukan lagi di
+ * Google Drive. Ukuran ini panjang teks base64, bukan byte berkas.
+ */
+const POTONGAN = 3_000_000;
 
 /** foto dari HP dikecilkan dulu di peramban — hemat kuota ABK & cepat terkirim */
 async function siapkan(file: File): Promise<{ nama: string; mime: string; b64: string; ukuran: number }> {
@@ -66,8 +72,38 @@ export default function KirimLaporKapal() {
     const baru = Array.from(l).filter((f) => f.size <= BATAS_BYTE);
     const ditolak = Array.from(l).length - baru.length;
     setBerkas((b) => [...b, ...baru].slice(0, MAKS_BERKAS));
-    setGalat(ditolak ? `${ditolak} berkas dilewati karena lebih dari 12 MB.` : "");
+    setGalat(ditolak ? `${ditolak} berkas dilewati karena lebih dari 50 MB.` : "");
     if (inputRef.current) inputRef.current.value = "";
+  };
+
+  /** kirim satu berkas: pecah, lempar potongan demi potongan, kembalikan berkas jadi */
+  const unggahSatu = async (
+    kiriman: { id: string; token: string }, f: File, urut: string,
+  ) => {
+    const s = await siapkan(f);
+    const total = Math.max(1, Math.ceil(s.b64.length / POTONGAN));
+    const unggahId = `${kiriman.id.slice(0, 8)}-${Date.now().toString(36)}`;
+    for (let k = 0; k < total; k++) {
+      setMaju(total > 1
+        ? `Mengunggah ${urut} — bagian ${k + 1} dari ${total}…`
+        : `Mengunggah ${urut}…`);
+      const rr = await fetch("/api/lapor/berkas", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: kiriman.id, token: kiriman.token, nama: s.nama, mime: s.mime,
+          unggahId, indeks: k, total,
+          dataBase64: s.b64.slice(k * POTONGAN, (k + 1) * POTONGAN),
+        }),
+      });
+      const teks = await rr.text();
+      let dd: any;
+      try { dd = JSON.parse(teks); }
+      catch {
+        // hosting menolak sebelum kode kita jalan (mis. potongan kebesaran)
+        throw new Error(`Berkas ditolak server (${rr.status})`);
+      }
+      if (!dd.ok) throw new Error(dd.error || `Gagal (${rr.status})`);
+    }
   };
 
   const kirimSemua = async () => {
@@ -83,15 +119,8 @@ export default function KirimLaporKapal() {
       const gagal: string[] = [];
       let masuk = 0;
       for (let i = 0; i < berkas.length; i++) {
-        setMaju(`Mengunggah berkas ${i + 1} dari ${berkas.length}…`);
         try {
-          const s = await siapkan(berkas[i]);
-          const rr = await fetch("/api/lapor/berkas", {
-            method: "POST", headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ id: d.id, token: d.token, nama: s.nama, mime: s.mime, dataBase64: s.b64 }),
-          });
-          const dd = await rr.json();
-          if (!dd.ok) throw new Error(dd.error || `Gagal (${rr.status})`);
+          await unggahSatu(d, berkas[i], `berkas ${i + 1} dari ${berkas.length}`);
           masuk++;
         } catch (e: any) {
           gagal.push(`${berkas[i].name}: ${e?.message || e}`);
@@ -218,7 +247,7 @@ export default function KirimLaporKapal() {
             accept=".pdf,.jpg,.jpeg,.png,.webp,.doc,.docx,.xls,.xlsx"
             className="block w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-blue-600 file:px-4 file:py-2 file:text-white file:font-semibold" />
           <p className="text-xs text-slate-500 mt-1">
-            PDF, foto, Word, atau Excel. Maksimal {MAKS_BERKAS} berkas, tiap berkas ≤ 12 MB.
+            PDF, foto, Word, atau Excel. Maksimal {MAKS_BERKAS} berkas, tiap berkas ≤ 50 MB.
             Foto dikecilkan otomatis supaya hemat kuota.
           </p>
           {!!berkas.length && (

@@ -1,14 +1,19 @@
 /**
- * Unggah SATU berkas kiriman ke Google Drive pemilik, lalu tempelkan tautannya
- * ke catatan kiriman.
+ * Unggah berkas kiriman ke Google Drive pemilik, lalu tempelkan tautannya ke
+ * catatan kiriman.
  *
- * Berkas dilempar ke Apps Script (docs/lapor-apps-script.gs) yang menulis ke
- * folder Drive. Supabase hanya menerima catatan kecil: nama, ukuran, id & URL
- * Drive. Dengan begitu penyimpanan Supabase tidak ikut terpakai sama sekali.
+ * Berkas dikirim POTONGAN DEMI POTONGAN. Alasannya: satu permintaan ke hosting
+ * aplikasi dibatasi ~4,5 MB, sementara laporan kapal biasa 5–20 MB. Sebelum ini
+ * berkas sebesar itu ditolak oleh hosting sebelum kodenya jalan, dan pengirim
+ * hanya melihat galat yang tidak jelas. Sekarang peramban memecah berkas, tiap
+ * potongan dilempar ke Apps Script untuk disimpan sementara, dan potongan
+ * terakhir memicu penyatuan jadi satu berkas utuh di Drive.
  *
- * Terbuka tanpa login, tapi berkas hanya bisa menempel ke kiriman yang
- * tokennya cocok — token itu baru dibuat di /api/lapor/kirim dan hanya ada di
- * peramban pengirim.
+ * Supabase tetap hanya menerima catatan kecil: nama, ukuran, id & URL Drive.
+ *
+ * Terbuka tanpa login, tapi berkas hanya bisa menempel ke kiriman yang tokennya
+ * cocok — token itu baru dibuat di /api/lapor/kirim dan hanya ada di peramban
+ * pengirim.
  */
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
@@ -30,8 +35,11 @@ const MIME_SAH = new Set([
   "application/vnd.ms-excel",
   "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 ]);
-const BATAS_BYTE = 12 * 1024 * 1024;
 const MAKS_BERKAS = 12;
+/** panjang teks base64 maksimal per potongan — di bawah batas badan permintaan hosting */
+const MAKS_POTONGAN = 3_200_000;
+/** 50 MB berkas asli ≈ 67 MB base64 ≈ 24 potongan */
+const MAKS_TOTAL_POTONGAN = 26;
 
 export async function POST(req: NextRequest) {
   const gasUrl = process.env.LAPOR_GAS_URL;
@@ -42,20 +50,25 @@ export async function POST(req: NextRequest) {
       { status: 501 });
   }
   if (!URL_SB || !KEY_SB) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
-  if (lajuTerlampaui(`berkas:${ipDari(req)}`, 60)) {
+  if (lajuTerlampaui(`berkas:${ipDari(req)}`, 400)) {
     return NextResponse.json({ ok: false, error: "Terlalu banyak unggahan. Coba lagi beberapa menit." }, { status: 429 });
   }
 
   const b = await req.json().catch(() => ({} as any));
-  const { id, token, nama, mime, dataBase64 } = b as Record<string, string>;
+  const { id, token, nama, mime, dataBase64, unggahId } = b as Record<string, string>;
+  const indeks = Number(b.indeks) || 0;
+  const total = Number(b.total) || 1;
+
   if (!id || !token) return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 400 });
   if (!dataBase64) return NextResponse.json({ ok: false, error: "Berkas kosong" }, { status: 400 });
   if (!MIME_SAH.has(String(mime))) {
     return NextResponse.json({ ok: false, error: "Jenis berkas tidak didukung (pakai PDF, foto, Word, atau Excel)" }, { status: 400 });
   }
-  const ukuran = Math.round(dataBase64.length * 0.75);
-  if (ukuran > BATAS_BYTE) {
-    return NextResponse.json({ ok: false, error: "Berkas lebih dari 12 MB" }, { status: 413 });
+  if (dataBase64.length > MAKS_POTONGAN) {
+    return NextResponse.json({ ok: false, error: "Potongan terlalu besar" }, { status: 413 });
+  }
+  if (total > MAKS_TOTAL_POTONGAN || indeks < 0 || indeks >= total) {
+    return NextResponse.json({ ok: false, error: "Berkas lebih dari 50 MB" }, { status: 413 });
   }
 
   const c = createClient(URL_SB, KEY_SB);
@@ -69,7 +82,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: `Maksimal ${MAKS_BERKAS} berkas per kiriman` }, { status: 400 });
   }
 
-  // ── kirim ke Drive lewat Apps Script ──────────────────────────────────────
+  // ── lempar potongan ke Drive lewat Apps Script ────────────────────────────
   let hasil: any;
   try {
     const res = await fetch(gasUrl, {
@@ -77,9 +90,12 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         secret: gasSecret,
+        aksi: "potongan",
+        unggahId: String(unggahId || `${id}-${indeks}`).slice(0, 60),
+        indeks, total, data: dataBase64,
         kapal: p.kapal, jenis: p.jenis, periode: p.periode,
         catatan: `${p.pengirim || ""}${p.jabatan ? ` (${p.jabatan})` : ""}`,
-        namaBerkas: nama || "berkas", mime, dataBase64,
+        namaBerkas: nama || "berkas", mime,
       }),
       redirect: "follow", // Apps Script /exec menjawab lewat redirect
     });
@@ -92,13 +108,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: e?.message || "Gagal menghubungi Google Drive" }, { status: 502 });
   }
 
-  // ── catat tautannya (bukan berkasnya) ─────────────────────────────────────
+  // potongan tengah: belum ada berkas jadi, tidak ada yang perlu dicatat
+  if (!hasil.selesai) return NextResponse.json({ ok: true, selesai: false, indeks });
+
+  // ── berkas utuh: catat tautannya (bukan berkasnya) ────────────────────────
   const berkas = [...(p.berkas || []), {
-    nama: hasil.nama || nama, mime, ukuran: hasil.ukuran || ukuran,
+    nama: hasil.nama || nama, mime, ukuran: hasil.ukuran || 0,
     fileId: hasil.fileId, url: hasil.url, diunggahPada: new Date().toISOString(),
   }];
   const { error: e2 } = await c.from("projects").update({ payload: { ...p, berkas } }).eq("id", id);
   if (e2) return NextResponse.json({ ok: false, error: e2.message }, { status: 500 });
 
-  return NextResponse.json({ ok: true, berkas: berkas[berkas.length - 1], jumlah: berkas.length });
+  return NextResponse.json({ ok: true, selesai: true, berkas: berkas[berkas.length - 1], jumlah: berkas.length });
 }

@@ -23,7 +23,8 @@ var SECRET = "GANTI_SECRET_INI_SAMA_DENGAN_ENV";     // harus sama dgn LAPOR_GAS
 var ROOT_FOLDER_ID = "1EnJybY92LUhmMGg72uBztJlPJR2-OxQj"; // folder Drive tujuan
 var BAGIKAN_LINK = false;   // true = berkas bisa dibuka siapa pun yang punya tautan.
                             // Biarkan false: berkas tetap milik & hanya terlihat oleh pemilik Drive.
-var BATAS_MB = 12;          // tolak berkas lebih besar dari ini
+var BATAS_MB = 50;          // tolak berkas lebih besar dari ini
+var FOLDER_POTONGAN = "_potongan sementara"; // tempat singgah potongan berkas besar
 
 var LABEL = {
   permintaan_deck: "Permintaan Deck",
@@ -40,6 +41,11 @@ function doPost(e) {
   try {
     var body = JSON.parse((e.postData && e.postData.contents) || "{}");
     if (SECRET && body.secret !== SECRET) return json({ ok: false, error: "secret salah" });
+
+    // Berkas besar datang terpotong-potong (batas ukuran satu permintaan di
+    // hosting aplikasi jauh lebih kecil dari berkas kapal). Potongan disimpan
+    // sementara, lalu disatukan saat potongan terakhir tiba.
+    if (body.aksi === "potongan") return terimaPotongan(body);
 
     var b64 = String(body.dataBase64 || "");
     if (!b64) return json({ ok: false, error: "berkas kosong" });
@@ -65,6 +71,70 @@ function doPost(e) {
     });
   } catch (err) {
     return json({ ok: false, error: String(err) });
+  }
+}
+
+/**
+ * Terima satu potongan berkas. Tiap potongan ditulis jadi berkas teks singgah;
+ * pada potongan terakhir semuanya dibaca berurutan, disatukan, disimpan sebagai
+ * berkas asli, lalu singgahannya dibuang.
+ */
+function terimaPotongan(body) {
+  var akar = DriveApp.getFolderById(ROOT_FOLDER_ID);
+  var tmp = subFolder(akar, FOLDER_POTONGAN);
+  sapuSinggahan(tmp);
+
+  var unggahId = String(body.unggahId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
+  var indeks = Number(body.indeks), total = Number(body.total);
+  if (!unggahId || !(total > 0) || !(indeks >= 0) || indeks >= total) {
+    return json({ ok: false, error: "potongan tidak dikenali" });
+  }
+  if (total * 3 * 1024 * 1024 > (BATAS_MB + 5) * 1024 * 1024) {
+    return json({ ok: false, error: "berkas lebih dari " + BATAS_MB + " MB" });
+  }
+
+  var nama = unggahId + "." + indeks;
+  buangBernama(tmp, nama);                       // kalau potongan ini dikirim ulang
+  tmp.createFile(Utilities.newBlob(String(body.data || ""), "text/plain", nama));
+
+  if (indeks + 1 < total) return json({ ok: true, selesai: false, indeks: indeks });
+
+  var b64 = "";
+  for (var i = 0; i < total; i++) {
+    var it = tmp.getFilesByName(unggahId + "." + i);
+    if (!it.hasNext()) return json({ ok: false, error: "potongan ke-" + (i + 1) + " hilang, ulangi kiriman" });
+    b64 += it.next().getBlob().getDataAsString();
+  }
+
+  var kapal = bersih(body.kapal) || "TANPA KAPAL";
+  var jenis = String(body.jenis || "lainnya");
+  var folder = subFolder(subFolder(akar, kapal), LABEL[jenis] || jenis);
+  var file = folder.createFile(
+    Utilities.newBlob(Utilities.base64Decode(b64), body.mime || "application/octet-stream", namaBerkas(body)));
+  if (body.catatan) file.setDescription(String(body.catatan).slice(0, 500));
+  if (BAGIKAN_LINK) file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  for (var k = 0; k < total; k++) buangBernama(tmp, unggahId + "." + k);
+
+  return json({
+    ok: true, selesai: true,
+    fileId: file.getId(), url: file.getUrl(), nama: file.getName(),
+    ukuran: file.getSize(), folder: folder.getUrl(),
+  });
+}
+
+function buangBernama(folder, nama) {
+  var it = folder.getFilesByName(nama);
+  while (it.hasNext()) it.next().setTrashed(true);
+}
+
+/** buang singgahan yang tertinggal (kiriman putus di tengah jalan) lebih dari sehari */
+function sapuSinggahan(tmp) {
+  var batas = new Date().getTime() - 24 * 60 * 60 * 1000;
+  var it = tmp.getFiles();
+  while (it.hasNext()) {
+    var f = it.next();
+    if (f.getDateCreated().getTime() < batas) f.setTrashed(true);
   }
 }
 
