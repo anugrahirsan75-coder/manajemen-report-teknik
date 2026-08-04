@@ -49,7 +49,6 @@ export default function KirimLaporKapal() {
   const [periode, setPeriode] = useState(new Date().toISOString().slice(0, 7));
   const [pengirim, setPengirim] = useState("");
   const [jabatan, setJabatan] = useState("");
-  const [kontak, setKontak] = useState("");
   const [catatan, setCatatan] = useState("");
   const [berkas, setBerkas] = useState<File[]>([]);
 
@@ -76,7 +75,7 @@ export default function KirimLaporKapal() {
     try {
       const r = await fetch("/api/lapor/kirim", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ kapal, jenis, periode, pengirim, jabatan, kontak, catatan }),
+        body: JSON.stringify({ kapal, jenis, periode, pengirim, jabatan, catatan }),
       });
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || "Gagal membuka kiriman");
@@ -198,8 +197,8 @@ export default function KirimLaporKapal() {
           </div>
         </div>
 
-        {/* pengirim */}
-        <div className="grid sm:grid-cols-3 gap-3">
+        {/* pengirim — nomor HP sengaja tidak diminta; konfirmasi lewat WhatsApp kantor */}
+        <div className="grid sm:grid-cols-2 gap-3">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">4. Nama pengirim</label>
             <input value={pengirim} onChange={(e) => setPengirim(e.target.value)} placeholder="Nama lengkap"
@@ -208,11 +207,6 @@ export default function KirimLaporKapal() {
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">Jabatan</label>
             <input value={jabatan} onChange={(e) => setJabatan(e.target.value)} placeholder="Mualim I / KKM / …"
-              className="w-full rounded-xl ring-1 ring-slate-300 px-3 py-2.5" />
-          </div>
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">No. HP</label>
-            <input value={kontak} onChange={(e) => setKontak(e.target.value)} placeholder="08xx"
               className="w-full rounded-xl ring-1 ring-slate-300 px-3 py-2.5" />
           </div>
         </div>
@@ -260,7 +254,7 @@ export default function KirimLaporKapal() {
           <a href={tautanWa(`Halo, saya mau tanya soal pengiriman ${jenis ? labelJenis(jenis) : "permintaan/laporan"} kapal${kapal ? ` ${kapal}` : ""}.`)}
              target="_blank" rel="noopener noreferrer"
              className="rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3">
-            💬 Tanya / konfirmasi WA
+            💬 Konfirmasi WA
           </a>
           {!siap && !kirim && <span className="text-xs text-slate-500">Lengkapi jenis, kapal, nama pengirim, dan berkas dulu.</span>}
         </div>
