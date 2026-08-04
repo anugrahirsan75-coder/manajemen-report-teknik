@@ -39,6 +39,7 @@ export default function MonitoringPengadaan() {
   const [baris, setBaris] = useState<Baris[]>([]);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
+  const [temaGelap, setTemaGelap] = useState(false);
 
   const [cari, setCari] = useState("");
   const [jenis, setJenis] = useState("");
@@ -48,6 +49,23 @@ export default function MonitoringPengadaan() {
   const [lihat, setLihat] = useState<Baris | null>(null);
   const [unduh, setUnduh] = useState("");
   const [waktuMuat, setWaktuMuat] = useState("");
+
+  // Halaman monitoring tidak memakai sidebar aplikasi, jadi sediakan kontrol
+  // tema sendiri. Kuncinya sengaja sama ("theme") agar pilihan pengunjung juga
+  // berlaku saat membuka halaman lain di perangkat yang sama.
+  useEffect(() => {
+    const gelap = document.documentElement.classList.contains("dark");
+    setTemaGelap(gelap);
+    document.documentElement.style.colorScheme = gelap ? "dark" : "light";
+  }, []);
+
+  const gantiTema = () => {
+    const berikut = !temaGelap;
+    setTemaGelap(berikut);
+    document.documentElement.classList.toggle("dark", berikut);
+    document.documentElement.style.colorScheme = berikut ? "dark" : "light";
+    try { localStorage.setItem("theme", berikut ? "dark" : "light"); } catch {}
+  };
 
   const ambil = async () => {
     setMuat(true); setGalat("");
@@ -132,7 +150,19 @@ export default function MonitoringPengadaan() {
               Rekap SPPBJ Pengadaan — terbuka untuk umum, angkanya mengikuti aplikasi Manajemen Report Teknik
             </p>
           </div>
-          <div className="flex flex-col items-end gap-1.5">
+          <div className="flex flex-col items-end gap-2">
+            <button type="button" onClick={gantiTema}
+              aria-label={temaGelap ? "Gunakan tema terang" : "Gunakan tema gelap"}
+              title={temaGelap ? "Gunakan tema terang" : "Gunakan tema gelap"}
+              className="group inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/75 px-2 py-1.5 text-[11px] font-bold text-slate-600 shadow-sm backdrop-blur transition hover:-translate-y-0.5 hover:border-sky-300 hover:shadow-md dark:border-slate-600 dark:bg-slate-900/75 dark:text-slate-200">
+              <span className="relative grid h-6 w-11 grid-cols-2 items-center rounded-full bg-slate-200 p-0.5 text-[11px] dark:bg-slate-700" aria-hidden="true">
+                <span className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full shadow-sm transition-transform duration-300 ${temaGelap ? "translate-x-5" : "translate-x-0"}`}
+                  style={{ backgroundColor: "#fff" }} />
+                <span className="relative z-10 text-center">☀</span>
+                <span className="relative z-10 text-center">☾</span>
+              </span>
+              {temaGelap ? "Terang" : "Gelap"}
+            </button>
             <span className="text-[10px] font-bold px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 ring-1 ring-emerald-200">
               ● DATA LANGSUNG
             </span>
@@ -185,11 +215,12 @@ export default function MonitoringPengadaan() {
         <p className="mt-4 text-sm text-slate-400">Memuat…</p>
       ) : (
         <div className="mt-3 overflow-auto max-h-[70vh] bg-white rounded-2xl elev-md ring-line">
-          <table className="w-full text-sm min-w-[72rem]">
+          <table className="w-full text-sm min-w-[80rem]">
             <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold sticky top-0 z-10 shadow-[0_1px_0_rgba(0,0,0,0.08)]">
               <tr className="border-b-2 border-slate-200">
                 <th className="px-2 py-2.5 text-center w-8">No</th>
                 <th className="px-2 py-2.5 text-left min-w-[15rem]">Nama Pengadaan</th>
+                <th className="px-2 py-2.5 text-left w-32">Tanggal</th>
                 <th className="px-2 py-2.5 text-left w-24">Jenis</th>
                 <th className="px-2 py-2.5 text-left w-28">No. PR SAP</th>
                 <th className="px-2 py-2.5 text-left w-28">No. PO SAP</th>
@@ -202,14 +233,18 @@ export default function MonitoringPengadaan() {
             </thead>
             <tbody>
               {tampil.map((b, i) => (
-                <tr key={b.id} className="border-b border-slate-200 last:border-0 even:bg-slate-50/50 align-top hover:bg-sky-50/60 transition-colors">
+                <tr key={b.id} className="border-b border-slate-200 last:border-0 even:bg-slate-50/50 align-top hover:bg-sky-50/60 transition-colors dark:even:bg-slate-950/25 dark:hover:bg-sky-950/35">
                   <td className="px-2 py-2 text-center text-xs text-slate-400 tabular-nums">{i + 1}</td>
                   <td className="px-2 py-2">
                     <span className="block text-[12px] leading-[1.35] text-slate-800">{b.nama || "(tanpa nama)"}</span>
                     <span className="block text-[10px] text-slate-400">
                       {b.kapal.length ? b.kapal.join(" · ") : "tanpa kapal"}
-                      {b.tanggal ? ` · ${tanggalIndo(b.tanggal)}` : ""}
                     </span>
+                  </td>
+                  <td className="px-2 py-2 text-[11px] leading-tight text-slate-600 whitespace-nowrap tabular-nums">
+                    {b.tanggal
+                      ? <time dateTime={b.tanggal}>{tanggalIndo(b.tanggal)}</time>
+                      : <span className="text-slate-300">—</span>}
                   </td>
                   <td className="px-2 py-2">
                     <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ring-1 ${JENIS[b.jenis].kelas}`}>
@@ -227,7 +262,7 @@ export default function MonitoringPengadaan() {
                   </td>
                   <td className="px-2 py-2 text-right tabular-nums text-slate-700">{rupiah(b.nilaiPr)}</td>
                   <td className="px-2 py-2 text-right tabular-nums">
-                    {b.nilaiSpbj ? <b className="text-[#16357f]">{rupiah(b.nilaiSpbj)}</b> : <span className="text-slate-300">belum</span>}
+                    {b.nilaiSpbj ? <b className="text-[#16357f] dark:text-sky-300">{rupiah(b.nilaiSpbj)}</b> : <span className="text-slate-300">belum</span>}
                   </td>
                   <td className="px-2 py-2">
                     <span className={`inline-block whitespace-nowrap text-[10px] font-semibold px-2 py-0.5 rounded-full ${STATUS[b.status]?.kelas || STATUS.menunggu_spbj.kelas}`}>
@@ -235,37 +270,37 @@ export default function MonitoringPengadaan() {
                     </span>
                   </td>
                   <td className="px-2 py-2 text-center whitespace-nowrap">
-                    <button onClick={() => setLihat(b)} className="text-[11px] px-2 py-1 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50"
+                    <button onClick={() => setLihat(b)} className="text-[11px] px-2 py-1 rounded-lg ring-1 ring-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800"
                       title="Lihat rincian item pengadaan">👁 Lihat</button>
                     <button onClick={() => eksporSatu(b)} disabled={unduh === b.id}
-                      className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                      className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50 dark:text-emerald-300 dark:ring-emerald-800 dark:hover:bg-emerald-950/40"
                       title="Unduh berkas SPPBJ pengadaan ini — template yang sama dengan di aplikasi">
                       {unduh === b.id ? "…" : "📊 Excel"}</button>
                     <button onClick={() => setUbah(b)}
-                      className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-sky-200 text-[#16357f] hover:bg-sky-50"
+                      className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-sky-200 text-[#16357f] hover:bg-sky-50 dark:text-sky-300 dark:ring-sky-800 dark:hover:bg-sky-950/40"
                       title="Isi / ubah No. PO SAP dan No. GR/SES pengadaan ini">✏️ Isi Nomor</button>
                   </td>
                 </tr>
               ))}
               {!tampil.length && (
-                <tr><td colSpan={10} className="px-4 py-8 text-center text-sm text-slate-400">
+                <tr><td colSpan={11} className="px-4 py-8 text-center text-sm text-slate-400">
                   Tak ada pengadaan pada saringan ini.
                 </td></tr>
               )}
             </tbody>
             <tfoot className="bg-slate-50 font-bold sticky bottom-0 shadow-[0_-1px_0_rgba(0,0,0,0.08)]">
               <tr>
-                <td className="px-2 py-2.5" colSpan={6}>JUMLAH {tampil.length} pengadaan</td>
+                <td className="px-2 py-2.5" colSpan={7}>JUMLAH {tampil.length} pengadaan</td>
                 <td className="px-2 py-2.5 text-right tabular-nums">{rupiah(jml.pr)}</td>
-                <td className="px-2 py-2.5 text-right tabular-nums text-[#16357f]">{rupiah(jml.spbj)}</td>
-                <td />
+                <td className="px-2 py-2.5 text-right tabular-nums text-[#16357f] dark:text-sky-300">{rupiah(jml.spbj)}</td>
+                <td colSpan={2} />
               </tr>
             </tfoot>
           </table>
         </div>
       )}
 
-      <footer className="mt-5 rounded-2xl ring-line bg-white/70 px-4 py-3">
+      <footer className="mt-5 rounded-2xl ring-line bg-white/70 px-4 py-3 dark:bg-slate-900/80">
         <p className="text-[11px] text-slate-500 leading-relaxed">
           <b className="text-slate-700">Cara membaca:</b> <b>Nilai PR</b> = jumlah harga usulan tiap item.
           <b> Nilai SPBJ</b> = harga final setelah PO terbit — tampil setelah harga SPBJ-nya diisi di aplikasi,
