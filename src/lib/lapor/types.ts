@@ -37,6 +37,8 @@ export interface BerkasLapor {
   /** tautan buka di Drive */
   url: string;
   diunggahPada: string;
+  /** kunci idempotensi: retry jaringan tidak membuat salinan Drive baru */
+  unggahId?: string;
 }
 
 export interface KirimanLapor {

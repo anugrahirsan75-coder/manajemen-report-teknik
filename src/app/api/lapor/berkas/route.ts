@@ -56,10 +56,11 @@ export async function POST(req: NextRequest) {
 
   const b = await req.json().catch(() => ({} as any));
   const { id, token, nama, mime, dataBase64, unggahId } = b as Record<string, string>;
+  const idUnggah = String(unggahId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
   const indeks = Number(b.indeks) || 0;
   const total = Number(b.total) || 1;
 
-  if (!id || !token) return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 400 });
+  if (!id || !token || !idUnggah) return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 400 });
   if (!dataBase64) return NextResponse.json({ ok: false, error: "Berkas kosong" }, { status: 400 });
   if (!MIME_SAH.has(String(mime))) {
     return NextResponse.json({ ok: false, error: "Jenis berkas tidak didukung (pakai PDF, foto, Word, atau Excel)" }, { status: 400 });
@@ -78,6 +79,13 @@ export async function POST(req: NextRequest) {
   if (p.kind !== "lapor_kapal" || p.token !== token) {
     return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 403 });
   }
+  // Peramban dapat tidak menerima respons walaupun server sudah selesai. Saat
+  // potongan yang sama dicoba ulang, kembalikan hasil lama tanpa membuat file
+  // Google Drive kedua.
+  const sudahAda = (p.berkas || []).find((f: any) => f.unggahId === idUnggah);
+  if (sudahAda) {
+    return NextResponse.json({ ok: true, selesai: true, berkas: sudahAda, jumlah: (p.berkas || []).length });
+  }
   if ((p.berkas || []).length >= MAKS_BERKAS) {
     return NextResponse.json({ ok: false, error: `Maksimal ${MAKS_BERKAS} berkas per kiriman` }, { status: 400 });
   }
@@ -95,7 +103,7 @@ export async function POST(req: NextRequest) {
         // Hanya berkas besar yang menuntut Apps Script versi baru.
         ...(total === 1
           ? { dataBase64 }
-          : { aksi: "potongan", unggahId: String(unggahId || `${id}-${indeks}`).slice(0, 60), indeks, total, data: dataBase64 }),
+          : { aksi: "potongan", unggahId: idUnggah, indeks, total, data: dataBase64 }),
         kapal: p.kapal, jenis: p.jenis, periode: p.periode,
         catatan: `${p.pengirim || ""}${p.jabatan ? ` (${p.jabatan})` : ""}`,
         namaBerkas: nama || "berkas", mime,
@@ -104,20 +112,38 @@ export async function POST(req: NextRequest) {
     });
     const t = await res.text();
     try { hasil = JSON.parse(t); } catch { hasil = { ok: false, error: t.slice(0, 200) }; }
-    if (!res.ok || hasil?.ok === false) {
-      return NextResponse.json({ ok: false, error: hasil?.error || `Google Drive menolak (${res.status})` }, { status: 502 });
+    if (!res.ok || hasil?.ok !== true) {
+      return NextResponse.json({
+        ok: false,
+        error: hasil?.error || `Google Drive menolak (${res.status})`,
+        retryable: res.status >= 500,
+      }, { status: 502 });
     }
   } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message || "Gagal menghubungi Google Drive" }, { status: 502 });
+    return NextResponse.json({
+      ok: false,
+      error: e?.message || "Gagal menghubungi Google Drive",
+      retryable: true,
+    }, { status: 502 });
   }
 
   // potongan tengah: belum ada berkas jadi, tidak ada yang perlu dicatat
   if (total > 1 && !hasil.selesai) return NextResponse.json({ ok: true, selesai: false, indeks });
 
+  // Jangan pernah membuat tombol "Buka" kosong. Respons sukses dari Drive wajib
+  // membawa identitas dan tautan berkas yang dapat disimpan.
+  if (!hasil.fileId || !hasil.url) {
+    return NextResponse.json({
+      ok: false,
+      error: "Google Drive belum mengembalikan tautan berkas. Coba kirim ulang berkas ini.",
+      retryable: false,
+    }, { status: 424 });
+  }
+
   // ── berkas utuh: catat tautannya (bukan berkasnya) ────────────────────────
   const berkas = [...(p.berkas || []), {
     nama: hasil.nama || nama, mime, ukuran: hasil.ukuran || Math.round(dataBase64.length * 0.75),
-    fileId: hasil.fileId, url: hasil.url, diunggahPada: new Date().toISOString(),
+    fileId: hasil.fileId, url: hasil.url, diunggahPada: new Date().toISOString(), unggahId: idUnggah,
   }];
   const { error: e2 } = await c.from("projects").update({ payload: { ...p, berkas } }).eq("id", id);
   if (e2) return NextResponse.json({ ok: false, error: e2.message }, { status: 500 });

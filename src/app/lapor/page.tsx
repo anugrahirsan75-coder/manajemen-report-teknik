@@ -18,21 +18,31 @@ import { JENIS_LAPOR, JenisLapor, bulanIndo, labelJenis, tautanWa, ukuranSingkat
 const MAKS_BERKAS = 12;
 const BATAS_BYTE = 50 * 1024 * 1024;
 /**
- * Berkas dikirim sepotong-sepotong: satu permintaan ke hosting dibatasi ~4,5 MB,
- * jauh di bawah ukuran laporan kapal yang biasa. Potongan disatukan lagi di
- * Google Drive. Ukuran ini panjang teks base64, bukan byte berkas.
+ * Berkas dibaca dan dikirim sepotong-sepotong supaya HP tidak menampung seluruh
+ * PDF beserta salinan base64-nya sekaligus. Potongan disatukan di Google Drive.
  */
-const POTONGAN = 3_000_000;
+const BYTE_PER_POTONGAN = 2_250_000;
+const MAKS_COBA = 3;
+
+const tunggu = (ms: number) => new Promise((selesai) => setTimeout(selesai, ms));
+
+const keB64 = (blob: Blob) => new Promise<string>((res, rej) => {
+  const fr = new FileReader();
+  fr.onload = () => res(String(fr.result).split(",")[1] || "");
+  fr.onerror = () => rej(new Error("Gagal membaca berkas dari perangkat"));
+  fr.readAsDataURL(blob);
+});
+
+const pesanRamah = (e: unknown) => {
+  const pesan = e instanceof Error ? e.message : String(e || "");
+  if (/load failed|failed to fetch|networkerror|network request failed/i.test(pesan)) {
+    return "Koneksi terputus saat mengunggah. Pastikan sinyal aktif lalu coba lagi.";
+  }
+  return pesan || "Unggahan gagal";
+};
 
 /** foto dari HP dikecilkan dulu di peramban — hemat kuota ABK & cepat terkirim */
-async function siapkan(file: File): Promise<{ nama: string; mime: string; b64: string; ukuran: number }> {
-  const keB64 = (blob: Blob) => new Promise<string>((res, rej) => {
-    const fr = new FileReader();
-    fr.onload = () => res(String(fr.result).split(",")[1] || "");
-    fr.onerror = () => rej(new Error("Gagal membaca berkas"));
-    fr.readAsDataURL(blob);
-  });
-
+async function siapkan(file: File): Promise<{ nama: string; mime: string; blob: Blob; ukuran: number }> {
   if (file.type.startsWith("image/") && file.type !== "image/heic") {
     try {
       const img = await createImageBitmap(file);
@@ -43,10 +53,17 @@ async function siapkan(file: File): Promise<{ nama: string; mime: string; b64: s
       c.getContext("2d")!.drawImage(img, 0, 0, c.width, c.height);
       const blob: Blob = await new Promise((r) => c.toBlob((b) => r(b || file), "image/jpeg", 0.78));
       const nama = file.name.replace(/\.[^.]+$/, "") + ".jpg";
-      return { nama, mime: "image/jpeg", b64: await keB64(blob), ukuran: blob.size };
+      return { nama, mime: "image/jpeg", blob, ukuran: blob.size };
     } catch { /* kalau gagal dikecilkan, kirim apa adanya */ }
   }
-  return { nama: file.name, mime: file.type || "application/octet-stream", b64: await keB64(file), ukuran: file.size };
+  return { nama: file.name, mime: file.type || "application/octet-stream", blob: file, ukuran: file.size };
+}
+
+interface GagalUnggah { file: File; pesan: string }
+interface HasilKiriman {
+  kiriman: { id: string; token: string };
+  masuk: number;
+  gagal: GagalUnggah[];
 }
 
 export default function KirimLaporKapal() {
@@ -61,8 +78,9 @@ export default function KirimLaporKapal() {
   const [kirim, setKirim] = useState(false);
   const [maju, setMaju] = useState("");
   const [galat, setGalat] = useState("");
-  const [selesai, setSelesai] = useState<{ id: string; masuk: number; gagal: string[] } | null>(null);
+  const [selesai, setSelesai] = useState<HasilKiriman | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const idUnggah = useRef(new WeakMap<File, string>());
 
   const totalByte = useMemo(() => berkas.reduce((s, f) => s + f.size, 0), [berkas]);
   const siap = kapal && jenis && /^\d{4}-\d{2}$/.test(periode) && pengirim.trim().length >= 3 && berkas.length > 0;
@@ -81,28 +99,61 @@ export default function KirimLaporKapal() {
     kiriman: { id: string; token: string }, f: File, urut: string,
   ) => {
     const s = await siapkan(f);
-    const total = Math.max(1, Math.ceil(s.b64.length / POTONGAN));
-    const unggahId = `${kiriman.id.slice(0, 8)}-${Date.now().toString(36)}`;
+    const total = Math.max(1, Math.ceil(s.blob.size / BYTE_PER_POTONGAN));
+    let unggahId = idUnggah.current.get(f);
+    if (!unggahId) {
+      unggahId = `${kiriman.id.slice(0, 8)}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+      idUnggah.current.set(f, unggahId);
+    }
+
     for (let k = 0; k < total; k++) {
-      setMaju(total > 1
-        ? `Mengunggah ${urut} — bagian ${k + 1} dari ${total}…`
-        : `Mengunggah ${urut}…`);
-      const rr = await fetch("/api/lapor/berkas", {
-        method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: kiriman.id, token: kiriman.token, nama: s.nama, mime: s.mime,
-          unggahId, indeks: k, total,
-          dataBase64: s.b64.slice(k * POTONGAN, (k + 1) * POTONGAN),
-        }),
-      });
-      const teks = await rr.text();
-      let dd: any;
-      try { dd = JSON.parse(teks); }
-      catch {
-        // hosting menolak sebelum kode kita jalan (mis. potongan kebesaran)
-        throw new Error(`Berkas ditolak server (${rr.status})`);
+      // Hanya satu potongan berada di memori. Ini mencegah Safari/Chrome pada
+      // HP menutup permintaan besar dengan pesan "Load failed".
+      const awal = k * BYTE_PER_POTONGAN;
+      const dataBase64 = await keB64(s.blob.slice(awal, Math.min(awal + BYTE_PER_POTONGAN, s.blob.size)));
+      let selesaiBagian = false;
+      let galatTerakhir: unknown;
+
+      for (let coba = 1; coba <= MAKS_COBA; coba++) {
+        setMaju(coba > 1
+          ? `Sinyal terputus — mencoba lagi (${coba}/${MAKS_COBA})…`
+          : total > 1
+            ? `Mengunggah ${urut} — bagian ${k + 1} dari ${total}…`
+            : `Mengunggah ${urut}…`);
+        try {
+          const rr = await fetch("/api/lapor/berkas", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              id: kiriman.id, token: kiriman.token, nama: s.nama, mime: s.mime,
+              unggahId, indeks: k, total, dataBase64,
+            }),
+          });
+          const teks = await rr.text();
+          let dd: any;
+          try { dd = JSON.parse(teks); }
+          catch {
+            const er: Error & { retryable?: boolean } = new Error(`Respons server tidak terbaca (${rr.status})`);
+            er.retryable = rr.status >= 500;
+            throw er;
+          }
+          if (!rr.ok || !dd.ok) {
+            const er: Error & { retryable?: boolean } = new Error(dd.error || `Gagal (${rr.status})`);
+            er.retryable = Boolean(dd.retryable) || [408, 429, 503, 504].includes(rr.status);
+            throw er;
+          }
+          if (k === total - 1 && dd.selesai !== true) {
+            throw new Error("Google Drive belum menyelesaikan berkas");
+          }
+          selesaiBagian = true;
+          break;
+        } catch (e) {
+          galatTerakhir = e;
+          const retryable = e instanceof TypeError || Boolean((e as Error & { retryable?: boolean })?.retryable);
+          if (!retryable) break;
+          if (coba < MAKS_COBA) await tunggu(coba * 1200);
+        }
       }
-      if (!dd.ok) throw new Error(dd.error || `Gagal (${rr.status})`);
+      if (!selesaiBagian) throw new Error(pesanRamah(galatTerakhir));
     }
   };
 
@@ -116,20 +167,42 @@ export default function KirimLaporKapal() {
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || "Gagal membuka kiriman");
 
-      const gagal: string[] = [];
+      const gagal: GagalUnggah[] = [];
       let masuk = 0;
       for (let i = 0; i < berkas.length; i++) {
         try {
           await unggahSatu(d, berkas[i], `berkas ${i + 1} dari ${berkas.length}`);
           masuk++;
-        } catch (e: any) {
-          gagal.push(`${berkas[i].name}: ${e?.message || e}`);
+        } catch (e) {
+          gagal.push({ file: berkas[i], pesan: pesanRamah(e) });
         }
       }
-      if (!masuk) throw new Error(gagal[0] || "Tidak ada berkas yang berhasil diunggah");
-      setSelesai({ id: d.id, masuk, gagal });
-    } catch (e: any) {
-      setGalat(e?.message || String(e));
+      // Kiriman sudah dibuat. Walau semua berkas gagal karena sinyal, simpan ID
+      // dan tokennya supaya tombol coba lagi memakai kiriman yang sama.
+      setSelesai({ kiriman: { id: d.id, token: d.token }, masuk, gagal });
+    } catch (e) {
+      setGalat(pesanRamah(e));
+    } finally {
+      setKirim(false); setMaju("");
+    }
+  };
+
+  const ulangiGagal = async () => {
+    if (!selesai?.gagal.length) return;
+    setKirim(true); setGalat("");
+    const gagalLagi: GagalUnggah[] = [];
+    let tambahan = 0;
+    try {
+      for (let i = 0; i < selesai.gagal.length; i++) {
+        const item = selesai.gagal[i];
+        try {
+          await unggahSatu(selesai.kiriman, item.file, `berkas ${i + 1} dari ${selesai.gagal.length}`);
+          tambahan++;
+        } catch (e) {
+          gagalLagi.push({ file: item.file, pesan: pesanRamah(e) });
+        }
+      }
+      setSelesai((lama) => lama ? { ...lama, masuk: lama.masuk + tambahan, gagal: gagalLagi } : lama);
     } finally {
       setKirim(false); setMaju("");
     }
@@ -137,34 +210,56 @@ export default function KirimLaporKapal() {
 
   const ulangi = () => {
     setSelesai(null); setBerkas([]); setCatatan("");
+    idUnggah.current = new WeakMap<File, string>();
   };
 
   // ── layar berhasil ────────────────────────────────────────────────────────
   if (selesai) {
+    const semuaMasuk = selesai.gagal.length === 0;
+    const belumAdaYangMasuk = selesai.masuk === 0;
     const pesan = `Halo, saya ${pengirim}${jabatan ? ` (${jabatan})` : ""} dari ${kapal}.\n`
       + `Sudah mengirim ${labelJenis(jenis as string)} periode ${bulanIndo(periode)} `
-      + `sebanyak ${selesai.masuk} berkas lewat halaman Lapor Kapal. Mohon dicek. Terima kasih.`;
+      + `sebanyak ${selesai.masuk} berkas lewat halaman Lapor Kapal.`
+      + (selesai.gagal.length ? ` Masih ada ${selesai.gagal.length} berkas yang belum berhasil.` : "")
+      + ` Mohon dicek. Terima kasih.`;
     return (
       <main className="max-w-2xl mx-auto px-4 py-10">
         <div className="rounded-3xl bg-white ring-1 ring-slate-200 shadow-sm p-8 text-center">
-          <div className="text-5xl mb-3">✅</div>
-          <h1 className="text-2xl font-extrabold text-slate-900">Kiriman masuk</h1>
+          <div className="text-5xl mb-3">{semuaMasuk ? "✅" : belumAdaYangMasuk ? "📶" : "⏳"}</div>
+          <h1 className="text-2xl font-extrabold text-slate-900">
+            {semuaMasuk ? "Kiriman berhasil" : belumAdaYangMasuk ? "Berkas belum terkirim" : "Sebagian berkas masuk"}
+          </h1>
           <p className="mt-2 text-slate-600">
-            {selesai.masuk} berkas <b>{labelJenis(jenis as string)}</b> dari <b>{kapal}</b> periode{" "}
-            <b>{bulanIndo(periode)}</b> sudah tersimpan.
+            {selesai.masuk > 0 ? <><b>{selesai.masuk} berkas</b> sudah tersimpan untuk </> : "Belum ada berkas yang tersimpan untuk "}
+            <b>{labelJenis(jenis as string)}</b> dari <b>{kapal}</b> periode <b>{bulanIndo(periode)}</b>.
           </p>
           {!!selesai.gagal.length && (
-            <div className="mt-4 text-left text-sm bg-amber-50 ring-1 ring-amber-200 rounded-xl p-3 text-amber-800">
-              <b>Belum terkirim:</b>
-              <ul className="list-disc ml-5 mt-1">{selesai.gagal.map((g, i) => <li key={i}>{g}</li>)}</ul>
-              <p className="mt-1">Kirim ulang berkas itu saja lewat borang di bawah.</p>
+            <div className="mt-5 text-left text-sm bg-amber-50 ring-1 ring-amber-200 rounded-2xl p-4 text-amber-900">
+              <b>{selesai.gagal.length} berkas menunggu dikirim:</b>
+              <ul className="mt-2 space-y-2">{selesai.gagal.map((g, i) => (
+                <li key={`${g.file.name}-${i}`} className="rounded-xl bg-white/70 px-3 py-2 ring-1 ring-amber-200/70">
+                  <span className="block truncate font-bold">{g.file.name}</span>
+                  <span className="block text-xs text-amber-700">{g.pesan}</span>
+                </li>
+              ))}</ul>
+              <p className="mt-3 text-xs">Tidak perlu mengisi ulang formulir. Pastikan sinyal aktif, lalu tekan tombol coba lagi.</p>
             </div>
           )}
-          <a href={tautanWa(pesan)} target="_blank" rel="noopener noreferrer"
-             className="mt-6 inline-flex items-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 text-white font-bold px-5 py-3">
-            💬 Konfirmasi lewat WhatsApp
-          </a>
-          <p className="mt-2 text-xs text-slate-500">Pesannya sudah terisi otomatis, tinggal kirim.</p>
+          <div className="mt-6 flex flex-col items-stretch justify-center gap-2 sm:flex-row">
+            {!!selesai.gagal.length && (
+              <button type="button" onClick={ulangiGagal} disabled={kirim}
+                className="rounded-xl bg-blue-600 px-5 py-3 font-bold text-white transition hover:bg-blue-700 disabled:cursor-wait disabled:bg-blue-300">
+                {kirim ? maju || "Mencoba lagi…" : `↻ Coba lagi ${selesai.gagal.length} berkas`}
+              </button>
+            )}
+            {selesai.masuk > 0 && (
+              <a href={tautanWa(pesan)} target="_blank" rel="noopener noreferrer"
+                 className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-bold text-white hover:bg-green-700">
+                💬 Konfirmasi lewat WhatsApp
+              </a>
+            )}
+          </div>
+          {semuaMasuk && <p className="mt-2 text-xs text-slate-500">Pesannya sudah terisi otomatis, tinggal kirim.</p>}
           <button onClick={ulangi} className="mt-6 block mx-auto text-sm font-semibold text-blue-700 hover:underline">
             Kirim dokumen lain
           </button>
