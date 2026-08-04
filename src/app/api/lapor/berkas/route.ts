@@ -90,9 +90,12 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         secret: gasSecret,
-        aksi: "potongan",
-        unggahId: String(unggahId || `${id}-${indeks}`).slice(0, 60),
-        indeks, total, data: dataBase64,
+        // Berkas yang muat dalam satu potongan dikirim dengan cara lama, supaya
+        // Apps Script versi lama (yang belum kenal potongan) tetap melayaninya.
+        // Hanya berkas besar yang menuntut Apps Script versi baru.
+        ...(total === 1
+          ? { dataBase64 }
+          : { aksi: "potongan", unggahId: String(unggahId || `${id}-${indeks}`).slice(0, 60), indeks, total, data: dataBase64 }),
         kapal: p.kapal, jenis: p.jenis, periode: p.periode,
         catatan: `${p.pengirim || ""}${p.jabatan ? ` (${p.jabatan})` : ""}`,
         namaBerkas: nama || "berkas", mime,
@@ -109,11 +112,11 @@ export async function POST(req: NextRequest) {
   }
 
   // potongan tengah: belum ada berkas jadi, tidak ada yang perlu dicatat
-  if (!hasil.selesai) return NextResponse.json({ ok: true, selesai: false, indeks });
+  if (total > 1 && !hasil.selesai) return NextResponse.json({ ok: true, selesai: false, indeks });
 
   // ── berkas utuh: catat tautannya (bukan berkasnya) ────────────────────────
   const berkas = [...(p.berkas || []), {
-    nama: hasil.nama || nama, mime, ukuran: hasil.ukuran || 0,
+    nama: hasil.nama || nama, mime, ukuran: hasil.ukuran || Math.round(dataBase64.length * 0.75),
     fileId: hasil.fileId, url: hasil.url, diunggahPada: new Date().toISOString(),
   }];
   const { error: e2 } = await c.from("projects").update({ payload: { ...p, berkas } }).eq("id", id);
