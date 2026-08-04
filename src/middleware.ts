@@ -15,8 +15,10 @@ export function middleware(req: NextRequest) {
 
 export const config = {
   // lindungi semua KECUALI: /login, /api/auth/*, aset next, favicon, logo
-  // /monitoring + api/monitoring SENGAJA terbuka: halaman pemantauan pengadaan
-  // untuk orang banyak. Route API-nya sendiri yang membatasi — hanya kolom
-  // rekap yang keluar, dan mengubah data menuntut kode ubah.
-  matcher: ["/((?!login|monitoring|api/auth|api/monitoring|_next/static|_next/image|favicon.ico|logo-asdp.png).*)"],
+  // Dua kelompok SENGAJA terbuka, route API-nya sendiri yang membatasi:
+  //  · /monitoring + api/monitoring — rekap pengadaan untuk dilihat orang banyak.
+  //  · /lapor + api/lapor/kirim + api/lapor/berkas — ABK kapal mengirim berkas
+  //    tanpa akun. Perhatikan: HANYA dua route api/lapor itu yang dibuka;
+  //    api/lapor/daftar (isi seluruh kiriman, dipakai kantor) tetap terkunci.
+  matcher: ["/((?!login|monitoring|lapor(?:$|/)|api/auth|api/monitoring|api/lapor/kirim|api/lapor/berkas|_next/static|_next/image|favicon.ico|logo-asdp.png).*)"],
 };

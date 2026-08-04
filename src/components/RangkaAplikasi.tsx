@@ -2,7 +2,8 @@
 /**
  * Rangka aplikasi: sidebar + lonceng pengingat.
  *
- * Halaman /monitoring adalah halaman TERBUKA untuk orang banyak — pengunjungnya
+ * Halaman /monitoring (rekap pengadaan) dan /lapor (kiriman berkas dari ABK
+ * kapal) adalah halaman TERBUKA untuk orang banyak — pengunjungnya
  * tak punya akses ke menu-menu di dalam aplikasi, jadi sidebar & lonceng
  * sengaja tidak dipasang di sana supaya tak menampilkan tautan yang ujungnya
  * hanya melempar ke halaman masuk.
@@ -14,7 +15,7 @@ export default function RangkaAplikasi({ sidebar, loneng, children }: {
   sidebar: ReactNode; loneng: ReactNode; children: ReactNode;
 }) {
   const path = usePathname() || "";
-  const terbuka = path.startsWith("/monitoring");
+  const terbuka = path.startsWith("/monitoring") || path.startsWith("/lapor");
 
   if (terbuka) return <div className="min-h-screen">{children}</div>;
 
