@@ -11,6 +11,8 @@ const nextConfig = {
       "/api/sppbj/generate": ["./templates/sppbj/**/*"],
       "/api/sppbj/generate-all": ["./templates/sppbj/**/*"],
       "/api/nonpr/generate": ["./templates/nonpr/**/*"],
+      // halaman terbuka mengunduh SPPBJ memakai template yang sama
+      "/api/monitoring/pengadaan/[id]/sppbj": ["./templates/sppbj/**/*"],
       // indeks harga (60 ribu item) dibaca di sisi server, tidak dikirim ke peramban
       "/api/harga/cari": ["./data/hargaIndex.json"],
       "/api/harga/cocok": ["./data/hargaIndex.json"],

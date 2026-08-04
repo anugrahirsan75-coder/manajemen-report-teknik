@@ -15,7 +15,6 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { rupiah, tanggalIndo } from "@/lib/format";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
-import { unduhSatuPengadaan } from "@/lib/monitoring/ekspor";
 
 interface GrSesRekap { termin: number | null; nomor: string; tanggal: string }
 interface Baris {
@@ -65,15 +64,25 @@ export default function MonitoringPengadaan() {
   };
   useEffect(() => { ambil(); }, []);
 
-  // Ekspor SATU pengadaan — rinciannya diambil saat tombolnya ditekan, jadi
-  // tabel di layar tak perlu memikul ribuan item hanya untuk berjaga-jaga.
+  // Ekspor SATU pengadaan memakai TEMPLATE SPPBJ yang sama dengan di aplikasi.
+  // Berkasnya disusun di server (template hanya ada di sana), lalu diunduh apa
+  // adanya — bukan lembar buatan halaman ini.
   const eksporSatu = async (b: Baris) => {
     setUnduh(b.id);
     try {
-      const r = await fetch(`/api/monitoring/pengadaan/${b.id}`, { cache: "no-store" });
-      const d = await r.json();
-      if (!d.ok) { setUnduh("Gagal: " + (d.error || r.status)); return; }
-      await unduhSatuPengadaan(d.dok, JENIS[b.jenis].label);
+      const r = await fetch(`/api/monitoring/pengadaan/${b.id}/sppbj`, { cache: "no-store" });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        setUnduh("Gagal: " + (d.error || r.status));
+        return;
+      }
+      const blob = await r.blob();
+      const nama = /filename="(.+?)"/.exec(r.headers.get("Content-Disposition") || "")?.[1]
+        || `${b.nama || "SPPBJ"}.xlsx`;
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = nama; a.click();
+      URL.revokeObjectURL(url);
       setUnduh("");
     } catch (e: any) { setUnduh("Gagal: " + (e?.message || e)); }
   };
@@ -230,7 +239,7 @@ export default function MonitoringPengadaan() {
                       title="Lihat rincian item pengadaan">👁 Lihat</button>
                     <button onClick={() => eksporSatu(b)} disabled={unduh === b.id}
                       className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-emerald-200 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
-                      title="Unduh Excel pengadaan ini berikut seluruh itemnya">
+                      title="Unduh berkas SPPBJ pengadaan ini — template yang sama dengan di aplikasi">
                       {unduh === b.id ? "…" : "📊 Excel"}</button>
                     <button onClick={() => setUbah(b)}
                       className="ml-1 text-[11px] px-2 py-1 rounded-lg ring-1 ring-sky-200 text-[#16357f] hover:bg-sky-50"
@@ -261,7 +270,8 @@ export default function MonitoringPengadaan() {
           <b className="text-slate-700">Cara membaca:</b> <b>Nilai PR</b> = jumlah harga usulan tiap item.
           <b> Nilai SPBJ</b> = harga final setelah PO terbit — tampil setelah harga SPBJ-nya diisi di aplikasi,
           selama belum diisi tertulis &ldquo;belum&rdquo;. Tombol <b>👁 Lihat</b> membuka rincian item tiap pengadaan,
-          <b> 📊 Excel</b> mengunduh pengadaan itu saja berikut seluruh itemnya.
+          <b> 📊 Excel</b> mengunduh berkas SPPBJ pengadaan itu memakai template resmi yang
+          sama dengan di aplikasi.
         </p>
         <p className="text-[11px] text-slate-400 mt-1.5">
           Halaman ini hanya memuat <b>SPPBJ Pengadaan</b> (SPPBJ Non PR PO tidak termasuk).
@@ -309,8 +319,7 @@ function DialogLihat({ baris, onTutup }: { baris: Baris; onTutup: () => void }) 
     <div className="fixed inset-0 z-50 bg-slate-900/60 p-4 overflow-y-auto" onMouseDown={onTutup}>
       <div className="max-w-[210mm] mx-auto mb-2 flex flex-wrap items-center gap-2 no-print" onMouseDown={(e) => e.stopPropagation()}>
         <span className="text-white font-bold text-sm truncate flex-1">{baris.nama}</span>
-        <button onClick={() => dok && unduhSatuPengadaan(dok, JENIS[baris.jenis].label)}
-          disabled={!dok} className="btn btn-ghost text-xs disabled:opacity-40">📊 Excel</button>
+        <a href={`/api/monitoring/pengadaan/${baris.id}/sppbj`} className="btn btn-ghost text-xs">📊 Excel</a>
         <button onClick={() => window.print()} className="btn btn-ghost text-xs">🖨️ Cetak</button>
         <button onClick={onTutup} className="btn btn-ghost text-xs">✕ Tutup</button>
       </div>
