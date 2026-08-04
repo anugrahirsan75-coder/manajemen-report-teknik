@@ -153,7 +153,7 @@ function DashboardInner() {
         <>
           {v === "ringkas" && <Ringkasan plafon={plafon} docking={docking} program={program} pengadaan={pengadaan} />}
 
-          {v === "rutin" && <AnggaranRutin plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} onExcel={(dari, sampai) => unduhExcel("rutin", dari, sampai)} xlsBusy={xlsBusy} />}
+          {v === "rutin" && <AnggaranRutin rkaData={rka} plafon={plafon} pengadaan={pengadaan} onSave={savePlafon} onSaveRka={saveRka} onExcel={(dari, sampai) => unduhExcel("rutin", dari, sampai)} xlsBusy={xlsBusy} />}
 
           {v === "docking" && <AnggaranDocking docking={docking} pengadaan={pengadaan} onSave={saveDocking} onExcel={() => unduhExcel("docking")} xlsBusy={xlsBusy} />}
 
@@ -566,7 +566,22 @@ const TFOOT_ROW = "bg-slate-100 border-t-2 border-slate-300 font-extrabold text-
 const barPct = (pct: number) => (pct > 100 ? "bg-red-500" : pct >= 80 ? "bg-amber-500" : "bg-emerald-500");
 const tintPct = (pct: number) => (pct > 100 ? "text-red-700" : pct >= 80 ? "text-amber-700" : "text-slate-900");
 
-function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon: PlafonRutin[]; pengadaan: PengadaanRow[]; onSave: (p: PlafonRutin[]) => Promise<void>; onExcel?: (dari: string, sampai: string) => void; xlsBusy?: boolean }) {
+/** RKA bulanan yang diatur pengguna menang atas angka bawaan RKA 2026. */
+function rkaRutinEfektif(rkaData: RKA, bulan: string) {
+  const manual = rkaData.bulanan?.[bulan];
+  if (manual) return { perMa: manual, total: Object.values(manual).reduce((s, v) => s + (v || 0), 0), manual: true };
+  return { ...rutinRentang([bulan]), manual: false };
+}
+
+function AnggaranRutin({ rkaData, plafon, pengadaan, onSave, onSaveRka, onExcel, xlsBusy }: {
+  rkaData: RKA;
+  plafon: PlafonRutin[];
+  pengadaan: PengadaanRow[];
+  onSave: (p: PlafonRutin[]) => Promise<void>;
+  onSaveRka: (r: RKA) => Promise<void>;
+  onExcel?: (dari: string, sampai: string) => void;
+  xlsBusy?: boolean;
+}) {
   const bulanList = useMemo(() => {
     const s = new Set<string>();
     plafon.forEach((p) => p.bulan && s.add(p.bulan));
@@ -626,6 +641,8 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
 
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState<PlafonRow[]>([]);
+  const [editRkaBulanan, setEditRkaBulanan] = useState(false);
+  const [draftRkaBulanan, setDraftRkaBulanan] = useState<PlafonRow[]>([]);
   const [busy, setBusy] = useState(false);
   const [paste, setPaste] = useState<string | null>(null);
   const [openKey, setOpenKey] = useState<string | null>(null);
@@ -633,7 +650,19 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
 
   // gabung pagu + realisasi (termasuk realisasi tanpa pagu)
   // RKA cabang sebagai pembanding — mengikuti bulan / rentang bulan yang dilihat
-  const rka = useMemo(() => rutinRentang(rentang), [rentang]);
+  const rkaSatuBulan = useMemo(() => rkaRutinEfektif(rkaData, bulan), [rkaData, bulan]);
+  const rka = useMemo(() => {
+    const perMa: Record<string, number> = {};
+    let total = 0;
+    let manual = false;
+    rentang.forEach((b) => {
+      const rb = rkaRutinEfektif(rkaData, b);
+      Object.entries(rb.perMa).forEach(([k, v]) => { perMa[k] = (perMa[k] || 0) + (v || 0); });
+      total += rb.total;
+      manual ||= rb.manual;
+    });
+    return { perMa, total, manual };
+  }, [rkaData, rentang]);
   const rkaPerMa = rka.perMa;
   const adaRka = rka.total > 0;
 
@@ -672,7 +701,17 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
     return { active: true, factor, total, pct, dayToday, daysInMonth };
   }, [banyakBulan, bulan, totalPakai, totalPagu, pctTot]);
 
-  const startEdit = () => { setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]); setEdit(true); };
+  const startEdit = () => {
+    setEditRkaBulanan(false);
+    setDraft(rows.length ? rows.map((r) => ({ ...r })) : [{ ma: "", nilai: 0 }]);
+    setEdit(true);
+  };
+  const startEditRkaBulanan = () => {
+    setEdit(false);
+    const awal = Object.entries(rkaSatuBulan.perMa).map(([kode, nilai]) => ({ ma: fullMA(kode), nilai }));
+    setDraftRkaBulanan(awal.length ? awal : [{ ma: "", nilai: 0 }]);
+    setEditRkaBulanan(true);
+  };
   // siapkan pagu bulan BERIKUTNYA: lompat bulan + salin pagu bulan aktif + langsung mode edit
   const bulanLain = () => {
     const nb = nextMonth(bulan);
@@ -707,6 +746,21 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
       setEdit(false);
     } finally { setBusy(false); }
   };
+  const simpanRkaBulanan = async () => {
+    setBusy(true);
+    try {
+      const perMa: Record<string, number> = {};
+      draftRkaBulanan.filter((r) => r.ma.trim()).forEach((r) => {
+        const kode = maKey(r.ma);
+        if (kode) perMa[kode] = (perMa[kode] || 0) + (r.nilai || 0);
+      });
+      const bulanan = { ...(rkaData.bulanan || {}) };
+      if (Object.keys(perMa).length) bulanan[bulan] = perMa;
+      else delete bulanan[bulan];
+      await onSaveRka({ ...rkaData, bulanan });
+      setEditRkaBulanan(false);
+    } finally { setBusy(false); }
+  };
 
   return (
     <Card tone="biru" icon="🧭" badge={banyakBulan ? `${rentang.length} BULAN` : "BULANAN"} title="Kendali Anggaran Rutin"
@@ -714,11 +768,11 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
         ? `Rekap gabungan ${labelPeriode} · pagu & realisasi dijumlahkan per Mata Anggaran`
         : "Persetujuan Rutin per BULAN · pagu per Mata Anggaran"}>
       <div className="flex flex-wrap items-center gap-2 mb-3">
-        <input type="month" value={bulan} onChange={(e) => setBulanSel(e.target.value)}
-          className="text-xs border px-2.5 py-1.5 rounded-lg bg-white" title="Bulan awal — pilih bulan mana pun (termasuk bulan baru)" />
+        <input type="month" value={bulan} onChange={(e) => setBulanSel(e.target.value)} disabled={editRkaBulanan}
+          className="text-xs border px-2.5 py-1.5 rounded-lg bg-white disabled:opacity-50" title={editRkaBulanan ? "Selesaikan pengaturan RKA bulan ini terlebih dahulu" : "Bulan awal — pilih bulan mana pun (termasuk bulan baru)"} />
         <span className="text-[11px] text-slate-400">s.d.</span>
-        <input type="month" value={bulanAkhir} onChange={(e) => setAkhirSel(e.target.value)}
-          className={`text-xs border px-2.5 py-1.5 rounded-lg bg-white ${banyakBulan ? "border-[#1ca3dd] font-semibold text-[#16357f]" : ""}`}
+        <input type="month" value={bulanAkhir} onChange={(e) => setAkhirSel(e.target.value)} disabled={editRkaBulanan}
+          className={`text-xs border px-2.5 py-1.5 rounded-lg bg-white disabled:opacity-50 ${banyakBulan ? "border-[#1ca3dd] font-semibold text-[#16357f]" : ""}`}
           title="Bulan akhir — samakan dengan bulan awal untuk melihat satu bulan saja" />
         {banyakBulan ? (
           <span className="text-[10px] font-bold px-2 py-1 rounded-lg bg-sky-100 text-sky-800 ring-1 ring-sky-300">
@@ -733,17 +787,31 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
           <div className="flex items-center gap-1">
             <span className="text-[10px] text-slate-500 font-semibold">ada data:</span>
             {bulanList.slice(0, 6).map((b) => (
-              <button key={b} onClick={() => setBulanSel(b)}
-                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md border transition ${b === bulan ? "bg-[#16357f] text-white border-[#16357f]" : "border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f]"}`}>
+              <button key={b} onClick={() => setBulanSel(b)} disabled={editRkaBulanan}
+                className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-md border transition disabled:opacity-40 ${b === bulan ? "bg-[#16357f] text-white border-[#16357f]" : "border-slate-300 text-slate-600 hover:border-[#1ca3dd] hover:text-[#16357f]"}`}>
                 {bulanTahun(b + "-01")}
               </button>
             ))}
           </div>
         )}
-        {adaRka && <span className="text-[11px] text-indigo-800 bg-indigo-50 ring-1 ring-indigo-200 rounded-full px-2 py-0.5">RKA {TAHUN_RKA} ikut ditampilkan · pagu tetap dari Persetujuan Pusat</span>}
+        {adaRka && <span className="text-[11px] text-indigo-800 bg-indigo-50 ring-1 ring-indigo-200 rounded-full px-2 py-0.5">
+          RKA {bulan.slice(0, 4)} ikut ditampilkan{rka.manual ? " · sudah disesuaikan per bulan" : " · data acuan awal"} · pagu tetap dari Persetujuan Pusat
+        </span>}
         <span className="text-[11px] text-slate-500">realisasi = SPPBJ + Non PR PO ber-<b className="text-slate-700">Jenis Anggaran: Rutin</b>, per Mata Anggaran (Docking terpisah, tak overlap)</span>
         <div className="ml-auto flex items-center gap-2">
-          {!edit ? (
+          {edit ? (
+            <>
+              <button onClick={salin} className="btn btn-ghost text-xs">⧉ Salin bln lalu</button>
+              <button onClick={() => setPaste("")} className="btn btn-ghost text-xs">📋 Tempel dari Excel</button>
+              <button onClick={simpan} disabled={busy} className="btn btn-primary text-xs">{busy ? "…" : "💾 Simpan"}</button>
+              <button onClick={() => setEdit(false)} className="btn btn-ghost text-xs">Batal</button>
+            </>
+          ) : editRkaBulanan ? (
+            <>
+              <button onClick={simpanRkaBulanan} disabled={busy} className="btn btn-primary text-xs">{busy ? "…" : "💾 Simpan RKA"}</button>
+              <button onClick={() => setEditRkaBulanan(false)} className="btn btn-ghost text-xs">Batal</button>
+            </>
+          ) : (
             <>
               {onExcel && (
                 <button onClick={() => onExcel(bulan, bulanAkhir)} disabled={xlsBusy} className="btn btn-success text-xs disabled:opacity-50"
@@ -756,14 +824,11 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
                 title={banyakBulan ? "Pagu diatur per bulan — samakan bulan awal & akhir dulu" : `Siapkan pagu ${bulanTahun(nextMonth(bulan) + "-01")} (disalin dari bulan ini)`}>➕ Pagu Bulan Lain</button>
               <button onClick={startEdit} disabled={banyakBulan} className="btn btn-ghost text-xs disabled:opacity-40"
                 title={banyakBulan ? "Pagu diatur per bulan — samakan bulan awal & akhir dulu" : "Ubah pagu bulan ini"}>✏️ Atur Pagu</button>
+              <button onClick={startEditRkaBulanan} disabled={banyakBulan} className="btn btn-ghost text-xs text-indigo-700 disabled:opacity-40 dark:text-indigo-300"
+                title={banyakBulan ? "RKA diatur per bulan — samakan bulan awal & akhir dulu" : `Atur RKA ${bulanTahun(bulan + "-01")}`}>
+                🎯 Atur RKA per Bulan
+              </button>
               {entry && !banyakBulan && <button onClick={hapusPagu} disabled={busy} className="btn btn-ghost text-xs text-red-600 disabled:opacity-50" title="Hapus pagu bulan ini (pengadaan tetap ada)">🗑️ Hapus Pagu</button>}
-            </>
-          ) : (
-            <>
-              <button onClick={salin} className="btn btn-ghost text-xs">⧉ Salin bln lalu</button>
-              <button onClick={() => setPaste("")} className="btn btn-ghost text-xs">📋 Tempel dari Excel</button>
-              <button onClick={simpan} disabled={busy} className="btn btn-primary text-xs">{busy ? "…" : "💾 Simpan"}</button>
-              <button onClick={() => setEdit(false)} className="btn btn-ghost text-xs">Batal</button>
             </>
           )}
         </div>
@@ -774,7 +839,7 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
 
       {/* KPI mini */}
       <div className={`grid grid-cols-2 ${adaRka ? "sm:grid-cols-5" : "sm:grid-cols-4"} gap-2 mb-3`}>
-        {adaRka && <MiniStat label={`RKA ${TAHUN_RKA}`} val={rupiah(rka.total)} tint="text-indigo-800" bar="bg-indigo-500" />}
+        {adaRka && <MiniStat label={`RKA ${bulan.slice(0, 4)}`} val={rupiah(rka.total)} tint="text-indigo-800" bar="bg-indigo-500" />}
         <MiniStat label="Total Pagu" val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-slate-400" />
         <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-800" bar="bg-blue-600" />
         <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-700" : "text-emerald-800"} bar={sisa < 0 ? "bg-red-500" : "bg-emerald-500"} />
@@ -790,7 +855,32 @@ function AnggaranRutin({ plafon, pengadaan, onSave, onExcel, xlsBusy }: { plafon
         </div>
       )}
 
-      {edit ? (
+      {editRkaBulanan ? (
+        <div className="rounded-xl border border-indigo-200 bg-indigo-50/45 p-3 ring-1 ring-indigo-100 dark:border-indigo-800 dark:bg-indigo-950/20 dark:ring-indigo-900">
+          <div className="mb-3 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <p className="text-xs font-bold text-indigo-900 dark:text-indigo-200">🎯 RKA Rutin {bulanTahun(bulan + "-01")}</p>
+              <p className="mt-0.5 text-[11px] text-slate-500">Nilai di sini menjadi acuan RKA bulan terpilih. Pagu Persetujuan Pusat dan realisasi tidak ikut berubah.</p>
+            </div>
+            {rkaSatuBulan.manual && <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-bold text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950 dark:text-indigo-300 dark:ring-indigo-800">SUDAH DISESUAIKAN</span>}
+          </div>
+          <datalist id="maRkaBulananList">{MATA_ANGGARAN.map((m) => <option key={m.kode} value={fullMA(m.kode)} />)}</datalist>
+          {draftRkaBulanan.map((r, i) => (
+            <div key={i} className="mb-1.5 flex items-center gap-2">
+              <input list="maRkaBulananList" value={r.ma}
+                onChange={(e) => setDraftRkaBulanan((d) => d.map((x, j) => j === i ? { ...x, ma: e.target.value } : x))}
+                placeholder="Mata Anggaran RKA" className="flex-1 rounded border border-indigo-200 bg-white px-2 py-1.5 text-xs dark:border-indigo-800" />
+              <input type="number" value={r.nilai || ""}
+                onChange={(e) => setDraftRkaBulanan((d) => d.map((x, j) => j === i ? { ...x, nilai: +e.target.value } : x))}
+                placeholder="RKA Rp" className="w-40 rounded border border-indigo-200 bg-white px-2 py-1.5 text-right text-xs dark:border-indigo-800" />
+              <button onClick={() => setDraftRkaBulanan((d) => d.filter((_, j) => j !== i))}
+                className="px-1 text-sm text-red-400 hover:text-red-600" aria-label={`Hapus baris RKA ${i + 1}`}>✕</button>
+            </div>
+          ))}
+          <button onClick={() => setDraftRkaBulanan((d) => [...d, { ma: "", nilai: 0 }])}
+            className="mt-1 text-xs font-semibold text-indigo-700 hover:underline dark:text-indigo-300">+ baris Mata Anggaran RKA</button>
+        </div>
+      ) : edit ? (
         <div className="rounded-xl ring-1 ring-slate-200 p-3">
           <p className="text-xs text-slate-500 mb-2">Mengisi pagu untuk <b className="text-[#16357f]">{bulanTahun(bulan + "-01")}</b> — ganti bulan lewat kalender di atas bila perlu.</p>
           <datalist id="maRutinList">{MATA_ANGGARAN.map((m) => <option key={m.kode} value={fullMA(m.kode)} />)}</datalist>

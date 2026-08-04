@@ -133,6 +133,8 @@ export const isMaInvestasi = (key: string) => key.startsWith("10206") || DOCKING
 export interface RKA {
   tahun: number;
   nilai: Record<string, number>; // kode MA -> nilai disetujui
+  /** Penyesuaian RKA rutin per bulan: YYYY-MM -> kode MA -> nilai. */
+  bulanan?: Record<string, Record<string, number>>;
   catatan?: string;
 }
 
