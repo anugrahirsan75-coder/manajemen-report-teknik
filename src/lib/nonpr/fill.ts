@@ -4,7 +4,7 @@ import PizZip from "pizzip";
 import { NonprRequest, NonprItem, kapalUnikNonpr, tahunNonpr, ketLines, bdLines } from "./types";
 import { penerimaBstb, vendorOf, Jabatan } from "./db";
 import { bulanRomawi, tanggalIndo } from "@/lib/format";
-import { applyEdits, sheetXmlPath, saveZip, esc, Edit } from "@/lib/sppbj/fill";
+import { applyEdits, sheetXmlPath, saveZip, esc, Edit, insertRowsRaw } from "@/lib/sppbj/fill";
 import { fotoToDataUrl } from "@/lib/server/foto";
 
 // exceljs MERUSAK template ini -> WAJIB raw-XML (reuse engine sppbj).
@@ -63,68 +63,7 @@ function bstbLines(items: NonprItem[]): Line[] {
   return out;
 }
 
-// ---------- INSERT BARIS raw-XML (band dinamis) ----------
-// Sisip `count` baris baru mulai `atRow` (geser semua >= atRow): row/cell refs, merge,
-// formula sheet ini, formula lintas-sheet (Sheet!A1) di sheet lain + definedNames, anchor drawing.
-// Baris baru kloning style dari `styleRow` (nilai dibuang, style/border ikut).
-function insertRowsRaw(zip: PizZip, sheetName: string, atRow: number, count: number, styleRow: number) {
-  if (count <= 0) return;
-  const p = sheetXmlPath(zip, sheetName);
-  let xml = zip.file(p)!.asText();
-  const sh = (n: number) => (n >= atRow ? n + count : n);
-
-  // template baris utk kloning (ambil SEBELUM digeser)
-  const tplMatch = xml.match(new RegExp(`<row r="${styleRow}"[^>]*?/>`)) ||
-    xml.match(new RegExp(`<row r="${styleRow}"[^>]*>[\\s\\S]*?</row>`));
-  const tplRow = tplMatch ? tplMatch[0] : `<row r="${styleRow}"/>`;
-
-  // geser row + cell + merge + formula sheet ini
-  xml = xml.replace(/<row r="(\d+)"/g, (_, n) => `<row r="${sh(+n)}"`);
-  xml = xml.replace(/<c r="([A-Z]+)(\d+)"/g, (_, c, n) => `<c r="${c}${sh(+n)}"`);
-  xml = xml.replace(/<mergeCell ref="([A-Z]+)(\d+):([A-Z]+)(\d+)"/g,
-    (_, c1, r1, c2, r2) => `<mergeCell ref="${c1}${sh(+r1)}:${c2}${sh(+r2)}"`);
-  xml = xml.replace(/<f([^>]*)>([^<]*)<\/f>/g, (_, attrs, f) => {
-    const nf = f.replace(/(?<![A-Z0-9_!$])(\$?[A-Z]{1,3}\$?)(\d+)(?!\()/g, (s: string, col: string, n: string) => col + sh(+n));
-    return `<f${attrs}>${nf}</f>`;
-  });
-
-  // baris baru kloning style (nilai kosong, s= dipertahankan)
-  let news = "";
-  for (let i = 0; i < count; i++) {
-    const rn = atRow + i;
-    let row = tplRow.replace(/<row r="\d+"/, `<row r="${rn}"`);
-    row = row.replace(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>[\s\S]*?<\/c>)/g, (_, c, attrs) => {
-      const sAttr = (attrs.match(/ s="\d+"/) || [""])[0];
-      return `<c r="${c}${rn}"${sAttr}/>`;
-    });
-    news += row;
-  }
-  const allRows = Array.from(xml.matchAll(/<row r="(\d+)"/g));
-  const after = allRows.find((r) => +r[1] >= atRow + count);
-  if (after) xml = xml.replace(new RegExp(`<row r="${after[1]}"`), `${news}<row r="${after[1]}"`);
-  else xml = xml.replace("</sheetData>", `${news}</sheetData>`);
-  zip.file(p, xml);
-
-  // ref lintas-sheet di sheet lain + definedNames workbook (mis. spkh: =SPPB!R31)
-  const qre = new RegExp(`(${sheetName}!\\$?[A-Z]{1,3}\\$?)(\\d+)`, "g");
-  for (const f of Object.keys(zip.files)) {
-    if (f === p) continue;
-    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(f) || f === "xl/workbook.xml") {
-      const x = zip.file(f)!.asText();
-      const nx = x.replace(qre, (_, pre, n) => pre + sh(+n));
-      if (nx !== x) zip.file(f, nx);
-    }
-  }
-
-  // anchor drawing sheet ini (xdr:row 0-based)
-  const rels = zip.file(p.replace("worksheets/", "worksheets/_rels/") + ".rels")?.asText();
-  const dt = rels?.match(/Target="\.\.\/drawings\/(drawing\d+\.xml)"/)?.[1];
-  if (dt) {
-    let dx = zip.file(`xl/drawings/${dt}`)!.asText();
-    dx = dx.replace(/<xdr:row>(\d+)<\/xdr:row>/g, (_, n) => `<xdr:row>${+n >= atRow - 1 ? +n + count : +n}</xdr:row>`);
-    zip.file(`xl/drawings/${dt}`, dx);
-  }
-}
+// insertRowsRaw dipindah ke @/lib/sppbj/fill agar dipakai bersama modul SPPBJ.
 
 // ---------- SPPB ----------
 function sppbEdits(req: NonprRequest, lines: Line[], bandEnd: number): Edit[] {

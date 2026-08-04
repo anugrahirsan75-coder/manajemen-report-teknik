@@ -162,7 +162,118 @@ function kakPointEdits(namaPengadaan: string): Edit[] {
   return [{ ref: "C71", kind: "str", value: namaPengadaan || "" }];
 }
 
-export function buildSppbjEdits(req: SppbjRequest): Edit[] {
+
+// ---------- INSERT BARIS raw-XML (band dinamis) ----------
+// Sisip `count` baris baru mulai `atRow` (geser semua >= atRow): row/cell refs, merge,
+// formula sheet ini, formula lintas-sheet (Sheet!A1) di sheet lain + definedNames, anchor drawing.
+// Baris baru kloning style dari `styleRow` (nilai dibuang, style/border ikut).
+export function insertRowsRaw(zip: PizZip, sheetName: string, atRow: number, count: number, styleRow: number) {
+  if (count <= 0) return;
+  const p = sheetXmlPath(zip, sheetName);
+  let xml = zip.file(p)!.asText();
+  const sh = (n: number) => (n >= atRow ? n + count : n);
+
+  // template baris utk kloning (ambil SEBELUM digeser)
+  const tplMatch = xml.match(new RegExp(`<row r="${styleRow}"[^>]*?/>`)) ||
+    xml.match(new RegExp(`<row r="${styleRow}"[^>]*>[\\s\\S]*?</row>`));
+  const tplRow = tplMatch ? tplMatch[0] : `<row r="${styleRow}"/>`;
+
+  // geser row + cell + merge + formula sheet ini
+  xml = xml.replace(/<row r="(\d+)"/g, (_, n) => `<row r="${sh(+n)}"`);
+  xml = xml.replace(/<c r="([A-Z]+)(\d+)"/g, (_, c, n) => `<c r="${c}${sh(+n)}"`);
+  xml = xml.replace(/<mergeCell ref="([A-Z]+)(\d+):([A-Z]+)(\d+)"/g,
+    (_, c1, r1, c2, r2) => `<mergeCell ref="${c1}${sh(+r1)}:${c2}${sh(+r2)}"`);
+  xml = xml.replace(/<f([^>]*)>([^<]*)<\/f>/g, (_, attrs, f) => {
+    const nf = f.replace(/(?<![A-Z0-9_!$])(\$?[A-Z]{1,3}\$?)(\d+)(?!\()/g, (s: string, col: string, n: string) => col + sh(+n));
+    return `<f${attrs}>${nf}</f>`;
+  });
+
+  // baris baru kloning style (nilai kosong, s= dipertahankan)
+  let news = "";
+  for (let i = 0; i < count; i++) {
+    const rn = atRow + i;
+    let row = tplRow.replace(/<row r="\d+"/, `<row r="${rn}"`);
+    row = row.replace(/<c r="([A-Z]+)\d+"([^>]*?)(?:\/>|>[\s\S]*?<\/c>)/g, (_, c, attrs) => {
+      const sAttr = (attrs.match(/ s="\d+"/) || [""])[0];
+      return `<c r="${c}${rn}"${sAttr}/>`;
+    });
+    news += row;
+  }
+  const allRows = Array.from(xml.matchAll(/<row r="(\d+)"/g));
+  const after = allRows.find((r) => +r[1] >= atRow + count);
+  if (after) xml = xml.replace(new RegExp(`<row r="${after[1]}"`), `${news}<row r="${after[1]}"`);
+  else xml = xml.replace("</sheetData>", `${news}</sheetData>`);
+  zip.file(p, xml);
+
+  // ref lintas-sheet di sheet lain + definedNames workbook (mis. spkh: =SPPB!R31)
+  const qre = new RegExp(`(${sheetName}!\\$?[A-Z]{1,3}\\$?)(\\d+)`, "g");
+  for (const f of Object.keys(zip.files)) {
+    if (f === p) continue;
+    if (/^xl\/worksheets\/sheet\d+\.xml$/.test(f) || f === "xl/workbook.xml") {
+      const x = zip.file(f)!.asText();
+      const nx = x.replace(qre, (_, pre, n) => pre + sh(+n));
+      if (nx !== x) zip.file(f, nx);
+    }
+  }
+
+  // anchor drawing sheet ini (xdr:row 0-based)
+  const rels = zip.file(p.replace("worksheets/", "worksheets/_rels/") + ".rels")?.asText();
+  const dt = rels?.match(/Target="\.\.\/drawings\/(drawing\d+\.xml)"/)?.[1];
+  if (dt) {
+    let dx = zip.file(`xl/drawings/${dt}`)!.asText();
+    dx = dx.replace(/<xdr:row>(\d+)<\/xdr:row>/g, (_, n) => `<xdr:row>${+n >= atRow - 1 ? +n + count : +n}</xdr:row>`);
+    zip.file(`xl/drawings/${dt}`, dx);
+  }
+}
+
+/**
+ * Berapa baris yang sebenarnya dibutuhkan tabel item.
+ *
+ * Template hanya menyediakan sejumlah baris tetap. Sebelum ini, item yang
+ * melebihi jatah itu DIBUANG diam-diam — dokumen tampak wajar padahal isinya
+ * kurang. Hitungan ini dipakai untuk menyisipkan barisnya lebih dulu.
+ */
+export function butuhBaris(
+  groups: { kapal: string; items: SppbjItem[] }[],
+  o: { headerKapal?: boolean; spasiAntarKapal?: boolean } = {},
+): number {
+  let n = 0;
+  groups.forEach((g, gi) => {
+    if (o.spasiAntarKapal && gi > 0) n++;
+    if (o.headerKapal) n++;
+    let prevKet = "";
+    for (const it of g.items) {
+      if ((it.keterangan || "") !== prevKet) { n += ketLines(it).length; prevKet = it.keterangan || ""; }
+      n += 1 + bdLines(it).length;
+    }
+  });
+  return n;
+}
+
+/**
+ * Pastikan band `first..last` cukup menampung `butuh` baris; kalau kurang,
+ * baris disisipkan pada akhir band sehingga baris penutup (jumlah, PPN, tanda
+ * tangan) ikut bergeser turun beserta rumusnya. Mengembalikan baris akhir baru.
+ */
+export function pastikanBaris(
+  zip: PizZip, sheet: string, first: number, last: number, butuh: number, styleRow: number,
+): number {
+  const tambah = Math.max(0, butuh - (last - first + 1));
+  if (tambah > 0) insertRowsRaw(zip, sheet, last, tambah, styleRow);
+  return last + tambah;
+}
+
+/** seperti genWorkbook, tapi zip boleh disiapkan dulu (mis. menyisipkan baris) */
+export function genWorkbookSiap(siap: (zip: PizZip) => { sheet: string; edits: Edit[] }[]): Buffer {
+  const zip = openTpl();
+  for (const p of siap(zip)) {
+    const sp = sheetXmlPath(zip, p.sheet);
+    zip.file(sp, applyEdits(zip.file(sp)!.asText(), p.edits));
+  }
+  return saveZip(zip);
+}
+
+export function buildSppbjEdits(req: SppbjRequest, akhirTabel = 35): Edit[] {
   const bt = bulanTahun(req.tanggal);
   const groups = groupByKapal(req.items);
 
@@ -175,12 +286,17 @@ export function buildSppbjEdits(req: SppbjRequest): Edit[] {
     { ref: "D13", kind: "str", value: req.mataAnggaran.join(", ") },
     { ref: "E45", kind: "str", value: req.stafTeknik },
     { ref: "E52", kind: "str", value: req.deptHead },
-    ...tableEdits(17, 35, groups, true),
+    ...tableEdits(17, akhirTabel, groups, true),
     ...kakPointEdits(req.namaPengadaan),
   ];
   return edits;
 }
 
 export function fillSppbj(req: SppbjRequest): Buffer {
-  return genWorkbook([{ sheet: "SPPBJ", edits: buildSppbjEdits(req) }]);
+  return genWorkbookSiap((zip) => {
+    const groups = groupByKapal(req.items);
+    const butuh = butuhBaris(groups, { headerKapal: true, spasiAntarKapal: true });
+    const akhir = pastikanBaris(zip, "SPPBJ", 17, 35, butuh, 30);
+    return [{ sheet: "SPPBJ", edits: buildSppbjEdits(req, akhir) }];
+  });
 }

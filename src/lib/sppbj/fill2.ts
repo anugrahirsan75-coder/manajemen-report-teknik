@@ -1,6 +1,6 @@
 import { SppbjRequest, SppbjItem, kapalUnik, tahunDari, hargaSpbjOf, bdLines, ketLines, fullNoKontrak, tanggalKontrak } from "./types";
 import { tanggalIndo, rupiah } from "@/lib/format";
-import { genWorkbook, buildSppbjEdits, Edit, openTpl, sheetXmlPath, applyEdits, saveZip } from "./fill";
+import { genWorkbook, genWorkbookSiap, butuhBaris, pastikanBaris, buildSppbjEdits, Edit, openTpl, sheetXmlPath, applyEdits, saveZip } from "./fill";
 import type PizZip from "pizzip";
 
 const storLoc = (kapal: string) => kapal.replace(/KMP\.?/i, "").trim().toLowerCase();
@@ -10,7 +10,7 @@ const nomorSPBJ = (req: SppbjRequest) => (req.noSpbjNum || "").trim();
 
 // ---------- BSTB ----------
 // kapal diberikan -> 1 kapal; kapal null -> semua item (sub-header per kapal di kolom B)
-export function buildBstbEdits(req: SppbjRequest, kapal: string | null): Edit[] {
+export function buildBstbEdits(req: SppbjRequest, kapal: string | null, akhirTabel = 33): Edit[] {
   const tahun = tahunDari(req.tanggal);
   const noNum = nomorSPBJ(req);
   const itemRow = (r: number, it: SppbjItem, no: number) => {
@@ -32,33 +32,40 @@ export function buildBstbEdits(req: SppbjRequest, kapal: string | null): Edit[] 
     { ref: "H9", kind: "str", value: req.tanggalSPBJ ? tanggalIndo(req.tanggalSPBJ) : "" },
     { ref: "C12", kind: "str", value: fullNoKontrak(req) ? `SPBJ No. ${fullNoKontrak(req)}` : "" },
   ];
-  for (let r = 21; r <= 33; r++) ["A", "B", "E", "G", "H", "I", "J"].forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
+  for (let r = 21; r <= akhirTabel; r++) ["A", "B", "E", "G", "H", "I", "J"].forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
   let r = 21, no = 1;
   const groups = kapal ? [{ kapal, items: itemsKapal(req, kapal) }] : kapalUnik(req.items).map((k) => ({ kapal: k, items: itemsKapal(req, k) }));
   for (const g of groups) {
-    if (r > 33) break;
+    if (r > akhirTabel) break;
     if (!kapal) { edits.push({ ref: `B${r}`, kind: "str", value: g.kapal }); r++; } // sub-header kapal (mode semua)
     let prevKet = "";
     for (const it of g.items) {
-      if (r > 33) break;
+      if (r > akhirTabel) break;
       if ((it.keterangan || "") !== prevKet) {
-        for (const kl of ketLines(it)) { if (r > 33) break; edits.push({ ref: `B${r}`, kind: "str", value: kl }); r++; }
+        for (const kl of ketLines(it)) { if (r > akhirTabel) break; edits.push({ ref: `B${r}`, kind: "str", value: kl }); r++; }
         prevKet = it.keterangan || "";
       }
-      if (r > 33) break;
+      if (r > akhirTabel) break;
       itemRow(r, it, no).forEach((e) => edits.push(e));
       no++; r++;
-      for (const bl of bdLines(it)) { if (r > 33) break; edits.push({ ref: `B${r}`, kind: "str", value: bl }); r++; }
+      for (const bl of bdLines(it)) { if (r > akhirTabel) break; edits.push({ ref: `B${r}`, kind: "str", value: bl }); r++; }
     }
   }
   return edits;
 }
 export function fillBstb(req: SppbjRequest, kapal: string): Buffer {
-  return genWorkbook([{ sheet: "BSTB", edits: buildBstbEdits(req, kapal) }]);
+  return genWorkbookSiap((zip) => {
+    const groups = kapal
+      ? [{ kapal, items: itemsKapal(req, kapal) }]
+      : kapalUnik(req.items).map((k) => ({ kapal: k, items: itemsKapal(req, k) }));
+    const butuh = butuhBaris(groups, { headerKapal: !kapal });
+    const akhir = pastikanBaris(zip, "BSTB", 21, 33, butuh, 30);
+    return [{ sheet: "BSTB", edits: buildBstbEdits(req, kapal, akhir) }];
+  });
 }
 
 // ---------- BAPP ----------
-export function buildBappEdits(req: SppbjRequest): Edit[] {
+export function buildBappEdits(req: SppbjRequest, akhirTabel = 30): Edit[] {
   const tahun = tahunDari(req.tanggal);
 
   const edits: Edit[] = [
@@ -69,20 +76,20 @@ export function buildBappEdits(req: SppbjRequest): Edit[] {
     { ref: "L7", kind: "str", value: req.tanggalBAPP ? tanggalIndo(req.tanggalBAPP) : "" },
   ];
   // tabel item 14-30 (grup per kapal): B kapal header, lalu item A,B,G,H,I,J,L
-  for (let r = 14; r <= 30; r++) ["A", "B", "G", "H", "I", "J", "L"].forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
+  for (let r = 14; r <= akhirTabel; r++) ["A", "B", "G", "H", "I", "J", "L"].forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
   let r = 14, no = 1;
   for (const kapal of kapalUnik(req.items)) {
-    if (r > 30) break;
+    if (r > akhirTabel) break;
     edits.push({ ref: `B${r}`, kind: "str", value: kapal });
     r++;
     let prevKet = "";
     for (const it of itemsKapal(req, kapal)) {
-      if (r > 30) break;
+      if (r > akhirTabel) break;
       if ((it.keterangan || "") !== prevKet) {
-        for (const kl of ketLines(it)) { if (r > 30) break; edits.push({ ref: `B${r}`, kind: "str", value: kl }); r++; }
+        for (const kl of ketLines(it)) { if (r > akhirTabel) break; edits.push({ ref: `B${r}`, kind: "str", value: kl }); r++; }
         prevKet = it.keterangan || "";
       }
-      if (r > 30) break;
+      if (r > akhirTabel) break;
       edits.push({ ref: `A${r}`, kind: "num", value: no });
       edits.push({ ref: `B${r}`, kind: "str", value: it.nama });
       edits.push({ ref: `G${r}`, kind: "str", value: it.spesifikasi || "" });
@@ -91,13 +98,18 @@ export function buildBappEdits(req: SppbjRequest): Edit[] {
       edits.push({ ref: `J${r}`, kind: "str", value: rupiah(hargaSpbjOf(it) * it.jumlah) });
       edits.push({ ref: `L${r}`, kind: "str", value: "SELESAI" });
       no++; r++;
-      for (const bl of bdLines(it)) { if (r > 30) break; edits.push({ ref: `B${r}`, kind: "str", value: bl }); r++; }
+      for (const bl of bdLines(it)) { if (r > akhirTabel) break; edits.push({ ref: `B${r}`, kind: "str", value: bl }); r++; }
     }
   }
   return edits;
 }
 export function fillBapp(req: SppbjRequest): Buffer {
-  return genWorkbook([{ sheet: "BAPP", edits: buildBappEdits(req) }]);
+  return genWorkbookSiap((zip) => {
+    const groups = kapalUnik(req.items).map((k) => ({ kapal: k, items: itemsKapal(req, k) }));
+    const butuh = butuhBaris(groups, { headerKapal: true });
+    const akhir = pastikanBaris(zip, "BAPP", 14, 30, butuh, 27);
+    return [{ sheet: "BAPP", edits: buildBappEdits(req, akhir) }];
+  });
 }
 
 // ---------- FORMAT SAP ----------
@@ -109,16 +121,16 @@ function plus30Dot(iso: string): string {
   return `${p(d.getDate())}.${p(d.getMonth() + 1)}.${d.getFullYear()}`;
 }
 
-export function buildSapEdits(req: SppbjRequest): Edit[] {
+export function buildSapEdits(req: SppbjRequest, akhirTabel = 40): Edit[] {
   const jasa = (req.jenisPengadaan ?? (/jasa/i.test(req.namaPengadaan) ? "jasa" : "barang")) === "jasa";
   const dDate = plus30Dot(req.tanggal);
   const matl = req.matlGroup || "";
   const edits: Edit[] = [];
   const allCols = ["B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q"];
-  for (let r = 4; r <= 40; r++) allCols.forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
+  for (let r = 4; r <= akhirTabel; r++) allCols.forEach((c) => edits.push({ ref: `${c}${r}`, kind: "clear" }));
   let r = 4, no = 1;
   for (const it of req.items) {
-    if (r > 40) break;
+    if (r > akhirTabel) break;
     edits.push({ ref: `B${r}`, kind: "num", value: no });
     edits.push({ ref: `D${r}`, kind: "str", value: "K" });
     edits.push({ ref: `E${r}`, kind: "str", value: jasa ? "D" : "" });
@@ -139,15 +151,24 @@ export function buildSapEdits(req: SppbjRequest): Edit[] {
 }
 
 export function fillFormatSap(req: SppbjRequest): Buffer {
-  return genWorkbook([{ sheet: "FORMAT SAP", edits: buildSapEdits(req) }]);
+  return genWorkbookSiap((zip) => {
+    const akhir = pastikanBaris(zip, "FORMAT SAP", 4, 40, req.items.length, 20);
+    return [{ sheet: "FORMAT SAP", edits: buildSapEdits(req, akhir) }];
+  });
 }
 
 // ---------- FASE 1: 1 file Excel berisi sheet SPPBJ + FORMAT SAP ----------
 export function fillFase1(req: SppbjRequest): Buffer {
-  return genWorkbook([
-    { sheet: "SPPBJ", edits: buildSppbjEdits(req) },
-    { sheet: "FORMAT SAP", edits: buildSapEdits(req) },
-  ]);
+  return genWorkbookSiap((zip) => {
+    const groups = kapalUnik(req.items).map((k) => ({ kapal: k, items: itemsKapal(req, k) }));
+    const aSppbj = pastikanBaris(zip, "SPPBJ", 17, 35,
+      butuhBaris(groups, { headerKapal: true, spasiAntarKapal: true }), 30);
+    const aSap = pastikanBaris(zip, "FORMAT SAP", 4, 40, req.items.length, 20);
+    return [
+      { sheet: "SPPBJ", edits: buildSppbjEdits(req, aSppbj) },
+      { sheet: "FORMAT SAP", edits: buildSapEdits(req, aSap) },
+    ];
+  });
 }
 
 // ---------- LENGKAP: 1 file Excel; SPPBJ + FORMAT SAP + BAPP + BSTB (sheet per kapal) ----------
@@ -186,11 +207,23 @@ function cloneBstb(zip: PizZip, srcSheetXml: string, srcRelsXml: string, drawing
 export function fillLengkap(req: SppbjRequest): Buffer {
   const zip = openTpl();
   const apply = (sheet: string, edits: Edit[]) => { const p = sheetXmlPath(zip, sheet); zip.file(p, applyEdits(zip.file(p)!.asText(), edits)); };
-  apply("SPPBJ", buildSppbjEdits(req));
-  apply("FORMAT SAP", buildSapEdits(req));
-  apply("BAPP", buildBappEdits(req));
 
+  // Baris tabel disisipkan DULU untuk semua sheet — kalau tidak, item yang
+  // melebihi jatah template terbuang diam-diam. BSTB disisipkan memakai jumlah
+  // item kapal terbanyak karena lembarnya dikloning per kapal dari sumber yang
+  // sama, jadi harus cukup untuk yang paling panjang.
   const kapals = kapalUnik(req.items);
+  const grupSemua = kapals.map((k) => ({ kapal: k, items: itemsKapal(req, k) }));
+  const aSppbj = pastikanBaris(zip, "SPPBJ", 17, 35,
+    butuhBaris(grupSemua, { headerKapal: true, spasiAntarKapal: true }), 30);
+  const aSap = pastikanBaris(zip, "FORMAT SAP", 4, 40, req.items.length, 20);
+  const aBapp = pastikanBaris(zip, "BAPP", 14, 30, butuhBaris(grupSemua, { headerKapal: true }), 27);
+  const butuhBstb = Math.max(1, ...grupSemua.map((g2) => butuhBaris([g2])));
+  const aBstb = pastikanBaris(zip, "BSTB", 21, 33, butuhBstb, 30);
+
+  apply("SPPBJ", buildSppbjEdits(req, aSppbj));
+  apply("FORMAT SAP", buildSapEdits(req, aSap));
+  apply("BAPP", buildBappEdits(req, aBapp));
   const bstbPath = sheetXmlPath(zip, "BSTB");
   const origBstb = zip.file(bstbPath)!.asText();
   // sumber rels/drawing BSTB (utk kloning)
@@ -202,10 +235,10 @@ export function fillLengkap(req: SppbjRequest): Buffer {
   const drawRelsXml = drawPath ? (zip.file(drawPath.replace("drawings/", "drawings/_rels/") + ".rels")?.asText() || "") : "";
 
   // kapal pertama -> sheet BSTB asli
-  zip.file(bstbPath, applyEdits(origBstb, buildBstbEdits(req, kapals[0] || null)));
+  zip.file(bstbPath, applyEdits(origBstb, buildBstbEdits(req, kapals[0] || null, aBstb)));
   // kapal selanjutnya -> sheet baru hasil clone
   for (let i = 1; i < kapals.length; i++) {
-    cloneBstb(zip, origBstb, srcRels, drawXml, drawRelsXml, { sheet: "", drawing: "" }, buildBstbEdits(req, kapals[i]), `BSTB ${kapals[i].replace(/KMP\.?\s*/i, "")}`);
+    cloneBstb(zip, origBstb, srcRels, drawXml, drawRelsXml, { sheet: "", drawing: "" }, buildBstbEdits(req, kapals[i], aBstb), `BSTB ${kapals[i].replace(/KMP\.?\s*/i, "")}`);
   }
   return saveZip(zip);
 }
