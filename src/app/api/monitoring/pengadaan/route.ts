@@ -72,6 +72,7 @@ function keRekap(row: any) {
     jenis: jenisAnggaran(p),
     kapal: kapalDari(items),
     tanggal: p.tanggal || "",
+    tanggalSpbj: p.tanggalSPBJ || "",
     status: p.status || "menunggu_spbj",
     nilaiPr,
     nilaiSpbj: items.some((i) => n(i.hargaSpbj) > 0) ? nilaiSpbj : 0,

@@ -19,7 +19,7 @@ import PreviewPengadaan from "@/components/PreviewPengadaan";
 interface GrSesRekap { termin: number | null; nomor: string; tanggal: string }
 interface Baris {
   id: string; nama: string; noPr: string; noPo: string; grSes: GrSesRekap[];
-  jenis: "rutin" | "docking" | "lainnya"; kapal: string[]; tanggal: string;
+  jenis: "rutin" | "docking" | "lainnya"; kapal: string[]; tanggal: string; tanggalSpbj: string;
   status: string; nilaiPr: number; nilaiSpbj: number; jumlahItem: number;
 }
 
@@ -215,15 +215,16 @@ export default function MonitoringPengadaan() {
         <p className="mt-4 text-sm text-slate-400">Memuat…</p>
       ) : (
         <div className="mt-3 overflow-auto max-h-[70vh] bg-white rounded-2xl elev-md ring-line">
-          <table className="w-full text-sm min-w-[80rem]">
+          <table className="w-full text-sm min-w-[87rem]">
             <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold sticky top-0 z-10 shadow-[0_1px_0_rgba(0,0,0,0.08)]">
               <tr className="border-b-2 border-slate-200">
                 <th className="px-2 py-2.5 text-center w-8">No</th>
                 <th className="px-2 py-2.5 text-left min-w-[15rem]">Nama Pengadaan</th>
-                <th className="px-2 py-2.5 text-left w-32">Tanggal</th>
+                <th className="px-2 py-2.5 text-left w-32">Tanggal SPPBJ</th>
                 <th className="px-2 py-2.5 text-left w-24">Jenis</th>
                 <th className="px-2 py-2.5 text-left w-28">No. PR SAP</th>
                 <th className="px-2 py-2.5 text-left w-28">No. PO SAP</th>
+                <th className="px-2 py-2.5 text-left w-32">Tanggal SPBJ</th>
                 <th className="px-2 py-2.5 text-left w-32">No. GR / SES</th>
                 <th className="px-2 py-2.5 text-right w-32">Nilai PR</th>
                 <th className="px-2 py-2.5 text-right w-32">Nilai SPBJ</th>
@@ -253,6 +254,11 @@ export default function MonitoringPengadaan() {
                   </td>
                   <td className="px-2 py-2 tabular-nums text-slate-700 break-words">{b.noPr || <span className="text-slate-300">—</span>}</td>
                   <td className="px-2 py-2 tabular-nums text-slate-700 break-words">{b.noPo || <span className="text-slate-300">—</span>}</td>
+                  <td className="px-2 py-2 text-[11px] leading-tight text-slate-600 whitespace-nowrap tabular-nums">
+                    {b.tanggalSpbj
+                      ? <time dateTime={b.tanggalSpbj}>{tanggalIndo(b.tanggalSpbj)}</time>
+                      : <span className="text-slate-300">—</span>}
+                  </td>
                   <td className="px-2 py-2">
                     {b.grSes.length ? b.grSes.map((g, k) => (
                       <span key={k} className="block text-[11px] tabular-nums text-slate-700">
@@ -283,14 +289,14 @@ export default function MonitoringPengadaan() {
                 </tr>
               ))}
               {!tampil.length && (
-                <tr><td colSpan={11} className="px-4 py-8 text-center text-sm text-slate-400">
+                <tr><td colSpan={12} className="px-4 py-8 text-center text-sm text-slate-400">
                   Tak ada pengadaan pada saringan ini.
                 </td></tr>
               )}
             </tbody>
             <tfoot className="bg-slate-50 font-bold sticky bottom-0 shadow-[0_-1px_0_rgba(0,0,0,0.08)]">
               <tr>
-                <td className="px-2 py-2.5" colSpan={7}>JUMLAH {tampil.length} pengadaan</td>
+                <td className="px-2 py-2.5" colSpan={8}>JUMLAH {tampil.length} pengadaan</td>
                 <td className="px-2 py-2.5 text-right tabular-nums">{rupiah(jml.pr)}</td>
                 <td className="px-2 py-2.5 text-right tabular-nums text-[#16357f] dark:text-sky-300">{rupiah(jml.spbj)}</td>
                 <td colSpan={2} />
