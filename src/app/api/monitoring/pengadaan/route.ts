@@ -6,9 +6,16 @@
  *   GET   hanya mengembalikan kolom rekap yang memang untuk dilihat orang
  *         banyak (judul, nomor, jenis, kapal, nilai). Rincian item, vendor,
  *         penerima, foto, catatan anggaran TIDAK ikut keluar.
- *   POST  hanya boleh mengubah 4 hal: No. PR SAP, No. PO SAP, GR/SES, dan
- *         status — dan harus menyertakan kode ubah. Menambah atau menghapus
- *         pengadaan tidak mungkin lewat sini.
+ *   POST  hanya boleh mengubah TIGA hal: No. PO SAP, No. GR/SES, dan status.
+ *         No. PR SAP dikunci — itu nomor terbit dari SAP, jadi patokan yang
+ *         menautkan baris ini ke dokumen aslinya dan tak boleh bergeser dari
+ *         halaman terbuka. Nilai rupiah juga tak bisa disentuh: angkanya
+ *         dihitung dari item pengadaan. Menambah/menghapus pengadaan tidak
+ *         mungkin lewat sini.
+ *
+ * Pengisian sengaja TANPA kode atas keputusan pemilik proses, supaya petugas
+ * bisa langsung mengisi. Penggantinya: pembatas laju per alamat IP dan jejak
+ * waktu tiap perubahan, sehingga penyalahgunaan tetap terlihat dan tertahan.
  *
  * Hanya SPPBJ Pengadaan (kind="sppbj"). SPPBJ Non PR PO sengaja tidak ikut.
  */
@@ -20,7 +27,6 @@ export const dynamic = "force-dynamic";
 
 const URL_SB = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
 const KEY_SB = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const KODE_UBAH = process.env.MONITOR_EDIT_CODE || "";
 
 const sb = () => (URL_SB && KEY_SB ? createClient(URL_SB, KEY_SB) : null);
 
@@ -87,23 +93,40 @@ export async function GET() {
     (b.tanggal || "").localeCompare(a.tanggal || "")
     || a.nama.localeCompare(b.nama, "id")
     || a.id.localeCompare(b.id));
-  return NextResponse.json({ ok: true, baris, bolehUbah: !!KODE_UBAH });
+  return NextResponse.json({ ok: true, baris, bolehUbah: true });
 }
 
 const STATUS_SAH = new Set(["menunggu_spbj", "spbj_terbit", "selesai"]);
 
+/**
+ * Pembatas laju sederhana per alamat IP. Bukan pengganti kata sandi, tapi
+ * menahan penyuntingan borongan: tanpa ini satu skrip bisa menyapu seluruh
+ * baris dalam hitungan detik.
+ */
+const JEJAK = new Map<string, number[]>();
+const JENDELA_MS = 5 * 60 * 1000;
+const BATAS = 40;
+function lajuTerlampaui(ip: string) {
+  const kini = Date.now();
+  const lama = (JEJAK.get(ip) || []).filter((t) => kini - t < JENDELA_MS);
+  lama.push(kini);
+  JEJAK.set(ip, lama);
+  if (JEJAK.size > 500) JEJAK.clear();          // jaga-jaga agar tak menumpuk
+  return lama.length > BATAS;
+}
+
 export async function POST(req: NextRequest) {
-  if (!KODE_UBAH) {
-    return NextResponse.json({ ok: false, error: "Pengubahan dari halaman ini belum diaktifkan." }, { status: 403 });
+  const ip = req.headers.get("x-forwarded-for")?.split(",")[0].trim() || "tak-dikenal";
+  if (lajuTerlampaui(ip)) {
+    return NextResponse.json(
+      { ok: false, error: "Terlalu banyak perubahan dalam waktu singkat. Coba lagi beberapa menit." },
+      { status: 429 });
   }
   const c = sb();
   if (!c) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
-  const { id, kode, noPr, noPo, grSes, status } = body as any;
-  if (kode !== KODE_UBAH) {
-    return NextResponse.json({ ok: false, error: "Kode ubah salah." }, { status: 401 });
-  }
+  const { id, noPo, grSes, status } = body as any;
   if (!id) return NextResponse.json({ ok: false, error: "Baris tak dikenali" }, { status: 400 });
 
   const { data: ada, error: e1 } = await c.from("projects").select("payload").eq("id", id).single();
@@ -112,9 +135,11 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Bukan SPPBJ Pengadaan" }, { status: 400 });
   }
 
-  // hanya empat hal ini yang boleh berubah dari halaman terbuka
+  // hanya tiga hal ini yang boleh berubah dari halaman terbuka.
+  // No. PR SAP sengaja TIDAK ikut walau dikirim — dikunci di sisi server,
+  // bukan sekadar dinonaktifkan di layar, supaya tetap aman bila ada yang
+  // memanggil route ini langsung.
   const payload: any = { ...ada.payload };
-  if (typeof noPr === "string") payload.noPRSAP = noPr.trim();
   if (typeof noPo === "string") payload.noPOSAP = noPo.trim();
   if (typeof status === "string" && STATUS_SAH.has(status)) payload.status = status;
   if (Array.isArray(grSes)) {
@@ -125,6 +150,10 @@ export async function POST(req: NextRequest) {
       tanggal: typeof g?.tanggal === "string" ? g.tanggal.slice(0, 10) : undefined,
     })).filter((g: any) => g.nomor);
   }
+
+  // jejak: kapan dan berapa kali baris ini diubah dari halaman terbuka
+  payload.monitorUbahPada = new Date().toISOString();
+  payload.monitorUbahKe = (Number(payload.monitorUbahKe) || 0) + 1;
 
   const { error: e2 } = await c.from("projects").update({ payload }).eq("id", id);
   if (e2) return NextResponse.json({ ok: false, error: e2.message }, { status: 500 });

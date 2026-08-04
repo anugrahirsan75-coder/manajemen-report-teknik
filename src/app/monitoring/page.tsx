@@ -6,9 +6,10 @@
  * Datanya satu sumber dengan menu SPPBJ Pengadaan di dalam aplikasi: apa yang
  * diinput di sana langsung tampil di sini, dan sebaliknya.
  *
- * Karena terbuka, mengubah data menuntut kode ubah dan hanya menyentuh empat
- * hal: No. PR SAP, No. PO SAP, No. GR/SES, dan status. Menambah atau menghapus
- * pengadaan tetap hanya lewat aplikasi.
+ * Pengisian dari sini tanpa kode, tapi hanya menyentuh tiga hal: No. PO SAP,
+ * No. GR/SES, dan status. No. PR SAP dikunci — itu patokan yang menautkan
+ * baris ini ke dokumen aslinya. Nilai rupiah mengikuti item di aplikasi.
+ * Menambah atau menghapus pengadaan tetap hanya lewat aplikasi.
  */
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
@@ -39,7 +40,6 @@ export default function MonitoringPengadaan() {
   const [baris, setBaris] = useState<Baris[]>([]);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
-  const [bolehUbah, setBolehUbah] = useState(false);
 
   const [cari, setCari] = useState("");
   const [jenis, setJenis] = useState("");
@@ -57,7 +57,7 @@ export default function MonitoringPengadaan() {
       const d = await r.json();
       if (!d.ok) setGalat(d.error || "Gagal memuat");
       else {
-        setBaris(d.baris); setBolehUbah(!!d.bolehUbah);
+        setBaris(d.baris);
         setWaktuMuat(new Date().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }));
       }
     } catch (e: any) { setGalat(e?.message || String(e)); }
@@ -265,8 +265,8 @@ export default function MonitoringPengadaan() {
         </p>
         <p className="text-[11px] text-slate-400 mt-1.5">
           Halaman ini hanya memuat <b>SPPBJ Pengadaan</b> (SPPBJ Non PR PO tidak termasuk).
-          Petugas teknik dapat mengisi No. PO SAP &amp; No. GR/SES lewat tombol <b>✏️ Isi Nomor</b>
-          (perlu kode), atau masuk ke{" "}
+          Petugas teknik dapat mengisi No. PO SAP &amp; No. GR/SES langsung lewat tombol <b>✏️ Isi Nomor</b> —
+          hasilnya seketika tampil juga di aplikasi. No. PR SAP terkunci. Untuk input lengkap, masuk ke{" "}
           <a href="/login" className="text-[#1ca3dd] hover:underline">aplikasi Manajemen Report Teknik</a>{" "}
           untuk input lengkap.
         </p>
@@ -274,7 +274,7 @@ export default function MonitoringPengadaan() {
 
       {lihat && <DialogLihat baris={lihat} onTutup={() => setLihat(null)} />}
 
-      {ubah && <DialogUbah baris={ubah} bolehUbah={bolehUbah} onTutup={() => setUbah(null)} onSelesai={(b) => {
+      {ubah && <DialogUbah baris={ubah} onTutup={() => setUbah(null)} onSelesai={(b) => {
         setBaris((p) => p.map((x) => (x.id === b.id ? b : x)));
         setUbah(null);
       }} />}
@@ -355,13 +355,9 @@ function Kartu({ label, nilai, ket, warna = "text-slate-800" }: { label: string;
  * masih dibuka. Yang boleh diubah hanya nomor-nomor SAP dan status — nilai
  * rupiah tetap ikut item di aplikasi supaya tak bisa dikarang dari luar.
  */
-function DialogUbah({ baris, bolehUbah, onTutup, onSelesai }: {
-  baris: Baris; bolehUbah: boolean; onTutup: () => void; onSelesai: (b: Baris) => void;
+function DialogUbah({ baris, onTutup, onSelesai }: {
+  baris: Baris; onTutup: () => void; onSelesai: (b: Baris) => void;
 }) {
-  const [kode, setKode] = useState(() => {
-    try { return sessionStorage.getItem("monitor_kode") || ""; } catch { return ""; }
-  });
-  const [noPr, setNoPr] = useState(baris.noPr);
   const [noPo, setNoPo] = useState(baris.noPo);
   const [status, setStatus] = useState(baris.status);
   const [gr, setGr] = useState<GrSesRekap[]>(baris.grSes.length ? baris.grSes : [{ termin: null, nomor: "", tanggal: "" }]);
@@ -373,11 +369,10 @@ function DialogUbah({ baris, bolehUbah, onTutup, onSelesai }: {
     try {
       const r = await fetch("/api/monitoring/pengadaan", {
         method: "POST", headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id: baris.id, kode, noPr, noPo, status, grSes: gr.filter((g) => g.nomor.trim()) }),
+        body: JSON.stringify({ id: baris.id, noPo, status, grSes: gr.filter((g) => g.nomor.trim()) }),
       });
       const d = await r.json();
       if (!d.ok) { setGalat(d.error || `Gagal (${r.status})`); return; }
-      try { sessionStorage.setItem("monitor_kode", kode); } catch {}
       onSelesai({ ...baris, ...d.baris });
     } catch (e: any) { setGalat(e?.message || String(e)); }
     finally { setSibuk(false); }
@@ -392,31 +387,16 @@ function DialogUbah({ baris, bolehUbah, onTutup, onSelesai }: {
         </div>
 
         <div className="p-5 space-y-3">
-          {!bolehUbah && (
-            <div className="text-[11px] text-amber-900 bg-amber-50 ring-1 ring-amber-200 rounded-lg px-3 py-2.5 leading-relaxed">
-              <b>Pengisian dari halaman ini belum diaktifkan.</b> Yang perlu dilakukan sekali saja oleh
-              pengelola: di Vercel → project → Settings → Environment Variables, tambah{" "}
-              <code className="bg-white px-1 rounded">MONITOR_EDIT_CODE</code> berisi kode pilihan sendiri,
-              lalu Redeploy. Sesudah itu tombol ini langsung bisa dipakai.
-              <br />Sementara itu, pengisian tetap bisa lewat aplikasi Manajemen Report Teknik →
-              SPPBJ Pengadaan — hasilnya otomatis tampil di halaman ini.
-            </div>
-          )}
-          <label className="block">
-            <span className="text-[11px] font-semibold text-slate-600">Kode ubah</span>
-            <input type="password" value={kode} onChange={(e) => setKode(e.target.value)} autoFocus disabled={!bolehUbah}
-              placeholder="minta ke Manajer Teknik"
-              className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm" />
-          </label>
           <div className="grid sm:grid-cols-2 gap-3">
             <label className="block">
               <span className="text-[11px] font-semibold text-slate-600">No. PR SAP</span>
-              <input value={noPr} onChange={(e) => setNoPr(e.target.value)}
-                className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums" />
+              <input value={baris.noPr} readOnly title="No. PR SAP terbit dari SAP dan menjadi patokan baris ini — tak bisa diubah dari sini"
+                className="mt-1 w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm tabular-nums text-slate-500" />
+              <span className="text-[10px] text-slate-400">terkunci — patokan ke dokumen aslinya</span>
             </label>
             <label className="block">
               <span className="text-[11px] font-semibold text-slate-600">No. PO SAP</span>
-              <input value={noPo} onChange={(e) => setNoPo(e.target.value)} placeholder="4500012345"
+              <input value={noPo} onChange={(e) => setNoPo(e.target.value)} placeholder="4500012345" autoFocus
                 className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm tabular-nums" />
             </label>
           </div>
@@ -458,15 +438,16 @@ function DialogUbah({ baris, bolehUbah, onTutup, onSelesai }: {
           </label>
 
           <p className="text-[11px] text-slate-500">
-            Nilai rupiah tidak diubah dari sini — angkanya mengikuti item di aplikasi supaya tetap bisa
-            ditelusuri.
+            Perubahan langsung tersimpan dan seketika tampil di menu <b>SPPBJ Pengadaan</b> aplikasi —
+            begitu pula sebaliknya. Nilai rupiah tak diubah dari sini; angkanya mengikuti item pengadaan
+            supaya tetap bisa ditelusuri.
           </p>
           {galat && <p className="text-xs text-rose-800 bg-rose-50 ring-1 ring-rose-200 rounded-lg px-3 py-2">{galat}</p>}
         </div>
 
         <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2">
           <button onClick={onTutup} className="btn btn-ghost text-xs">Batal</button>
-          <button onClick={simpan} disabled={sibuk || !kode || !bolehUbah} className="btn btn-primary text-xs px-4 disabled:opacity-40">
+          <button onClick={simpan} disabled={sibuk} className="btn btn-primary text-xs px-4 disabled:opacity-40">
             {sibuk ? "Menyimpan…" : "Simpan"}
           </button>
         </div>
