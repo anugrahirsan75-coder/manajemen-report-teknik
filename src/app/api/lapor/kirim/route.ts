@@ -12,7 +12,8 @@
  * daftar yang dibaca kantor.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { randomUUID } from "crypto";
+import { dbLapor, dbSiap } from "@/lib/lapor/db";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import { JENIS_LAPOR } from "@/lib/lapor/types";
 import { lajuTerlampaui, ipDari } from "@/lib/lapor/laju";
@@ -20,13 +21,11 @@ import { lajuTerlampaui, ipDari } from "@/lib/lapor/laju";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const URL_SB = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const KEY_SB = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 const teks = (v: any, maks: number) => String(v ?? "").replace(/\s+/g, " ").trim().slice(0, maks);
 
 export async function POST(req: NextRequest) {
-  if (!URL_SB || !KEY_SB) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
+  if (!dbSiap()) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
   if (lajuTerlampaui(ipDari(req), 15)) {
     return NextResponse.json(
       { ok: false, error: "Terlalu banyak kiriman dari perangkat ini. Coba lagi beberapa menit." },
@@ -52,7 +51,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Nama pengirim wajib diisi" }, { status: 400 });
   }
 
-  const token = `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 12)}`;
+  // Token dibuat dengan pembangkit acak kriptografis. Date.now()+Math.random()
+  // dapat ditebak oleh siapa pun yang tahu kira-kira kapan kiriman dibuat.
+  const token = randomUUID().replace(/-/g, "");
   const payload = {
     kind: "lapor_kapal",
     kapal, jenis, periode, pengirim,
@@ -63,15 +64,19 @@ export async function POST(req: NextRequest) {
     dikirimPada: new Date().toISOString(),
     status: "baru",
     tindakLanjut: "",
+    /** diisi halaman ABK bila unggahan gagal — supaya sebabnya terlihat di kantor */
+    galatUnggah: "",
     token,
   };
 
-  const c = createClient(URL_SB, KEY_SB);
+  const c = dbLapor()!;
   const { data, error } = await c.from("projects")
     .insert({ nama_kapal: kapal, tahun: +periode.slice(0, 4), payload })
     .select("id").single();
   if (error || !data) {
-    return NextResponse.json({ ok: false, error: error?.message || "Gagal menyimpan" }, { status: 500 });
+    // Pesan mentah basis data tidak dibocorkan ke halaman terbuka.
+    console.error("lapor/kirim gagal simpan:", error?.message);
+    return NextResponse.json({ ok: false, error: "Kiriman gagal dibuka di server. Coba lagi sebentar." }, { status: 500 });
   }
   return NextResponse.json({ ok: true, id: data.id, token });
 }

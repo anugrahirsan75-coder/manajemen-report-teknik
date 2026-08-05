@@ -9,7 +9,8 @@
  * kebutuhan kapal.
  */
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import {
   BerkasLapor, JENIS_LAPOR, KirimanLapor, STATUS_LAPOR, bulanIndo, labelJenis, singkatJenis,
@@ -22,7 +23,7 @@ const labelStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.label |
 const waktuSingkat = (iso: string) =>
   iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
 
-export default function PermintaanLaporanKapal() {
+function IsiPermintaanLaporanKapal() {
   const [baris, setBaris] = useState<KirimanLapor[]>([]);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
@@ -34,6 +35,7 @@ export default function PermintaanLaporanKapal() {
   const [buka, setBuka] = useState<KirimanLapor | null>(null);
   const [hapusBerkasId, setHapusBerkasId] = useState("");
   const [salin, setSalin] = useState("");
+  const sp = useSearchParams();
 
   const ambil = async () => {
     setMuat(true); setGalat("");
@@ -60,23 +62,47 @@ export default function PermintaanLaporanKapal() {
     return cari.toLowerCase().split(/\s+/).filter(Boolean).every((k) => t.includes(k));
   }), [baris, kapal, jenis, status, periode, cari]);
 
-  // matriks kelengkapan: kapal × jenis untuk satu periode
-  const periodeMatriks = periode || periodeAda[0] || new Date().toISOString().slice(0, 7);
+  /**
+   * Periode rekap punya state sendiri dan bawaannya BULAN BERJALAN. Sebelumnya
+   * ia mengekor periode terbaru di data, sehingga satu ABK yang salah memilih
+   * bulan membuat seluruh armada tampak belum menyetor.
+   */
+  const [periodeRekap, setPeriodeRekap] = useState(() => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+  });
+  const periodeMatriks = periodeRekap;
+
+  // Kelengkapan diukur dari BERKAS yang sampai, bukan dari adanya catatan
+  // kiriman. Kiriman yang berkasnya gagal naik tidak boleh tampil hijau —
+  // itu justru membuat kantor mengira dokumen sudah ada padahal Drive kosong.
   const matriks = useMemo(() => {
     const peta = new Map<string, KirimanLapor[]>();
-    baris.filter((b) => b.periode === periodeMatriks).forEach((b) => {
+    baris.filter((b) => b.periode === periodeMatriks && b.berkas.length > 0).forEach((b) => {
       const k = `${b.kapal}|${b.jenis}`;
       peta.set(k, [...(peta.get(k) || []), b]);
     });
     return peta;
   }, [baris, periodeMatriks]);
 
+  /** kiriman yang catatannya ada tapi berkasnya tidak pernah sampai */
+  const gagalKirim = useMemo(
+    () => baris.filter((b) => b.periode === periodeMatriks && b.berkas.length === 0),
+    [baris, periodeMatriks]);
+
   const ubah = async (id: string, patch: Partial<KirimanLapor>) => {
-    const r = await fetch("/api/lapor/daftar", {
-      method: "PATCH", headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id, ...patch }),
-    });
-    const d = await r.json();
+    let d: any;
+    try {
+      const r = await fetch("/api/lapor/daftar", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id, ...patch }),
+      });
+      d = await r.json();
+    } catch (e: any) {
+      // Tanpa ini, catatan tindak lanjut hilang diam-diam saat jaringan putus.
+      setGalat(e?.message || "Perubahan gagal disimpan. Periksa koneksi lalu ulangi.");
+      return;
+    }
     if (!d.ok) { setGalat(d.error || "Gagal menyimpan"); return; }
     setBaris((l) => l.map((x) => (x.id === id ? d.baris : x)));
     setBuka((x) => (x && x.id === id ? d.baris : x));
@@ -89,8 +115,11 @@ export default function PermintaanLaporanKapal() {
   };
 
   // Klik notifikasi lonceng membawa pengguna langsung ke kiriman yang tepat.
+  // Alamatnya dibaca lewat useSearchParams supaya tetap bekerja ketika petugas
+  // SUDAH berada di halaman ini — window.location tidak memicu efek apa pun
+  // saat Next hanya mengganti query tanpa memuat ulang halaman.
   useEffect(() => {
-    const id = new URLSearchParams(window.location.search).get("buka");
+    const id = sp.get("buka");
     if (!id) return;
     const ditemukan = baris.find((b) => b.id === id);
     if (!ditemukan) return;
@@ -98,7 +127,7 @@ export default function PermintaanLaporanKapal() {
     bukaKiriman(ditemukan);
     // URL dibersihkan sebelum status diperbarui, sehingga efek tidak berulang.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [baris]);
+  }, [baris, sp]);
 
   const hapus = async (b: KirimanLapor) => {
     if (!(await konfirmasi({
@@ -107,8 +136,14 @@ export default function PermintaanLaporanKapal() {
       rincian: ["Catatan kiriman akan dihapus dari rekap kantor.", "Berkas di Google Drive tidak ikut terhapus."],
       tombolYa: "Hapus catatan",
     }))) return;
-    const r = await fetch(`/api/lapor/daftar?id=${b.id}`, { method: "DELETE" });
-    const d = await r.json();
+    let d: any;
+    try {
+      const r = await fetch(`/api/lapor/daftar?id=${b.id}`, { method: "DELETE" });
+      d = await r.json();
+    } catch (e: any) {
+      setGalat(e?.message || "Kiriman gagal dihapus. Periksa koneksi lalu ulangi.");
+      return;
+    }
     if (!d.ok) { setGalat(d.error || "Gagal menghapus"); return; }
     setBaris((l) => l.filter((x) => x.id !== b.id));
     setBuka(null);
@@ -234,8 +269,9 @@ export default function PermintaanLaporanKapal() {
             </div>
             <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 shadow-sm dark:bg-slate-800 dark:ring-slate-700">
               <span className="text-slate-400">Periode</span>
-              <select value={periodeMatriks} onChange={(e) => setPeriode(e.target.value)} className="bg-transparent font-bold text-[#16357f] outline-none dark:text-sky-300">
-                {periodeAda.length ? periodeAda.map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>) : <option value={periodeMatriks}>{bulanIndo(periodeMatriks)}</option>}
+              <select value={periodeMatriks} onChange={(e) => setPeriodeRekap(e.target.value)} className="bg-transparent font-bold text-[#16357f] outline-none dark:text-sky-300">
+                {(periodeAda.includes(periodeMatriks) ? periodeAda : [periodeMatriks, ...periodeAda])
+                  .map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>)}
               </select>
             </label>
           </div>
@@ -247,7 +283,25 @@ export default function PermintaanLaporanKapal() {
             <KpiRekap ikon="📎" label="Berkas Drive" nilai={String(ringkas.berkas)} ket="lampiran tersimpan" warna="amber" />
           </div>
 
-          <div className="mt-3 flex items-center gap-3">
+          {gagalKirim.length > 0 && (
+        <button
+          onClick={() => { setStatus(""); setPeriode(periodeMatriks); setCari(""); setKapal(""); setJenis(""); }}
+          className="anim-in mb-4 flex w-full flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-left shadow-sm transition hover:border-amber-300 dark:border-amber-900 dark:bg-amber-950/30">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500 text-lg text-white">⚠</span>
+          <span className="flex-1">
+            <span className="block text-xs font-extrabold text-amber-900 dark:text-amber-200">
+              {gagalKirim.length} kiriman {bulanIndo(periodeMatriks)} tidak membawa berkas
+            </span>
+            <span className="block text-[10px] text-amber-800 dark:text-amber-300">
+              Unggahan ABK putus di tengah jalan. Kiriman ini TIDAK dihitung sebagai dokumen diterima.
+              {gagalKirim[0]?.galatUnggah ? ` Sebab terakhir: ${gagalKirim[0].galatUnggah}` : ""}
+            </span>
+          </span>
+          <span className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300">LIHAT →</span>
+        </button>
+      )}
+
+      <div className="mt-3 flex items-center gap-3">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 dark:bg-slate-700 dark:ring-slate-600">
               <div className="h-full rounded-full bg-gradient-to-r from-[#14b8c4] via-[#1ca3dd] to-[#16357f] transition-all duration-500" style={{ width: `${ringkas.persen}%` }} />
             </div>
@@ -390,7 +444,12 @@ export default function PermintaanLaporanKapal() {
                     {b.catatan && <p className="mt-1.5 line-clamp-1 text-xs text-slate-500">{b.catatan}</p>}
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className="rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">📎 {b.berkas.length} berkas</span>
+                    <span className={`rounded-lg px-2.5 py-1.5 text-[11px] font-semibold ring-1 ${
+                      b.berkas.length
+                        ? "bg-slate-50 text-slate-600 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700"
+                        : "bg-amber-50 text-amber-800 ring-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-900"}`}>
+                      {b.berkas.length ? `📎 ${b.berkas.length} berkas` : "⚠ belum ada berkas"}
+                    </span>
                     <button onClick={() => bukaKiriman(b)} className="btn btn-primary text-xs">Buka detail →</button>
                   </div>
                 </div>
@@ -443,7 +502,13 @@ export default function PermintaanLaporanKapal() {
 
               <div>
                 <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Berkas di Google Drive</div>
-                {!buka.berkas.length ? <p className="text-sm text-slate-500">Tidak ada berkas.</p> : (
+                {!buka.berkas.length ? (
+                  <div className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:ring-amber-900">
+                    <b>Belum ada berkas yang sampai.</b> Unggahan ABK terputus sebelum selesai.
+                    {buka.galatUnggah && <span className="mt-1 block text-xs">Sebab terakhir: {buka.galatUnggah}</span>}
+                    <span className="mt-1 block text-xs">Minta pengirim membuka kembali tautan Lapor Kapal dan menekan kirim ulang.</span>
+                  </div>
+                ) : (
                   <ul className="space-y-1.5">
                     {buka.berkas.map((f) => (
                       <li key={f.fileId} className="flex items-center gap-2 bg-slate-50 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm">
@@ -480,9 +545,14 @@ export default function PermintaanLaporanKapal() {
               </div>
 
               <div className="flex flex-wrap gap-2 pt-1">
-                <a href={tautanWa(`Halo ${buka.pengirim}, ${labelJenis(buka.jenis)} ${buka.kapal} periode ${bulanIndo(buka.periode)} sudah kami terima.`)}
-                   target="_blank" rel="noopener noreferrer"
-                   className="rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-4 py-2.5">💬 Balas lewat WA</a>
+                {/* tautanWa() menuju nomor KANTOR — untuk membalas pengirim, yang
+                    dipakai harus nomornya sendiri. Kalau tidak ada, tombolnya
+                    tidak ditampilkan daripada menelepon diri sendiri. */}
+                {buka.kontak && (
+                  <a href={`https://wa.me/${buka.kontak.replace(/\D/g, "").replace(/^0/, "62")}?text=${encodeURIComponent(`Halo ${buka.pengirim}, ${labelJenis(buka.jenis)} ${buka.kapal} periode ${bulanIndo(buka.periode)} sudah kami terima.`)}`}
+                     target="_blank" rel="noopener noreferrer"
+                     className="rounded-xl bg-green-600 hover:bg-green-700 text-white text-sm font-bold px-4 py-2.5">💬 Balas ke pengirim</a>
+                )}
                 <button onClick={() => hapus(buka)}
                   className="rounded-xl bg-white ring-1 ring-rose-300 text-rose-700 hover:bg-rose-50 text-sm font-bold px-4 py-2.5">
                   Hapus catatan
@@ -516,5 +586,16 @@ function KpiRekap({ ikon, label, nilai, ket, warna }: {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * useSearchParams menuntut batas Suspense saat halaman dirender di server.
+ */
+export default function PermintaanLaporanKapal() {
+  return (
+    <Suspense fallback={<main className="mx-auto max-w-7xl px-4 py-10 text-slate-500">Memuat…</main>}>
+      <IsiPermintaanLaporanKapal />
+    </Suspense>
   );
 }

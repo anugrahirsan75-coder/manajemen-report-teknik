@@ -56,7 +56,12 @@ export interface KirimanLapor {
   status: StatusLapor;
   /** catatan internal dari kantor — tidak pernah keluar ke halaman terbuka */
   tindakLanjut: string;
+  /** sebab kegagalan unggahan terakhir, diisi halaman ABK; kosong bila lancar */
+  galatUnggah: string;
 }
+
+/** kiriman yang catatannya ada tapi berkasnya tidak pernah sampai */
+export const kirimanGagal = (k: { berkas: unknown[] }) => k.berkas.length === 0;
 
 /** nomor WA kantor untuk konfirmasi kiriman (format internasional tanpa +) */
 export const WA_KONFIRMASI = "6281994892686";

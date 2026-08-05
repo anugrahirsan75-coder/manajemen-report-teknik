@@ -7,15 +7,12 @@
  * dan tidak perlu ikut beredar.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { dbLapor, dbSiap } from "@/lib/lapor/db";
 import { KirimanLapor, STATUS_LAPOR } from "@/lib/lapor/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const URL_SB = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const KEY_SB = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-const sb = () => (URL_SB && KEY_SB ? createClient(URL_SB, KEY_SB) : null);
 
 function keKiriman(row: any): KirimanLapor {
   const p = row.payload || {};
@@ -32,11 +29,12 @@ function keKiriman(row: any): KirimanLapor {
     dikirimPada: p.dikirimPada || "",
     status: p.status || "baru",
     tindakLanjut: p.tindakLanjut || "",
+    galatUnggah: p.galatUnggah || "",
   };
 }
 
 export async function GET() {
-  const c = sb();
+  const c = dbLapor();
   if (!c) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
   const { data, error } = await c.from("projects")
     .select("id,nama_kapal,payload")
@@ -50,7 +48,7 @@ export async function GET() {
 
 /** ubah status / catatan tindak lanjut — hanya dari dalam aplikasi */
 export async function PATCH(req: NextRequest) {
-  const c = sb();
+  const c = dbLapor();
   if (!c) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
   const { id, status, tindakLanjut } = await req.json().catch(() => ({} as any));
   if (!id) return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 400 });
@@ -60,11 +58,20 @@ export async function PATCH(req: NextRequest) {
   const p: any = ada.payload || {};
   if (p.kind !== "lapor_kapal") return NextResponse.json({ ok: false, error: "Bukan kiriman kapal" }, { status: 400 });
 
-  if (typeof status === "string" && STATUS_LAPOR.some((s) => s.id === status)) p.status = status;
-  if (typeof tindakLanjut === "string") p.tindakLanjut = tindakLanjut.slice(0, 1000);
+  // Hanya dua medan ini yang boleh berubah, dan payload dibaca ULANG sesaat
+  // sebelum ditulis. Kalau tidak, berkas yang baru selesai diunggah ABK bisa
+  // terhapus dari rekap hanya karena kantor menyimpan catatan tindak lanjut.
+  const { data: kini } = await c.from("projects").select("payload").eq("id", id).single();
+  const pTulis: any = kini?.payload || p;
+  if (typeof status === "string" && STATUS_LAPOR.some((s) => s.id === status)) pTulis.status = status;
+  if (typeof tindakLanjut === "string") pTulis.tindakLanjut = tindakLanjut.slice(0, 2000);
+  Object.assign(p, pTulis);
 
-  const { error: e2 } = await c.from("projects").update({ payload: p }).eq("id", id);
-  if (e2) return NextResponse.json({ ok: false, error: e2.message }, { status: 500 });
+  const { error: e2 } = await c.from("projects").update({ payload: pTulis }).eq("id", id);
+  if (e2) {
+    console.error("lapor/daftar PATCH:", e2.message);
+    return NextResponse.json({ ok: false, error: "Perubahan gagal disimpan. Coba lagi." }, { status: 500 });
+  }
   return NextResponse.json({ ok: true, baris: keKiriman({ id, nama_kapal: p.kapal, payload: p }) });
 }
 
@@ -74,7 +81,7 @@ export async function PATCH(req: NextRequest) {
  * berkasnya memang mau dibuang, hapus langsung dari folder Drive.
  */
 export async function DELETE(req: NextRequest) {
-  const c = sb();
+  const c = dbLapor();
   if (!c) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
   const id = req.nextUrl.searchParams.get("id");
   if (!id) return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 400 });
@@ -83,6 +90,9 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Bukan kiriman kapal" }, { status: 400 });
   }
   const { error } = await c.from("projects").delete().eq("id", id);
-  if (error) return NextResponse.json({ ok: false, error: error.message }, { status: 500 });
+  if (error) {
+    console.error("lapor/daftar DELETE:", error.message);
+    return NextResponse.json({ ok: false, error: "Kiriman gagal dihapus. Coba lagi." }, { status: 500 });
+  }
   return NextResponse.json({ ok: true });
 }

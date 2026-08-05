@@ -41,7 +41,16 @@ export function usePengingat() {
     try {
       const { data } = await supabase.from("projects").select("id,payload")
         .or(KINDS.map((k) => `payload->>kind.eq.${k}`).join(","));
-      const rows = (data || []).map((r: any) => r.payload ? { ...r.payload, __rowId: r.id } : null).filter(Boolean);
+      // Payload kiriman kapal membawa token pengirim. Token itu tidak ada
+      // gunanya bagi lonceng dan tidak boleh ikut mengendap di localStorage
+      // peramban kantor, jadi dibuang begitu data sampai.
+      const rows = (data || [])
+        .map((r: any) => {
+          if (!r.payload) return null;
+          const { token, ...sisa } = r.payload as Record<string, unknown>;
+          return { ...sisa, __rowId: r.id };
+        })
+        .filter(Boolean);
       const hasil = susun(rows);
       setList(hasil);
       setWaktu(new Date().toLocaleTimeString("id-ID"));

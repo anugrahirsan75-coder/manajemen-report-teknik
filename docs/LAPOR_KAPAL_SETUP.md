@@ -69,8 +69,9 @@ supaya isi folder tetap terbaca walau dibuka langsung dari Drive.
 - Tombol **Hapus** pada satu dokumen memindahkan dokumen tersebut ke Sampah
   Google Drive dan menghapus tautannya dari rekap. Penghapusan dibatasi hanya
   untuk dokumen yang berada di bawah `ROOT_FOLDER_ID`.
-- Batas: 12 berkas per kiriman, 12 MB per berkas, dan 15 kiriman per 10 menit
-  dari satu alamat IP. Foto dikecilkan otomatis di HP pengirim (sisi lebar
+- Batas: 12 berkas per kiriman, **35 MB per berkas**, dan 15 kiriman per 10 menit
+  dari satu alamat IP. Angka 35 MB ini terikat pada `BATAS_MB` di Apps Script —
+  ubah keduanya bersamaan kalau mau digeser. Foto dikecilkan otomatis di HP pengirim (sisi lebar
   maks 1600 px) supaya hemat kuota kapal.
 - Konfirmasi ABK diarahkan ke WhatsApp kantor (+62 819-9489-2686) dengan pesan
   yang sudah terisi otomatis. Nomornya diatur di `src/lib/lapor/types.ts`
@@ -79,3 +80,53 @@ supaya isi folder tetap terbaca walau dibuka langsung dari Drive.
 > Setelah memperbarui `docs/lapor-apps-script.gs`, pilih **Deploy → Manage
 > deployments → Edit → New version → Deploy**. URL `/exec` tetap sama, tetapi
 > versi baru wajib diterbitkan agar tombol hapus dokumen dapat bekerja.
+
+## Kalau ABK melapor "gagal kirim"
+
+Urutan pemeriksaan, dari yang paling sering:
+
+1. **Apps Script masih versi lama.** Berkas kecil masuk, berkas besar ditolak.
+   Buka `/exec` di peramban: jawabannya harus memuat `"versi":3`. Kalau tidak,
+   terbitkan versi baru (Deploy → Kelola deployment → pensil → Versi baru).
+2. **Lihat kirimannya di menu Permintaan & Laporan Kapal.** Kiriman yang
+   berkasnya tidak sampai ditandai "⚠ belum ada berkas", dan sebab kegagalan
+   terakhir yang dilaporkan ponsel ikut tercatat di panel rinciannya.
+3. **Sinyal kapal.** Unggahan sekarang melanjutkan dari potongan terakhir yang
+   sudah sampai, jadi ABK cukup menekan "Coba lagi" — berkas tidak diulang dari
+   awal, dan isian borang tidak perlu diketik ulang.
+4. **Jenis berkas.** PDF, foto (termasuk HEIC iPhone), Word, Excel, CSV.
+   Jenisnya ditentukan dari ekstensi nama berkas, jadi berkas yang jenisnya
+   tidak dikenali ponsel tetap diterima selama namanya berakhiran benar.
+
+## Mengunci basis data (disarankan, butuh tindakan pemilik)
+
+Kunci `NEXT_PUBLIC_SUPABASE_ANON_KEY` ikut terkirim ke setiap peramban yang
+membuka aplikasi — memang begitu sifatnya. Selama kebijakan RLS tabel
+`projects` masih mengizinkan `anon` membaca dan menulis apa saja, kunci itu
+sama dengan akses penuh ke seluruh data cabang: gerbang login bisa dilewati
+dengan memanggil REST Supabase langsung.
+
+Route Lapor Kapal sudah siap dipindahkan ke kunci server. Langkahnya:
+
+1. Supabase → Project Settings → API → salin **service_role key**.
+2. Isi env di Vercel (dan `.env.local`) — **tanpa awalan NEXT_PUBLIC**:
+
+   ```
+   SUPABASE_SERVICE_ROLE_KEY=<service role key>
+   ```
+
+3. Supabase → SQL editor, jalankan:
+
+   ```sql
+   alter table projects enable row level security;
+   drop policy if exists "anon full access" on projects;
+   -- tidak ada policy untuk anon = anon tidak bisa apa-apa;
+   -- service_role melewati RLS, jadi aplikasi tetap jalan.
+   ```
+
+4. Redeploy, lalu periksa: halaman aplikasi tetap normal, sedangkan memanggil
+   `https://<proyek>.supabase.co/rest/v1/projects?select=*` dengan kunci anon
+   harus mengembalikan daftar kosong.
+
+Selama env itu belum diisi, aplikasi tetap berjalan seperti sebelumnya memakai
+kunci anon — tidak ada yang rusak, hanya belum terkunci.

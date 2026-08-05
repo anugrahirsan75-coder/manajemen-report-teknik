@@ -15,6 +15,10 @@
  *     (Jalankan sekali dari editor supaya muncul izin akses Drive.)
  *  5. Salin URL /exec -> env LAPOR_GAS_URL. SECRET -> env LAPOR_GAS_SECRET.
  *
+ * SETIAP kali kode ini diperbarui: Deploy -> Kelola deployment -> pensil ->
+ * Versi baru -> Terapkan. URL /exec tidak berubah, tapi versi lama akan terus
+ * dilayani sampai langkah itu dilakukan.
+ *
  * "Anyone with the link" hanya berarti URL ini bisa dipanggil siapa saja;
  * tanpa SECRET yang cocok, permintaan ditolak dan tidak ada berkas yang masuk.
  */
@@ -23,7 +27,7 @@ var SECRET = "GANTI_SECRET_INI_SAMA_DENGAN_ENV";     // harus sama dgn LAPOR_GAS
 var ROOT_FOLDER_ID = "1EnJybY92LUhmMGg72uBztJlPJR2-OxQj"; // folder Drive tujuan
 var BAGIKAN_LINK = false;   // true = berkas bisa dibuka siapa pun yang punya tautan.
                             // Biarkan false: berkas tetap milik & hanya terlihat oleh pemilik Drive.
-var BATAS_MB = 50;          // tolak berkas lebih besar dari ini
+var BATAS_MB = 35;          // tolak berkas lebih besar dari ini (harus sama dgn batas di aplikasi)
 var FOLDER_POTONGAN = "_potongan sementara"; // tempat singgah potongan berkas besar
 
 var LABEL = {
@@ -34,45 +38,51 @@ var LABEL = {
 };
 
 function doGet() {
-  return json({ ok: true, msg: "Penerima berkas kapal aktif" });
+  return json({ ok: true, msg: "Penerima berkas kapal aktif", versi: 3 });
 }
 
 function doPost(e) {
   try {
     var body = JSON.parse((e.postData && e.postData.contents) || "{}");
-    if (SECRET && body.secret !== SECRET) return json({ ok: false, error: "secret salah" });
+    // SECRET kosong TIDAK berarti bebas masuk. Kalau pemasangan belum selesai,
+    // lebih baik semua ditolak daripada Drive pemilik terbuka untuk siapa saja.
+    if (!SECRET || SECRET === "GANTI_SECRET_INI_SAMA_DENGAN_ENV" || body.secret !== SECRET) {
+      return json({ ok: false, error: "secret salah" });
+    }
 
-    // Berkas besar datang terpotong-potong (batas ukuran satu permintaan di
-    // hosting aplikasi jauh lebih kecil dari berkas kapal). Potongan disimpan
-    // sementara, lalu disatukan saat potongan terakhir tiba.
     if (body.aksi === "potongan") return terimaPotongan(body);
+    if (body.aksi === "status") return statusPotongan(body);
     if (body.aksi === "hapus") return hapusBerkas(body);
 
     var b64 = String(body.dataBase64 || "");
     if (!b64) return json({ ok: false, error: "berkas kosong" });
-    // panjang base64 -> perkiraan ukuran asli
-    if (b64.length * 0.75 > BATAS_MB * 1024 * 1024) return json({ ok: false, error: "berkas lebih dari " + BATAS_MB + " MB" });
+    if (b64.length * 0.75 > BATAS_MB * 1024 * 1024) {
+      return json({ ok: false, error: "berkas lebih dari " + BATAS_MB + " MB" });
+    }
 
-    var kapal = bersih(body.kapal) || "TANPA KAPAL";
-    var jenis = String(body.jenis || "lainnya");
-    var folder = subFolder(subFolder(DriveApp.getFolderById(ROOT_FOLDER_ID), kapal), LABEL[jenis] || jenis);
-
-    var blob = Utilities.newBlob(Utilities.base64Decode(b64), body.mime || "application/octet-stream", namaBerkas(body));
-    var file = folder.createFile(blob);
-    if (body.catatan) file.setDescription(String(body.catatan).slice(0, 500));
-    if (BAGIKAN_LINK) file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    var folder = folderTujuan(body);
+    var file = folder.createFile(
+      Utilities.newBlob(Utilities.base64Decode(b64), mimeAman(body), namaBerkas(body)));
+    hiasBerkas(file, body);
 
     return json({
-      ok: true,
-      fileId: file.getId(),
-      url: file.getUrl(),
-      nama: file.getName(),
-      ukuran: file.getSize(),
-      folder: folder.getUrl(),
+      ok: true, selesai: true,
+      fileId: file.getId(), url: file.getUrl(), nama: file.getName(),
+      ukuran: file.getSize(), folder: folder.getUrl(),
     });
   } catch (err) {
-    return json({ ok: false, error: String(err) });
+    // Galat Drive yang sifatnya sesaat (sibuk, kuota sesaat, batas waktu) harus
+    // ditandai supaya aplikasi tahu unggahan itu layak diulang, bukan digagalkan.
+    return json({ ok: false, error: String(err), sementara: galatSesaat(err) });
   }
+}
+
+function galatSesaat(err) {
+  var t = String(err || "").toLowerCase();
+  return t.indexOf("timed out") >= 0 || t.indexOf("timeout") >= 0
+    || t.indexOf("try again") >= 0 || t.indexOf("temporar") >= 0
+    || t.indexOf("service") >= 0 || t.indexOf("unavailable") >= 0
+    || t.indexOf("internal error") >= 0 || t.indexOf("rate") >= 0;
 }
 
 /**
@@ -83,7 +93,15 @@ function hapusBerkas(body) {
   var fileId = String(body.fileId || "").trim();
   if (!fileId) return json({ ok: false, error: "fileId kosong" });
 
-  var file = DriveApp.getFileById(fileId);
+  var file;
+  try {
+    file = DriveApp.getFileById(fileId);
+  } catch (err) {
+    // Sudah dihapus atau dipindah manual dari Drive. Anggap selesai, supaya
+    // catatannya tetap bisa dibersihkan dari rekap kantor.
+    return json({ ok: true, fileId: fileId, sudahTiada: true });
+  }
+  if (file.isTrashed()) return json({ ok: true, fileId: fileId, sudahTiada: true });
   if (!beradaDiFolderLaporan(file)) {
     return json({ ok: false, error: "berkas berada di luar folder laporan" });
   }
@@ -112,52 +130,133 @@ function beradaDiFolderLaporan(file) {
 }
 
 /**
+ * Potongan mana saja yang sudah tersimpan untuk satu unggahan.
+ * Dipakai halaman ABK untuk MELANJUTKAN unggahan yang putus di tengah jalan,
+ * bukan mengulang berkas dari potongan pertama.
+ */
+function statusPotongan(body) {
+  var unggahId = idUnggah(body);
+  if (!unggahId) return json({ ok: false, error: "unggahan tidak dikenali" });
+  var tmp = subFolder(DriveApp.getFolderById(ROOT_FOLDER_ID), FOLDER_POTONGAN);
+
+  var jadi = bacaPenanda(tmp, unggahId);
+  if (jadi) return json({ ok: true, selesai: true, hasil: jadi });
+
+  var ada = [];
+  var it = tmp.getFiles();
+  var awalan = unggahId + ".";
+  while (it.hasNext()) {
+    var nm = it.next().getName();
+    if (nm.indexOf(awalan) === 0) {
+      var sisa = nm.slice(awalan.length);
+      if (/^\d+$/.test(sisa)) ada.push(Number(sisa));
+    }
+  }
+  ada.sort(function (a, b) { return a - b; });
+  return json({ ok: true, selesai: false, potongan: ada });
+}
+
+/**
  * Terima satu potongan berkas. Tiap potongan ditulis jadi berkas teks singgah;
  * pada potongan terakhir semuanya dibaca berurutan, disatukan, disimpan sebagai
  * berkas asli, lalu singgahannya dibuang.
+ *
+ * Penyatuan dibuat IDEMPOTEN: hasilnya dicatat dalam berkas penanda. Kalau
+ * jawaban tidak sampai ke ponsel dan potongan terakhir dikirim ulang, yang
+ * dikembalikan adalah berkas yang sama — bukan salinan kedua di Drive, dan
+ * bukan galat "potongan hilang" karena singgahannya sudah dibuang.
  */
 function terimaPotongan(body) {
   var akar = DriveApp.getFolderById(ROOT_FOLDER_ID);
   var tmp = subFolder(akar, FOLDER_POTONGAN);
-  sapuSinggahan(tmp);
 
-  var unggahId = String(body.unggahId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
+  var unggahId = idUnggah(body);
   var indeks = Number(body.indeks), total = Number(body.total);
   if (!unggahId || !(total > 0) || !(indeks >= 0) || indeks >= total) {
     return json({ ok: false, error: "potongan tidak dikenali" });
   }
-  if (total * 3 * 1024 * 1024 > (BATAS_MB + 5) * 1024 * 1024) {
+  // 1 potongan = 2,25 MB isi asli. Batas dihitung dari ukuran sebenarnya,
+  // bukan taksiran 3 MB yang dulu menolak berkas yang sebetulnya muat.
+  if (total * 2.25 * 1024 * 1024 > (BATAS_MB + 2) * 1024 * 1024) {
     return json({ ok: false, error: "berkas lebih dari " + BATAS_MB + " MB" });
   }
+
+  var jadi = bacaPenanda(tmp, unggahId);
+  if (jadi) return json({ ok: true, selesai: true, fileId: jadi.fileId, url: jadi.url, nama: jadi.nama, ukuran: jadi.ukuran });
 
   var nama = unggahId + "." + indeks;
   buangBernama(tmp, nama);                       // kalau potongan ini dikirim ulang
   tmp.createFile(Utilities.newBlob(String(body.data || ""), "text/plain", nama));
 
-  if (indeks + 1 < total) return json({ ok: true, selesai: false, indeks: indeks });
+  if (indeks + 1 < total) {
+    // Penyapuan singgahan lama hanya dilakukan sesekali. Kalau dijalankan pada
+    // setiap potongan, satu unggahan 15 potongan memindai folder 15 kali dan
+    // makin lambat justru saat jaringan kapal sedang payah.
+    if (indeks === 0) sapuSinggahan(tmp);
+    return json({ ok: true, selesai: false, indeks: indeks, tersimpan: indeks + 1 });
+  }
 
   var b64 = "";
   for (var i = 0; i < total; i++) {
     var it = tmp.getFilesByName(unggahId + "." + i);
-    if (!it.hasNext()) return json({ ok: false, error: "potongan ke-" + (i + 1) + " hilang, ulangi kiriman" });
+    if (!it.hasNext()) return json({ ok: false, error: "potongan ke-" + (i + 1) + " belum sampai, tekan coba lagi" });
     b64 += it.next().getBlob().getDataAsString();
   }
 
-  var kapal = bersih(body.kapal) || "TANPA KAPAL";
-  var jenis = String(body.jenis || "lainnya");
-  var folder = subFolder(subFolder(akar, kapal), LABEL[jenis] || jenis);
+  var folder = folderTujuan(body);
   var file = folder.createFile(
-    Utilities.newBlob(Utilities.base64Decode(b64), body.mime || "application/octet-stream", namaBerkas(body)));
-  if (body.catatan) file.setDescription(String(body.catatan).slice(0, 500));
-  if (BAGIKAN_LINK) file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+    Utilities.newBlob(Utilities.base64Decode(b64), mimeAman(body), namaBerkas(body)));
+  hiasBerkas(file, body);
 
+  var hasil = {
+    fileId: file.getId(), url: file.getUrl(),
+    nama: file.getName(), ukuran: file.getSize(),
+  };
+  // Penanda ditulis LEBIH DULU, baru singgahannya dibuang. Urutan ini yang
+  // membuat percobaan ulang tetap menemukan hasilnya.
+  tulisPenanda(tmp, unggahId, hasil);
   for (var k = 0; k < total; k++) buangBernama(tmp, unggahId + "." + k);
 
   return json({
     ok: true, selesai: true,
-    fileId: file.getId(), url: file.getUrl(), nama: file.getName(),
-    ukuran: file.getSize(), folder: folder.getUrl(),
+    fileId: hasil.fileId, url: hasil.url, nama: hasil.nama,
+    ukuran: hasil.ukuran, folder: folder.getUrl(),
   });
+}
+
+function idUnggah(body) {
+  return String(body.unggahId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
+}
+
+function namaPenanda(unggahId) { return unggahId + ".jadi"; }
+
+function bacaPenanda(tmp, unggahId) {
+  var it = tmp.getFilesByName(namaPenanda(unggahId));
+  if (!it.hasNext()) return null;
+  try { return JSON.parse(it.next().getBlob().getDataAsString()); } catch (err) { return null; }
+}
+
+function tulisPenanda(tmp, unggahId, hasil) {
+  buangBernama(tmp, namaPenanda(unggahId));
+  tmp.createFile(Utilities.newBlob(JSON.stringify(hasil), "application/json", namaPenanda(unggahId)));
+}
+
+function folderTujuan(body) {
+  var akar = DriveApp.getFolderById(ROOT_FOLDER_ID);
+  var kapal = bersih(body.kapal) || "TANPA KAPAL";
+  var jenis = String(body.jenis || "lainnya");
+  var label = Object.prototype.hasOwnProperty.call(LABEL, jenis) ? LABEL[jenis] : jenis;
+  return subFolder(subFolder(akar, kapal), label);
+}
+
+function mimeAman(body) {
+  var m = String(body.mime || "").trim();
+  return m || "application/octet-stream";
+}
+
+function hiasBerkas(file, body) {
+  if (body.catatan) file.setDescription(String(body.catatan).slice(0, 500));
+  if (BAGIKAN_LINK) file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
 }
 
 function buangBernama(folder, nama) {
@@ -169,9 +268,10 @@ function buangBernama(folder, nama) {
 function sapuSinggahan(tmp) {
   var batas = new Date().getTime() - 24 * 60 * 60 * 1000;
   var it = tmp.getFiles();
-  while (it.hasNext()) {
+  var dibuang = 0;
+  while (it.hasNext() && dibuang < 200) {
     var f = it.next();
-    if (f.getDateCreated().getTime() < batas) f.setTrashed(true);
+    if (f.getDateCreated().getTime() < batas) { f.setTrashed(true); dibuang++; }
   }
 }
 
@@ -190,22 +290,28 @@ function subFolder(induk, nama) {
 /**
  * Nama berkas dibuat berurutan sendiri: periode dulu, lalu jenis, kapal, waktu
  * kirim. Dengan begitu isi folder tetap terbaca walau diunduh berombongan atau
- * dibuka di luar aplikasi.
+ * dibuka di luar aplikasi. EKSTENSI selalu dipertahankan di ujung — kalau ikut
+ * terpotong, berkasnya tidak bisa dibuka dengan aplikasi yang benar.
  */
 function namaBerkas(body) {
   var asli = bersih(body.namaBerkas) || "berkas";
   var titik = asli.lastIndexOf(".");
   var pokok = titik > 0 ? asli.slice(0, titik) : asli;
   var ext = titik > 0 ? asli.slice(titik) : "";
+  if (ext.length > 10) { pokok = asli; ext = ""; }      // titik di tengah nama, bukan ekstensi
   var cap = Utilities.formatDate(new Date(), "Asia/Jayapura", "yyyyMMdd-HHmmss");
+  var label = Object.prototype.hasOwnProperty.call(LABEL, body.jenis) ? LABEL[body.jenis] : (body.jenis || "lainnya");
   var bagian = [
     bersih(body.periode) || "tanpa-periode",
-    LABEL[body.jenis] || body.jenis || "lainnya",
+    label,
     bersih(body.kapal),
     pokok,
     cap,
   ].filter(String);
-  return bagian.join(" - ").slice(0, 180) + ext;
+  var gabung = bagian.join(" - ");
+  var maksPokok = 180 - ext.length;
+  if (gabung.length > maksPokok) gabung = gabung.slice(0, maksPokok);
+  return gabung + ext;
 }
 
 function json(o) {

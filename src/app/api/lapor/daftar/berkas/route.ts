@@ -3,15 +3,13 @@
  * Route berada di bawah /api/lapor/daftar, sehingga tetap dilindungi login.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { dbLapor, dbSiap } from "@/lib/lapor/db";
 import type { BerkasLapor } from "@/lib/lapor/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 export const maxDuration = 60;
 
-const URL_SB = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const KEY_SB = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export async function DELETE(req: NextRequest) {
   const gasUrl = process.env.LAPOR_GAS_URL;
@@ -19,7 +17,7 @@ export async function DELETE(req: NextRequest) {
   if (!gasUrl) {
     return NextResponse.json({ ok: false, error: "Penyimpanan Google Drive belum aktif." }, { status: 501 });
   }
-  if (!URL_SB || !KEY_SB) {
+  if (!dbSiap()) {
     return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
   }
 
@@ -28,7 +26,7 @@ export async function DELETE(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "Dokumen tidak dikenali" }, { status: 400 });
   }
 
-  const c = createClient(URL_SB, KEY_SB);
+  const c = dbLapor()!;
   const { data: ada, error: e1 } = await c.from("projects").select("payload").eq("id", id).single();
   if (e1 || !ada) {
     return NextResponse.json({ ok: false, error: "Kiriman tidak ditemukan" }, { status: 404 });

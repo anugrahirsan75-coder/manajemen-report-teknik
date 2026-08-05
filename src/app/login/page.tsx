@@ -8,7 +8,10 @@ import { Ferry } from "@/components/MaritimeFx";
 function LoginForm() {
   const router = useRouter();
   const sp = useSearchParams();
-  const from = sp.get("from") || "/";
+  // Hanya jalur internal. Nilai ?from= datang dari luar, jadi bentuk seperti
+  // "//situs-lain" atau "javascript:..." tidak boleh dipakai sebagai tujuan.
+  const mentah = sp.get("from") || "/";
+  const from = /^\/(?!\/)[^\s]*$/.test(mentah) && !mentah.startsWith("/login") ? mentah : "/";
   const [user, setUser] = useState("");
   const [pass, setPass] = useState("");
   const [err, setErr] = useState("");
@@ -21,7 +24,7 @@ function LoginForm() {
       const r = await fetch("/api/auth/login", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ user, pass }) });
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Gagal masuk");
-      window.location.href = from.startsWith("/login") ? "/" : from;
+      window.location.href = from;
     } catch (e: any) { setErr(e?.message ?? String(e)); } finally { setBusy(false); }
   };
 

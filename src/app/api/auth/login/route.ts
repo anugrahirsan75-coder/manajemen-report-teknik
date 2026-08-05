@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
   const token = process.env.AUTH_TOKEN;
   if (!token) return NextResponse.json({ error: "AUTH_TOKEN belum diset di server" }, { status: 500 });
   const res = NextResponse.json({ ok: true });
-  res.cookies.set("mrt_session", token, { httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7 });
+  res.cookies.set("mrt_session", token, {
+    httpOnly: true, sameSite: "lax", path: "/", maxAge: 60 * 60 * 24 * 7,
+    // di produksi cookie hanya boleh melewati sambungan terenkripsi
+    secure: process.env.NODE_ENV === "production",
+  });
   return res;
 }
