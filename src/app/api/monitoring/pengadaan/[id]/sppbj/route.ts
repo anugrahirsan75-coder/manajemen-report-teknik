@@ -9,7 +9,7 @@
  * dalam bentuk data — yang keluar hanya berkas jadinya.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { dbServer, dbSiap } from "@/lib/dbServer";
 import { SppbjRequest } from "@/lib/sppbj/types";
 import { fillSppbj } from "@/lib/sppbj/fill";
 import { fillFase1, fillLengkap } from "@/lib/sppbj/fill2";
@@ -17,13 +17,11 @@ import { fillFase1, fillLengkap } from "@/lib/sppbj/fill2";
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
-const URL_SB = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const KEY_SB = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const aman = (s: string) => s.replace(/[\\/:*?"<>|]/g, "").trim();
 
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
-  if (!URL_SB || !KEY_SB) return NextResponse.json({ error: "Sumber data belum siap" }, { status: 503 });
-  const c = createClient(URL_SB, KEY_SB);
+  if (!dbSiap()) return NextResponse.json({ error: "Sumber data belum siap" }, { status: 503 });
+  const c = dbServer()!;
   const { data, error } = await c.from("projects").select("nama_kapal,payload").eq("id", params.id).single();
   if (error || !data) return NextResponse.json({ error: "Pengadaan tak ditemukan" }, { status: 404 });
 

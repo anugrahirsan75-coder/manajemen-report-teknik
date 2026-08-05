@@ -7,19 +7,17 @@
  * internal dan tak diperlukan untuk memantau.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { dbServer, dbSiap } from "@/lib/dbServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const URL_SB = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const KEY_SB = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 const n = (v: any) => (typeof v === "number" && isFinite(v) ? v : 0);
 const s = (v: any) => String(v ?? "").trim();
 
 export async function GET(_req: NextRequest, { params }: { params: { id: string } }) {
-  if (!URL_SB || !KEY_SB) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
-  const c = createClient(URL_SB, KEY_SB);
+  if (!dbSiap()) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
+  const c = dbServer()!;
   const { data, error } = await c.from("projects").select("nama_kapal,payload").eq("id", params.id).single();
   if (error || !data) return NextResponse.json({ ok: false, error: "Pengadaan tak ditemukan" }, { status: 404 });
 

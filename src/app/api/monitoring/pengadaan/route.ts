@@ -20,15 +20,12 @@
  * Hanya SPPBJ Pengadaan (kind="sppbj"). SPPBJ Non PR PO sengaja tidak ikut.
  */
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@supabase/supabase-js";
+import { dbServer, dbSiap } from "@/lib/dbServer";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-const URL_SB = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
-const KEY_SB = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
-
-const sb = () => (URL_SB && KEY_SB ? createClient(URL_SB, KEY_SB) : null);
+const sb = () => dbServer();
 
 const n = (v: any) => (typeof v === "number" && isFinite(v) ? v : 0);
 

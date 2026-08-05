@@ -121,8 +121,12 @@ Route Lapor Kapal sudah siap dipindahkan ke kunci server. Langkahnya:
    alter table projects enable row level security;
    drop policy if exists "anon full access" on projects;
    -- tidak ada policy untuk anon = anon tidak bisa apa-apa;
-   -- service_role melewati RLS, jadi aplikasi tetap jalan.
+   -- kunci server melewati RLS, jadi aplikasi tetap jalan.
    ```
+
+   Aman dijalankan karena SELURUH modul (bukan hanya Lapor Kapal) kini
+   menyentuh basis data lewat gerbang `/api/db` yang berada di balik login dan
+   memakai kunci server. Peramban tidak lagi memerlukan kunci anon sama sekali.
 
 4. Redeploy, lalu periksa: halaman aplikasi tetap normal, sedangkan memanggil
    `https://<proyek>.supabase.co/rest/v1/projects?select=*` dengan kunci anon
