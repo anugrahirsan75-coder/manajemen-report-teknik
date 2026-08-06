@@ -160,6 +160,11 @@ export const dockingInvestasi: TemplateSurat = {
     {
       id: "tabel", label: "Rincian mata anggaran", jenis: "tabel", wajib: true,
       petunjuk: "Kode 1020604xxx otomatis dihitung sebagai investasi; 5010302004 sebagai mobilisasi. Subtotal dihitung sendiri.",
+      bacaBerkas:
+        "Rincian estimasi biaya docking dan investasi satu kapal, per mata anggaran. Tiap baris berisi kode mata anggaran "
+        + "10 digit (mis. 5010403003 atau 1020604010) beserta uraiannya, nilai RKA, dan nilai usulan cabang. "
+        + "Kode dan uraiannya kadang menyatu dalam satu sel, mis. “(M.A. 5010403003) Pemeliharaan Kapal Ro-ro” — "
+        + "pisahkan kodenya ke kolom kode dan sisanya ke uraian. Lewati baris Sub Total dan Total.",
       kolom: [
         { id: "kode", label: "Kode M.A.", jenis: "teks", lebar: "8rem", saran: MATA_ANGGARAN.map((m) => ({ nilai: m.kode, label: `${m.kode} — ${m.uraian}` })) },
         { id: "uraian", label: "Uraian", jenis: "teks" },

@@ -15,6 +15,7 @@ import { TEMPLATE_SURAT, cariTemplate } from "@/lib/surat/registry";
 import { DataSurat, Isian, TemplateSurat } from "@/lib/surat/types";
 import { angkaRibuan, keAngka, rupiahSurat } from "@/lib/surat/format";
 import { terbilangRupiah } from "@/lib/surat/terbilang";
+import UnggahTabel from "@/components/surat/UnggahTabel";
 
 const KUNCI_DRAF = "surat_eoffice_draf";
 
@@ -419,6 +420,7 @@ function MedanIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
 
 /* ── isian berbentuk tabel ─────────────────────────────────────────────── */
 function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v: unknown) => void }) {
+  const [bukaUnggah, setBukaUnggah] = useState(false);
   const kolom = medan.kolom || [];
   const kosong = () => Object.fromEntries(kolom.map((k) => [k.id, ""]));
   const baris: Record<string, string>[] = nilai?.length ? nilai : [kosong()];
@@ -429,11 +431,31 @@ function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
 
   const saranId = (k: string) => `saran-${medan.id}-${k}`;
 
+  /** hasil bacaan berkas: dirapikan ke bentuk kolom tabel ini, lalu diganti/ditambah */
+  const terapkanBacaan = (hasil: Record<string, string>[], cara: "ganti" | "tambah") => {
+    const rapi = hasil.map((r) => ({ ...kosong(), ...Object.fromEntries(kolom.map((k) => [k.id, r[k.id] ?? ""])) }));
+    if (!rapi.length) return;
+    if (cara === "ganti") { ubah(rapi); return; }
+    ubah((lama: Record<string, string>[]) => {
+      // baris kosong bawaan tidak ikut terbawa saat menambah
+      const ada = (lama || []).filter((r) => Object.values(r).some((v) => String(v).trim()));
+      return [...ada, ...rapi];
+    });
+  };
+
   return (
     <div>
-      <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-200">
-        {medan.label}{medan.wajib && <span className="text-rose-500"> *</span>}
-      </label>
+      <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
+        <label className="block text-xs font-bold text-slate-700 dark:text-slate-200">
+          {medan.label}{medan.wajib && <span className="text-rose-500"> *</span>}
+        </label>
+        {medan.bacaBerkas !== false && (
+          <button onClick={() => setBukaUnggah(true)}
+            className="rounded-lg bg-sky-50 px-2.5 py-1 text-[11px] font-bold text-sky-800 ring-1 ring-sky-200 transition hover:bg-sky-100 dark:bg-sky-950/40 dark:text-sky-200 dark:ring-sky-900">
+            📄 Isi dari berkas
+          </button>
+        )}
+      </div>
       <div className="overflow-x-auto rounded-2xl ring-1 ring-slate-200 dark:ring-slate-700">
         <table className="w-full text-sm">
           <thead className="bg-slate-50 dark:bg-slate-800">
@@ -491,6 +513,16 @@ function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
       <button onClick={() => perbarui((lama) => [...lama, kosong()])}
         className="mt-2 text-xs font-bold text-blue-700 hover:underline dark:text-blue-400">+ Tambah baris</button>
       {medan.petunjuk && <p className="mt-1 text-[11px] text-slate-400">{medan.petunjuk}</p>}
+
+      {medan.bacaBerkas !== false && (
+        <UnggahTabel
+          buka={bukaUnggah} tutup={() => setBukaUnggah(false)}
+          kolom={kolom} judul={medan.label}
+          konteks={typeof medan.bacaBerkas === "string" ? medan.bacaBerkas : ""}
+          jumlahBarisSekarang={baris.filter((r) => Object.values(r).some((v) => String(v).trim())).length}
+          terapkan={terapkanBacaan}
+        />
+      )}
     </div>
   );
 }

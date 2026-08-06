@@ -11,6 +11,7 @@
  */
 import { extractJson } from "@/lib/sppbj/scanPrompt";
 import { ollamaHost } from "@/lib/sppbj/scanAI";
+import { bukaPdf } from "@/lib/pdfPeramban";
 import { PROMPT_BORANG, HasilBorang, rapikanBorang, gabungHalaman } from "./borang";
 import { bacaDocx, berkasWord, wordLama } from "./bacaWord";
 
@@ -20,12 +21,9 @@ const VISION_RE = /(vision|llava|minicpm-?v|moondream|bakllava|qwen2\.?5?-?vl|qw
 
 /** PDF -> gambar PNG per halaman, dikerjakan di peramban (pdf.js) */
 export async function halamanPdf(file: Blob, skala = 2): Promise<string[]> {
-  const pdfjs: any = await import("pdfjs-dist");
-  // worker-nya disalin ke /public saat pemasangan (scripts/salin-pdf-worker.cjs)
-  // — sengaja bukan dari CDN luar, supaya berkas kapal tetap tak menyentuh internet
-  pdfjs.GlobalWorkerOptions.workerSrc = "/pdf.worker.min.mjs";
-  const buf = await file.arrayBuffer();
-  const dok = await pdfjs.getDocument({ data: buf }).promise;
+  // pustaka + worker-nya dimuat dari berkas sendiri (lihat lib/pdfPeramban.ts):
+  // bukan dari CDN luar, supaya berkas kapal tetap tak menyentuh internet
+  const dok = await bukaPdf(file);
   const out: string[] = [];
   for (let i = 1; i <= dok.numPages; i++) {
     const hal = await dok.getPage(i);

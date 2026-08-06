@@ -51,6 +51,12 @@ export const permohonanIO: TemplateSurat = {
     {
       id: "rujukan", label: "Surat yang menjadi dasar", jenis: "tabel", wajib: true,
       petunjuk: "Boleh sebanyak yang diperlukan — tiap baris menjadi satu butir daftar di surat.",
+      bacaBerkas:
+        "Daftar surat yang menjadi dasar permohonan, sering ditulis sebagai butir a, b, c pada surat lama. "
+        + "Tiap butir berbentuk kalimat: “Surat <pengirim> Nomor : <nomor> tanggal <tanggal> perihal <perihal>”. "
+        + "Bagian antara kata “Surat” dan kata “Nomor” adalah PENGIRIMNYA — masukkan ke kolom instansi "
+        + "(mis. jabatan seperti Direktur Teknik dan Fasilitas, atau nama unit). Nomornya bergaya "
+        + "KU.3/00524/VII/ASDP-TTE/2026 atau TN.101/03644/VI/ASDP-2026.",
       kolom: [
         { id: "instansi", label: "Surat dari", jenis: "teks", saran: [
           { nilai: "Group Head Perencanaan dan Pengendalian Keuangan", label: "Group Head Perencanaan dan Pengendalian Keuangan" },
@@ -64,6 +70,10 @@ export const permohonanIO: TemplateSurat = {
     {
       id: "rincian", label: "Rincian investasi (boleh dikosongkan)", jenis: "tabel",
       petunjuk: "Bila dikosongkan, surat menyebut “sebagaimana form terlampir” seperti surat lama.",
+      bacaBerkas:
+        "Rincian investasi per kapal yang dimintakan nomor IO. Tiap baris: nama kapal (diawali KMP.), "
+        + "kode mata anggaran investasi berawalan 1020604, uraian pekerjaan/barang investasinya, dan nilai rupiahnya. "
+        + "Biasanya berasal dari form lampiran permohonan IO. Lewati baris Total.",
       kolom: [
         { id: "kapal", label: "Kapal", jenis: "teks", lebar: "12rem", saran: KAPAL_SURAT.map((k) => ({ nilai: k, label: k })) },
         { id: "ma", label: "Mata Anggaran", jenis: "teks", saran: MA_INVESTASI },

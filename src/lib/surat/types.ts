@@ -40,6 +40,12 @@ export interface Isian {
   bebas?: boolean;
   /** untuk jenis "tabel" */
   kolom?: KolomTabel[];
+  /**
+   * Tabel boleh diisi dari berkas (Excel/CSV/PDF/foto). Tombolnya muncul pada
+   * setiap tabel; isi dengan kalimat untuk memberi tahu mesin pembaca tabel apa
+   * yang sedang dicari, atau `false` untuk mematikannya di tabel tertentu.
+   */
+  bacaBerkas?: string | false;
   /** lebar isian pada tata letak borang (1 = penuh, 2 = setengah) */
   kolomBorang?: 1 | 2;
 }

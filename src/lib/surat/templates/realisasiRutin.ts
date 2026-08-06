@@ -43,6 +43,9 @@ export const realisasiRutin: TemplateSurat = {
     { id: "bulanKolomRka", label: "Bulan pada judul kolom RKA", jenis: "pilih", pilihan: NAMA_BULAN, wajib: true, petunjuk: "Dipakai di kepala tabel: “USULAN RKA {bulan} TAHUN {tahun}”.", kolomBorang: 2 },
     {
       id: "tabel", label: "Rincian per kapal", jenis: "tabel", wajib: true,
+      bacaBerkas:
+        "Rekap perawatan rutin per kapal dalam satu bulan. Tiap baris satu kapal (nama diawali KMP.), "
+        + "dengan nilai usulan RKA dan nilai usulan cabang/realisasi. Lewati baris Total.",
       kolom: [
         { id: "kapal", label: "Nama kapal", jenis: "teks", saran: KAPAL_SURAT.map((k) => ({ nilai: k, label: k })) },
         { id: "rka", label: "Usulan RKA", jenis: "rupiah", lebar: "10rem" },
