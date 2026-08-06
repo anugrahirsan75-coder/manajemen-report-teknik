@@ -27,6 +27,7 @@ export default function BilahScm({ aksi }: { aksi?: React.ReactNode }) {
           <p className="text-[11px] text-white/70">PT ASDP Indonesia Ferry (Persero) — Cabang Ternate</p>
         </div>
         {tautan("/scm", "📋 Antrean", path === "/scm")}
+        {tautan("/scm/rekap", "📈 Rekap", path.startsWith("/scm/rekap"))}
         {tautan("/scm/vendor", "🏢 Data Vendor", path.startsWith("/scm/vendor"))}
         {aksi}
         <button onClick={keluar} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80 hover:bg-white/20">

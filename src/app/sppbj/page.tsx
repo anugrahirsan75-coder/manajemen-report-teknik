@@ -15,11 +15,15 @@ import JenisBadge from "@/components/JenisBadge";
 import { useAnggaran } from "@/lib/anggaran/store";
 import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
+import { muatProses, BarisScm } from "@/lib/scm/store";
+import { LABEL_TAHAP, WARNA_TAHAP, ProsesScm, totalHari } from "@/lib/scm/types";
 
 export default function SppbjList() {
   const { listRemote, patchRemote, deleteRemote, loadById, newDraft, supabaseReady } = useSppbj();
   const router = useRouter();
   const [rows, setRows] = useState<any[]>([]);
+  /** perjalanan tiap dokumen di SCM, dikunci dengan id SPPBJ-nya */
+  const [scm, setScm] = useState<Map<string, ProsesScm>>(new Map());
   const [loading, setLoading] = useState(false);
   const [bulan, setBulan] = useState(""); // "" = semua bulan, else "YYYY-MM"
   const [query, setQuery] = useState("");
@@ -101,10 +105,30 @@ export default function SppbjList() {
     };
   }, { usulan: 0, final: 0, usulanBerSpbj: 0, selisih: 0, berSpbj: 0 });
 
+  /** pengadaan yang SPBJ-nya sudah terbit di SCM tapi belum ada No. GR/SES di sini */
+  const spbjSiap = rows.filter((r) => {
+    const pr = scm.get(r.id);
+    if (!pr || (pr.tahap !== "spbj" && pr.tahap !== "selesai")) return false;
+    return !((r.payload?.grSes || []).some((g: any) => (g?.nomor || "").trim()));
+  });
+
   const hitungJenis = (j: "rutin" | "docking" | "lainnya") =>
     rows.filter((r) => (!bulan || ym(r) === bulan) && jenisOf(r) === j && matchTokens(r, query)).length;
 
-  const refresh = async () => { setLoading(true); setRows(await listRemote()); setLoading(false); };
+  /**
+   * Perjalanan dokumen di SCM ikut dimuat supaya Teknik tahu kabarnya tanpa
+   * bertanya: sampai tahap mana, sudah berapa hari, dan mana yang SPBJ-nya
+   * sudah terbit sehingga tinggal di-GR/SES.
+   */
+  const refresh = async () => {
+    setLoading(true);
+    setRows(await listRemote());
+    try {
+      const daftar: BarisScm[] = await muatProses();
+      setScm(new Map(daftar.map((b) => [b.proses.sppbjId, b.proses])));
+    } catch { /* proses SCM belum ada / tak terjangkau — daftar tetap tampil */ }
+    setLoading(false);
+  };
   useEffect(() => { if (supabaseReady) refresh(); /* eslint-disable-next-line */ }, [supabaseReady]);
 
   const mulai = () => { newDraft(); router.push("/sppbj/isi"); };
@@ -326,6 +350,7 @@ export default function SppbjList() {
                 <th className="px-2 py-2.5 text-right w-28" title="Jumlah harga final SPBJ. Bertanda — bila SPBJ-nya belum terbit.">Nilai SPBJ</th>
                 <th className="px-2 py-2.5 text-right w-24" title="Nilai SPPBJ dikurangi nilai SPBJ. Positif = lebih murah dari usulan.">Selisih</th>
                 <th className="px-2 py-2.5 text-left w-20">Tanggal</th>
+                <th className="px-2 py-2.5 text-left w-32" title="Perjalanan dokumen di tim SCM">Proses SCM</th>
                 <th className="px-2 py-2.5 text-left w-28">Status</th>
                 <th className="px-2 py-2.5 text-center w-40">Aksi</th>
               </tr>
@@ -386,6 +411,20 @@ export default function SppbjList() {
                         )}
                     </td>
                     <td className="px-2 py-2.5 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
+                    <td className="px-2 py-2.5">
+                      {(() => {
+                        const pr = scm.get(r.id);
+                        if (!pr) return r.payload?.keScm
+                          ? <span className="text-[10px] text-slate-400">menunggu diterima</span>
+                          : <span className="text-slate-300">—</span>;
+                        return (
+                          <span className={`inline-block rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 whitespace-nowrap ${WARNA_TAHAP[pr.tahap]}`}
+                            title={`${totalHari(pr)} hari sejak masuk SCM`}>
+                            {LABEL_TAHAP[pr.tahap]} · {totalHari(pr)}h
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-2 py-2.5"><span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
                     <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-1">
@@ -421,11 +460,20 @@ export default function SppbjList() {
                     jumlahNilai.selisih > 0 ? "text-emerald-700" : jumlahNilai.selisih < 0 ? "text-rose-600" : "text-slate-400"}`}>
                     {jumlahNilai.selisih ? `${jumlahNilai.selisih > 0 ? "−" : "+"}${rupiah(Math.abs(jumlahNilai.selisih))}` : "0"}
                   </td>
-                  <td className="px-2 py-2.5" colSpan={3} />
+                  <td className="px-2 py-2.5" colSpan={4} />
                 </tr>
               </tfoot>
             )}
           </table>
+        </div>
+      )}
+      {spbjSiap.length > 0 && (
+        <div className="anim-in mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
+          <span className="text-lg">📬</span>
+          <span className="min-w-0 flex-1">
+            <b>{spbjSiap.length} pengadaan sudah terbit SPBJ</b> dari SCM — tinggal di-GR/SES.
+            <span className="block truncate text-[11px] text-emerald-800/80">{spbjSiap.map((x) => x.nama_pengadaan).join(" · ")}</span>
+          </span>
         </div>
       )}
       {preview && (
