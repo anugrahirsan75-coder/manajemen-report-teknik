@@ -24,7 +24,24 @@
  */
 
 var SECRET = "9hYKmF5iIAvauQmf3jpKJfEqYNne1K6g";     // harus sama dgn LAPOR_GAS_SECRET di app
-var ROOT_FOLDER_ID = "1EnJybY92LUhmMGg72uBztJlPJR2-OxQj"; // folder Drive tujuan
+var ROOT_FOLDER_ID = "1EnJybY92LUhmMGg72uBztJlPJR2-OxQj"; // folder Drive tujuan (berkas dari kapal)
+var FOLDER_DOCKING = "1asHma-Ln4vYxcLg96MTevIKP2v9S7WGs"; // folder Laporan Docking
+
+/**
+ * Folder yang BOLEH disentuh skrip ini, dipanggil dengan nama pendek dari
+ * aplikasi. Daftar tertutup seperti ini penting: tanpa itu, siapa pun yang tahu
+ * SECRET bisa menyuruh skrip membaca atau menulis folder mana saja di Drive
+ * pemilik hanya dengan mengirim ID folder lain.
+ */
+var AKAR = {
+  kapal: ROOT_FOLDER_ID,
+  docking: FOLDER_DOCKING,
+};
+
+function akarDari(body) {
+  var n = String(body.akar || "kapal");
+  return DriveApp.getFolderById(Object.prototype.hasOwnProperty.call(AKAR, n) ? AKAR[n] : ROOT_FOLDER_ID);
+}
 var BAGIKAN_LINK = false;   // true = berkas bisa dibuka siapa pun yang punya tautan.
                             // Biarkan false: berkas tetap milik & hanya terlihat oleh pemilik Drive.
 var BATAS_MB = 35;          // tolak berkas lebih besar dari ini (harus sama dgn batas di aplikasi)
@@ -38,7 +55,7 @@ var LABEL = {
 };
 
 function doGet() {
-  return json({ ok: true, msg: "Penerima berkas kapal aktif", versi: 3 });
+  return json({ ok: true, msg: "Penerima berkas kapal aktif", versi: 4, akar: Object.keys(AKAR) });
 }
 
 function doPost(e) {
@@ -53,6 +70,7 @@ function doPost(e) {
     if (body.aksi === "potongan") return terimaPotongan(body);
     if (body.aksi === "status") return statusPotongan(body);
     if (body.aksi === "hapus") return hapusBerkas(body);
+    if (body.aksi === "daftar") return daftarIsi(body);
 
     var b64 = String(body.dataBase64 || "");
     if (!b64) return json({ ok: false, error: "berkas kosong" });
@@ -109,8 +127,10 @@ function hapusBerkas(body) {
   return json({ ok: true, fileId: fileId });
 }
 
-/** telusuri semua folder induk sampai ROOT_FOLDER_ID, dengan batas aman */
+/** telusuri semua folder induk sampai salah satu folder yang dilayani skrip ini */
 function beradaDiFolderLaporan(file) {
+  var sah = {};
+  for (var k in AKAR) if (Object.prototype.hasOwnProperty.call(AKAR, k)) sah[AKAR[k]] = true;
   var antrean = [];
   var induk = file.getParents();
   while (induk.hasNext()) antrean.push(induk.next());
@@ -120,7 +140,7 @@ function beradaDiFolderLaporan(file) {
   while (antrean.length && langkah++ < 100) {
     var folder = antrean.shift();
     var id = folder.getId();
-    if (id === ROOT_FOLDER_ID) return true;
+    if (sah[id]) return true;
     if (dilihat[id]) continue;
     dilihat[id] = true;
     var atas = folder.getParents();
@@ -137,7 +157,7 @@ function beradaDiFolderLaporan(file) {
 function statusPotongan(body) {
   var unggahId = idUnggah(body);
   if (!unggahId) return json({ ok: false, error: "unggahan tidak dikenali" });
-  var tmp = subFolder(DriveApp.getFolderById(ROOT_FOLDER_ID), FOLDER_POTONGAN);
+  var tmp = subFolder(akarDari(body), FOLDER_POTONGAN);
 
   var jadi = bacaPenanda(tmp, unggahId);
   if (jadi) return json({ ok: true, selesai: true, hasil: jadi });
@@ -167,7 +187,7 @@ function statusPotongan(body) {
  * bukan galat "potongan hilang" karena singgahannya sudah dibuang.
  */
 function terimaPotongan(body) {
-  var akar = DriveApp.getFolderById(ROOT_FOLDER_ID);
+  var akar = akarDari(body);
   var tmp = subFolder(akar, FOLDER_POTONGAN);
 
   var unggahId = idUnggah(body);
@@ -241,12 +261,72 @@ function tulisPenanda(tmp, unggahId, hasil) {
   tmp.createFile(Utilities.newBlob(JSON.stringify(hasil), "application/json", namaPenanda(unggahId)));
 }
 
+/**
+ * Folder tujuan sebuah kiriman.
+ *
+ * Dua bentuk dipakai berdampingan: berkas dari kapal tetap masuk
+ * <kapal>/<jenis> seperti semula, sedangkan Laporan Docking menyebut sendiri
+ * jalur foldernya (mis. ["KMP. TUNA", "2026", "Foto"]). Folder yang belum ada
+ * dibuatkan, jadi susunan di Drive tidak perlu disiapkan lebih dulu.
+ */
 function folderTujuan(body) {
-  var akar = DriveApp.getFolderById(ROOT_FOLDER_ID);
+  var folder = akarDari(body);
+  if (Array.isArray(body.jalur) && body.jalur.length) {
+    for (var i = 0; i < body.jalur.length && i < 6; i++) {
+      var n = bersih(body.jalur[i]);
+      if (n) folder = subFolder(folder, n);
+    }
+    return folder;
+  }
   var kapal = bersih(body.kapal) || "TANPA KAPAL";
   var jenis = String(body.jenis || "lainnya");
   var label = Object.prototype.hasOwnProperty.call(LABEL, jenis) ? LABEL[jenis] : jenis;
-  return subFolder(subFolder(akar, kapal), label);
+  return subFolder(subFolder(folder, kapal), label);
+}
+
+/**
+ * Isi sebuah folder: subfolder dan berkasnya. Dipakai halaman Laporan Docking
+ * untuk menelusuri Drive langsung, sehingga berkas yang ditaruh manual lewat
+ * Google Drive pun ikut terlihat tanpa perlu dicatat ulang di aplikasi.
+ *
+ * Folder dicari dengan MENELUSURI NAMA dari akar, bukan dengan menerima ID dari
+ * luar — supaya permintaan tak bisa diarahkan ke folder lain di Drive pemilik.
+ */
+function daftarIsi(body) {
+  var folder = akarDari(body);
+  var jalur = Array.isArray(body.jalur) ? body.jalur : [];
+  for (var i = 0; i < jalur.length && i < 6; i++) {
+    var nama = bersih(jalur[i]);
+    if (!nama) continue;
+    var it = folder.getFoldersByName(nama);
+    if (!it.hasNext()) return json({ ok: true, jalur: jalur, folder: [], berkas: [], kosong: true });
+    folder = it.next();
+  }
+
+  var folders = [];
+  var fit = folder.getFolders();
+  while (fit.hasNext() && folders.length < 300) {
+    var f = fit.next();
+    if (f.getName() === FOLDER_POTONGAN) continue;   // singgahan potongan, bukan isi laporan
+    folders.push({ nama: f.getName(), id: f.getId(), url: f.getUrl(), diubah: f.getLastUpdated().toISOString() });
+  }
+  folders.sort(function (a, b) { return a.nama.localeCompare(b.nama); });
+
+  var berkas = [];
+  var bit = folder.getFiles();
+  while (bit.hasNext() && berkas.length < 500) {
+    var x = bit.next();
+    berkas.push({
+      nama: x.getName(), id: x.getId(), url: x.getUrl(), mime: x.getMimeType(),
+      ukuran: x.getSize(), diubah: x.getLastUpdated().toISOString(),
+    });
+  }
+  berkas.sort(function (a, b) { return a.diubah < b.diubah ? 1 : -1; });
+
+  return json({
+    ok: true, jalur: jalur, folderId: folder.getId(), folderUrl: folder.getUrl(),
+    nama: folder.getName(), folder: folders, berkas: berkas,
+  });
 }
 
 function mimeAman(body) {
@@ -295,6 +375,10 @@ function subFolder(induk, nama) {
  */
 function namaBerkas(body) {
   var asli = bersih(body.namaBerkas) || "berkas";
+  // Laporan Docking diunggah dari kantor dengan nama yang sudah rapi dari
+  // sananya; hiasan periode/jenis/kapal justru membuatnya sulit dicocokkan
+  // dengan berkas yang ditaruh manual di Drive.
+  if (body.namaApaAdanya) return asli.slice(0, 190);
   var titik = asli.lastIndexOf(".");
   var pokok = titik > 0 ? asli.slice(0, titik) : asli;
   var ext = titik > 0 ? asli.slice(titik) : "";

@@ -39,6 +39,33 @@ ABK  →  /lapor  →  API  →  Apps Script  →  folder Google Drive
 7. Deploy ulang aplikasi, buka `/permintaan-laporan`, tekan **Salin tautan
    untuk ABK**, lalu sebarkan tautannya ke kapal.
 
+## Memperbarui skrip (wajib untuk menu Laporan Docking)
+
+Skrip yang sama kini melayani **dua** folder Drive:
+
+| Nama pendek | Dipakai halaman | Folder |
+|---|---|---|
+| `kapal` | `/lapor`, `/permintaan-laporan` | `ROOT_FOLDER_ID` |
+| `docking` | `/docking/laporan` | `FOLDER_DOCKING` |
+
+Folder di luar daftar itu tidak bisa disentuh: aplikasi hanya mengirim NAMA
+folder, dan skrip menelusurinya dari akar yang sudah ditentukan. Jadi walaupun
+SECRET bocor, tidak ada cara mengarahkannya ke folder lain di Drive pemilik.
+
+Cara memperbarui — URL `/exec` tidak berubah, jadi tidak ada env yang perlu
+diganti:
+
+1. Buka <https://script.google.com> → proyek yang sudah ada.
+2. Tempel ulang **seluruh** isi [`lapor-apps-script.gs`](lapor-apps-script.gs)
+   (SECRET dan ID folder di dalamnya sudah terisi apa adanya — periksa sekali).
+3. **Deploy → Kelola deployment → ikon pensil → Versi: Versi baru → Terapkan.**
+
+Kalau langkah 3 dilewatkan, Google akan terus melayani versi lama dan halaman
+Laporan Docking menjawab *"Apps Script menjawab bukan JSON"*.
+
+Memastikan sudah versi baru: buka URL `/exec` di peramban, jawabannya harus
+memuat `"versi":4`.
+
 Sebelum env terisi, halaman `/lapor` tetap terbuka tapi unggahan ditolak dengan
 pesan "Penyimpanan berkas belum aktif" — bukan gagal diam-diam.
 

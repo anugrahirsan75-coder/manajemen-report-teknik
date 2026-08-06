@@ -126,7 +126,8 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
 
         <SectionLabel>Data Kapal</SectionLabel>
         <NavLink href="/docking/rencana" icon="🗓️" label="Perencanaan Docking" desc="Repair List, RAB penunjang &amp; jadwal tahapan" active={path.startsWith("/docking/rencana")} onNavigate={onNavigate} />
-        <NavLink href="/docking" icon="🛠️" label="Monitoring Docking" desc="Lama docking, berita acara &amp; kelas BKI" active={path === "/docking" || (path.startsWith("/docking") && !path.startsWith("/docking/rencana"))} onNavigate={onNavigate} />
+        <NavLink href="/docking" icon="🛠️" label="Monitoring Docking" desc="Lama docking, berita acara &amp; kelas BKI" active={path === "/docking" || (path.startsWith("/docking") && !path.startsWith("/docking/rencana") && !path.startsWith("/docking/laporan"))} onNavigate={onNavigate} />
+        <NavLink href="/docking/laporan" icon="📂" label="Laporan Docking" desc="Berkas laporan per kapal — langsung dari Google Drive" active={path.startsWith("/docking/laporan")} onNavigate={onNavigate} />
         <NavLink href="/monitoring" icon="🌐" label="Monitoring Pengadaan Teknik" desc="Halaman terbuka — rekap SPPBJ untuk umum" active={path.startsWith("/monitoring")} onNavigate={onNavigate} />
         <NavLink href="/permintaan-laporan" icon="📨" label="Permintaan &amp; Laporan Kapal" desc="Kiriman ABK — Deck &amp; Mesin, berkas di Google Drive" active={path.startsWith("/permintaan-laporan")} onNavigate={onNavigate} />
         <NavLink href="/sertifikat" icon="📜" label="Monitor Sertifikat Kapal" desc="Masa berlaku sertifikat 13 kapal &amp; berkasnya" active={path.startsWith("/sertifikat")} onNavigate={onNavigate} />
