@@ -11,11 +11,11 @@
  * kolom bantu di sheet RINCIAN — karena SUMIFS mencocokkan teksnya.
  */
 import { saveAs } from "file-saver";
-import { PengadaanRow } from "./store";
+import { PengadaanRow, jenisItemRow } from "./store";
 import { posProgram } from "./program";
 import {
   PlafonRutin, PlafonDocking, PlafonProgram, KAPAL_ANGGARAN, MATA_ANGGARAN, maKey, fullMA,
-  namaKapalPenuh, jenisAnggaranOf, jenisItemOf, labelMA as labelMataAnggaran,
+  namaKapalPenuh, jenisAnggaranOf, labelMA as labelMataAnggaran,
 } from "./types";
 import { rutinKapal } from "./rka2026";
 import { ringkasKapal, pecahKapal } from "@/lib/kapal/nama";
@@ -173,7 +173,7 @@ function susunAnalisis(o: OpsiExportTipe) {
     let nilaiDok = 0;
     let maDok = "";
     for (const it of arr) {
-      if (jenisItemOf(p.raw || {}, it).jenis !== o.tipe) continue;
+      if (jenisItemRow(p, it).jenis !== o.tipe) continue;
       const nilai = (adaFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) * (it.jumlah || 0);
       if (!nilai) continue;
       const ma = labelMataAnggaran(maKey((it.mataAnggaran || "").trim() || maDefault));
@@ -230,6 +230,14 @@ function susunAnalisis(o: OpsiExportTipe) {
 }
 
 export async function exportTipeExcel(o: OpsiExportTipe) {
+  /**
+   * Tanpa daftar pengadaan, berkasnya tetap terbentuk rapi: pagu terisi,
+   * realisasi kosong, serapan 0%. Berkas seperti itu berbahaya justru karena
+   * tampak resmi, jadi lebih baik gagal dengan jelas.
+   */
+  if (!o.pengadaan.length) {
+    throw new Error("Data pengadaan belum termuat, jadi realisasinya akan nol. Muat ulang halaman lalu ulangi.");
+  }
   const grup: any[] = [];
   const dokumen: any[] = [];
   let judul = "", periode = "", labelGrup = "";
@@ -259,7 +267,7 @@ export async function exportTipeExcel(o: OpsiExportTipe) {
       if (p.stok) continue;                    // persediaan tidak menggerus pagu
       if ((p.tanggal || "").slice(0, 4) !== String(o.tahun)) continue;
       const dok = dokumenDari(p, (kapalTeks, maTeks, nilai, it) => {
-        if (!nilai || jenisItemOf(p.raw || {}, it).jenis !== "docking") return [];
+        if (!nilai || jenisItemRow(p, it).jenis !== "docking") return [];
         const kapals = pecahKapal(kapalTeks);
         const bagi = kapals.length || 1;
         const ma = labelMA(maTeks);
@@ -306,7 +314,7 @@ export async function exportTipeExcel(o: OpsiExportTipe) {
       const bl = (p.tanggal || "").slice(0, 7);
       if (!labelBulan[bl]) continue;
       const dok = dokumenDari(p, (_kapal, maTeks, nilai, it) =>
-        nilai && jenisItemOf(p.raw || {}, it).jenis === "rutin"
+        nilai && jenisItemRow(p, it).jenis === "rutin"
           ? [{ grup: labelBulan[bl], ma: labelMA(maTeks), nilai }] : []);
       if (dok) {
         dok._pos.forEach((x: PosItem) => tambahPos(x.grup, x.ma));

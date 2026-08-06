@@ -8,7 +8,10 @@
  * kasar per kolom rupiah supaya salah baca angka ketahuan sebelum ditempel.
  */
 import { useCallback, useEffect, useRef, useState } from "react";
-import { BERKAS_DITERIMA, Kemajuan, Mesin, TakAdaMesin, bacaBerkasTabel, namaMesin, periksaMesin } from "@/lib/surat/bacaTabel";
+import {
+  BERKAS_DITERIMA, Kemajuan, KesiapanMesin, Mesin, PETUNJUK_ORIGIN, PilihanMesin, TakAdaMesin,
+  bacaBerkasTabel, namaMesin, ollamaHost, periksaMesin, setOllamaHost,
+} from "@/lib/surat/bacaTabel";
 import { KolomTabel } from "@/lib/surat/types";
 import { angkaRibuan, keAngka } from "@/lib/surat/format";
 
@@ -29,37 +32,64 @@ export default function UnggahTabel({
   const [mesin, setMesin] = useState<Mesin | "">("");
   const [catatan, setCatatan] = useState<string[]>([]);
   const [galat, setGalat] = useState("");
-  const [siap, setSiap] = useState<{ gemini: boolean; ollama: string } | null>(null);
+  const [siap, setSiap] = useState<KesiapanMesin | null>(null);
   const [namaBerkas, setNamaBerkas] = useState<string[]>([]);
+  const [pilihMesin, setPilihMesin] = useState<PilihanMesin>("otomatis");
+  const [aturOllama, setAturOllama] = useState(false);
+  const [host, setHost] = useState("");
+  const [terakhir, setTerakhir] = useState<File[]>([]);   // untuk "baca ulang pakai AI"
+  const [detik, setDetik] = useState(0);
   const berkasRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (!sibuk) { setDetik(0); return; }
+    const t = setInterval(() => setDetik((d) => d + 1), 1000);
+    return () => clearInterval(t);
+  }, [sibuk]);
+
+  const periksa = useCallback(() => { periksaMesin().then(setSiap); }, []);
 
   useEffect(() => {
     if (!buka) return;
     setSibuk(false); setTahap({ tahap: "" }); setBaris([]); setMesin("");
-    setCatatan([]); setGalat(""); setNamaBerkas([]);
-    periksaMesin().then(setSiap);
-  }, [buka]);
+    setCatatan([]); setGalat(""); setNamaBerkas([]); setTerakhir([]);
+    setHost(ollamaHost());
+    setSiap(null);
+    periksa();
+  }, [buka, periksa]);
 
-  const jalankan = useCallback(async (berkas: File[]) => {
+  const jalankan = useCallback(async (berkas: File[], opsi: { paksaAI?: boolean; tambah?: boolean } = {}) => {
     if (!berkas.length) return;
     setGalat(""); setSibuk(true);
+    if (!opsi.tambah) { setBaris([]); setCatatan([]); setNamaBerkas([]); }
     try {
       for (const f of berkas) {
         setTahap({ tahap: `Membuka ${f.name}…` });
-        const hasil = await bacaBerkasTabel(f, kolom, konteks || "", setTahap);
+        const hasil = await bacaBerkasTabel(f, kolom, konteks || "", setTahap,
+          { mesin: pilihMesin, paksaAI: opsi.paksaAI });
         setBaris((lama) => [...lama, ...hasil.baris]);
         setMesin(hasil.mesin);
         setCatatan((lama) => [...lama, ...hasil.catatan]);
         setNamaBerkas((lama) => [...lama, f.name]);
         if (!hasil.baris.length) setGalat(`Tidak ada baris yang terbaca dari ${f.name}. Coba berkas lain, atau potret bagian tabelnya saja.`);
       }
+      setTerakhir(berkas);
     } catch (e: any) {
       console.error("[surat] gagal membaca berkas", e);   // jejak lengkap untuk menelusuri kegagalan
       setGalat(e instanceof TakAdaMesin ? e.message : `Gagal membaca: ${e?.message || e}`);
+      setTerakhir(berkas);
+      periksa();      // mungkin Ollama baru mati/hidup — segarkan lampu statusnya
     } finally {
       setSibuk(false); setTahap({ tahap: "" });
     }
-  }, [kolom, konteks]);
+  }, [kolom, konteks, pilihMesin, periksa]);
+
+  const simpanHost = () => {
+    setOllamaHost(host.trim() || "http://127.0.0.1:11434");
+    setHost(ollamaHost());
+    setSiap(null);
+    periksa();
+  };
 
   // tempel screenshot langsung dengan Ctrl+V
   useEffect(() => {
@@ -98,17 +128,50 @@ export default function UnggahTabel({
           <button onClick={tutup} className="text-xl leading-none text-slate-400 hover:text-slate-700">✕</button>
         </div>
 
-        {/* mesin yang siap */}
-        {siap && (
-          <div className="flex flex-wrap items-center gap-2 border-b px-5 py-1.5 text-[11px] dark:border-slate-700">
-            <span className="rounded bg-slate-100 px-1.5 py-0.5 font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">📗 Excel/CSV: dibaca langsung, tanpa AI</span>
-            <span className={`rounded px-1.5 py-0.5 font-semibold ${siap.gemini ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
-              ☁️ AI cloud {siap.gemini ? "siap" : "— GEMINI_API_KEY belum diset"}
-            </span>
-            <span className={`rounded px-1.5 py-0.5 font-semibold ${siap.ollama ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
-              🖥️ AI lokal {siap.ollama ? `siap (${siap.ollama})` : "— Ollama tak aktif"}
-            </span>
-            {mesin && <span className="ml-auto text-slate-400">Terbaca lewat: <b className="text-slate-600 dark:text-slate-300">{namaMesin(mesin)}</b></span>}
+        {/* mesin yang siap + pilihannya */}
+        <div className="flex flex-wrap items-center gap-2 border-b px-5 py-1.5 text-[11px] dark:border-slate-700">
+          <span className={`rounded px-1.5 py-0.5 font-semibold ${siap?.gemini ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
+            ☁️ AI cloud {siap ? (siap.gemini ? "siap" : "— GEMINI_API_KEY belum diset") : "…"}
+          </span>
+          <span className={`rounded px-1.5 py-0.5 font-semibold ${siap?.ollama ? "bg-emerald-50 text-emerald-700" : "bg-slate-100 text-slate-400"}`}>
+            🖥️ AI lokal {siap ? (siap.ollama ? `siap — ${siap.ollama} (lewat ${siap.jalur})` : "— Ollama tak terjangkau") : "…"}
+          </span>
+          <button onClick={() => setAturOllama((v) => !v)} className="rounded px-1.5 py-0.5 font-semibold text-sky-700 hover:bg-sky-50">
+            ⚙ Atur Ollama
+          </button>
+          <select value={pilihMesin} onChange={(e) => setPilihMesin(e.target.value as PilihanMesin)} disabled={sibuk}
+            title="Mesin mana yang dipakai lebih dulu"
+            className="rounded border border-slate-300 bg-white px-1.5 py-0.5 dark:border-slate-700 dark:bg-slate-900">
+            <option value="otomatis">Mesin: otomatis</option>
+            <option value="ollama">Mesin: AI lokal (Ollama) dulu</option>
+            <option value="gemini">Mesin: AI cloud dulu</option>
+          </select>
+          {mesin && <span className="ml-auto text-slate-400">Terbaca lewat: <b className="text-slate-600 dark:text-slate-300">{namaMesin(mesin)}</b></span>}
+        </div>
+
+        {aturOllama && (
+          <div className="border-b bg-slate-50 px-5 py-3 text-[11px] dark:border-slate-700 dark:bg-slate-800/60">
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="font-bold text-slate-600 dark:text-slate-300">Alamat Ollama</label>
+              <input value={host} onChange={(e) => setHost(e.target.value)} placeholder="http://127.0.0.1:11434"
+                className="w-64 rounded border border-slate-300 px-2 py-1 font-mono dark:border-slate-700 dark:bg-slate-900" />
+              <button onClick={simpanHost} className="rounded bg-slate-800 px-2.5 py-1 font-bold text-white">Simpan &amp; uji</button>
+              <button onClick={periksa} className="rounded border border-slate-300 px-2.5 py-1 font-semibold text-slate-600">Uji ulang</button>
+              {siap && (siap.ollama
+                ? <span className="font-semibold text-emerald-700">✓ tersambung ({siap.ollama}{siap.ollamaVisi ? `, bervisi: ${siap.ollamaVisi}` : ", belum ada model bervisi"})</span>
+                : <span className="font-semibold text-rose-600">✕ {siap.galat}</span>)}
+            </div>
+            <p className="mt-2 leading-relaxed text-slate-500">
+              Aplikasi ini dibuka dari internet, sedangkan Ollama berjalan di laptop — jadi <b>peramban</b> yang
+              menghubunginya, bukan server. Supaya tidak ditolak, izinkan asal situsnya sekali saja di Command Prompt
+              lalu keluar dari Ollama di baki sistem dan buka lagi:
+            </p>
+            <code className="mt-1 block rounded bg-slate-900 px-2 py-1.5 font-mono text-[11px] text-slate-100">setx OLLAMA_ORIGINS &quot;*&quot;</code>
+            <p className="mt-1 text-slate-500">
+              Model yang disarankan: <code>ollama pull qwen2.5:7b</code> (teks) dan <code>ollama pull qwen2.5vl:7b</code> (gambar).
+              Model 3b sering salah baca. Saat aplikasi dijalankan langsung di laptop, semua ini tidak perlu — servernya
+              yang bicara ke Ollama.
+            </p>
           </div>
         )}
 
@@ -126,6 +189,10 @@ export default function UnggahTabel({
                 <div className="mx-auto mt-2 h-2 max-w-xs overflow-hidden rounded-full bg-slate-200">
                   <div className="h-full bg-sky-500 transition-all" style={{ width: `${tahap.persen ?? 30}%` }} />
                 </div>
+                {/* AI lokal di CPU bisa makan menit, bukan detik — tanpa penunjuk waktu layar ini terlihat menggantung */}
+                <p className="mt-1.5 text-[11px] text-slate-500">
+                  {detik} detik berjalan{detik > 25 && " · AI lokal di laptop memang lambat; biarkan saja"}
+                </p>
               </div>
             ) : (
               <>
@@ -141,7 +208,17 @@ export default function UnggahTabel({
               onChange={(e) => { const fs = Array.from(e.target.files || []); if (fs.length) jalankan(fs); e.target.value = ""; }} />
           </div>
 
-          {galat && <p className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">{galat}</p>}
+          {galat && (
+            <div className="mt-3 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-800">
+              <p className="whitespace-pre-line">{galat}</p>
+              {!siap?.ollama && (
+                <p className="mt-2 text-[11px]">
+                  {PETUNJUK_ORIGIN}{" "}
+                  <button onClick={() => setAturOllama(true)} className="font-bold underline">Buka pengaturan Ollama</button>
+                </p>
+              )}
+            </div>
+          )}
           {catatan.length > 0 && (
             <ul className="mt-3 space-y-0.5 rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500 dark:bg-slate-800">
               {Array.from(new Set(catatan)).slice(0, 6).map((c, i) => <li key={i}>• {c}</li>)}
@@ -156,7 +233,16 @@ export default function UnggahTabel({
                   <b className="text-slate-800 dark:text-white">{baris.length} baris</b> dari {namaBerkas.length} berkas
                   {kosongPenting > 0 && <span className="text-amber-600"> · {kosongPenting} baris belum ada nilainya</span>}
                 </p>
-                <button onClick={() => setBaris([])} className="text-[11px] text-slate-500 hover:underline">bersihkan</button>
+                <div className="flex items-center gap-3">
+                  {terakhir.length > 0 && (
+                    <button onClick={() => jalankan(terakhir, { paksaAI: true })} disabled={sibuk}
+                      title="Abaikan pembacaan langsung, minta AI membaca ulang berkas yang sama"
+                      className="text-[11px] font-bold text-sky-700 hover:underline disabled:opacity-40">
+                      ↻ Baca ulang pakai AI
+                    </button>
+                  )}
+                  <button onClick={() => setBaris([])} className="text-[11px] text-slate-500 hover:underline">bersihkan</button>
+                </div>
               </div>
 
               <div className="max-h-[42vh] overflow-auto rounded-xl ring-1 ring-slate-200 dark:ring-slate-700">

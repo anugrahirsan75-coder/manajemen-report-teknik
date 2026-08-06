@@ -42,7 +42,7 @@ const estPengadaan = (r: PengadaanRow) => (r.items || []).reduce((s, it: any) =>
 function DashboardInner() {
   const qs = useSearchParams();
   const v = (qs.get("v") || "ringkas") as "ringkas" | "rutin" | "docking" | "lainnya" | "rincian";
-  const { ready, loading, pengadaan, rka, plafon, docking, program, reload, saveRka, savePlafon, saveDocking, saveProgram } = useAnggaran();
+  const { ready, loading, galat, pengadaan, rka, plafon, docking, program, reload, saveRka, savePlafon, saveDocking, saveProgram } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
   const [xlsBusy, setXlsBusy] = useState(false);
   /**
@@ -68,6 +68,15 @@ function DashboardInner() {
 
   // Export Excel PER TIPE (berjenjang + tautan antar sheet)
   const unduhExcel = async (tipe: "rutin" | "docking" | "lainnya", dari?: string, sampai?: string) => {
+    /**
+     * Pagu datang dari simpanan lokal, realisasi hanya dari server. Kalau daftar
+     * pengadaan belum termuat, berkasnya akan tampak lengkap tetapi kolom
+     * realisasinya kosong sama sekali — lebih baik ditahan daripada menyerahkan
+     * angka nol yang terlihat resmi.
+     */
+    if (loading) { void beritahu("Data pengadaan masih dimuat. Tunggu sebentar lalu ulangi."); return; }
+    if (galat) { void beritahu(`Data pengadaan gagal dimuat: ${galat}. Tekan “Muat ulang” dulu — tanpa itu kolom realisasi akan kosong.`); return; }
+    if (!pengadaan.length) { void beritahu("Belum ada data pengadaan yang termuat, jadi realisasinya akan nol. Tekan “Muat ulang” dulu."); return; }
     setXlsBusy(true);
     try {
       const penuh = dari ? null : rentangPenuh();
@@ -157,6 +166,20 @@ function DashboardInner() {
           <button onClick={reload} className="btn btn-ghost text-xs">↻ Muat ulang</button>
         </div>
       </div>
+
+      {/*
+        Pagu tersimpan di peramban, realisasi hanya ada di server. Begitu daftar
+        pengadaan gagal dimuat, seluruh angka realisasi di layar ini menjadi nol
+        tanpa satu pun tanda — jadi keadaan itu harus dikatakan terang-terangan.
+      */}
+      {!loading && (galat || (ready && !pengadaan.length)) && (
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
+          <b>Data pengadaan belum termuat</b> — semua angka realisasi di halaman ini (dan di berkas ekspor) akan
+          tampil nol, sedangkan pagunya tetap terlihat utuh.
+          {galat && <> Penyebabnya: <i>{galat}</i>.</>}{" "}
+          <button onClick={reload} className="font-bold underline">Muat ulang</button>
+        </div>
+      )}
 
       {/* navigasi antar tampilan */}
       <nav className="mt-4 flex flex-wrap items-center gap-1.5">

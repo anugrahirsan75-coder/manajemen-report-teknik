@@ -20,6 +20,8 @@
  */
 import { KolomTabel } from "./types";
 import { keRupiahBersih, keTanggalIso, promptTabel, rapikanBaris } from "./bacaSkema";
+import { tabelBlokMA } from "./bacaBlokMA";
+import { keAngka } from "./format";
 import { extractJson } from "@/lib/sppbj/scanPrompt";
 import { ollamaHost } from "@/lib/sppbj/scanAI";
 import { bukaPdf } from "@/lib/pdfPeramban";
@@ -55,25 +57,50 @@ export const BERKAS_DITERIMA = ".xlsx,.xls,.csv,.pdf,.png,.jpg,.jpeg,.webp,.heic
    1. Excel & CSV — dibaca apa adanya
    ══════════════════════════════════════════════════════════════════════════ */
 
-/** seluruh sel jadi matriks teks; sel Excel bertipe angka/tanggal ikut dirapikan */
-async function matriksSpreadsheet(file: File): Promise<string[][]> {
-  if (ekstensi(file.name) === "csv") return uraiCsv(await file.text());
+export interface Lembar { nama: string; matriks: string[][] }
+
+/**
+ * Tiap lembar dibaca SENDIRI-SENDIRI, tidak digabung jadi satu matriks.
+ *
+ * Berkas nyata seperti Repair List punya empat lembar: daftar pekerjaan yang
+ * panjang, penunjang docking, lalu Kontrol Biaya yang justru jadi sumber surat.
+ * Kalau semuanya ditumpuk, baris judul tabel yang dicari terkubur ratusan baris
+ * di bawah dan tak pernah ketemu.
+ */
+async function lembarSpreadsheet(file: File): Promise<Lembar[]> {
+  if (ekstensi(file.name) === "csv") return [{ nama: file.name, matriks: uraiCsv(await file.text()) }];
 
   const { default: ExcelJS } = await import("exceljs");
   const wb = new ExcelJS.Workbook();
   await wb.xlsx.load(await file.arrayBuffer());
-  const keluar: string[][] = [];
+  const keluar: Lembar[] = [];
   wb.eachSheet((ws) => {
+    const matriks: string[][] = [];
     ws.eachRow({ includeEmpty: true }, (row) => {
       const baris: string[] = [];
       row.eachCell({ includeEmpty: true }, (sel, kol) => {
         baris[kol - 1] = selKeTeks(sel.value);
       });
-      keluar.push(Array.from(baris, (v) => v ?? ""));
+      matriks.push(Array.from(baris, (v) => v ?? ""));
     });
-    keluar.push([]);   // pemisah antar-lembar
+    keluar.push({ nama: ws.name, matriks });
   });
   return keluar;
+}
+
+/**
+ * Urutan lembar yang paling mungkin memuat tabelnya. Lembar dengan blok
+ * "(M.A. …)" dan judul RKA jelas lebih menjanjikan daripada daftar pekerjaan
+ * sepanjang dua ratus baris.
+ */
+function urutkanLembar(lembar: Lembar[]): Lembar[] {
+  const skor = (l: Lembar) => {
+    const teks = l.matriks.slice(0, 400).map((r) => r.join(" ")).join("\n");
+    return (teks.match(/\(\s*M\.?\s*A\.?\s*\.?\s*\d{6,}/gi)?.length || 0) * 3
+      + (/\brka\b/i.test(teks) ? 5 : 0)
+      + (/kontrol\s+biaya|usulan\s+cabang/i.test(`${l.nama} ${teks}`) ? 5 : 0);
+  };
+  return [...lembar].map((l) => ({ l, s: skor(l) })).sort((a, b) => b.s - a.s).map((x) => x.l);
 }
 
 function selKeTeks(v: any): string {
@@ -210,6 +237,33 @@ function tabelDariMatriks(matriks: string[][], kolom: KolomTabel[]): HasilTabel 
   const takKetemu = kolom.filter((k) => peta.indeks[k.id] === undefined).map((k) => k.label);
   if (takKetemu.length) catatan.push(`Kolom ${takKetemu.join(", ")} tak ditemukan judulnya di berkas — isi sendiri.`);
   return { baris, catatan };
+}
+
+/**
+ * Apakah hasil baca-langsung ini layak dipakai?
+ *
+ * Berkas nyata sering memakai judul bertingkat dan sel gabungan. Pencocokan
+ * judul kolom tetap "berhasil" di berkas seperti itu, tapi hasilnya kacau:
+ * baris nomor kolom ikut terbaca sebagai data, dan nilai sel gabungan terulang
+ * di banyak baris. Lebih baik hasil begitu dibuang dan berkasnya diserahkan ke
+ * AI daripada ditempelkan ke surat.
+ */
+function hasilMasukAkal(baris: Record<string, string>[], kolom: KolomTabel[]): boolean {
+  const rupiah = kolom.filter((k) => k.jenis === "rupiah");
+  if (!rupiah.length || baris.length < 2) return true;
+
+  const berisi = baris.filter((r) => rupiah.some((k) => keAngka(r[k.id]) > 0));
+  if (berisi.length < baris.length * 0.6) return false;         // terlalu banyak baris tanpa angka
+
+  // nilai sel gabungan yang terulang: satu angka yang sama di seperempat baris
+  for (const k of rupiah) {
+    const nilai = berisi.map((r) => keAngka(r[k.id])).filter((n) => n > 0);
+    const hitung = new Map<number, number>();
+    nilai.forEach((n) => hitung.set(n, (hitung.get(n) || 0) + 1));
+    const terbanyak = Math.max(0, ...Array.from(hitung.values()));
+    if (nilai.length >= 6 && terbanyak > nilai.length * 0.25) return false;
+  }
+  return true;
 }
 
 interface HasilTabel { baris: Record<string, string>[]; catatan: string[] }
@@ -371,71 +425,150 @@ async function modelOllama(perluVisi: boolean): Promise<string> {
   return pilih;
 }
 
-async function keOllama(perintah: string, gambar: string[] | undefined, kolom: KolomTabel[]): Promise<HasilTabel> {
-  const model = await modelOllama(!!gambar?.length);
-  const r = await fetch(`${ollamaHost()}/api/generate`, {
-    method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      model, prompt: perintah, images: gambar, stream: false,
-      format: "json", options: { temperature: 0, num_ctx: 8192 },
-    }),
+/**
+ * Ollama LEWAT SERVER. Dipakai saat aplikasi dijalankan di laptop yang sama
+ * dengan Ollama: yang menghubungi 127.0.0.1 adalah servernya, jadi izin asal
+ * (CORS) tidak pernah jadi soal — cukup Ollama menyala.
+ */
+async function keOllamaServer(badan: any): Promise<HasilTabel> {
+  const r = await fetch("/api/surat/baca-tabel-ollama", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan),
   });
+  if (r.status === 501) throw new BelumSiap((await r.json().catch(() => ({}))).error || "Ollama tak terjangkau dari server");
+  if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `server ${r.status}`);
+  const d = await r.json();
+  return { baris: d.baris || [], catatan: d.catatan || [] };
+}
+
+/** Ollama LANGSUNG DARI PERAMBAN. Dipakai saat aplikasi dibuka dari Vercel. */
+async function keOllamaPeramban(perintah: string, gambar: string[] | undefined, kolom: KolomTabel[]): Promise<HasilTabel> {
+  const model = await modelOllama(!!gambar?.length);
+  let r: Response;
+  try {
+    r = await fetch(`${ollamaHost()}/api/generate`, {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        model, prompt: perintah, images: gambar, stream: false,
+        format: "json", options: { temperature: 0, num_ctx: 16384 },
+      }),
+    });
+  } catch (e: any) {
+    // gagal sebelum ada balasan = Ollama menolak asal situsnya, atau tak menyala
+    throw new BelumSiap(`Peramban tak bisa menghubungi Ollama di ${ollamaHost()} (${e?.message || e}). ${PETUNJUK_ORIGIN}`);
+  }
+  if (r.status === 403) throw new BelumSiap(`Ollama menolak permintaan dari halaman ini (403). ${PETUNJUK_ORIGIN}`);
   if (!r.ok) throw new Error(`Ollama ${r.status}: ${(await r.text()).slice(0, 200)}`);
   const d = await r.json();
   return rapikanBaris(extractJson(d.response || ""), kolom);
 }
 
-/** satu potong sumber (teks atau satu gambar) -> baris, dengan urutan mesin tetap */
+export const PETUNJUK_ORIGIN =
+  "Izinkan asal situsnya di Ollama: setx OLLAMA_ORIGINS \"*\" lalu tutup Ollama dari baki sistem dan buka lagi.";
+
+export type PilihanMesin = "otomatis" | "ollama" | "gemini";
+
+/** satu potong sumber (teks atau satu gambar) -> baris */
 async function bacaSatu(
   kolom: KolomTabel[], konteks: string,
   sumber: { teks?: string; gambar?: { base64: string; mime: string } },
+  pilihan: PilihanMesin = "otomatis",
 ): Promise<{ hasil: HasilTabel; mesin: Mesin }> {
   const mode = sumber.gambar ? "gambar" : "teks";
-  try {
-    const hasil = await keGemini({ mode, teks: sumber.teks, gambar: sumber.gambar, kolom, konteks });
-    return { hasil, mesin: mode === "gambar" ? "gemini-gambar" : "gemini-teks" };
-  } catch (e) {
-    if (!(e instanceof BelumSiap)) throw e;
-  }
-  try {
-    const perintah = promptTabel(kolom, konteks, mode)
-      + (sumber.teks ? `\n\nISI BERKAS:\n${sumber.teks.slice(0, 40_000)}` : "");
-    const hasil = await keOllama(perintah, sumber.gambar ? [sumber.gambar.base64] : undefined, kolom);
-    return { hasil, mesin: mode === "gambar" ? "ollama-gambar" : "ollama-teks" };
-  } catch (e) {
-    if (e instanceof BelumSiap) {
-      throw new TakAdaMesin(
-        `Belum ada mesin pembaca yang siap (${(e as Error).message}). `
-        + "Isi GEMINI_API_KEY di server, atau nyalakan Ollama di laptop.",
-      );
+  const badan = { mode, teks: sumber.teks, gambar: sumber.gambar, kolom, konteks };
+  const sebab: string[] = [];
+
+  /** urutan mesin: yang dipilih pengguna lebih dulu, sisanya jadi cadangan */
+  const urutan: ("gemini" | "ollama")[] =
+    pilihan === "ollama" ? ["ollama", "gemini"]
+      : pilihan === "gemini" ? ["gemini", "ollama"]
+        : ["gemini", "ollama"];
+
+  for (const mesin of urutan) {
+    if (mesin === "gemini") {
+      try {
+        return { hasil: await keGemini(badan), mesin: mode === "gambar" ? "gemini-gambar" : "gemini-teks" };
+      } catch (e) {
+        if (!(e instanceof BelumSiap)) throw e;
+        sebab.push(`AI cloud: ${(e as Error).message}`);
+      }
+      continue;
     }
-    throw e;
+
+    // Ollama: server dulu (tanpa CORS), baru peramban (saat dibuka dari Vercel)
+    try {
+      return { hasil: await keOllamaServer(badan), mesin: mode === "gambar" ? "ollama-gambar" : "ollama-teks" };
+    } catch (e) {
+      if (!(e instanceof BelumSiap)) throw e;
+      sebab.push(`Ollama lewat server: ${(e as Error).message}`);
+    }
+    try {
+      const perintah = promptTabel(kolom, konteks, mode)
+        + (sumber.teks ? `\n\nISI BERKAS:\n${sumber.teks.slice(0, 60_000)}` : "");
+      const hasil = await keOllamaPeramban(perintah, sumber.gambar ? [sumber.gambar.base64] : undefined, kolom);
+      return { hasil, mesin: mode === "gambar" ? "ollama-gambar" : "ollama-teks" };
+    } catch (e) {
+      if (!(e instanceof BelumSiap)) throw e;
+      sebab.push((e as Error).message);
+    }
   }
+
+  throw new TakAdaMesin(`Belum ada mesin pembaca yang siap.\n• ${sebab.join("\n• ")}`);
 }
 
 /* ══════════════════════════════════════════════════════════════════════════
    5. Pintu masuk
    ══════════════════════════════════════════════════════════════════════════ */
 
+export interface OpsiBaca {
+  /** mesin AI yang didahulukan; "otomatis" = cloud dulu, lalu Ollama */
+  mesin?: PilihanMesin;
+  /** lewati pembacaan langsung Excel dan langsung serahkan ke AI */
+  paksaAI?: boolean;
+}
+
 export async function bacaBerkasTabel(
   file: File,
   kolom: KolomTabel[],
   konteks = "",
   lapor: (k: Kemajuan) => void = () => {},
+  opsi: OpsiBaca = {},
 ): Promise<HasilBaca> {
   const ext = ekstensi(file.name);
   const catatan: string[] = [];
+  const pilihan = opsi.mesin || "otomatis";
 
   // ── Excel / CSV ────────────────────────────────────────────────────────
   if (["xlsx", "xls", "csv"].includes(ext)) {
     lapor({ tahap: "Membuka berkas…" });
-    const matriks = await matriksSpreadsheet(file);
-    const langsung = tabelDariMatriks(matriks, kolom);
-    if (langsung) return { ...langsung, mesin: "berkas" };
+    const lembar = urutkanLembar(await lembarSpreadsheet(file));
+    const banyakLembar = lembar.length > 1;
 
-    catatan.push("Judul kolom di berkas tidak dikenali, jadi isinya dibaca AI.");
-    lapor({ tahap: "Judul kolom tak dikenali — meminta bantuan AI…" });
-    const { hasil, mesin } = await bacaSatu(kolom, konteks, { teks: matriksKeTeks(matriks) });
+    if (!opsi.paksaAI) {
+      // bentuk baku "Kontrol Biaya Docking" dulu — paling tepat karena dikenali utuh
+      for (const l of lembar) {
+        const blok = tabelBlokMA(l.matriks, kolom);
+        if (blok) {
+          if (banyakLembar) blok.catatan.push(`Dibaca dari lembar “${l.nama}”.`);
+          return { ...blok, mesin: "berkas" };
+        }
+      }
+      for (const l of lembar) {
+        const langsung = tabelDariMatriks(l.matriks, kolom);
+        if (!langsung) continue;
+        if (hasilMasukAkal(langsung.baris, kolom)) {
+          if (banyakLembar) langsung.catatan.push(`Dibaca dari lembar “${l.nama}”.`);
+          return { ...langsung, mesin: "berkas" };
+        }
+        catatan.push(`Lembar “${l.nama}” terbaca kacau (judul bertingkat / sel gabungan), jadi dibuang.`);
+      }
+      if (!catatan.length) catatan.push("Judul kolom di berkas tidak dikenali, jadi isinya dibaca AI.");
+    }
+
+    lapor({ tahap: "Menyerahkan isi berkas ke AI…" });
+    // lembar yang paling menjanjikan saja yang dikirim: satu berkas bisa ribuan baris
+    const pilihLembar = lembar[0];
+    if (banyakLembar) catatan.push(`Yang dikirim ke AI hanya lembar “${pilihLembar.nama}”.`);
+    const { hasil, mesin } = await bacaSatu(kolom, konteks, { teks: matriksKeTeks(pilihLembar.matriks) }, pilihan);
     return { baris: hasil.baris, mesin, catatan: [...catatan, ...hasil.catatan] };
   }
 
@@ -446,7 +579,7 @@ export async function bacaBerkasTabel(
     const teks = await teksPdf(dok, lapor);
     if (teks.replace(/\s/g, "").length >= 200) {
       lapor({ tahap: "Menyusun tabel dari teks PDF…" });
-      const { hasil, mesin } = await bacaSatu(kolom, konteks, { teks });
+      const { hasil, mesin } = await bacaSatu(kolom, konteks, { teks }, pilihan);
       const bersihKop = buangKopSurat(hasil.baris, teks);
       if (bersihKop.dibuang) catatan.push(`${bersihKop.dibuang} baris dibuang karena isinya kop surat berkas itu sendiri.`);
       if (bersihKop.baris.length) return { baris: bersihKop.baris, mesin, catatan: [...catatan, ...hasil.catatan] };
@@ -461,7 +594,7 @@ export async function bacaBerkasTabel(
     let mesinDipakai: Mesin = "gemini-gambar";
     for (let i = 0; i < gambar.length; i++) {
       lapor({ tahap: `Membaca halaman ${i + 1}/${gambar.length}…`, persen: Math.round(((i + 1) / gambar.length) * 100) });
-      const { hasil, mesin } = await bacaSatu(kolom, konteks, { gambar: { base64: gambar[i], mime: "image/jpeg" } });
+      const { hasil, mesin } = await bacaSatu(kolom, konteks, { gambar: { base64: gambar[i], mime: "image/jpeg" } }, pilihan);
       semua.push(...hasil.baris);
       catatan.push(...hasil.catatan);
       mesinDipakai = mesin;
@@ -473,15 +606,43 @@ export async function bacaBerkasTabel(
   lapor({ tahap: "Menyiapkan gambar…" });
   const gambar = await gambarKeBase64(file);
   lapor({ tahap: "Membaca gambar…" });
-  const { hasil, mesin } = await bacaSatu(kolom, konteks, { gambar });
+  const { hasil, mesin } = await bacaSatu(kolom, konteks, { gambar }, pilihan);
   return { baris: hasil.baris, mesin, catatan: [...catatan, ...hasil.catatan] };
 }
 
+export interface KesiapanMesin {
+  gemini: boolean;
+  /** model Ollama yang akan dipakai, kosong bila tak terjangkau */
+  ollama: string;
+  ollamaVisi: string;
+  /** lewat mana Ollama terjangkau */
+  jalur: "server" | "peramban" | "";
+  host: string;
+  galat: string;
+}
+
 /** dipakai layar untuk memberi tahu mesin mana yang siap sebelum berkas dipilih */
-export async function periksaMesin(): Promise<{ gemini: boolean; ollama: string }> {
+export async function periksaMesin(): Promise<KesiapanMesin> {
   let gemini = false;
   try { gemini = !!(await (await fetch("/api/surat/baca-tabel", { cache: "no-store" })).json()).siap; } catch { /* server tak menjawab */ }
-  let ollama = "";
-  try { ollama = await modelOllama(false); } catch { /* Ollama mati */ }
-  return { gemini, ollama };
+
+  // 1) lewat server — berlaku saat aplikasi dijalankan di laptop
+  try {
+    const d = await (await fetch("/api/surat/baca-tabel-ollama", { cache: "no-store" })).json();
+    if (d?.siap && d.model) {
+      return { gemini, ollama: d.model, ollamaVisi: d.modelVisi || "", jalur: "server", host: d.host || "", galat: "" };
+    }
+  } catch { /* rute tak ada / server tak menjawab */ }
+
+  // 2) langsung dari peramban — berlaku saat aplikasi dibuka dari Vercel
+  try {
+    const model = await modelOllama(false);
+    let visi = "";
+    try { visi = await modelOllama(true); } catch { /* belum ada model bervisi */ }
+    return { gemini, ollama: model, ollamaVisi: visi, jalur: "peramban", host: ollamaHost(), galat: "" };
+  } catch (e: any) {
+    return { gemini, ollama: "", ollamaVisi: "", jalur: "", host: ollamaHost(), galat: e?.message || "Ollama tak terjangkau" };
+  }
 }
+
+export { ollamaHost, setOllamaHost } from "@/lib/sppbj/scanAI";

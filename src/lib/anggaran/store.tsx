@@ -194,6 +194,8 @@ export function useAnggaran() {
   const [docking, setDocking] = useState<PlafonDocking[]>([]);
   const [program, setProgram] = useState<PlafonProgram[]>([]);
   const [loading, setLoading] = useState(false);
+  /** pesan bila daftar pengadaan gagal dimuat — dipakai layar untuk menahan ekspor */
+  const [galat, setGalat] = useState("");
 
   // muat lokal dulu (offline-ready)
   useEffect(() => {
@@ -207,8 +209,22 @@ export function useAnggaran() {
     if (!supabase) return;
     setLoading(true);
     try {
-      const { data } = await supabase.from("projects").select("id,nama_kapal,payload,created_at")
+      const { data, error } = await supabase.from("projects").select("id,nama_kapal,payload,created_at")
         .or("payload->>kind.eq.sppbj,payload->>kind.eq.nonpr").order("created_at", { ascending: false });
+      /**
+       * Galat di sini TIDAK boleh ditelan.
+       *
+       * Pagu, RKA, dan plafon dimuat dari simpanan lokal, sedangkan daftar
+       * pengadaan hanya dari server. Kalau permintaannya gagal (sesi habis,
+       * jaringan putus) dan galatnya diabaikan, layar tetap tampil rapi dengan
+       * pagu utuh tetapi realisasi NOL — dan berkas ekspor pun ikut nol tanpa
+       * ada tanda apa pun bahwa datanya belum termuat.
+       */
+      if (error) {
+        setGalat(error.message || "Daftar pengadaan gagal dimuat.");
+        return;
+      }
+      setGalat("");
       setPengadaan(rowsFromProjects(data || []));
       // RKA + RR dari supabase (kind=anggaran)
       const { data: meta } = await supabase.from("projects").select("id,payload").filter("payload->>kind", "eq", "anggaran");
@@ -243,5 +259,5 @@ export function useAnggaran() {
   const saveDocking = useCallback(async (next: PlafonDocking[]) => { setDocking(next); await persist(rka, plafon, next, program); }, [rka, plafon, program, persist]);
   const saveProgram = useCallback(async (next: PlafonProgram[]) => { setProgram(next); await persist(rka, plafon, docking, next); }, [rka, plafon, docking, persist]);
 
-  return { ready, loading, pengadaan, rka, plafon, docking, program, reload: load, saveRka, savePlafon, saveDocking, saveProgram };
+  return { ready, loading, galat, pengadaan, rka, plafon, docking, program, reload: load, saveRka, savePlafon, saveDocking, saveProgram };
 }
