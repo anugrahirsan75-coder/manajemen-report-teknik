@@ -70,6 +70,20 @@ export interface GrSes {
 export const totalSpbj = (items: SppbjItem[] = []) =>
   items.reduce((s, i) => s + hargaSpbjOf(i) * (i.jumlah || 0), 0);
 
+/** total USULAN (harga di SPPBJ), apa pun harga final yang datang belakangan */
+export const totalSppbj = (items: SppbjItem[] = []) =>
+  items.reduce((s, i) => s + (i.harga || 0) * (i.jumlah || 0), 0);
+
+/**
+ * Harga final SPBJ sudah masuk?
+ *
+ * Dipakai untuk membedakan "belum ada SPBJ" dari "SPBJ senilai sama dengan
+ * usulan". Tanpa pembedaan itu, selisih 0 jadi rancu: bisa berarti belum
+ * dinegosiasi, bisa berarti memang tak berubah.
+ */
+export const adaHargaSpbj = (items: SppbjItem[] = []) =>
+  items.some((i) => (i.hargaSpbj || 0) > 0);
+
 /**
  * Nilai sebuah baris GR/SES yang berlaku.
  *

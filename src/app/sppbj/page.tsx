@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { useSppbj } from "@/lib/sppbj/store";
-import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak, GrSes, grSesBaru, nilaiGrEfektif, nilaiGrOtomatis } from "@/lib/sppbj/types";
+import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak, GrSes, grSesBaru, nilaiGrEfektif, nilaiGrOtomatis, totalSppbj, totalSpbj, adaHargaSpbj } from "@/lib/sppbj/types";
 import { tanggalIndo, bulanTahun, rupiah } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
@@ -78,6 +78,29 @@ export default function SppbjList() {
       default: return (tgl(b) || "").localeCompare(tgl(a) || "");   // terbaru dulu
     }
   });
+  /**
+   * Jumlah nilai untuk baris yang SEDANG TERSARING, bukan seluruh data.
+   * Angka inilah yang dicari saat menyaring per bulan atau per jenis anggaran —
+   * kalau yang ditotal seluruh riwayat, hasilnya tak menjawab apa pun.
+   */
+  const jumlahNilai = filtered.reduce((a, r) => {
+    const item = r.payload?.items || [];
+    const usulan = totalSppbj(item);
+    const final = adaHargaSpbj(item) ? totalSpbj(item) : 0;
+    const berSpbj = adaHargaSpbj(item);
+    return {
+      usulan: a.usulan + usulan,
+      final: a.final + final,
+      // Selisih HANYA dari pengadaan yang SPBJ-nya sudah terbit. Usulan mereka
+      // ikut dijumlah sendiri, karena tanpa itu dua kolom di kaki tabel tak bisa
+      // dikurangkan: yang satu mencakup semua pengadaan, yang lain hanya yang
+      // sudah ber-SPBJ — selisihnya akan tampak jauh lebih besar dari yang benar.
+      usulanBerSpbj: a.usulanBerSpbj + (berSpbj ? usulan : 0),
+      selisih: a.selisih + (berSpbj ? usulan - final : 0),
+      berSpbj: a.berSpbj + (berSpbj ? 1 : 0),
+    };
+  }, { usulan: 0, final: 0, usulanBerSpbj: 0, selisih: 0, berSpbj: 0 });
+
   const hitungJenis = (j: "rutin" | "docking" | "lainnya") =>
     rows.filter((r) => (!bulan || ym(r) === bulan) && jenisOf(r) === j && matchTokens(r, query)).length;
 
@@ -271,7 +294,7 @@ export default function SppbjList() {
         </div>
       ) : (
         <div className="mt-3 overflow-x-auto bg-white rounded-2xl elev-md ring-line anim-in">
-          <table className="w-full text-sm min-w-[68rem]">
+          <table className="w-full text-sm min-w-[86rem]">
             <thead className="bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 font-bold">
               <tr className="border-b-2 border-slate-200">
                 <th className="px-2 py-2.5 text-center w-8">No</th>
@@ -280,6 +303,9 @@ export default function SppbjList() {
                 <th className="px-2 py-2.5 text-left w-28">Nomor</th>
                 <th className="px-2 py-2.5 text-left w-24" title="Nomor PO SAP — terbit bersama SPBJ (Fase 2)">No. PO</th>
                 <th className="px-2 py-2.5 text-left w-28" title="No. GR/SES di SAP. Pekerjaan bertermin (docking) punya 3 nomor dalam 1 SPPBJ.">GR / SES</th>
+                <th className="px-2 py-2.5 text-right w-28" title="Jumlah harga usulan di SPPBJ (harga x jumlah seluruh item)">Nilai SPPBJ</th>
+                <th className="px-2 py-2.5 text-right w-28" title="Jumlah harga final SPBJ. Bertanda — bila SPBJ-nya belum terbit.">Nilai SPBJ</th>
+                <th className="px-2 py-2.5 text-right w-24" title="Nilai SPPBJ dikurangi nilai SPBJ. Positif = lebih murah dari usulan.">Selisih</th>
                 <th className="px-2 py-2.5 text-left w-20">Tanggal</th>
                 <th className="px-2 py-2.5 text-left w-28">Status</th>
                 <th className="px-2 py-2.5 text-center w-40">Aksi</th>
@@ -291,6 +317,11 @@ export default function SppbjList() {
                 const nomor = r.payload?.noSPPBJ || r.payload?.noKontrak || "-";
                 const po = (r.payload?.noPOSAP || "").trim();
                 const gr: GrSes[] = (r.payload?.grSes || []).filter((g: GrSes) => (g.nomor || "").trim());
+                const item = r.payload?.items || [];
+                const nUsulan = totalSppbj(item);
+                const adaFinal = adaHargaSpbj(item);
+                const nFinal = adaFinal ? totalSpbj(item) : 0;
+                const selisih = adaFinal ? nUsulan - nFinal : 0;
                 return (
                   <tr key={r.id} className="border-b border-slate-200 last:border-0 row-hover cursor-pointer align-middle even:bg-slate-50/50" onClick={() => buka(r)}>
                     <td className="px-2 py-2.5 text-center text-xs text-slate-400 tabular-nums">{i + 1}</td>
@@ -319,6 +350,22 @@ export default function SppbjList() {
                         {gr.length > 1 ? `🧾 ${gr.length} termin` : gr.length === 1 ? gr[0].nomor : "— isi"}
                       </button>
                     </td>
+                    <td className="px-2 py-2.5 text-right tabular-nums text-slate-700 whitespace-nowrap">{nUsulan ? rupiah(nUsulan) : "-"}</td>
+                    <td className="px-2 py-2.5 text-right tabular-nums whitespace-nowrap">
+                      {adaFinal
+                        ? <span className="font-semibold text-slate-800">{rupiah(nFinal)}</span>
+                        : <span className="text-slate-300" title="SPBJ belum terbit / harga final belum diisi">—</span>}
+                    </td>
+                    <td className="px-2 py-2.5 text-right tabular-nums whitespace-nowrap">
+                      {!adaFinal ? <span className="text-slate-300">—</span>
+                        : selisih === 0 ? <span className="text-slate-400">0</span>
+                        : (
+                          <span className={`font-semibold ${selisih > 0 ? "text-emerald-700" : "text-rose-600"}`}
+                            title={selisih > 0 ? "Harga final lebih murah dari usulan" : "Harga final lebih mahal dari usulan"}>
+                            {selisih > 0 ? "−" : "+"}{rupiah(Math.abs(selisih))}
+                          </span>
+                        )}
+                    </td>
                     <td className="px-2 py-2.5 text-slate-600">{r.payload?.tanggal ? tanggalIndo(r.payload.tanggal) : "-"}</td>
                     <td className="px-2 py-2.5"><span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
                     <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
@@ -332,6 +379,26 @@ export default function SppbjList() {
                 );
               })}
             </tbody>
+            {filtered.length > 0 && (
+              <tfoot className="bg-slate-100 text-[12px] font-bold text-slate-700">
+                <tr className="border-t-2 border-slate-200">
+                  <td className="px-2 py-2.5" />
+                  <td className="px-2 py-2.5" colSpan={5}>
+                    Jumlah {filtered.length} pengadaan
+                    <span className="ml-1 font-medium text-slate-500">
+                      · {jumlahNilai.berSpbj} sudah ber-SPBJ, usulannya {rupiah(jumlahNilai.usulanBerSpbj)} → selisih dihitung dari itu
+                    </span>
+                  </td>
+                  <td className="px-2 py-2.5 text-right tabular-nums whitespace-nowrap">{rupiah(jumlahNilai.usulan)}</td>
+                  <td className="px-2 py-2.5 text-right tabular-nums whitespace-nowrap">{rupiah(jumlahNilai.final)}</td>
+                  <td className={`px-2 py-2.5 text-right tabular-nums whitespace-nowrap ${
+                    jumlahNilai.selisih > 0 ? "text-emerald-700" : jumlahNilai.selisih < 0 ? "text-rose-600" : "text-slate-400"}`}>
+                    {jumlahNilai.selisih ? `${jumlahNilai.selisih > 0 ? "−" : "+"}${rupiah(Math.abs(jumlahNilai.selisih))}` : "0"}
+                  </td>
+                  <td className="px-2 py-2.5" colSpan={3} />
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
       )}
