@@ -134,6 +134,9 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <NavLink href="/armada" icon="⚓" label="Profil Armada" desc="Lihat spesifikasi & inventaris" active={path.startsWith("/armada")} onNavigate={onNavigate} />
         <NavLink href="/kapal" icon="🚢" label="Ship Database" desc="Isi & edit data kapal" active={path.startsWith("/kapal")} onNavigate={onNavigate} />
 
+        <SectionLabel>Dokumen</SectionLabel>
+        <NavLink href="/surat" icon="✉️" label="Buat Surat E-Office" desc="Badan surat siap tempel ke e-office" active={path.startsWith("/surat")} onNavigate={onNavigate} />
+
         <SectionLabel>Tools Pekerjaan</SectionLabel>
         <Tool active={swakelolaActive} href="/" icon="⚙️" label="Generator Swakelola" sub={SWAKELOLA_SUB} onNavigate={onNavigate} path={path} />
         <div className="h-1" />

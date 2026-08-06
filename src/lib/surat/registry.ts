@@ -1,0 +1,23 @@
+/**
+ * Daftar template surat.
+ *
+ * Menambah jenis surat baru: buat satu berkas di templates/, lalu daftarkan di
+ * sini. Halaman UI membaca daftar ini dan merakit borangnya sendiri dari skema
+ * isian, jadi tidak ada yang perlu diubah di sisi tampilan.
+ */
+import { TemplateSurat } from "./types";
+import { dockingInvestasi } from "./templates/dockingInvestasi";
+import { realisasiRutin } from "./templates/realisasiRutin";
+import { classMatter } from "./templates/classMatter";
+import { surveyStatutori } from "./templates/surveyStatutori";
+import { perpanjanganSertifikat } from "./templates/perpanjanganSertifikat";
+
+export const TEMPLATE_SURAT: TemplateSurat[] = [
+  dockingInvestasi,
+  realisasiRutin,
+  classMatter,
+  surveyStatutori,
+  perpanjanganSertifikat,
+];
+
+export const cariTemplate = (id: string) => TEMPLATE_SURAT.find((t) => t.id === id);

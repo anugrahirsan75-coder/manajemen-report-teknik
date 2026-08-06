@@ -1,0 +1,145 @@
+/**
+ * Pembangun HTML badan surat untuk editor e-office.
+ *
+ * ATURAN YANG TIDAK BOLEH DILANGGAR — editor e-office membuang blok <style> di
+ * <head>, dan pernah membuat garis tabel hilang serta angka antar kolom menempel
+ * jadi satu ("1.380.274.7961.466.529.390"). Maka:
+ *   · tidak ada <style>, <head>, <html>, <body>, class, atau CSS eksternal;
+ *   · seluruh gaya ditulis inline di tiap elemen;
+ *   · atribut HTML lawas (border, cellpadding, bgcolor, align, width, <font>)
+ *     tetap dipasang sebagai cadangan kalau CSS ikut dibuang.
+ *
+ * Semua fungsi di sini yang memasang gaya itu, jadi berkas template tidak perlu
+ * mengulang string style panjang dan tidak mungkin lupa cadangannya.
+ */
+
+export const WARNA = {
+  kepala: "#1F4E79",      // header tabel, teks putih
+  subtotal: "#F4B183",    // sub total docking
+  investasi: "#FFE699",   // sub total investasi
+  total: "#FFFF00",       // grand total
+  kepalaKuning: "#FFC000", // header tabel laporan rutin (teks hitam)
+} as const;
+
+const GARIS = "border:1px solid #000000;padding:4px;";
+
+export const esc = (v: unknown): string =>
+  String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+/** pembungkus wajib seluruh badan surat */
+export const bungkus = (isi: string) =>
+  `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.5;color:#000000;">\n${isi}\n</div>`;
+
+export const p = (isi: string, rata: "justify" | "left" | "center" = "justify") =>
+  `<p style="margin:0 0 10px 0;text-align:${rata};">${isi}</p>`;
+
+export const b = (isi: string) => `<b>${isi}</b>`;
+export const i = (isi: string) => `<i>${isi}</i>`;
+
+interface OpsiSel {
+  align?: "left" | "center" | "right";
+  bg?: string;
+  putih?: boolean;
+  tebal?: boolean;
+  miring?: boolean;
+  colspan?: number;
+  rowspan?: number;
+  width?: string;
+  valign?: "top" | "middle";
+}
+
+function atributSel(o: OpsiSel) {
+  const a: string[] = [];
+  if (o.align) a.push(`align="${o.align}"`);
+  if (o.valign) a.push(`valign="${o.valign}"`);
+  if (o.bg) a.push(`bgcolor="${o.bg}"`);
+  if (o.colspan) a.push(`colspan="${o.colspan}"`);
+  if (o.rowspan) a.push(`rowspan="${o.rowspan}"`);
+  if (o.width) a.push(`width="${o.width}"`);
+  return a.length ? " " + a.join(" ") : "";
+}
+
+function gayaSel(o: OpsiSel) {
+  let g = GARIS;
+  if (o.align) g += `text-align:${o.align};`;
+  if (o.valign) g += `vertical-align:${o.valign};`;
+  if (o.bg) g += `background-color:${o.bg};`;
+  if (o.width) g += `width:${o.width};`;
+  if (o.putih) g += "color:#FFFFFF;";
+  if (o.tebal) g += "font-weight:bold;";
+  if (o.miring) g += "font-style:italic;";
+  return g;
+}
+
+function isiSel(isi: string, o: OpsiSel) {
+  let t = isi === "" ? "&nbsp;" : isi;
+  if (o.tebal) t = `<b>${t}</b>`;
+  if (o.miring) t = `<i>${t}</i>`;
+  // <font> sengaja dipakai: kalau editor membuang style, teks header tetap putih
+  if (o.putih) t = `<font color="#FFFFFF">${t}</font>`;
+  return t;
+}
+
+/** sel isi tabel */
+export const td = (isi: string, o: OpsiSel = {}) =>
+  `<td${atributSel(o)} style="${gayaSel(o)}">${isiSel(isi, o)}</td>`;
+
+/** sel angka — selalu rata kanan, dengan atribut lawas ikut terpasang */
+export const tdAngka = (isi: string, o: OpsiSel = {}) =>
+  td(isi, { ...o, align: "right" });
+
+/** sel kepala tabel */
+export const th = (isi: string, o: OpsiSel = {}) => {
+  const opsi: OpsiSel = { align: "center", bg: WARNA.kepala, putih: true, tebal: true, valign: "middle", ...o };
+  return `<th${atributSel(opsi)} style="${gayaSel(opsi)}">${isiSel(isi, opsi)}</th>`;
+};
+
+export const baris = (sel: string[]) => `<tr>${sel.join("")}</tr>`;
+
+/** tabel bergaris — bentuk yang dipakai untuk rincian anggaran */
+export const tabel = (isiBaris: string[]) =>
+  `<table border="1" cellspacing="0" cellpadding="4" bordercolor="#000000" width="100%" `
+  + `style="border-collapse:collapse;width:100%;font-size:9pt;font-family:Arial,Helvetica,sans-serif;color:#000000;">\n`
+  + `${isiBaris.join("\n")}\n</table>`;
+
+/**
+ * Tabel data tanpa garis (spesifikasi kapal): dua kolom dengan pemisah titik dua.
+ * cellpadding tetap dipasang supaya nilai tidak menempel ke labelnya bila CSS
+ * dibuang editor.
+ */
+export const tabelData = (pasangan: [string, string][], lebarKiri = "160px") =>
+  `<table border="0" cellspacing="0" cellpadding="3" width="100%" `
+  + `style="border-collapse:collapse;font-size:11pt;font-family:Arial,Helvetica,sans-serif;color:#000000;">\n`
+  + pasangan.map(([kiri, kanan]) =>
+      `<tr>`
+      + `<td width="${lebarKiri}" valign="top" style="width:${lebarKiri};vertical-align:top;padding:3px;">${esc(kiri)}</td>`
+      + `<td width="14" valign="top" style="width:14px;vertical-align:top;padding:3px;">:</td>`
+      + `<td valign="top" style="vertical-align:top;padding:3px;">${kanan}</td>`
+      + `</tr>`).join("\n")
+  + `\n</table>`;
+
+/** daftar berbutir bulat kosong, dipakai pada surat perpanjangan sertifikat */
+export const daftarButir = (butir: string[]) =>
+  `<ul style="list-style-type:circle;margin:0 0 10px 0;padding-left:28px;">\n`
+  + butir.map((x) => `<li style="margin:0 0 4px 0;">${x}</li>`).join("\n")
+  + `\n</ul>`;
+
+export const PENUTUP_PERMOHONAN =
+  "Demikian permohonan ini kami sampaikan. Besar harapan kami agar permohonan dimaksud dapat "
+  + "memperoleh persetujuan. Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.";
+
+export const PENUTUP_SAMPAI =
+  "Demikian kami sampaikan, atas perhatiannya diucapkan terima kasih.";
+
+export const PENUTUP_KERJASAMA =
+  "Demikian kami sampaikan, atas kerja samanya diucapkan terima kasih.";
+
+export const LAMPIRAN =
+  "Sebagai bahan pertimbangan, bersama ini kami lampirkan dokumen persyaratan sesuai dengan "
+  + "ketentuan yang berlaku.";
+
+export const SALAM = "Dengan Hormat,";
