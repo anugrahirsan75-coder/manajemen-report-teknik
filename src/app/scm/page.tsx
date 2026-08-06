@@ -11,6 +11,7 @@ import { useSppbj } from "@/lib/sppbj/store";
 import { totalSppbj, adaHargaSpbj, totalSpbj } from "@/lib/sppbj/types";
 import { rupiah, tanggalIndo } from "@/lib/format";
 import { kapalDariItems } from "@/components/KapalCell";
+import BilahScm from "@/components/scm/BilahScm";
 import {
   BarisScm, majuTahap, muatProses, muatVendor, prosesBaru, simpanProses,
 } from "@/lib/scm/store";
@@ -108,37 +109,14 @@ export default function HalamanScm() {
     } catch (e: any) { setGalat(e?.message || String(e)); }
   };
 
-  const keluar = async () => {
-    await fetch("/api/scm/masuk", { method: "DELETE" });
-    window.location.href = "/scm/masuk";
-  };
-
   return (
     <div className="min-h-screen bg-slate-100">
-      {/*
-        Bilah milik SCM sendiri. Halaman ini sengaja di luar kerangka aplikasi
-        Teknik: yang memakainya tim SCM, dan alat kerja Teknik bukan urusan
-        mereka — menampilkannya hanya menambah kebingungan dan tautan yang
-        ujungnya ditolak.
-      */}
-      <header className="asdp-gradient sticky top-0 z-30 shadow-md">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15 text-lg">📦</span>
-          <div className="min-w-0 flex-1">
-            <p className="text-sm font-extrabold leading-tight text-white">Pengadaan — SCM</p>
-            <p className="text-[11px] text-white/70">PT ASDP Indonesia Ferry (Persero) — Cabang Ternate</p>
-          </div>
-          <a href="/scm" className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25">📋 Antrean</a>
-          <a href="/scm/vendor" className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25">🏢 Data Vendor</a>
-          <button onClick={ambil} disabled={muat}
-            className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25 disabled:opacity-50">
-            {muat ? "Memuat…" : "↻ Muat ulang"}
-          </button>
-          <button onClick={keluar} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80 hover:bg-white/20">
-            Keluar
-          </button>
-        </div>
-      </header>
+      <BilahScm aksi={
+        <button onClick={ambil} disabled={muat}
+          className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25 disabled:opacity-50">
+          {muat ? "Memuat…" : "↻ Muat ulang"}
+        </button>
+      } />
 
       <main className="mx-auto max-w-6xl px-4 py-6">
         <p className="text-sm text-slate-500">SPPBJ dari Teknik masuk sendiri ke sini. Tiap tahap dicatat jamnya.</p>
