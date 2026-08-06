@@ -67,6 +67,20 @@ function DashboardInner() {
   };
 
   // Export Excel PER TIPE (berjenjang + tautan antar sheet)
+  /**
+   * Tautan halaman Kinerja Anggaran — halaman TERBUKA yang hanya bisa dilihat,
+   * dibuat untuk dibagikan ke Direksi. Sengaja disalin dari sini, bukan ditulis
+   * manual, supaya alamatnya selalu benar (termasuk saat dibuka dari domain
+   * Vercel maupun dari server kantor).
+   */
+  const [tautanSalin, setTautanSalin] = useState("");
+  const salinTautanDireksi = async () => {
+    const url = `${window.location.origin}/kinerja-anggaran`;
+    try { await navigator.clipboard.writeText(url); setTautanSalin(`Tautan disalin: ${url}`); }
+    catch { setTautanSalin(`Salin sendiri tautannya: ${url}`); }
+    window.setTimeout(() => setTautanSalin(""), 6000);
+  };
+
   const unduhExcel = async (tipe: "rutin" | "docking" | "lainnya", dari?: string, sampai?: string) => {
     /**
      * Pagu datang dari simpanan lokal, realisasi hanya dari server. Kalau daftar
@@ -163,9 +177,19 @@ function DashboardInner() {
               ))}
             </div>
           )}
+          <button onClick={salinTautanDireksi} className="btn btn-ghost text-xs"
+            title="Salin tautan halaman Kinerja Anggaran — halaman terbuka, hanya bisa dilihat">
+            🔗 Tautan Direksi
+          </button>
           <button onClick={reload} className="btn btn-ghost text-xs">↻ Muat ulang</button>
         </div>
       </div>
+
+      {tautanSalin && (
+        <div className="anim-in mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">
+          ✓ {tautanSalin}
+        </div>
+      )}
 
       {/*
         Pagu tersimpan di peramban, realisasi hanya ada di server. Begitu daftar
