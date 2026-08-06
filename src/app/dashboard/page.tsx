@@ -45,16 +45,38 @@ function DashboardInner() {
   const { ready, loading, pengadaan, rka, plafon, docking, program, reload, saveRka, savePlafon, saveDocking, saveProgram } = useAnggaran();
   const [tahun, setTahun] = useState<string>("");
   const [xlsBusy, setXlsBusy] = useState(false);
+  /**
+   * Seluruh bulan yang punya pagu ATAU realisasi pada tahun terpilih.
+   *
+   * Dipakai saat Export ditekan dari tab Ringkasan, yang memang tidak punya
+   * pemilih bulan. Sebelumnya di situ bulannya jatuh ke bulan HARI INI, jadi
+   * berkas Rutin yang terunduh hanya berisi satu bulan berjalan — bulan yang
+   * pagunya sudah terbit tapi SPPBJ-nya belum, sehingga terpakainya nol dan
+   * berkasnya terlihat kosong.
+   */
+  const rentangPenuh = () => {
+    const th = (tahun || "").trim();
+    const bulan = new Set<string>();
+    plafon.forEach((p) => { if (p.bulan && (!th || p.bulan.startsWith(th))) bulan.add(p.bulan); });
+    pengadaan.forEach((p) => {
+      const b = (p.tanggal || "").slice(0, 7);
+      if (b && (!th || b.startsWith(th))) bulan.add(b);
+    });
+    const urut = Array.from(bulan).sort();
+    return urut.length ? { dari: urut[0], sampai: urut[urut.length - 1] } : null;
+  };
+
   // Export Excel PER TIPE (berjenjang + tautan antar sheet)
   const unduhExcel = async (tipe: "rutin" | "docking" | "lainnya", dari?: string, sampai?: string) => {
     setXlsBusy(true);
     try {
+      const penuh = dari ? null : rentangPenuh();
       await exportTipeExcel({
         tipe, plafon, docking, program, pengadaan,
-        // Rutin memakai bulan yang SEDANG DILIHAT (dan rentangnya bila dipilih),
-        // bukan bulan hari ini — dulu ini sumber salah paham.
-        bulan: dari || new Date().toISOString().slice(0, 7),
-        bulanAkhir: sampai || dari || undefined,
+        // Bulan yang SEDANG DILIHAT bila export ditekan dari tab Rutin; dari tab
+        // Ringkasan (tanpa pemilih bulan) diambil seluruh bulan yang ada datanya.
+        bulan: dari || penuh?.dari || new Date().toISOString().slice(0, 7),
+        bulanAkhir: sampai || dari || penuh?.sampai || undefined,
         tahun: parseInt(tahun || String(new Date().getFullYear()), 10),
       });
     } catch (e: any) { void beritahu("Gagal export: " + (e?.message ?? e)); }
@@ -125,7 +147,8 @@ function DashboardInner() {
               <span className="text-[10px] text-slate-500 font-semibold">{xlsBusy ? "menyiapkan…" : "Export Excel:"}</span>
               {([["rutin", "Rutin"], ["docking", "Docking"], ["lainnya", "Lainnya"]] as const).map(([t, l]) => (
                 <button key={t} onClick={() => unduhExcel(t)} disabled={xlsBusy}
-                  className="btn btn-ghost text-xs disabled:opacity-50" title={`Unduh Excel ${l} — berjenjang sampai item pengadaan`}>
+                  className="btn btn-ghost text-xs disabled:opacity-50"
+                  title={`Unduh Excel ${l} — seluruh bulan yang ada datanya${tahun ? ` pada ${tahun}` : ""}, berjenjang sampai item pengadaan`}>
                   📊 {l}
                 </button>
               ))}
