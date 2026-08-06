@@ -449,7 +449,11 @@ function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
                 <td className="px-2 py-1.5 text-xs text-slate-400">{idx + 1}</td>
                 {kolom.map((k) => (
                   <td key={k.id} className="px-2 py-1.5" style={k.lebar ? { width: k.lebar } : undefined}>
-                    {k.jenis === "rupiah" ? (
+                    {k.jenis === "tanggal" ? (
+                      <input type="date" value={r[k.id] || ""}
+                        onChange={(e) => setSel(idx, k.id, e.target.value)}
+                        className="w-full rounded-lg border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900" />
+                    ) : k.jenis === "rupiah" ? (
                       <input value={r[k.id] ? angkaRibuan(keAngka(r[k.id])) : ""} inputMode="numeric" placeholder="0"
                         onChange={(e) => setSel(idx, k.id, String(keAngka(e.target.value) || ""))}
                         className="w-full rounded-lg border border-slate-300 px-2 py-1 text-right text-sm tabular-nums dark:border-slate-700 dark:bg-slate-900" />

@@ -20,7 +20,7 @@ export type JenisIsian =
 export interface KolomTabel {
   id: string;
   label: string;
-  jenis: "teks" | "rupiah";
+  jenis: "teks" | "rupiah" | "tanggal";
   lebar?: string;
   /** saran isi untuk kolom teks (mis. daftar mata anggaran) */
   saran?: { nilai: string; label: string }[];
