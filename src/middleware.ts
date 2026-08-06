@@ -1,19 +1,44 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { bolehScm, peranDariToken } from "@/lib/auth/peran";
+import { bolehScm, peranDariToken, tokenPeran } from "@/lib/auth/peran";
 
 // Gerbang login: semua route butuh cookie sesi valid, kecuali /login & /api/auth.
 export async function middleware(req: NextRequest) {
-  const token = req.cookies.get("mrt_session")?.value;
+  const path = req.nextUrl.pathname;
   const expected = process.env.AUTH_TOKEN;
+  const token = req.cookies.get("mrt_session")?.value;
+  const scmCookie = req.cookies.get("mrt_scm")?.value;
+
+  /**
+   * Halaman SCM punya PINTUNYA SENDIRI.
+   *
+   * Dipakai orang lain (tim SCM), jadi sandinya terpisah — akun Teknik yang
+   * sudah masuk pun tetap harus mengetiknya, dan sebaliknya membuka SCM tidak
+   * membuka apa pun di sisi Teknik. Cookienya juga berbeda supaya dua sesi itu
+   * tidak saling mengusir.
+   */
+  const scmSah = !!expected && !!scmCookie && scmCookie === (await tokenPeran(expected, "scm"));
+  if (path.startsWith("/scm") || path.startsWith("/api/scm")) {
+    if (path.startsWith("/scm/masuk") || path.startsWith("/api/scm/masuk")) return NextResponse.next();
+    if (scmSah) return NextResponse.next();
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ ok: false, error: "Sesi SCM habis. Masuk ulang." }, { status: 401 });
+    }
+    const ke = req.nextUrl.clone();
+    ke.pathname = "/scm/masuk";
+    ke.search = `?dari=${encodeURIComponent(path)}`;
+    return NextResponse.redirect(ke);
+  }
+  // halaman SCM membaca datanya lewat gerbang /api/db — dibuka untuk sesi SCM saja
+  if (scmSah && path.startsWith("/api/db")) return NextResponse.next();
+
   // expected harus diisi (env) — kalau kosong, semua diarahkan ke login (aman, bukan bypass)
   const peran = await peranDariToken(token, expected);
   if (peran === "teknik") return NextResponse.next();
   if (peran === "scm") {
-    // Akun SCM hanya boleh di halaman pengadaannya sendiri. Dibatasi di sini,
-    // bukan sekadar disembunyikan dari menu.
-    if (bolehScm(req.nextUrl.pathname)) return NextResponse.next();
-    if (req.nextUrl.pathname.startsWith("/api/")) {
+    // Akun SCM yang masuk lewat login utama tetap dikurung di halaman pengadaan.
+    if (bolehScm(path)) return NextResponse.next();
+    if (path.startsWith("/api/")) {
       return NextResponse.json({ ok: false, error: "Akun SCM tidak berhak atas data ini." }, { status: 403 });
     }
     const ke = req.nextUrl.clone();
@@ -24,18 +49,18 @@ export async function middleware(req: NextRequest) {
   // Permintaan data (fetch dari halaman dalam aplikasi) harus dijawab 401 JSON.
   // Mengembalikan halaman /login membuat pemanggilnya gagal mengurai JSON dan
   // layar tampak "rusak" padahal sesinya hanya habis.
-  if (req.nextUrl.pathname.startsWith("/api/")) {
+  if (path.startsWith("/api/")) {
     return NextResponse.json({ ok: false, error: "Sesi habis. Masuk ulang untuk melanjutkan." }, { status: 401 });
   }
   const url = req.nextUrl.clone();
   url.pathname = "/login";
-  url.searchParams.set("from", req.nextUrl.pathname + req.nextUrl.search);
+  url.searchParams.set("from", path + req.nextUrl.search);
   return NextResponse.redirect(url);
 }
 
 export const config = {
   // lindungi semua KECUALI: /login, /api/auth/*, aset next, favicon, logo
-  // Dua kelompok SENGAJA terbuka, route API-nya sendiri yang membatasi:
+  // Kelompok yang SENGAJA terbuka, route API-nya sendiri yang membatasi:
   //  · /monitoring + api/monitoring — rekap pengadaan untuk dilihat orang banyak.
   //  · /lapor + api/lapor/kirim + api/lapor/berkas — ABK kapal mengirim berkas
   //    tanpa akun. Perhatikan: HANYA dua route api/lapor itu yang dibuka;

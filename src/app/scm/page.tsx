@@ -108,21 +108,40 @@ export default function HalamanScm() {
     } catch (e: any) { setGalat(e?.message || String(e)); }
   };
 
+  const keluar = async () => {
+    await fetch("/api/scm/masuk", { method: "DELETE" });
+    window.location.href = "/scm/masuk";
+  };
+
   return (
-    <main className="mx-auto max-w-6xl px-4 py-6">
-      <header className="asdp-gradient rounded-3xl p-[1.5px] elev-lg anim-in">
-        <div className="glass hero-glow flex flex-wrap items-center gap-4 rounded-3xl px-6 py-5">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl asdp-gradient text-2xl text-white shadow-md">📦</div>
+    <div className="min-h-screen bg-slate-100">
+      {/*
+        Bilah milik SCM sendiri. Halaman ini sengaja di luar kerangka aplikasi
+        Teknik: yang memakainya tim SCM, dan alat kerja Teknik bukan urusan
+        mereka — menampilkannya hanya menambah kebingungan dan tautan yang
+        ujungnya ditolak.
+      */}
+      <header className="asdp-gradient sticky top-0 z-30 shadow-md">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-3 px-4 py-3">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-white/15 text-lg">📦</span>
           <div className="min-w-0 flex-1">
-            <h1 className="asdp-text-gradient text-2xl font-extrabold tracking-tight">Pengadaan — SCM</h1>
-            <p className="text-sm text-slate-500">SPPBJ dari Teknik masuk sendiri ke sini. Tiap tahap dicatat jamnya.</p>
+            <p className="text-sm font-extrabold leading-tight text-white">Pengadaan — SCM</p>
+            <p className="text-[11px] text-white/70">PT ASDP Indonesia Ferry (Persero) — Cabang Ternate</p>
           </div>
-          <a href="/scm/vendor" className="btn btn-ghost text-xs">🏢 Data Vendor</a>
-          <button onClick={ambil} disabled={muat} className="btn btn-primary text-xs disabled:opacity-50">
+          <a href="/scm" className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25">📋 Antrean</a>
+          <a href="/scm/vendor" className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25">🏢 Data Vendor</a>
+          <button onClick={ambil} disabled={muat}
+            className="rounded-lg bg-white/15 px-3 py-1.5 text-xs font-bold text-white hover:bg-white/25 disabled:opacity-50">
             {muat ? "Memuat…" : "↻ Muat ulang"}
+          </button>
+          <button onClick={keluar} className="rounded-lg bg-white/10 px-3 py-1.5 text-xs font-bold text-white/80 hover:bg-white/20">
+            Keluar
           </button>
         </div>
       </header>
+
+      <main className="mx-auto max-w-6xl px-4 py-6">
+        <p className="text-sm text-slate-500">SPPBJ dari Teknik masuk sendiri ke sini. Tiap tahap dicatat jamnya.</p>
 
       {pesan && <div className="anim-in mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 ring-1 ring-emerald-200">✓ {pesan}</div>}
       {galat && <div className="anim-in mt-4 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-rose-200">{galat}</div>}
@@ -163,8 +182,9 @@ export default function HalamanScm() {
             onNaik={(ke) => a.baris && naik(a.baris, ke)}
             onSimpan={(patch) => a.baris && simpanIsian(a.baris, patch)} />
         ))}
-      </section>
-    </main>
+        </section>
+      </main>
+    </div>
   );
 }
 

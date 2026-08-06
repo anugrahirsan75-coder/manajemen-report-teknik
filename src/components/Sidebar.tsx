@@ -93,32 +93,8 @@ function NavLink({ href, icon, label, desc, active, onNavigate }: { href: string
   );
 }
 
-/**
- * Peran pemakai dari penanda yang dipasang saat masuk.
- *
- * Hanya untuk MEMILIH MENU. Penjaga aksesnya ada di middleware, yang memeriksa
- * nilai token sesi — jadi menyunting penanda ini di peramban tidak membuka
- * halaman apa pun, hanya menampilkan tautan yang ujungnya ditolak.
- */
-function peranPemakai(): "teknik" | "scm" {
-  if (typeof document === "undefined") return "teknik";
-  return /(?:^|;\s*)mrt_peran=scm(?:;|$)/.test(document.cookie) ? "scm" : "teknik";
-}
-
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const path = usePathname();
-  const [peran, setPeran] = useState<"teknik" | "scm">("teknik");
-  useEffect(() => { setPeran(peranPemakai()); }, [path]);
-
-  if (peran === "scm") {
-    return (
-      <nav className="flex-1 overflow-y-auto px-3 py-3 space-y-0.5">
-        <SectionLabel>Pengadaan</SectionLabel>
-        <NavLink href="/scm" icon="📦" label="Antrean Pengadaan" desc="SPPBJ dari Teknik &amp; tahapannya" active={path === "/scm"} onNavigate={onNavigate} />
-        <NavLink href="/scm/vendor" icon="🏢" label="Data Vendor" desc="Daftar penyedia barang &amp; jasa" active={path.startsWith("/scm/vendor")} onNavigate={onNavigate} />
-      </nav>
-    );
-  }
 
   const materialActive = path.startsWith("/material");
   const sppbjActive = path.startsWith("/sppbj");

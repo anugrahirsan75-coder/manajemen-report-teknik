@@ -3,8 +3,9 @@
  * Rangka aplikasi: sidebar + lonceng pengingat.
  *
  * Halaman /monitoring (rekap pengadaan), /lapor (kiriman berkas dari ABK
- * kapal), dan /kinerja-anggaran (tautan lihat-saja untuk Direksi) adalah
- * halaman TERBUKA untuk orang banyak — pengunjungnya
+ * kapal), /kinerja-anggaran (tautan lihat-saja untuk Direksi), dan /scm
+ * (ruang kerja tim SCM, berpintu sendiri) berdiri DI LUAR kerangka aplikasi —
+ * pemakainya
  * tak punya akses ke menu-menu di dalam aplikasi, jadi sidebar & lonceng
  * sengaja tidak dipasang di sana supaya tak menampilkan tautan yang ujungnya
  * hanya melempar ke halaman masuk.
@@ -17,7 +18,7 @@ export default function RangkaAplikasi({ sidebar, loneng, children }: {
 }) {
   const path = usePathname() || "";
   const terbuka = path.startsWith("/monitoring") || path.startsWith("/lapor")
-    || path.startsWith("/kinerja-anggaran");
+    || path.startsWith("/kinerja-anggaran") || path.startsWith("/scm");
 
   if (terbuka) return <div className="min-h-screen">{children}</div>;
 
