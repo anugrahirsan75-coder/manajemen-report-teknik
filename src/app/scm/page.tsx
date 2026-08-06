@@ -12,11 +12,13 @@ import { totalSppbj, adaHargaSpbj, totalSpbj } from "@/lib/sppbj/types";
 import { rupiah, tanggalIndo } from "@/lib/format";
 import { kapalDariItems } from "@/components/KapalCell";
 import BilahScm from "@/components/scm/BilahScm";
+import TabelNego, { BarisNego } from "@/components/scm/TabelNego";
+import { nomorDokumen } from "@/lib/scm/nomor";
 import {
   BarisScm, majuTahap, muatProses, muatVendor, prosesBaru, simpanProses,
 } from "@/lib/scm/store";
 import {
-  LABEL_TAHAP, ProsesScm, TahapScm, TINDAKAN_TAHAP, URUT_TAHAP, Vendor, WARNA_TAHAP,
+  ItemNego, LABEL_TAHAP, ProsesScm, TahapScm, TINDAKAN_TAHAP, URUT_TAHAP, Vendor, WARNA_TAHAP,
   lamaPerTahap, tahapBerikut, tertahan, totalHari, umurTahap,
 } from "@/lib/scm/types";
 
@@ -237,17 +239,97 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
   onNaik: (ke: TahapScm) => void; onSimpan: (patch: Partial<ProsesScm>) => void;
 }) {
   const [draf, setDraf] = useState<Partial<ProsesScm>>({});
+  const [unduh, setUnduh] = useState(false);
+  const [galat, setGalat] = useState("");
   const nilai = <K extends keyof ProsesScm>(k: K): any => (draf as any)[k] ?? (p as any)[k] ?? "";
   const ubah = (k: keyof ProsesScm, v: any) => setDraf((d) => ({ ...d, [k]: v }));
   const simpan = () => { onSimpan(draf); setDraf({}); };
   const lama = lamaPerTahap(p);
   const v = vendor.find((x) => x.id === nilai("vendorId"));
 
+  /**
+   * Baris negosiasi dirakit dari item SPPBJ-nya sendiri, bukan disalin ke
+   * catatan SCM. Yang disimpan di sini hanya HARGA HASIL NEGO tiap baris —
+   * kalau itemnya diperbaiki di sisi Teknik, yang terbaca di sini ikut benar.
+   */
+  const itemAsli: any[] = a.payload?.items || [];
+  const negoTersimpan: Record<number, number> = {};
+  ((nilai("itemNego") as ItemNego[]) || []).forEach((x) => {
+    if (typeof x?.hargaNego === "number") negoTersimpan[x.idx] = x.hargaNego;
+  });
+  const potongan = Number(nilai("potonganPersen")) || 0;
+  const barisNego: BarisNego[] = itemAsli.map((it, i) => ({
+    idx: i,
+    kapal: String(it.kapal || "").trim(),
+    nama: String(it.nama || ""),
+    spesifikasi: String(it.spesifikasi || ""),
+    jumlah: Number(it.jumlah) || 0,
+    satuan: String(it.satuan || ""),
+    harga: Number(it.harga) || 0,
+    hargaNego: negoTersimpan[i] ?? Math.round((Number(it.harga) || 0) * (1 - potongan / 100)),
+  }));
+
+  const setHarga = (idx: number, harga: number) => {
+    const peta = { ...negoTersimpan, [idx]: harga };
+    ubah("itemNego", Object.entries(peta).map(([k, val]) => ({ idx: Number(k), hargaNego: val })));
+  };
+  const potongRata = (persen: number) => {
+    setDraf((d) => ({
+      ...d,
+      potonganPersen: persen,
+      itemNego: itemAsli.map((it, i) => ({
+        idx: i, hargaNego: Math.round((Number(it.harga) || 0) * (1 - persen / 100)),
+      })),
+    }));
+  };
+
+  const nomor = nomorDokumen(
+    String(nilai("noInisiasi")), String(nilai("tglInisiasi")),
+    String(nilai("tglNego")), String(nilai("tglBahp")), String(nilai("tglSpbj")));
+
+  const unduhExcel = async () => {
+    setGalat(""); setUnduh(true);
+    try {
+      const badan = {
+        namaPengadaan: a.nama, noSppbj: a.nomor, tglSppbj: a.tanggal, user: "Divisi Teknik",
+        items: itemAsli.map((it, i) => ({
+          kapal: String(it.kapal || ""), keterangan: String(it.keterangan || ""),
+          nama: String(it.nama || ""), spesifikasi: String(it.spesifikasi || ""),
+          jumlah: Number(it.jumlah) || 0, satuan: String(it.satuan || ""),
+          harga: Number(it.harga) || 0, hargaNego: barisNego[i]?.hargaNego,
+        })),
+        noInisiasi: String(nilai("noInisiasi")), tglInisiasi: String(nilai("tglInisiasi")),
+        vendor: {
+          nama: v?.nama || "", pimpinan: v?.pimpinan || "", jabatan: v?.jabatan || "Direktur",
+          telepon: v?.telepon || "", fax: v?.fax || "", npwp: v?.npwp || "",
+          alamat: v?.alamat || "", kota: v?.kota || "",
+        },
+        noPenawaran: String(nilai("noPenawaran")), tglPenawaran: String(nilai("tglPenawaran")),
+        tglNego: String(nilai("tglNego")), jamNego: String(nilai("jamNego") || "14.00 WIT"),
+        tglBahp: String(nilai("tglBahp") || nilai("tglNego")), jamBahp: String(nilai("jamBahp") || "15.00 WIT"),
+        tglSpbj: String(nilai("tglSpbj")), hariPenyerahan: Number(nilai("hariPenyerahan")) || 7,
+        lokasi: "Ternate",
+      };
+      const r = await fetch("/api/scm/excel", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(badan),
+      });
+      if (!r.ok) throw new Error((await r.json().catch(() => ({}))).error || `HTTP ${r.status}`);
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = String(a.nama).replace(/[\\/:*?"<>|]/g, "-").slice(0, 90) + ".xlsx";
+      link.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) { setGalat(e?.message || String(e)); }
+    finally { setUnduh(false); }
+  };
+
   const isian = "w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-sky-400";
   const label = "mb-1 block text-[11px] font-bold text-slate-600";
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* jejak waktu */}
       <div>
         <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">Perjalanan dokumen</p>
@@ -301,25 +383,29 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
           <input type="date" value={nilai("tglPenawaran")} onChange={(e) => ubah("tglPenawaran", e.target.value)} className={isian} />
         </div>
         <div>
-          <label className={label}>Potongan negosiasi (%)</label>
-          <input type="number" min={0} max={100} step={0.5} value={nilai("potonganPersen")}
-            onChange={(e) => ubah("potonganPersen", Number(e.target.value))} placeholder="5" className={isian} />
-          <p className="mt-1 text-[11px] text-slate-400">
-            Potongan rata dari harga penawaran. Nilai setelah nego: {rupiah(Math.round(a.nilai * (1 - (Number(nilai("potonganPersen")) || 0) / 100)))}
-          </p>
-        </div>
-        <div>
           <label className={label}>Tanggal negosiasi</label>
           <input type="date" value={nilai("tglNego")} onChange={(e) => ubah("tglNego", e.target.value)} className={isian} />
         </div>
         <div>
-          <label className={label}>Nomor SPBJ</label>
-          <input value={nilai("noSpbj")} onChange={(e) => ubah("noSpbj", e.target.value)}
-            placeholder="SPB/J.4181/PBJ/VI/ASDP-2026" className={isian} />
+          <label className={label}>Jam negosiasi</label>
+          <input value={nilai("jamNego")} onChange={(e) => ubah("jamNego", e.target.value)} placeholder="14.00 WIT" className={isian} />
+        </div>
+        <div>
+          <label className={label}>Tanggal BAHP</label>
+          <input type="date" value={nilai("tglBahp")} onChange={(e) => ubah("tglBahp", e.target.value)} className={isian} />
+        </div>
+        <div>
+          <label className={label}>Jam BAHP</label>
+          <input value={nilai("jamBahp")} onChange={(e) => ubah("jamBahp", e.target.value)} placeholder="15.00 WIT" className={isian} />
         </div>
         <div>
           <label className={label}>Tanggal SPBJ</label>
           <input type="date" value={nilai("tglSpbj")} onChange={(e) => ubah("tglSpbj", e.target.value)} className={isian} />
+        </div>
+        <div>
+          <label className={label}>Waktu penyerahan (hari kalender)</label>
+          <input type="number" min={1} value={nilai("hariPenyerahan") || 7}
+            onChange={(e) => ubah("hariPenyerahan", Number(e.target.value))} className={isian} />
         </div>
         <div className="sm:col-span-2">
           <label className={label}>Catatan</label>
@@ -328,19 +414,79 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
         </div>
       </div>
 
-      <div className="flex flex-wrap items-center gap-2">
+      {/* nomor dokumen otomatis */}
+      <div>
+        <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
+          Nomor dokumen (dari 4 angka pertama nomor inisiasi)
+        </p>
+        {nomor.undangan ? (
+          <div className="grid gap-1.5 sm:grid-cols-2">
+            <NomorSalin label="Undangan" nilai={nomor.undangan} />
+            <NomorSalin label="Jadwal" nilai={nomor.jadwal} />
+            <NomorSalin label="BA Negosiasi" nilai={nomor.baNego} />
+            <NomorSalin label="BAHP" nilai={nomor.bahp} />
+            <NomorSalin label="SPBJ" nilai={nomor.spbj} />
+          </div>
+        ) : (
+          <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500 ring-1 ring-slate-200">
+            Isi nomor inisiasi e-Proc beserta tanggalnya — nomor dokumen tersusun sendiri di sini.
+          </p>
+        )}
+      </div>
+
+      {/* negosiasi harga per item */}
+      <div>
+        <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
+          Harga setelah negosiasi ({itemAsli.length} item)
+        </p>
+        {itemAsli.length ? (
+          <TabelNego baris={barisNego} onUbah={setHarga} onPotongRata={potongRata} />
+        ) : (
+          <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500 ring-1 ring-slate-200">
+            SPPBJ ini belum punya item.
+          </p>
+        )}
+      </div>
+
+      {galat && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-rose-200">{galat}</p>}
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
         <button onClick={simpan} disabled={!Object.keys(draf).length} className="btn btn-primary text-xs disabled:opacity-40">
           💾 Simpan isian
+        </button>
+        <button onClick={unduhExcel} disabled={unduh || !itemAsli.length} className="btn btn-success text-xs disabled:opacity-40"
+          title="Berkas 12 sheet: DATA, DATA VENDOR, SPPBJ, DKP, JADWAL, UNDANGAN, LAMP UNDANGAN, BA NEGO, LAMPIRAN NEGO, SPBJ, BAHP, SPBJ BARU">
+          {unduh ? "Menyusun…" : "⬇ Unduh berkas pengadaan (Excel)"}
         </button>
         <select value="" onChange={(e) => e.target.value && onNaik(e.target.value as TahapScm)}
           className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs">
           <option value="">Pindahkan ke tahap…</option>
           {URUT_TAHAP.map((t) => <option key={t} value={t}>{LABEL_TAHAP[t]}</option>)}
         </select>
-        <span className="ml-auto text-[11px] text-slate-400">
-          Total {totalHari(p)} hari sejak masuk SCM
-        </span>
+        <span className="ml-auto text-[11px] text-slate-400">Total {totalHari(p)} hari sejak masuk SCM</span>
       </div>
+      {Object.keys(draf).length > 0 && (
+        <p className="text-[11px] font-semibold text-amber-700">
+          Ada perubahan yang belum disimpan — tekan “Simpan isian” sebelum berpindah pengadaan.
+        </p>
+      )}
     </div>
+  );
+}
+
+/** satu nomor dokumen, sekali ketuk tersalin */
+function NomorSalin({ label, nilai }: { label: string; nilai: string }) {
+  const [ok, setOk] = useState(false);
+  const salin = async () => {
+    try { await navigator.clipboard.writeText(nilai); setOk(true); window.setTimeout(() => setOk(false), 1200); }
+    catch { /* peramban menolak — teksnya masih bisa disorot sendiri */ }
+  };
+  return (
+    <button onClick={salin} title="Ketuk untuk menyalin"
+      className="flex items-center gap-2 rounded-lg bg-slate-50 px-3 py-1.5 text-left ring-1 ring-slate-200 transition hover:bg-sky-50">
+      <span className="w-24 shrink-0 text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{label}</span>
+      <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-slate-700">{nilai}</span>
+      <span className={`text-[10px] ${ok ? "text-emerald-600" : "text-slate-300"}`}>{ok ? "tersalin" : "⧉"}</span>
+    </button>
   );
 }
