@@ -72,38 +72,47 @@ function tabelAnggaran(d: DataSurat): string {
   if (komersil) ketBaris.push(`${b("KOMERSIL")} : ${i(esc(komersil))}`);
   const ket = ketBaris.join("<br />");
 
-  const isiBaris: string[] = [];
-  isiBaris.push(baris([
+  const kepala = baris([
     th("No", { width: "5%" }),
     th("MATA ANGGARAN", { width: "41%" }),
     th(`RKA ${tahun}`, { width: "16%" }),
     th("USULAN CABANG", { width: "17%" }),
     th("KETERANGAN", { width: "21%" }),
-  ]));
+  ]);
 
+  const adaSubDocking = h.docking.length > 0;
+  const adaSubMob = h.mobilisasi.length > 0;
   const jumlahBiaya = h.docking.length + h.mobilisasi.length;
+  /**
+   * Sel KETERANGAN membentang ke SELURUH blok biaya, dan baris subtotal ikut
+   * dihitung. Sebelumnya rowspan hanya menghitung baris mata anggaran, sehingga
+   * begitu subtotal disisipkan di tengah, kolom terakhir kehabisan baris dan
+   * tabelnya jadi berantakan saat dicetak.
+   */
+  const tinggiKet = jumlahBiaya + (adaSubDocking ? 1 : 0) + (adaSubMob ? 1 : 0);
+
+  const isiBaris: string[] = [];
   urut.forEach((r, idx) => {
+    const biaya = idx < jumlahBiaya;
     const sel = [
       td(romawi(idx + 1), { align: "center", tebal: true, width: "5%" }),
       td(`(M.A. ${esc(r.kode)}) ${esc(r.uraian)}`, { width: "41%" }),
       tdAngka(angkaRibuan(keAngka(r.rka)), { width: "16%" }),
       tdAngka(angkaRibuan(keAngka(r.cabang)), { width: "17%" }),
     ];
-    // keterangan lintasan hanya ditulis sekali, membentang ke seluruh baris biaya
-    if (idx === 0 && ket) sel.push(td(ket, { rowspan: jumlahBiaya || 1, valign: "top", width: "21%" }));
-    else if (idx === 0 && !ket) sel.push(td("", { rowspan: jumlahBiaya || 1, width: "21%" }));
-    else if (idx >= jumlahBiaya) sel.push(td("", { width: "21%" }));
+    if (idx === 0) sel.push(td(ket, { rowspan: tinggiKet, valign: "top", width: "21%" }));
+    else if (!biaya) sel.push(td("", { width: "21%" }));   // baris investasi punya selnya sendiri
     isiBaris.push(baris(sel));
 
-    // subtotal disisipkan tepat setelah kelompoknya
-    if (h.docking.length && idx === h.docking.length - 1) {
+    // subtotal disisipkan tepat setelah kelompoknya; keduanya masih tercakup rowspan
+    if (adaSubDocking && idx === h.docking.length - 1) {
       isiBaris.push(baris([
         td("Sub Total Docking (I)", { colspan: 2, align: "center", tebal: true, bg: WARNA.subtotal }),
         tdAngka(angkaRibuan(h.subDockingRka), { tebal: true, bg: WARNA.subtotal }),
         tdAngka(angkaRibuan(h.subDockingCabang), { tebal: true, bg: WARNA.subtotal }),
       ]));
     }
-    if (h.mobilisasi.length && idx === jumlahBiaya - 1) {
+    if (adaSubMob && idx === jumlahBiaya - 1) {
       isiBaris.push(baris([
         td("Sub Total Docking dan Mobilisasi (I+II)", { colspan: 2, align: "center", tebal: true, bg: WARNA.subtotal }),
         tdAngka(angkaRibuan(h.subMobRka), { tebal: true, bg: WARNA.subtotal }),
@@ -117,17 +126,17 @@ function tabelAnggaran(d: DataSurat): string {
       td("Sub Total Investasi (III)", { colspan: 2, align: "center", tebal: true, bg: WARNA.investasi }),
       tdAngka(angkaRibuan(h.subInvRka), { tebal: true, bg: WARNA.investasi }),
       tdAngka(angkaRibuan(h.subInvCabang), { tebal: true, bg: WARNA.investasi }),
-      td("", {}),
+      td("", { width: "21%" }),
     ]));
   }
   isiBaris.push(baris([
     td("Total Docking dan Investasi (I+II+III)", { colspan: 2, align: "center", tebal: true, bg: WARNA.total }),
     tdAngka(angkaRibuan(h.totalRka), { tebal: true, bg: WARNA.total }),
     tdAngka(angkaRibuan(h.totalCabang), { tebal: true, bg: WARNA.total }),
-    td("", {}),
+    td("", { width: "21%" }),
   ]));
 
-  return tabel(isiBaris);
+  return tabel(isiBaris, kepala);
 }
 
 export const dockingInvestasi: TemplateSurat = {
@@ -200,7 +209,7 @@ export const dockingInvestasi: TemplateSurat = {
     ));
 
     const t = tabelAnggaran(d);
-    if (t) bagian.push(t, "<p style=\"margin:0 0 10px 0;\">&nbsp;</p>");
+    if (t) bagian.push(t);
 
     bagian.push(p(LAMPIRAN));
     bagian.push(p(PENUTUP_PERMOHONAN));

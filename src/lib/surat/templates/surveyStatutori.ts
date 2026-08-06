@@ -58,7 +58,6 @@ export const surveyStatutori: TemplateSurat = {
       ["Pada Tanggal", esc(tgl)],
       ["Untuk Keperluan", esc(d.keperluan || "")],
     ]));
-    bagian.push(`<p style="margin:0 0 10px 0;">&nbsp;</p>`);
     bagian.push(p("Demikian kami sampaikan sebagai permohonan, atas kerja samanya diucapkan terima kasih."));
     return bungkus(bagian.join("\n"));
   },

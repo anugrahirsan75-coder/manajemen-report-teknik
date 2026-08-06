@@ -83,14 +83,15 @@ export const realisasiRutin: TemplateSurat = {
     ));
 
     if (h.isi.length) {
-      const kepala = { bg: WARNA.kepalaKuning, putih: false, tebal: true, align: "center" as const };
+      const gaya = { bg: WARNA.kepalaKuning, putih: false, tebal: true, align: "center" as const };
+      // kepala dipisah supaya tercetak ulang bila daftar kapal jatuh ke halaman berikutnya
+      const kepala = baris([
+        th("NO", { ...gaya, width: "6%" }),
+        th("NAMA KAPAL", { ...gaya, width: "40%" }),
+        th(`USULAN RKA ${String(d.bulanKolomRka || "").toUpperCase()} TAHUN ${esc(d.tahunRka || "")}`, { ...gaya, width: "27%" }),
+        th("USULAN CABANG", { ...gaya, width: "27%" }),
+      ]);
       const barisTabel: string[] = [
-        baris([
-          th("NO", { ...kepala, width: "6%" }),
-          th("NAMA KAPAL", { ...kepala, width: "40%" }),
-          th(`USULAN RKA ${String(d.bulanKolomRka || "").toUpperCase()} TAHUN ${esc(d.tahunRka || "")}`, { ...kepala, width: "27%" }),
-          th("USULAN CABANG", { ...kepala, width: "27%" }),
-        ]),
         ...h.isi.map((r, idx) => baris([
           td(String(idx + 1), { align: "center", width: "6%" }),
           td(esc(r.kapal), { width: "40%" }),
@@ -103,7 +104,7 @@ export const realisasiRutin: TemplateSurat = {
           tdAngka(angkaRibuan(h.totalCabang), { tebal: true }),
         ]),
       ];
-      bagian.push(tabel(barisTabel), "<p style=\"margin:0 0 10px 0;\">&nbsp;</p>");
+      bagian.push(tabel(barisTabel, kepala));
     }
 
     bagian.push(p(PENUTUP_SAMPAI));

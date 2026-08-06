@@ -21,7 +21,16 @@ export const WARNA = {
   kepalaKuning: "#FFC000", // header tabel laporan rutin (teks hitam)
 } as const;
 
-const GARIS = "border:1px solid #000000;padding:4px;";
+/**
+ * Ukuran huruf mengikuti hasil CETAK e-office, bukan tampilan layar: dengan
+ * 11pt satu surat docking meluber ke halaman kedua hanya untuk kalimat
+ * penutupnya. 10pt membuatnya selesai dalam satu halaman dan sepadan dengan
+ * surat-surat lama cabang.
+ */
+export const UKURAN_ISI = "10pt";
+export const UKURAN_TABEL = "8pt";
+
+const GARIS = "border:1px solid #000000;padding:3px;word-wrap:break-word;";
 
 export const esc = (v: unknown): string =>
   String(v ?? "")
@@ -32,10 +41,10 @@ export const esc = (v: unknown): string =>
 
 /** pembungkus wajib seluruh badan surat */
 export const bungkus = (isi: string) =>
-  `<div style="font-family:Arial,Helvetica,sans-serif;font-size:11pt;line-height:1.5;color:#000000;">\n${isi}\n</div>`;
+  `<div style="font-family:Arial,Helvetica,sans-serif;font-size:${UKURAN_ISI};line-height:1.45;color:#000000;">\n${isi}\n</div>`;
 
 export const p = (isi: string, rata: "justify" | "left" | "center" = "justify") =>
-  `<p style="margin:0 0 10px 0;text-align:${rata};">${isi}</p>`;
+  `<p style="margin:0 0 8px 0;text-align:${rata};font-size:${UKURAN_ISI};">${isi}</p>`;
 
 export const b = (isi: string) => `<b>${isi}</b>`;
 export const i = (isi: string) => `<i>${isi}</i>`;
@@ -100,11 +109,21 @@ export const th = (isi: string, o: OpsiSel = {}) => {
 
 export const baris = (sel: string[]) => `<tr>${sel.join("")}</tr>`;
 
-/** tabel bergaris — bentuk yang dipakai untuk rincian anggaran */
-export const tabel = (isiBaris: string[]) =>
-  `<table border="1" cellspacing="0" cellpadding="4" bordercolor="#000000" width="100%" `
-  + `style="border-collapse:collapse;width:100%;font-size:9pt;font-family:Arial,Helvetica,sans-serif;color:#000000;">\n`
-  + `${isiBaris.join("\n")}\n</table>`;
+/**
+ * Tabel bergaris — bentuk yang dipakai untuk rincian anggaran.
+ *
+ * Baris kepala dipisah ke <thead> supaya ikut tercetak ulang bila tabel jatuh ke
+ * halaman berikutnya. table-layout:fixed menahan lebar kolom mengikuti angka
+ * width yang diberikan; tanpa itu uraian panjang melebarkan kolomnya sendiri dan
+ * kolom terakhir terdorong keluar batas kertas.
+ */
+export const tabel = (isiBaris: string[], kepala?: string) =>
+  `<table border="1" cellspacing="0" cellpadding="3" bordercolor="#000000" width="100%" `
+  + `style="border-collapse:collapse;table-layout:fixed;width:100%;font-size:${UKURAN_TABEL};font-family:Arial,Helvetica,sans-serif;color:#000000;">\n`
+  + (kepala
+      ? `<thead>${kepala}</thead>\n<tbody>\n${isiBaris.join("\n")}\n</tbody>`
+      : isiBaris.join("\n"))
+  + `\n</table>`;
 
 /**
  * Tabel data tanpa garis (spesifikasi kapal): dua kolom dengan pemisah titik dua.
@@ -113,7 +132,7 @@ export const tabel = (isiBaris: string[]) =>
  */
 export const tabelData = (pasangan: [string, string][], lebarKiri = "160px") =>
   `<table border="0" cellspacing="0" cellpadding="3" width="100%" `
-  + `style="border-collapse:collapse;font-size:11pt;font-family:Arial,Helvetica,sans-serif;color:#000000;">\n`
+  + `style="border-collapse:collapse;font-size:${UKURAN_ISI};font-family:Arial,Helvetica,sans-serif;color:#000000;">\n`
   + pasangan.map(([kiri, kanan]) =>
       `<tr>`
       + `<td width="${lebarKiri}" valign="top" style="width:${lebarKiri};vertical-align:top;padding:3px;">${esc(kiri)}</td>`
@@ -124,7 +143,7 @@ export const tabelData = (pasangan: [string, string][], lebarKiri = "160px") =>
 
 /** daftar berbutir bulat kosong, dipakai pada surat perpanjangan sertifikat */
 export const daftarButir = (butir: string[]) =>
-  `<ul style="list-style-type:circle;margin:0 0 10px 0;padding-left:28px;">\n`
+  `<ul style="list-style-type:circle;margin:0 0 8px 0;padding-left:26px;font-size:${UKURAN_ISI};">\n`
   + butir.map((x) => `<li style="margin:0 0 4px 0;">${x}</li>`).join("\n")
   + `\n</ul>`;
 
