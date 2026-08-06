@@ -14,6 +14,7 @@ import { kapalDariItems } from "@/components/KapalCell";
 import BilahScm from "@/components/scm/BilahScm";
 import TabelNego, { BarisNego } from "@/components/scm/TabelNego";
 import { nomorDokumen } from "@/lib/scm/nomor";
+import { ISIAN_TAHAP, MedanTahap, kurangIsian, perluHargaNego } from "@/lib/scm/tahapIsian";
 import {
   BarisScm, majuTahap, muatProses, muatVendor, prosesBaru, simpanProses,
 } from "@/lib/scm/store";
@@ -187,6 +188,11 @@ function KartuPengadaan({ a, vendor, dibuka, onBuka, onTerima, onNaik, onSimpan 
   const p: ProsesScm | undefined = a.baris?.proses;
   const macet = p ? tertahan(p) : false;
   const berikut = p ? tahapBerikut(p.tahap) : null;
+  // tahap hanya boleh maju kalau isian tahap ini sudah lengkap — jam perpindahan
+  // itulah bukti lama proses, jadi tak boleh dilompati saat datanya belum ada
+  const adaNego = !!(p?.itemNego || []).length;
+  const kurangTahap = p ? kurangIsian(p, p.tahap, adaNego) : [];
+  const siapLanjut = kurangTahap.length === 0;
 
   return (
     <article className={`rounded-2xl bg-white shadow-sm ring-1 transition ${macet ? "ring-rose-300" : "ring-slate-200"}`}>
@@ -212,8 +218,10 @@ function KartuPengadaan({ a, vendor, dibuka, onBuka, onTerima, onNaik, onSimpan 
         {!p ? (
           <button onClick={onTerima} className="btn btn-primary text-xs">✓ Terima</button>
         ) : berikut ? (
-          <button onClick={() => onNaik(berikut)} className="btn btn-success text-xs" title={TINDAKAN_TAHAP[p.tahap]}>
-            Lanjut → {LABEL_TAHAP[berikut]}
+          <button onClick={() => (siapLanjut ? onNaik(berikut) : onBuka())}
+            title={siapLanjut ? TINDAKAN_TAHAP[p.tahap] : `Lengkapi dulu: ${kurangTahap.join(", ")}`}
+            className={`btn text-xs ${siapLanjut ? "btn-success" : "btn-ghost"}`}>
+            {siapLanjut ? `Lanjut → ${LABEL_TAHAP[berikut]}` : `Isi dulu (${kurangTahap.length})`}
           </button>
         ) : null}
         <button onClick={onBuka} className="btn btn-ghost text-xs">{dibuka ? "Tutup" : "Rincian"}</button>
@@ -239,24 +247,25 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
   onNaik: (ke: TahapScm) => void; onSimpan: (patch: Partial<ProsesScm>) => void;
 }) {
   const [draf, setDraf] = useState<Partial<ProsesScm>>({});
+  const [semuaIsian, setSemuaIsian] = useState(false);
   const [unduh, setUnduh] = useState(false);
   const [galat, setGalat] = useState("");
   const nilai = <K extends keyof ProsesScm>(k: K): any => (draf as any)[k] ?? (p as any)[k] ?? "";
   const ubah = (k: keyof ProsesScm, v: any) => setDraf((d) => ({ ...d, [k]: v }));
-  const simpan = () => { onSimpan(draf); setDraf({}); };
   const lama = lamaPerTahap(p);
   const v = vendor.find((x) => x.id === nilai("vendorId"));
 
   /**
    * Baris negosiasi dirakit dari item SPPBJ-nya sendiri, bukan disalin ke
-   * catatan SCM. Yang disimpan di sini hanya HARGA HASIL NEGO tiap baris —
-   * kalau itemnya diperbaiki di sisi Teknik, yang terbaca di sini ikut benar.
+   * catatan SCM. Yang disimpan hanya HARGA HASIL NEGO tiap baris — kalau
+   * itemnya diperbaiki di sisi Teknik, yang terbaca di sini ikut benar.
    */
   const itemAsli: any[] = a.payload?.items || [];
   const negoTersimpan: Record<number, number> = {};
   ((nilai("itemNego") as ItemNego[]) || []).forEach((x) => {
     if (typeof x?.hargaNego === "number") negoTersimpan[x.idx] = x.hargaNego;
   });
+  const adaHargaNego = Object.keys(negoTersimpan).length > 0;
   const potongan = Number(nilai("potonganPersen")) || 0;
   const barisNego: BarisNego[] = itemAsli.map((it, i) => ({
     idx: i,
@@ -286,6 +295,19 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
   const nomor = nomorDokumen(
     String(nilai("noInisiasi")), String(nilai("tglInisiasi")),
     String(nilai("tglNego")), String(nilai("tglBahp")), String(nilai("tglSpbj")));
+
+  /** keadaan setelah draf digabung — dipakai memeriksa kelengkapan tahap ini */
+  const gabung: ProsesScm = { ...p, ...draf };
+  const kurang = kurangIsian(gabung, p.tahap, adaHargaNego);
+  const berikut = tahapBerikut(p.tahap);
+  const bolehLanjut = kurang.length === 0;
+
+  const simpan = () => { onSimpan(draf); setDraf({}); };
+  const simpanLalu = () => {
+    if (Object.keys(draf).length) onSimpan(draf);
+    setDraf({});
+    if (berikut) window.setTimeout(() => onNaik(berikut), 60);
+  };
 
   const unduhExcel = async () => {
     setGalat(""); setUnduh(true);
@@ -325,8 +347,10 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
     finally { setUnduh(false); }
   };
 
-  const isian = "w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-sky-400";
-  const label = "mb-1 block text-[11px] font-bold text-slate-600";
+  const medanTahapIni = ISIAN_TAHAP[p.tahap];
+  const medanLain = (Object.keys(ISIAN_TAHAP) as TahapScm[])
+    .filter((t) => t !== p.tahap)
+    .flatMap((t) => ISIAN_TAHAP[t].map((m) => ({ ...m, tahap: t })));
 
   return (
     <div className="space-y-5">
@@ -336,90 +360,89 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
         <div className="flex flex-wrap gap-1.5">
           {URUT_TAHAP.map((t) => {
             const lewat = URUT_TAHAP.indexOf(t) <= URUT_TAHAP.indexOf(p.tahap);
+            const kini = t === p.tahap;
             const hari = lama.filter((x) => x.tahap === t).reduce((s, x) => s + x.hari, 0);
             return (
               <span key={t} className={`rounded-lg px-2 py-1 text-[10px] font-bold ring-1 ${
-                lewat ? WARNA_TAHAP[t] : "bg-white text-slate-300 ring-slate-200"}`}>
+                kini ? "bg-slate-900 text-white ring-slate-900"
+                  : lewat ? WARNA_TAHAP[t] : "bg-white text-slate-300 ring-slate-200"}`}>
                 {LABEL_TAHAP[t]}{lewat && hari > 0 ? ` · ${hari}h` : ""}
               </span>
             );
           })}
         </div>
-        <p className="mt-1.5 text-[11px] text-slate-500">
-          Yang harus dikerjakan sekarang: <b className="text-slate-700">{TINDAKAN_TAHAP[p.tahap]}</b>
-        </p>
       </div>
 
-      {/* isian per tahap */}
-      <div className="grid gap-3 sm:grid-cols-2">
-        <div>
-          <label className={label}>No. Inisiasi e-Proc</label>
-          <input value={nilai("noInisiasi")} onChange={(e) => ubah("noInisiasi", e.target.value)}
-            placeholder="4181/INITIATION/ASDP-DN-11-02-03/VI/2026" className={isian} />
+      {/* ── isian TAHAP INI saja ─────────────────────────────────────────── */}
+      <section className="rounded-2xl bg-sky-50/60 p-4 ring-1 ring-sky-200">
+        <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="rounded-full bg-slate-900 px-2 py-0.5 text-[10px] font-extrabold text-white">
+            LANGKAH {URUT_TAHAP.indexOf(p.tahap) + 1}/{URUT_TAHAP.length}
+          </span>
+          <b className="text-sm text-slate-800">{TINDAKAN_TAHAP[p.tahap]}</b>
         </div>
-        <div>
-          <label className={label}>Tanggal inisiasi</label>
-          <input type="date" value={nilai("tglInisiasi")} onChange={(e) => ubah("tglInisiasi", e.target.value)} className={isian} />
-        </div>
-        <div className="sm:col-span-2">
-          <label className={label}>Vendor</label>
-          <select value={nilai("vendorId")} onChange={(e) => ubah("vendorId", e.target.value)} className={isian}>
-            <option value="">— pilih vendor —</option>
-            {vendor.map((x) => <option key={x.id} value={x.id}>{x.nama}{x.kota ? ` — ${x.kota}` : ""}</option>)}
-          </select>
-          {v && (
-            <p className="mt-1 text-[11px] text-slate-500">
-              {v.pimpinan} ({v.jabatan}) · {v.kota} {v.npwp ? `· NPWP ${v.npwp}` : ""}
+
+        {medanTahapIni.length === 0 && !perluHargaNego(p.tahap) ? (
+          <p className="text-[13px] text-slate-600">
+            {p.tahap === "selesai"
+              ? "Pengadaan ini sudah tuntas — tidak ada isian lagi."
+              : "Tidak ada isian pada langkah ini. Lanjutkan bila pekerjaannya sudah dilakukan."}
+          </p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2">
+            {medanTahapIni.map((m) => (
+              <MedanIsianScm key={String(m.id)} m={m} nilai={nilai(m.id)} vendor={vendor}
+                onUbah={(val) => ubah(m.id, val)} />
+            ))}
+          </div>
+        )}
+
+        {v && p.tahap === "undangan" && (
+          <p className="mt-2 rounded-lg bg-white px-3 py-2 text-[11px] text-slate-600 ring-1 ring-slate-200">
+            {v.pimpinan} ({v.jabatan}) · {v.kota} {v.npwp ? `· NPWP ${v.npwp}` : ""} {v.telepon ? `· ${v.telepon}` : ""}
+          </p>
+        )}
+
+        {perluHargaNego(p.tahap) && (
+          <div className="mt-4">
+            <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-500">
+              Harga setelah negosiasi ({itemAsli.length} item)
             </p>
+            {itemAsli.length ? (
+              <TabelNego baris={barisNego} onUbah={setHarga} onPotongRata={potongRata} />
+            ) : (
+              <p className="rounded-xl bg-white px-3 py-2 text-[11px] text-slate-500 ring-1 ring-slate-200">
+                SPPBJ ini belum punya item.
+              </p>
+            )}
+          </div>
+        )}
+
+        {kurang.length > 0 && (
+          <p className="mt-3 text-[11px] font-semibold text-amber-700">
+            Belum lengkap untuk lanjut: {kurang.join(", ")}.
+          </p>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button onClick={simpan} disabled={!Object.keys(draf).length}
+            className="btn btn-ghost text-xs disabled:opacity-40">💾 Simpan</button>
+          {berikut && (
+            <button onClick={simpanLalu} disabled={!bolehLanjut}
+              title={bolehLanjut ? "" : `Lengkapi dulu: ${kurang.join(", ")}`}
+              className="btn btn-success text-xs disabled:opacity-40">
+              Simpan &amp; lanjut → {LABEL_TAHAP[berikut]}
+            </button>
           )}
         </div>
-        <div>
-          <label className={label}>Nomor penawaran harga</label>
-          <input value={nilai("noPenawaran")} onChange={(e) => ubah("noPenawaran", e.target.value)}
-            placeholder="789-2/QUOT/BBS/JKT/VI/2026" className={isian} />
-        </div>
-        <div>
-          <label className={label}>Tanggal penawaran</label>
-          <input type="date" value={nilai("tglPenawaran")} onChange={(e) => ubah("tglPenawaran", e.target.value)} className={isian} />
-        </div>
-        <div>
-          <label className={label}>Tanggal negosiasi</label>
-          <input type="date" value={nilai("tglNego")} onChange={(e) => ubah("tglNego", e.target.value)} className={isian} />
-        </div>
-        <div>
-          <label className={label}>Jam negosiasi</label>
-          <input value={nilai("jamNego")} onChange={(e) => ubah("jamNego", e.target.value)} placeholder="14.00 WIT" className={isian} />
-        </div>
-        <div>
-          <label className={label}>Tanggal BAHP</label>
-          <input type="date" value={nilai("tglBahp")} onChange={(e) => ubah("tglBahp", e.target.value)} className={isian} />
-        </div>
-        <div>
-          <label className={label}>Jam BAHP</label>
-          <input value={nilai("jamBahp")} onChange={(e) => ubah("jamBahp", e.target.value)} placeholder="15.00 WIT" className={isian} />
-        </div>
-        <div>
-          <label className={label}>Tanggal SPBJ</label>
-          <input type="date" value={nilai("tglSpbj")} onChange={(e) => ubah("tglSpbj", e.target.value)} className={isian} />
-        </div>
-        <div>
-          <label className={label}>Waktu penyerahan (hari kalender)</label>
-          <input type="number" min={1} value={nilai("hariPenyerahan") || 7}
-            onChange={(e) => ubah("hariPenyerahan", Number(e.target.value))} className={isian} />
-        </div>
-        <div className="sm:col-span-2">
-          <label className={label}>Catatan</label>
-          <textarea value={nilai("catatan")} onChange={(e) => ubah("catatan", e.target.value)} rows={2}
-            placeholder="mis. menunggu revisi spesifikasi dari Teknik" className={isian} />
-        </div>
-      </div>
+      </section>
 
-      {/* nomor dokumen otomatis */}
-      <div>
-        <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
-          Nomor dokumen (dari 4 angka pertama nomor inisiasi)
-        </p>
-        {nomor.undangan ? (
+      {/* nomor dokumen — muncul begitu nomor inisiasi terisi */}
+      {nomor.undangan && (
+        <div>
+          <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
+            Nomor dokumen (dari 4 angka pertama nomor inisiasi)
+          </p>
           <div className="grid gap-1.5 sm:grid-cols-2">
             <NomorSalin label="Undangan" nilai={nomor.undangan} />
             <NomorSalin label="Jadwal" nilai={nomor.jadwal} />
@@ -427,39 +450,40 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
             <NomorSalin label="BAHP" nilai={nomor.bahp} />
             <NomorSalin label="SPBJ" nilai={nomor.spbj} />
           </div>
-        ) : (
-          <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500 ring-1 ring-slate-200">
-            Isi nomor inisiasi e-Proc beserta tanggalnya — nomor dokumen tersusun sendiri di sini.
-          </p>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* negosiasi harga per item */}
+      {/* isian langkah lain — tertutup, dibuka hanya untuk memperbaiki */}
       <div>
-        <p className="mb-1.5 text-[11px] font-extrabold uppercase tracking-[0.12em] text-slate-400">
-          Harga setelah negosiasi ({itemAsli.length} item)
-        </p>
-        {itemAsli.length ? (
-          <TabelNego baris={barisNego} onUbah={setHarga} onPotongRata={potongRata} />
-        ) : (
-          <p className="rounded-xl bg-slate-50 px-3 py-2 text-[11px] text-slate-500 ring-1 ring-slate-200">
-            SPPBJ ini belum punya item.
-          </p>
+        <button onClick={() => setSemuaIsian((x) => !x)}
+          className="text-[11px] font-bold text-sky-700 hover:underline">
+          {semuaIsian ? "▾ Sembunyikan isian langkah lain" : "▸ Buka isian langkah lain (untuk memperbaiki)"}
+        </button>
+        {semuaIsian && (
+          <div className="mt-2 grid gap-3 rounded-2xl bg-slate-50 p-4 ring-1 ring-slate-200 sm:grid-cols-2">
+            {medanLain.map((m) => (
+              <MedanIsianScm key={String(m.id)} m={m} nilai={nilai(m.id)} vendor={vendor}
+                jejak={LABEL_TAHAP[m.tahap]} onUbah={(val) => ubah(m.id, val)} />
+            ))}
+            <div className="sm:col-span-2">
+              <label className="mb-1 block text-[11px] font-bold text-slate-600">Catatan</label>
+              <textarea value={nilai("catatan")} onChange={(e) => ubah("catatan", e.target.value)} rows={2}
+                placeholder="mis. menunggu revisi spesifikasi dari Teknik"
+                className="w-full rounded-lg border border-slate-300 px-2.5 py-1.5 text-sm outline-none focus:border-sky-400" />
+            </div>
+          </div>
         )}
       </div>
 
       {galat && <p className="rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-rose-200">{galat}</p>}
 
       <div className="flex flex-wrap items-center gap-2 border-t border-slate-100 pt-3">
-        <button onClick={simpan} disabled={!Object.keys(draf).length} className="btn btn-primary text-xs disabled:opacity-40">
-          💾 Simpan isian
-        </button>
-        <button onClick={unduhExcel} disabled={unduh || !itemAsli.length} className="btn btn-success text-xs disabled:opacity-40"
+        <button onClick={unduhExcel} disabled={unduh || !itemAsli.length} className="btn btn-primary text-xs disabled:opacity-40"
           title="Berkas 12 sheet: DATA, DATA VENDOR, SPPBJ, DKP, JADWAL, UNDANGAN, LAMP UNDANGAN, BA NEGO, LAMPIRAN NEGO, SPBJ, BAHP, SPBJ BARU">
           {unduh ? "Menyusun…" : "⬇ Unduh berkas pengadaan (Excel)"}
         </button>
         <select value="" onChange={(e) => e.target.value && onNaik(e.target.value as TahapScm)}
-          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs">
+          className="rounded-lg border border-slate-300 px-2.5 py-1.5 text-xs" title="Pindah tahap tanpa urutan — untuk membetulkan pencatatan">
           <option value="">Pindahkan ke tahap…</option>
           {URUT_TAHAP.map((t) => <option key={t} value={t}>{LABEL_TAHAP[t]}</option>)}
         </select>
@@ -467,9 +491,39 @@ function RincianProses({ a, p, vendor, onNaik, onSimpan }: {
       </div>
       {Object.keys(draf).length > 0 && (
         <p className="text-[11px] font-semibold text-amber-700">
-          Ada perubahan yang belum disimpan — tekan “Simpan isian” sebelum berpindah pengadaan.
+          Ada perubahan yang belum disimpan.
         </p>
       )}
+    </div>
+  );
+}
+
+/** satu isian, bentuknya mengikuti jenis medan pada tahap itu */
+function MedanIsianScm({ m, nilai, vendor, jejak, onUbah }: {
+  m: MedanTahap; nilai: any; vendor: Vendor[]; jejak?: string; onUbah: (v: any) => void;
+}) {
+  const kelas = "w-full rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm outline-none focus:border-sky-400";
+  return (
+    <div className={m.jenis === "vendor" ? "sm:col-span-2" : ""}>
+      <label className="mb-1 block text-[11px] font-bold text-slate-600">
+        {m.label}{m.wajib && <span className="text-rose-500"> *</span>}
+        {jejak && <span className="ml-1 font-normal text-slate-400">· {jejak}</span>}
+      </label>
+      {m.jenis === "vendor" ? (
+        <select value={nilai || ""} onChange={(e) => onUbah(e.target.value)} className={kelas}>
+          <option value="">— pilih vendor —</option>
+          {vendor.map((x) => <option key={x.id} value={x.id}>{x.nama}{x.kota ? ` — ${x.kota}` : ""}</option>)}
+        </select>
+      ) : m.jenis === "tanggal" ? (
+        <input type="date" value={nilai || ""} onChange={(e) => onUbah(e.target.value)} className={kelas} />
+      ) : m.jenis === "angka" ? (
+        <input type="number" min={1} value={nilai || ""} onChange={(e) => onUbah(Number(e.target.value))} className={kelas} />
+      ) : m.jenis === "textarea" ? (
+        <textarea value={nilai || ""} rows={2} onChange={(e) => onUbah(e.target.value)} className={kelas} />
+      ) : (
+        <input value={nilai || ""} placeholder={m.contoh} onChange={(e) => onUbah(e.target.value)} className={kelas} />
+      )}
+      {m.petunjuk && <p className="mt-1 text-[10px] text-slate-400">{m.petunjuk}</p>}
     </div>
   );
 }
