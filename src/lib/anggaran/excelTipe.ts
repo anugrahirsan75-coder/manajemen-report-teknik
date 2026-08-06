@@ -17,6 +17,7 @@
  * Ubah satu harga di sheet dokumen, seluruh tingkat ikut menyesuaikan.
  */
 import ExcelJS from "exceljs";
+import { PermintaanGrafik, sisipkanGrafik } from "./grafikXlsx";
 
 const TEAL = "FF14B8C4";
 const ABU = "FFF1F5F9";
@@ -83,6 +84,13 @@ export interface DataTipe {
   dicetak: string;
   grup: GrupAnggaran[];
   dokumen: Dokumen[];
+  /** bahan sheet ANALISIS — disiapkan di exportTipe.ts */
+  analisis?: {
+    perBulan: { bulan: string; nilai: number }[];
+    kapal: { kapal: string; real: number; rka: number; pos: number[] }[];
+    kolomMa: string[];
+    besar: { nama: string; tanggal: string; nilai: number; ma: string }[];
+  };
 }
 
 const amanSheet = (s: string) => (s || "Sheet").replace(/[\\/*?:\[\]']/g, "-").slice(0, 31).trim();
@@ -156,6 +164,229 @@ function warnaStatus(ws: ExcelJS.Worksheet, kolServapan: string, kolStatus: stri
     ],
   });
 }
+
+/**
+ * Sheet ANALISIS — bagian yang menjawab pertanyaan rapat, bukan sekadar rekap.
+ *
+ * RINGKASAN dan Budget Control menjawab "berapa". Di sini dijawab "kapal mana
+ * yang melampaui rencananya, jatuh di pos apa, dan bagaimana sampai Desember" —
+ * lengkap dengan grafik Excel yang masih tertaut ke selnya, sehingga angka yang
+ * diubah saat rapat langsung mengubah grafiknya.
+ */
+function sheetAnalisis(wb: ExcelJS.Workbook, d: DataTipe): PermintaanGrafik[] {
+  const a = d.analisis;
+  if (!a) return [];
+  const NAMA = "ANALISIS";
+  const ws = wb.addWorksheet(NAMA, {
+    views: [{ showGridLines: false }],
+    pageSetup: { orientation: "landscape", fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  });
+  const grafik: PermintaanGrafik[] = [];
+  const rujuk = (kol: string, r1: number, r2?: number) =>
+    `'${NAMA}'!$${kol}$${r1}${r2 ? `:$${kol}$${r2}` : ""}`;
+
+  [26, 20, 20, 13, 20, 18, 18, 18, 18, 18].forEach((w, i) => (ws.getColumn(i + 1).width = w));
+  kop(ws, `${d.judul} — ANALISIS`, `${d.periode} · dicetak ${d.dicetak}`, 10, d.warna);
+
+  // ── A. per periode: pagu vs realisasi ──────────────────────────────────────
+  let r = 6;
+  const judulBlok = (teks: string, ket: string) => {
+    ws.mergeCells(r, 1, r, 10);
+    const c = ws.getCell(r, 1);
+    c.value = teks;
+    c.font = { name: "Calibri", size: 12, bold: true, color: { argb: d.warna } };
+    r += 1;
+    if (ket) {
+      ws.mergeCells(r, 1, r, 10);
+      const k = ws.getCell(r, 1);
+      k.value = ket;
+      k.font = { name: "Calibri", size: 9, color: { argb: "FF64748B" } };
+      r += 1;
+    }
+  };
+  const kepala = (judulKolom: string[]) => {
+    judulKolom.forEach((t, i) => {
+      const c = ws.getCell(r, i + 1);
+      c.value = t;
+      c.font = { name: "Calibri", size: 9, bold: true, color: { argb: "FFFFFFFF" } };
+      c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: d.warna } };
+      c.alignment = { horizontal: "center", vertical: "middle", wrapText: true };
+      c.border = { top: { style: "thin", color: { argb: GARIS } }, left: { style: "thin", color: { argb: GARIS } }, bottom: { style: "thin", color: { argb: GARIS } }, right: { style: "thin", color: { argb: GARIS } } };
+    });
+    ws.getRow(r).height = 26;
+    r += 1;
+  };
+  const isiSel = (baris: number, kol: number, nilai: any, fmt?: string, tebal = false) => {
+    const c = ws.getCell(baris, kol);
+    c.value = nilai;
+    if (fmt) c.numFmt = fmt;
+    c.font = { name: "Calibri", size: 10, bold: tebal, color: { argb: TINTA } };
+    c.border = { top: { style: "thin", color: { argb: GARIS } }, left: { style: "thin", color: { argb: GARIS } }, bottom: { style: "thin", color: { argb: GARIS } }, right: { style: "thin", color: { argb: GARIS } } };
+    return c;
+  };
+
+  const paguGrup: Record<string, number> = {};
+  d.grup.forEach((g2) => {
+    paguGrup[g2.nama] = (g2.pos || []).reduce((s2, x) => s2 + (x.pagu || 0) + (x.addendum || 0), 0);
+  });
+
+  if (a.perBulan.length && d.tipe === "rutin") {
+    judulBlok("A. PAGU VS REALISASI PER BULAN", "Batang = rupiah (sumbu kiri). Garis = serapan terhadap pagu (sumbu kanan).");
+    kepala(["Bulan", "Pagu", "Realisasi", "Serapan", "Selisih", "Status"]);
+    const r0 = r;
+    a.perBulan.forEach((b) => {
+      const nama = d.grup.find((g2) => g2.nama.toLowerCase().startsWith(namaBulanDari(b.bulan).toLowerCase()))?.nama
+        || namaBulanDari(b.bulan);
+      const pagu = paguGrup[nama] || 0;
+      isiSel(r, 1, nama, undefined, true);
+      isiSel(r, 2, pagu || null, RP);
+      isiSel(r, 3, b.nilai || null, RP, true);
+      const cs = isiSel(r, 4, pagu ? b.nilai / pagu : null, PCT, true);
+      isiSel(r, 5, pagu ? pagu - b.nilai : null, RP);
+      const lewat = pagu && b.nilai / pagu > 1;
+      const waspada = pagu && b.nilai / pagu >= 0.95 && b.nilai / pagu <= 1;
+      const st = isiSel(r, 6, !pagu ? "—" : lewat ? "MELEWATI PAGU" : waspada ? "WASPADA" : "AMAN");
+      const warna = lewat ? "FFFEE2E2" : waspada ? "FFFEF3C7" : "FFDCFCE7";
+      [cs, st].forEach((c) => {
+        c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: warna } };
+        c.alignment = { horizontal: "center" };
+        c.font = { name: "Calibri", size: 10, bold: true, color: { argb: lewat ? MERAH : waspada ? KUNING : HIJAU } };
+      });
+      r += 1;
+    });
+    const rAkhir = r - 1;
+    isiSel(r, 1, "TOTAL", undefined, true);
+    isiSel(r, 2, { formula: `SUM(B${r0}:B${rAkhir})` }, RP, true);
+    isiSel(r, 3, { formula: `SUM(C${r0}:C${rAkhir})` }, RP, true);
+    isiSel(r, 4, { formula: `IF(B${r}=0,"",C${r}/B${r})` }, PCT, true);
+    isiSel(r, 5, { formula: `B${r}-C${r}` }, RP, true);
+    isiSel(r, 6, "");
+    r += 2;
+
+    grafik.push({
+      sheet: NAMA, jenis: "batang", judul: "Pagu vs Realisasi per Bulan",
+      kategori: rujuk("A", r0, rAkhir),
+      deret: [
+        { nama: rujuk("B", r0 - 1), nilai: rujuk("B", r0, rAkhir) },
+        { nama: rujuk("C", r0 - 1), nilai: rujuk("C", r0, rAkhir) },
+        { nama: rujuk("D", r0 - 1), nilai: rujuk("D", r0, rAkhir), garisKanan: true },
+      ],
+      kolom: 0, baris: r, lebarKolom: 10, tinggiBaris: 20,
+    });
+    r += 22;
+  }
+
+  // ── B. per kapal: realisasi vs RKA ────────────────────────────────────────
+  if (a.kapal.length) {
+    const adaRka = a.kapal.some((k) => k.rka > 0);
+    judulBlok(
+      "B. PER KAPAL — REALISASI TERHADAP RENCANANYA SENDIRI",
+      adaRka
+        ? "Boros diukur dari RKA kapal itu sendiri, bukan dibanding kapal lain: kapal besar memang wajar lebih mahal."
+        : "RKA per kapal tidak tersedia untuk tipe ini, jadi yang dibandingkan adalah besaran realisasinya.",
+    );
+    kepala(adaRka
+      ? ["Kapal", "RKA", "Realisasi", "Serapan", "Selisih", "Catatan"]
+      : ["Kapal", "Realisasi", "Porsi terhadap total", "Catatan"]);
+    const r0 = r;
+    const totalReal = a.kapal.reduce((s2, k) => s2 + k.real, 0) || 1;
+    a.kapal.forEach((k) => {
+      isiSel(r, 1, k.kapal, undefined, true);
+      if (adaRka) {
+        isiSel(r, 2, k.rka || null, RP);
+        isiSel(r, 3, k.real || null, RP, true);
+        const ras = k.rka ? k.real / k.rka : null;
+        const c = isiSel(r, 4, ras, PCT, true);
+        if (ras) {
+          const lewat = ras > 1;
+          c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: lewat ? "FFFEE2E2" : ras >= 0.95 ? "FFFEF3C7" : "FFDCFCE7" } };
+          c.font = { name: "Calibri", size: 10, bold: true, color: { argb: lewat ? MERAH : ras >= 0.95 ? KUNING : HIJAU } };
+          c.alignment = { horizontal: "center" };
+        }
+        isiSel(r, 5, k.rka ? k.real - k.rka : null, RP);
+        isiSel(r, 6, !k.rka ? "belum ada RKA" : k.real > k.rka ? "melampaui rencana" : "");
+      } else {
+        isiSel(r, 2, k.real || null, RP, true);
+        const c = isiSel(r, 3, k.real / totalReal, PCT, true);
+        c.alignment = { horizontal: "center" };
+        isiSel(r, 4, "");
+      }
+      r += 1;
+    });
+    const rAkhir = r - 1;
+    r += 1;
+
+    grafik.push({
+      sheet: NAMA, jenis: "batang-mendatar",
+      judul: adaRka ? "RKA vs Realisasi per kapal" : "Realisasi per kapal",
+      kategori: rujuk("A", r0, rAkhir),
+      deret: adaRka
+        ? [
+            { nama: rujuk("B", r0 - 1), nilai: rujuk("B", r0, rAkhir) },
+            { nama: rujuk("C", r0 - 1), nilai: rujuk("C", r0, rAkhir) },
+          ]
+        : [{ nama: rujuk("B", r0 - 1), nilai: rujuk("B", r0, rAkhir) }],
+      kolom: 0, baris: r, lebarKolom: 10, tinggiBaris: 22,
+    });
+    r += 24;
+  }
+
+  // ── C. kapal x Mata Anggaran: di pos mana biayanya jatuh ──────────────────
+  if (a.kapal.length && a.kolomMa.length) {
+    judulBlok("C. DI POS MANA BIAYANYA JATUH", "Kolom mengikuti Mata Anggaran terbesar. Kolom terakhir menyebut pos penyumbang terbesar tiap kapal.");
+    kepala(["Kapal", ...a.kolomMa, "Total", "Pos terbesar"]);
+    const r0 = r;
+    a.kapal.forEach((k) => {
+      isiSel(r, 1, k.kapal, undefined, true);
+      k.pos.forEach((v, i) => isiSel(r, 2 + i, v || null, RP));
+      const tot = k.pos.reduce((s2, v) => s2 + v, 0);
+      isiSel(r, 2 + a.kolomMa.length, tot || null, RP, true);
+      const idx = k.pos.indexOf(Math.max(...k.pos));
+      const porsi = tot ? k.pos[idx] / tot : 0;
+      const c = isiSel(r, 3 + a.kolomMa.length, tot ? `${a.kolomMa[idx]} (${Math.round(porsi * 100)}%)` : "—");
+      if (porsi > 0.6) c.fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFFEE2E2" } };
+      r += 1;
+    });
+    const rAkhir = r - 1;
+    r += 1;
+
+    grafik.push({
+      sheet: NAMA, jenis: "batang-tumpuk", judul: "Susunan biaya tiap kapal menurut Mata Anggaran",
+      kategori: rujuk("A", r0, rAkhir),
+      deret: a.kolomMa.map((_, i) => ({
+        nama: rujuk(String.fromCharCode(66 + i), r0 - 1),
+        nilai: rujuk(String.fromCharCode(66 + i), r0, rAkhir),
+      })),
+      kolom: 0, baris: r, lebarKolom: 10, tinggiBaris: 20,
+    });
+    r += 22;
+  }
+
+  // ── D. pengadaan terbesar ─────────────────────────────────────────────────
+  if (a.besar.length) {
+    judulBlok("D. PENGADAAN TERBESAR", "Dipakai untuk menjawab pertanyaan “uangnya habis untuk apa”.");
+    kepala(["Tanggal", "Nama pengadaan", "", "", "Mata Anggaran", "Nilai"]);
+    a.besar.forEach((x) => {
+      isiSel(r, 1, x.tanggal);
+      ws.mergeCells(r, 2, r, 4);
+      isiSel(r, 2, x.nama);
+      isiSel(r, 5, x.ma);
+      isiSel(r, 6, x.nilai, RP, true);
+      r += 1;
+    });
+  }
+
+  return grafik;
+}
+
+/** "2026-03" -> "Maret 2026" */
+function namaBulanDari(ym: string): string {
+  const bl = ["Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"];
+  const [y, m] = (ym || "").split("-").map(Number);
+  return bl[(m || 1) - 1] ? `${bl[m - 1]} ${y}` : ym;
+}
+
 
 export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
   const wb = new ExcelJS.Workbook();
@@ -785,10 +1016,16 @@ export async function buatExcelTipe(d: DataTipe): Promise<Uint8Array> {
   n.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LANGIT } };
   [rN, rN + 1, rN + 2].forEach((x) => (ws.getRow(x).height = 32));
 
-  // urutan tab: RINGKASAN → sheet grup → DAFTAR → PEMBEBANAN → sheet dokumen
-  const urut = ["RINGKASAN", ...ringkasGrup.map((x) => x.sheet), "DAFTAR", "PEMBEBANAN", ...sheetDok];
+  // ANALISIS ditaruh paling depan: itu yang dibuka lebih dulu saat rapat
+  const grafik = sheetAnalisis(wb, d);
+
+  // urutan tab: ANALISIS → RINGKASAN → sheet grup → DAFTAR → PEMBEBANAN → dokumen
+  const urut = ["ANALISIS", "RINGKASAN", ...ringkasGrup.map((x) => x.sheet), "DAFTAR", "PEMBEBANAN", ...sheetDok];
   urut.forEach((nm, i) => { const sh: any = wb.getWorksheet(nm); if (sh) sh.orderNo = i + 1; });
   wb.views = [{ activeTab: 0, x: 0, y: 0, width: 20000, height: 12000, firstSheet: 0, visibility: "visible" }];
 
-  return new Uint8Array(await wb.xlsx.writeBuffer());
+  // ExcelJS tidak bisa membuat grafik; grafiknya disisipkan sebagai XML asli
+  // Excel sesudah berkasnya jadi (lihat grafikXlsx.ts).
+  const buf = new Uint8Array(await wb.xlsx.writeBuffer());
+  return sisipkanGrafik(buf, grafik);
 }
