@@ -130,6 +130,25 @@ export default function SppbjList() {
     setRows((p) => p.map((r) => (r.id === id ? { ...r, payload: { ...r.payload, ...patch } } : r)));
   };
 
+  /**
+   * Serahkan SPPBJ ke SCM.
+   *
+   * Yang dicatat hanya JAM penyerahannya di dokumen itu sendiri; antrean SCM
+   * membaca penanda ini. Isi dokumennya tidak disalin ke mana-mana, jadi tak
+   * ada dua versi angka yang bisa berbeda antara layar Teknik dan layar SCM.
+   */
+  const kirimScm = async (r: any) => {
+    if (!(await konfirmasi({
+      judul: "Kirim ke SCM?", pesan: r.nama_pengadaan || "(tanpa nama)",
+      tegasan: "Pengadaan ini akan muncul di antrean kerja tim SCM, dan lama prosesnya mulai dihitung.",
+      tombolYa: "Ya, kirim",
+    }))) return;
+    const keScm = new Date().toISOString();
+    await patchRemote(r.id, { keScm } as any);
+    setRows((p) => p.map((x) => (x.id === r.id ? { ...x, payload: { ...x.payload, keScm } } : x)));
+    void beritahu("Terkirim ke SCM. Tim SCM akan melihatnya di halaman Pengadaan — SCM.");
+  };
+
   const hapus = async (id: string, nama: string) => {
     if (!(await konfirmasi({
       nada: "bahaya", judul: "Hapus pengadaan ini?", pesan: nama,
@@ -370,6 +389,13 @@ export default function SppbjList() {
                     <td className="px-2 py-2.5"><span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
                     <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-1">
+                        {r.payload?.keScm ? (
+                          <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200"
+                            title={`Dikirim ke SCM ${tanggalIndo(String(r.payload.keScm).slice(0, 10))}`}>→ SCM</span>
+                        ) : (
+                          <button onClick={() => kirimScm(r)} className="btn btn-ghost text-[11px] px-2 py-1"
+                            title="Kirim SPPBJ ini ke antrean SCM">📤 SCM</button>
+                        )}
                         <button onClick={() => setPreview(r)} className="btn btn-ghost text-[11px] px-2 py-1" title="Lihat isi dokumen">👁</button>
                         <button onClick={() => buka(r)} className="btn btn-primary text-[11px] px-3 py-1">Buka</button>
                         <button onClick={() => hapus(r.id, r.nama_pengadaan)} className="btn btn-danger-soft text-[11px] px-2 py-1" title="Hapus">🗑</button>
