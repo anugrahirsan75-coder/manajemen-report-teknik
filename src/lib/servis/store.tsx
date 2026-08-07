@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { usePathname } from "next/navigation";
 import { ServisItem } from "./types";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { catatBackup } from "@/lib/backup/local";
@@ -11,6 +12,8 @@ const LS_KEY = "servis_items";
 interface Ctx {
   items: ServisItem[];
   loading: boolean;
+  /** pesan bila pemuatan gagal — ditampilkan halaman servis, bukan lewat dialog */
+  galat: string;
   refresh: () => Promise<void>;
   saveItem: (it: ServisItem) => Promise<void>;
   deleteItem: (id: string) => Promise<void>;
@@ -24,8 +27,10 @@ const lsRead = (): ServisItem[] => { try { return JSON.parse(localStorage.getIte
 const lsWrite = (items: ServisItem[]) => { try { localStorage.setItem(LS_KEY, JSON.stringify(items)); } catch {} };
 
 export function ServisProvider({ children }: { children: React.ReactNode }) {
+  const path = usePathname() || "";
   const [items, setItems] = useState<ServisItem[]>([]);
   const [loading, setLoading] = useState(false);
+  const [galat, setGalat] = useState("");
   const [editing, setEditing] = useState<ServisItem | null>(null);
 
   const refresh = async () => {
@@ -37,12 +42,30 @@ export function ServisProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       setItems((data ?? []).map((r: any) => ({ ...r.payload, id: r.id })));
     } catch (e: any) {
-      void beritahu("Gagal muat data servis: " + e.message);
+      /**
+       * Pemuatan latar TIDAK boleh menyela dengan dialog.
+       *
+       * Penyedia ini dipasang di seluruh aplikasi, sehingga ikut berjalan di
+       * halaman yang sama sekali tak berurusan dengan servis — termasuk halaman
+       * masuk, tempat sesi memang belum ada dan gagal itu wajar. Dialog di situ
+       * hanya membuat layar tampak rusak. Galatnya dicatat, datanya jatuh ke
+       * salinan lokal, dan halaman servis sendiri yang menampilkannya bila perlu.
+       */
+      console.error("[servis] gagal memuat", e);
+      setGalat(e?.message || "gagal memuat data servis");
       setItems(lsRead());
     } finally { setLoading(false); }
   };
 
-  useEffect(() => { refresh(); /* eslint-disable-next-line */ }, []);
+  /**
+   * Hanya dimuat saat halaman yang membutuhkannya dibuka. Sebelumnya data ini
+   * ditarik di setiap halaman, jadi halaman SCM dan halaman masuk pun ikut
+   * memanggil basis data tanpa alasan.
+   */
+  useEffect(() => {
+    if (path.startsWith("/servis")) void refresh();
+    /* eslint-disable-next-line */
+  }, [path]);
 
   const saveItem = async (it: ServisItem) => {
     const now = new Date().toISOString();
@@ -70,7 +93,7 @@ export function ServisProvider({ children }: { children: React.ReactNode }) {
     await refresh();
   };
 
-  return <C.Provider value={{ items, loading, refresh, saveItem, deleteItem, editing, setEditing, supabaseReady: isSupabaseReady }}>{children}</C.Provider>;
+  return <C.Provider value={{ items, loading, galat, refresh, saveItem, deleteItem, editing, setEditing, supabaseReady: isSupabaseReady }}>{children}</C.Provider>;
 }
 
 export function useServis() {
