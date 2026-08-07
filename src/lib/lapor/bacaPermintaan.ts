@@ -51,16 +51,39 @@ export async function bacaPermintaan(
   lapor: (k: Kemajuan) => void = () => {},
 ): Promise<HasilPermintaan> {
   lapor({ tahap: "Mengambil berkas dari Google Drive…" });
-  const r = await fetch(`/api/lapor/isi?fileId=${encodeURIComponent(fileId)}`, { cache: "no-store" });
-  const d = await r.json().catch(() => ({}));
-  if (!r.ok || !d?.ok) throw new Error(d?.error || `gagal mengambil berkas (${r.status})`);
 
-  // base64 -> File, supaya bisa dilewatkan ke mesin baca yang sama dengan
-  // yang dipakai halaman surat (ia menerima File, bukan tautan)
-  const bin = atob(String(d.dataBase64 || ""));
-  const buf = new Uint8Array(bin.length);
-  for (let i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
-  const file = new File([buf], d.nama || namaBerkas, { type: d.mime || "application/octet-stream" });
+  let r: Response;
+  try {
+    r = await fetch(`/api/lapor/isi?fileId=${encodeURIComponent(fileId)}`, {
+      cache: "no-store",
+      // Drive kadang lambat; batas ini membuat kegagalannya punya sebab yang
+      // bisa dibaca, bukan menggantung sampai peramban menyerah sendiri
+      signal: AbortSignal.timeout(70_000),
+    });
+  } catch (e: any) {
+    /**
+     * fetch yang gagal SEBELUM ada jawaban hanya berkata "Failed to fetch" —
+     * pesan yang tak menjelaskan apa pun kepada orang kantor. Diterjemahkan ke
+     * sebab yang benar-benar mungkin terjadi di sini.
+     */
+    throw new Error(
+      e?.name === "TimeoutError"
+        ? `Berkas "${namaBerkas}" terlalu lama diambil dari Drive (lebih dari 70 detik). Coba lagi, atau buka berkasnya langsung lewat tombol Buka.`
+        : `Sambungan terputus saat mengambil "${namaBerkas}" (${e?.message || e}). Periksa jaringan lalu coba lagi.`,
+    );
+  }
+
+  if (!r.ok) {
+    const d = await r.json().catch(() => ({} as any));
+    throw new Error(d?.error || `gagal mengambil berkas (${r.status})`);
+  }
+
+  // Badannya adalah isi berkas apa adanya — langsung jadi File untuk mesin baca
+  // yang sama dengan yang dipakai halaman surat (ia menerima File, bukan tautan).
+  const buf = await r.arrayBuffer();
+  if (!buf.byteLength) throw new Error(`Berkas "${namaBerkas}" kosong saat diambil dari Drive.`);
+  const namaAsli = decodeURIComponent(r.headers.get("X-Nama-Berkas") || "") || namaBerkas;
+  const file = new File([buf], namaAsli, { type: r.headers.get("Content-Type") || "application/octet-stream" });
 
   lapor({ tahap: "Membaca isi permintaan…" });
   const hasil = await bacaBerkasTabel(file, KOLOM_PERMINTAAN, KONTEKS_PERMINTAAN, lapor);

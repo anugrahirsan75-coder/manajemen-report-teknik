@@ -404,7 +404,26 @@ const VISION_RE = /(vision|llava|minicpm-?v|moondream|bakllava|qwen2\.?5?-?vl|qw
 const ukuranModel = (nama: string) => Number(/:(\d+(?:\.\d+)?)\s*b/i.exec(nama)?.[1] || 0);
 
 async function modelOllama(perluVisi: boolean): Promise<string> {
-  const r = await fetch(`${ollamaHost()}/api/tags`, { cache: "no-store" });
+  let r: Response;
+  try {
+    r = await fetch(`${ollamaHost()}/api/tags`, { cache: "no-store" });
+  } catch (e: any) {
+    /**
+     * Kegagalan di sini WAJIB diterjemahkan, bukan dilempar apa adanya.
+     *
+     * fetch yang gagal menyambung hanya berkata "Failed to fetch", dan pesan itu
+     * naik sampai ke layar tanpa menyebut Ollama sama sekali — pemakainya
+     * mengira berkasnya yang gagal diambil. Sebab yang paling sering: halaman
+     * dibuka lewat https (Vercel) sedangkan Ollama melayani http di laptop,
+     * dan peramban memang melarang sambungan seperti itu.
+     */
+    const https = typeof location !== "undefined" && location.protocol === "https:";
+    throw new BelumSiap(
+      https
+        ? `AI lokal tak bisa dihubungi dari halaman https (${ollamaHost()}). Peramban melarang halaman aman memanggil alamat http. Pakai AI cloud, atau buka aplikasi ini dari laptop tempat Ollama berjalan.`
+        : `Ollama tak menjawab di ${ollamaHost()} (${e?.message || e}). Pastikan Ollama sedang berjalan.`,
+    );
+  }
   if (!r.ok) throw new BelumSiap(`Ollama menjawab ${r.status}`);
   const daftar: string[] = ((await r.json()).models || []).map((m: any) => m.name);
   /**

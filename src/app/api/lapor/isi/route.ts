@@ -7,8 +7,14 @@ export const maxDuration = 60;
 /**
  * Isi satu berkas kiriman ABK, untuk DIBACA kantor.
  *
- * Berkasnya tinggal di Drive pemilik dan tidak dibagikan tautannya, jadi
+ * Berkasnya tinggal di Drive pemilik dan tautannya tidak dibagikan, jadi
  * peramban tak bisa mengambilnya sendiri — Apps Script yang mengambilkannya.
+ *
+ * Yang dikirim balik ke peramban adalah BINER apa adanya, bukan JSON berisi
+ * base64. Base64 menggelembungkan ukuran sepertiga (berkas 475 KB jadi 633 KB
+ * teks), dan seluruhnya harus disusun di memori lalu diurai lagi di peramban —
+ * cukup untuk membuat permintaan mati di tengah jalan dan muncul sebagai
+ * "Failed to fetch" yang tak menjelaskan apa pun.
  *
  * Route ini di balik login (bukan bagian /api/lapor yang dibuka untuk ABK di
  * middleware), sehingga yang bisa membaca isi kiriman hanya orang kantor.
@@ -27,7 +33,7 @@ export async function GET(req: NextRequest) {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ secret, aksi: "isi", fileId }),
-      signal: AbortSignal.timeout(50_000),
+      signal: AbortSignal.timeout(45_000),
       cache: "no-store",
     });
     const teks = await r.text();
@@ -39,6 +45,7 @@ export async function GET(req: NextRequest) {
         error: "Apps Script menjawab bukan JSON. Perbarui skripnya ke versi 5 (lihat docs/LAPOR_KAPAL_SETUP.md).",
       }, { status: 502 });
     }
+
     if (!hasil?.ok) {
       /**
        * Skrip versi lama tidak mengenal aksi "isi", jadi permintaan ini jatuh ke
@@ -53,12 +60,27 @@ export async function GET(req: NextRequest) {
           : (hasil?.error || "gagal membaca berkas"),
       }, { status: 502 });
     }
-    return NextResponse.json(hasil);
+
+    const bytes = Buffer.from(String(hasil.dataBase64 || ""), "base64");
+    if (!bytes.length) return NextResponse.json({ ok: false, error: "berkas kosong di Drive" }, { status: 502 });
+
+    return new NextResponse(bytes as unknown as BodyInit, {
+      headers: {
+        "Content-Type": String(hasil.mime || "application/octet-stream"),
+        "Content-Length": String(bytes.length),
+        // nama berkas dikirim di kepala, bukan di badan, supaya badannya tetap
+        // murni isi berkas; encodeURIComponent menjaga nama berspasi & tanda baca
+        "X-Nama-Berkas": encodeURIComponent(String(hasil.nama || "berkas")),
+        "Cache-Control": "no-store",
+      },
+    });
   } catch (e: any) {
     const putus = e?.name === "TimeoutError";
     return NextResponse.json({
       ok: false,
-      error: putus ? "Google Drive lambat menjawab. Coba lagi." : (e?.message || "gagal"),
-    }, { status: 504 });
+      error: putus
+        ? "Google Drive lambat menjawab (lebih dari 45 detik). Coba lagi, atau buka berkasnya langsung di Drive."
+        : (e?.message || "gagal"),
+    }, { status: putus ? 504 : 502 });
   }
 }
