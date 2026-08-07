@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ambilTitipanSppbj } from "@/lib/lapor/bacaPermintaan";
 import { useSppbj } from "@/lib/sppbj/store";
 import { MATA_ANGGARAN, STAF_TEKNIK, KAPAL_LIST, DEPT_HEAD, VENDOR_DB, MATL_GROUP, KATEGORI_REKAP } from "@/lib/sppbj/db";
 import { SppbjItem, GrSes, grSesBaru, emptySppbjItem, sppbjTotal, kapalUnik, hargaSpbjOf, namaLengkap, ketLines, SppbjRequest, fullNoKontrak, totalSpbj, nilaiGrEfektif, nilaiGrOtomatis } from "@/lib/sppbj/types";
@@ -143,6 +144,25 @@ function SppbjIsiInner() {
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [qs]);
+
+  /**
+   * Daftar barang titipan dari halaman Permintaan & Laporan Kapal.
+   *
+   * Dititipkan lewat penyimpanan peramban, bukan lewat alamat: daftar barang
+   * bisa panjang, dan alamat yang kepanjangan dipotong diam-diam oleh sebagian
+   * peramban — barang terakhir hilang tanpa ada yang tahu.
+   */
+  useEffect(() => {
+    if (!new URLSearchParams(window.location.search).get("dari")) return;
+    const titipan = ambilTitipanSppbj();
+    if (!titipan) return;
+    newDraft();
+    setTimeout(() => {
+      update({ namaPengadaan: `Pengadaan ${titipan.asal}` });
+      setItems(titipan.items.map((it: any) => ({ ...emptySppbjItem(it.kapal), ...it })));
+    }, 0);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ===== Guardrail pagu RUTIN (anti-overbudget) =====
   const { plafon, pengadaan, program } = useAnggaran();

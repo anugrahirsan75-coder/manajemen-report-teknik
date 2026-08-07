@@ -39,7 +39,7 @@ ABK  →  /lapor  →  API  →  Apps Script  →  folder Google Drive
 7. Deploy ulang aplikasi, buka `/permintaan-laporan`, tekan **Salin tautan
    untuk ABK**, lalu sebarkan tautannya ke kapal.
 
-## Memperbarui skrip (wajib untuk menu Laporan Docking)
+## Memperbarui skrip (wajib untuk Laporan Docking & baca isi permintaan)
 
 Skrip yang sama kini melayani **dua** folder Drive:
 
@@ -64,7 +64,12 @@ Kalau langkah 3 dilewatkan, Google akan terus melayani versi lama dan halaman
 Laporan Docking menjawab *"Apps Script menjawab bukan JSON"*.
 
 Memastikan sudah versi baru: buka URL `/exec` di peramban, jawabannya harus
-memuat `"versi":4`.
+memuat `"versi":5`.
+
+Versi 5 menambah satu kemampuan: mengambil ISI sebuah berkas (aksi `isi`),
+dipakai tombol **🔍 Baca isi permintaan** di halaman Permintaan & Laporan Kapal
+untuk membaca borang ABK lalu menyusunkan daftar barangnya. Berkas di luar
+folder yang dilayani skrip tetap tak bisa diambil walaupun ID-nya diketahui.
 
 Sebelum env terisi, halaman `/lapor` tetap terbuka tapi unggahan ditolak dengan
 pesan "Penyimpanan berkas belum aktif" — bukan gagal diam-diam.

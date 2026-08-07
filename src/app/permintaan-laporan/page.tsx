@@ -9,6 +9,7 @@
  * kebutuhan kapal.
  */
 import Link from "next/link";
+import BacaPermintaan from "@/components/lapor/BacaPermintaan";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useState } from "react";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
@@ -33,6 +34,8 @@ function IsiPermintaanLaporanKapal() {
   const [periode, setPeriode] = useState("");
   const [cari, setCari] = useState("");
   const [buka, setBuka] = useState<KirimanLapor | null>(null);
+  /** kiriman yang sedang dibaca isinya (foto/PDF borang -> daftar barang) */
+  const [bacaKiriman, setBacaKiriman] = useState<any | null>(null);
   const [hapusBerkasId, setHapusBerkasId] = useState("");
   const [salin, setSalin] = useState("");
   const sp = useSearchParams();
@@ -501,7 +504,15 @@ function IsiPermintaanLaporanKapal() {
               )}
 
               <div>
-                <div className="text-xs font-bold text-slate-500 uppercase tracking-wide mb-2">Berkas di Google Drive</div>
+                <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                  <div className="text-xs font-bold uppercase tracking-wide text-slate-500">Berkas di Google Drive</div>
+                  {buka.berkas.length > 0 && (
+                    <button type="button" onClick={() => setBacaKiriman(buka)}
+                      className="rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white transition hover:bg-sky-700">
+                      🔍 Baca isi permintaan
+                    </button>
+                  )}
+                </div>
                 {!buka.berkas.length ? (
                   <div className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:ring-amber-900">
                     <b>Belum ada berkas yang sampai.</b> Unggahan ABK terputus sebelum selesai.
@@ -561,6 +572,15 @@ function IsiPermintaanLaporanKapal() {
             </div>
           </div>
         </div>
+      )}
+      {bacaKiriman && (
+        <BacaPermintaan
+          buka={!!bacaKiriman}
+          tutup={() => setBacaKiriman(null)}
+          kapal={bacaKiriman.kapal}
+          jenis={labelJenis(bacaKiriman.jenis)}
+          berkas={(bacaKiriman.berkas || []).map((f: any) => ({ fileId: f.fileId, nama: f.nama }))}
+        />
       )}
     </main>
   );

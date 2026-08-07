@@ -55,7 +55,7 @@ var LABEL = {
 };
 
 function doGet() {
-  return json({ ok: true, msg: "Penerima berkas kapal aktif", versi: 4, akar: Object.keys(AKAR) });
+  return json({ ok: true, msg: "Penerima berkas kapal aktif", versi: 5, akar: Object.keys(AKAR) });
 }
 
 function doPost(e) {
@@ -71,6 +71,7 @@ function doPost(e) {
     if (body.aksi === "status") return statusPotongan(body);
     if (body.aksi === "hapus") return hapusBerkas(body);
     if (body.aksi === "daftar") return daftarIsi(body);
+    if (body.aksi === "isi") return isiBerkas(body);
 
     var b64 = String(body.dataBase64 || "");
     if (!b64) return json({ ok: false, error: "berkas kosong" });
@@ -125,6 +126,35 @@ function hapusBerkas(body) {
   }
   file.setTrashed(true);
   return json({ ok: true, fileId: fileId });
+}
+
+/**
+ * Isi satu berkas, dikirim sebagai base64.
+ *
+ * Dipakai kantor untuk MEMBACA permintaan ABK tanpa membuka Drive satu per
+ * satu. Pemeriksaan induknya sama dengan penghapusan: berkas di luar folder
+ * yang dilayani skrip ini tidak bisa diambil walaupun ID-nya diketahui, jadi
+ * SECRET yang bocor pun tak membuka isi Drive pemilik seluruhnya.
+ */
+function isiBerkas(body) {
+  var fileId = String(body.fileId || "").trim();
+  if (!fileId) return json({ ok: false, error: "fileId kosong" });
+
+  var file;
+  try { file = DriveApp.getFileById(fileId); }
+  catch (err) { return json({ ok: false, error: "berkas tidak ditemukan" }); }
+  if (file.isTrashed()) return json({ ok: false, error: "berkas sudah dihapus" });
+  if (!beradaDiFolderLaporan(file)) return json({ ok: false, error: "berkas berada di luar folder laporan" });
+
+  // 20 MB sudah jauh di atas ukuran permintaan kapal yang wajar; di atas itu
+  // base64-nya tak akan muat dikirim balik dalam satu jawaban.
+  if (file.getSize() > 20 * 1024 * 1024) return json({ ok: false, error: "berkas terlalu besar untuk dibaca (>20 MB)" });
+
+  var blob = file.getBlob();
+  return json({
+    ok: true, nama: file.getName(), mime: blob.getContentType(),
+    ukuran: file.getSize(), dataBase64: Utilities.base64Encode(blob.getBytes()),
+  });
 }
 
 /** telusuri semua folder induk sampai salah satu folder yang dilayani skrip ini */
