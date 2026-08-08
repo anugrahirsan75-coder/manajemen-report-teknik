@@ -122,6 +122,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <SectionLabel>Ringkasan</SectionLabel>
         <NavLink href="/dashboard" icon="📊" label="Dashboard Anggaran" desc="Penyerapan, pagu & rincian" active={path.startsWith("/dashboard")} onNavigate={onNavigate} />
         <NavLink href="/rencana" icon="📆" label="Rencana &amp; Realisasi" desc="Lampiran 3 · usulan bulanan per kapal" active={path.startsWith("/rencana")} onNavigate={onNavigate} />
+        <NavLink href="/rencana-belanja" icon="🧾" label="Rencana Belanja" desc="Rencana pemakaian pagu rutin per bulan" active={path.startsWith("/rencana-belanja")} onNavigate={onNavigate} />
         <NavLink href="/rka" icon="🧮" label="Rencana RKA" desc="Usulan RKA tahun depan per kapal" active={path.startsWith("/rka")} onNavigate={onNavigate} />
         <NavLink href="/kerusakan" icon="🛠️" label="Rekap Kerusakan Kapal" desc="Report Accident · kejadian &amp; tindak lanjut" active={path.startsWith("/kerusakan")} onNavigate={onNavigate} />
 

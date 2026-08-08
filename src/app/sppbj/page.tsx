@@ -313,6 +313,8 @@ export default function SppbjList() {
             </select>
           </label>
           <Link href="/dashboard" className="btn btn-ghost text-xs">📊 Dashboard Anggaran</Link>
+          <Link href="/rencana-belanja" className="btn btn-ghost text-xs"
+            title="Susun rencana pemakaian pagu rutin sebelum SPPBJ dibuat">🧮 Rencana Belanja</Link>
           {supabaseReady && <button onClick={syncRekap} disabled={rekapBusy} className="btn btn-ghost text-xs" title="Kirim semua pengadaan (filter ini) ke spreadsheet REKAP PJK, per tab bulan">{rekapBusy ? "…" : "📊 Sync ke Rekap"}</button>}
           {supabaseReady && <button onClick={exportUsulan} disabled={exporting} className="btn btn-ghost text-xs" title="Excel usulan update harga Riil ke RAB master dari realisasi SPPBJ">{exporting ? "…" : "📤 Usulan Harga Riil"}</button>}
           {supabaseReady && <button onClick={refresh} className="btn btn-ghost text-xs">↻ Refresh</button>}
