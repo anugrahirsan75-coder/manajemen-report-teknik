@@ -34,6 +34,15 @@ function IsiPermintaanLaporanKapal() {
   const [periode, setPeriode] = useState("");
   const [cari, setCari] = useState("");
   const [buka, setBuka] = useState<KirimanLapor | null>(null);
+  /**
+   * Slot matriks yang isinya lebih dari satu kiriman.
+   *
+   * Lencana "3 kiriman" dulu hanya membuka SATU — yang paling baru — dan dua
+   * sisanya tak bisa dicapai dari situ sama sekali. Angkanya benar, tapi
+   * kliknya berbohong. Sekarang slot berisi banyak kiriman membuka daftarnya.
+   */
+  const [slotPilih, setSlotPilih] = useState<{ kapal: string; jenis: string; isi: KirimanLapor[] } | null>(null);
+
   /** kiriman yang sedang dibaca isinya (foto/PDF borang -> daftar barang) */
   const [bacaKiriman, setBacaKiriman] = useState<any | null>(null);
   const [hapusBerkasId, setHapusBerkasId] = useState("");
@@ -345,7 +354,9 @@ function IsiPermintaanLaporanKapal() {
                       return (
                         <td key={j.id} className="border-b border-slate-100 px-3 py-2 text-center dark:border-slate-800">
                           {isi.length ? (
-                            <button onClick={() => bukaKiriman(utama)}
+                            <button onClick={() => (isi.length > 1
+                              ? setSlotPilih({ kapal: k, jenis: j.singkat, isi })
+                              : bukaKiriman(utama))}
                               className={`relative inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[10px] font-extrabold ring-1 transition hover:-translate-y-0.5 hover:shadow-sm ${adaBaru ? "bg-rose-50 text-rose-700 ring-rose-200 hover:bg-rose-100 dark:bg-rose-950/30 dark:text-rose-300 dark:ring-rose-800" : "bg-emerald-50 text-emerald-700 ring-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/30 dark:text-emerald-300 dark:ring-emerald-800"}`}>
                               <span className={`grid h-4 w-4 place-items-center rounded-full text-[9px] text-white ${adaBaru ? "bg-rose-500" : "bg-emerald-500"}`}>{adaBaru ? "!" : "✓"}</span>
                               {adaBaru ? "Baru" : isi.length > 1 ? `${isi.length} kiriman` : "Diterima"}
@@ -366,7 +377,7 @@ function IsiPermintaanLaporanKapal() {
           </table>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50/80 px-4 py-3 text-[10px] text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-          <span><b className="text-slate-700 dark:text-slate-200">Diterima</b> dapat diklik untuk membuka kiriman terbaru pada slot tersebut.</span>
+          <span><b className="text-slate-700 dark:text-slate-200">Diterima</b> dapat diklik untuk membuka kirimannya; slot berisi lebih dari satu kiriman menampilkan daftarnya dulu.</span>
           <span className={`rounded-full px-2 py-0.5 font-bold ring-1 ${ringkas.kapalLengkap === KAPAL_ANGGARAN.length ? "bg-emerald-100 text-emerald-700 ring-emerald-200" : "bg-amber-50 text-amber-700 ring-amber-200"}`}>
             {KAPAL_ANGGARAN.length - ringkas.kapalLengkap} kapal belum lengkap
           </span>
@@ -570,6 +581,43 @@ function IsiPermintaanLaporanKapal() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+      {slotPilih && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-slate-900/50 p-4" onClick={() => setSlotPilih(null)}>
+          <div className="w-full max-w-lg overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-slate-900" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between border-b px-5 py-3 dark:border-slate-700">
+              <div>
+                <h3 className="font-extrabold text-slate-800 dark:text-white">{slotPilih.isi.length} kiriman pada slot ini</h3>
+                <p className="text-[11px] text-slate-500">{slotPilih.kapal} · {slotPilih.jenis} · periode {periodeMatriks}</p>
+              </div>
+              <button onClick={() => setSlotPilih(null)} className="text-xl leading-none text-slate-400 hover:text-slate-700">✕</button>
+            </div>
+            <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-auto dark:divide-slate-800">
+              {[...slotPilih.isi].sort((a, b) => (b.dikirimPada || "").localeCompare(a.dikirimPada || "")).map((x) => (
+                <li key={x.id}>
+                  <button onClick={() => { setSlotPilih(null); bukaKiriman(x); }}
+                    className="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-sky-50 dark:hover:bg-sky-950/30">
+                    <span className={`h-2 w-2 shrink-0 rounded-full ${x.status === "baru" ? "bg-rose-500" : "bg-emerald-500"}`} />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-semibold text-slate-800 dark:text-slate-100">
+                        {x.pengirim || "(tanpa nama pengirim)"}{x.jabatan ? ` · ${x.jabatan}` : ""}
+                      </span>
+                      <span className="block truncate text-[11px] text-slate-500">
+                        {x.dikirimPada ? new Date(x.dikirimPada).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" }) : "—"}
+                        {" · "}{x.berkas.length} berkas
+                        {x.catatan ? ` · ${x.catatan.slice(0, 40)}` : ""}
+                      </span>
+                    </span>
+                    <span className="shrink-0 text-[10px] font-bold uppercase text-slate-400">{x.status}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <p className="border-t bg-slate-50 px-5 py-2.5 text-[11px] text-slate-500 dark:border-slate-700 dark:bg-slate-800">
+              Beberapa kiriman pada satu slot biasanya berarti kapal mengirim ulang atau melengkapi berkas menyusul.
+            </p>
           </div>
         </div>
       )}
