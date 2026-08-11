@@ -12,6 +12,7 @@ import { classMatter } from "./templates/classMatter";
 import { surveyStatutori } from "./templates/surveyStatutori";
 import { perpanjanganSertifikat } from "./templates/perpanjanganSertifikat";
 import { permohonanIO } from "./templates/permohonanIO";
+import { suratKustom } from "./templates/suratKustom";
 
 export const TEMPLATE_SURAT: TemplateSurat[] = [
   dockingInvestasi,
@@ -20,6 +21,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   surveyStatutori,
   perpanjanganSertifikat,
   permohonanIO,
+  suratKustom,
 ];
 
 export const cariTemplate = (id: string) => TEMPLATE_SURAT.find((t) => t.id === id);

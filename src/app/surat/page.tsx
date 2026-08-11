@@ -16,6 +16,7 @@ import { DataSurat, Isian, TemplateSurat } from "@/lib/surat/types";
 import { angkaRibuan, keAngka, rupiahSurat } from "@/lib/surat/format";
 import { terbilangRupiah } from "@/lib/surat/terbilang";
 import UnggahTabel from "@/components/surat/UnggahTabel";
+import EditorSurat from "@/components/surat/EditorSurat";
 
 const KUNCI_DRAF = "surat_eoffice_draf";
 
@@ -217,6 +218,14 @@ export default function BuatSuratEOffice() {
             <p className="text-xs text-slate-400">Perihal yang biasa dipakai: <span className="text-slate-500">{templat.perihal}</span></p>
           </div>
 
+          {templat.kustom ? (
+            /*
+              Surat kustom tak punya borang: badannya ditulis langsung. Yang
+              disimpan sudah berupa HTML bergaya e-office, jadi pratinjau,
+              Salin, dan Unduh di sebelah kanan bekerja tanpa perubahan apa pun.
+            */
+            <EditorSurat nilai={String(data.isi || "")} ubah={(html) => ubah("isi", html)} />
+          ) : (
           <div className="grid gap-3 sm:grid-cols-2">
             {templat.isian.map((f) => (
               <div key={f.id} className={f.kolomBorang === 2 ? "sm:col-span-1" : "sm:col-span-2"}>
@@ -224,6 +233,7 @@ export default function BuatSuratEOffice() {
               </div>
             ))}
           </div>
+          )}
 
           {(ringkas || peringatan.length > 0 || kurang.length > 0) && (
             <div className="mt-4 space-y-2">

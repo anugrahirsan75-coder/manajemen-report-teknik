@@ -15,6 +15,7 @@ export type JenisIsian =
   | "angka"
   | "daftar-centang"   // banyak pilihan + boleh tambah sendiri
   | "daftar-teks"      // daftar bebas (mis. lintasan), dirangkai jadi kalimat
+  | "kustom"          // badan surat ditulis bebas lewat penyunting
   | "tabel";
 
 export interface KolomTabel {
@@ -58,6 +59,8 @@ export interface Peringatan {
 
 export interface TemplateSurat {
   id: string;
+  /** surat tanpa borang: badannya ditulis sendiri lewat penyunting */
+  kustom?: boolean;
   nama: string;
   /** dipakai sebagai pengingat: perihal yang biasanya dipakai di e-office */
   perihal: string;
