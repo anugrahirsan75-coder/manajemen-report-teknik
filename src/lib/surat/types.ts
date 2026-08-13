@@ -15,6 +15,7 @@ export type JenisIsian =
   | "angka"
   | "daftar-centang"   // banyak pilihan + boleh tambah sendiri
   | "daftar-teks"      // daftar bebas (mis. lintasan), dirangkai jadi kalimat
+  | "poin"            // teks bebas banyak baris; baris berawalan "-" jadi butir
   | "kustom"          // badan surat ditulis bebas lewat penyunting
   | "tabel";
 

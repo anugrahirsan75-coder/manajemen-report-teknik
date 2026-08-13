@@ -141,6 +141,52 @@ export const tabelData = (pasangan: [string, string][], lebarKiri = "160px") =>
       + `</tr>`).join("\n")
   + `\n</table>`;
 
+/**
+ * Teks bebas yang boleh berpoin, dipakai di dalam sel tabel data.
+ *
+ * Baris berawalan "-" (atau • * ·) jadi butir bulat, baris berawalan "1." jadi
+ * butir bernomor, sisanya tetap baris biasa. Nilai satu baris tanpa penanda
+ * keluar apa adanya — surat yang sudah jadi tidak berubah sedikit pun
+ * bentuknya, jadi ini aman dipasang pada isian yang sudah dipakai.
+ *
+ * Alasan adanya: rincian jarak antar-ruas dan daftar pelindung alami pernah
+ * ditulis berderet dalam satu paragraf panjang, dan pembacanya harus menghitung
+ * sendiri ada berapa ruas.
+ */
+const TANDA_BULAT = /^\s*[-–—•*·]\s+/;
+const TANDA_NOMOR = /^\s*\(?\d+[.)]\s+/;
+
+export function teksKaya(v: unknown): string {
+  const baris = String(v ?? "").split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+  const berpoin = baris.some((x) => TANDA_BULAT.test(x) || TANDA_NOMOR.test(x));
+  if (!berpoin) return baris.length > 1
+    ? baris.map((x) => `<div style="margin:0 0 3px 0;">${esc(x)}</div>`).join("\n")
+    : esc(baris[0] ?? "");
+
+  const keping: string[] = [];
+  let kumpul: string[] = [];
+  let jenis: "bulat" | "nomor" | "" = "";
+  const tutup = () => {
+    if (!kumpul.length) return;
+    const tag = jenis === "nomor" ? "ol" : "ul";
+    const gaya = jenis === "nomor" ? "decimal" : "disc";
+    keping.push(
+      `<${tag} style="list-style-type:${gaya};margin:0 0 4px 0;padding-left:20px;">\n`
+      + kumpul.map((x) => `<li style="margin:0 0 2px 0;">${esc(x)}</li>`).join("\n")
+      + `\n</${tag}>`);
+    kumpul = []; jenis = "";
+  };
+  baris.forEach((t) => {
+    const j = TANDA_BULAT.test(t) ? "bulat" : TANDA_NOMOR.test(t) ? "nomor" : "";
+    if (!j) { tutup(); keping.push(`<div style="margin:0 0 3px 0;">${esc(t)}</div>`); return; }
+    if (jenis && jenis !== j) tutup();
+    jenis = j;
+    kumpul.push(t.replace(j === "bulat" ? TANDA_BULAT : TANDA_NOMOR, ""));
+  });
+  tutup();
+  return keping.join("\n");
+}
+
 /** daftar berbutir bulat kosong, dipakai pada surat perpanjangan sertifikat */
 export const daftarButir = (butir: string[]) =>
   `<ul style="list-style-type:circle;margin:0 0 8px 0;padding-left:26px;font-size:${UKURAN_ISI};">\n`

@@ -400,6 +400,10 @@ function MedanIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
     );
   }
 
+  if (medan.jenis === "poin") {
+    return <IsianPoin medan={medan} nilai={nilai} ubah={ubah} label={label} kelas={kelas} petunjuk={petunjuk} />;
+  }
+
   if (medan.jenis === "rupiah") {
     return (
       <div>
@@ -424,6 +428,70 @@ function MedanIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
         value={nilai || ""} placeholder={medan.contoh}
         onChange={(e) => ubah(e.target.value)} className={kelas} />
       {petunjuk}
+    </div>
+  );
+}
+
+/* ── teks bebas yang boleh berpoin ─────────────────────────────────────── */
+/**
+ * Isian banyak baris dengan tiga tombol pengubah bentuk. Tombolnya bekerja pada
+ * BARIS YANG SEDANG DISOROT, bukan seluruh kotak: satu isian kerap memuat
+ * kalimat pembuka biasa lalu rinciannya berpoin, dan keduanya harus bisa hidup
+ * berdampingan. Penandanya ditulis apa adanya ("- ") supaya isian tetap teks
+ * biasa — bisa disalin, ditempel, dan dibaca ulang tanpa perkakas khusus.
+ */
+function IsianPoin({ medan, nilai, ubah, label, kelas, petunjuk }: {
+  medan: Isian; nilai: any; ubah: (v: unknown) => void;
+  label: React.ReactNode; kelas: string; petunjuk: React.ReactNode;
+}) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+  const teks = String(nilai || "");
+
+  /** ubah bentuk baris terpilih (atau baris tempat kursor berada) */
+  const terapkan = (mode: "bulat" | "nomor" | "biasa") => {
+    const el = ref.current;
+    const awal = el?.selectionStart ?? teks.length;
+    const akhir = el?.selectionEnd ?? teks.length;
+    const mulai = awal === 0 ? 0 : teks.lastIndexOf("\n", awal - 1) + 1;
+    const ujung = teks.indexOf("\n", akhir);
+    const henti = ujung < 0 ? teks.length : ujung;
+    const blok = teks.slice(mulai, henti).split("\n").map((b, idx) => {
+      const bersih = b.replace(/^\s*(?:[-–—•*·]|\(?\d+[.)])\s*/, "").trim();
+      if (mode === "biasa") return bersih;
+      return mode === "bulat" ? `- ${bersih}` : `${idx + 1}. ${bersih}`;
+    }).join("\n");
+    ubah(teks.slice(0, mulai) + blok + teks.slice(henti));
+    window.setTimeout(() => {
+      el?.focus();
+      el?.setSelectionRange(mulai, mulai + blok.length);
+    }, 0);
+  };
+
+  const tambahPoin = () => {
+    const baru = (teks ? teks.replace(/\s*$/, "") + "\n" : "") + "- ";
+    ubah(baru);
+    window.setTimeout(() => { ref.current?.focus(); ref.current?.setSelectionRange(baru.length, baru.length); }, 0);
+  };
+
+  const tombol = "rounded-lg px-2 py-1 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-100 dark:text-slate-300 dark:ring-slate-700 dark:hover:bg-slate-800";
+  const berpoin = /^\s*[-–—•*·]\s+/m.test(teks) || /^\s*\(?\d+[.)]\s+/m.test(teks);
+
+  return (
+    <div>
+      {label}
+      <div className="mb-1.5 flex flex-wrap items-center gap-1.5">
+        <button type="button" onClick={() => terapkan("bulat")} className={tombol}>• Jadikan poin</button>
+        <button type="button" onClick={() => terapkan("nomor")} className={tombol}>1. Bernomor</button>
+        <button type="button" onClick={() => terapkan("biasa")} className={tombol}>Teks biasa</button>
+        <button type="button" onClick={tambahPoin} className={`${tombol} text-blue-700 dark:text-blue-400`}>+ Poin baru</button>
+      </div>
+      <textarea ref={ref} value={teks} rows={berpoin ? 6 : 3} placeholder={medan.contoh}
+        onChange={(e) => ubah(e.target.value)} className={`${kelas} leading-relaxed`} />
+      {petunjuk}
+      <p className="mt-1 text-[11px] text-slate-400">
+        Tiap baris berdiri sendiri. Baris berawalan <code>-</code> keluar sebagai butir, berawalan <code>1.</code> sebagai
+        butir bernomor; sisanya tetap baris biasa.
+      </p>
     </div>
   );
 }

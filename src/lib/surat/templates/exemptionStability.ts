@@ -16,7 +16,7 @@
 import { DataSurat, TemplateSurat } from "../types";
 import { GALANGAN, KAPAL_SURAT, namaKapalSurat, tanggalSurat } from "../format";
 import {
-  PENUTUP_SAMPAI, SALAM, b, bungkus, daftarButir, esc, p, tabelData,
+  PENUTUP_SAMPAI, SALAM, b, bungkus, daftarButir, esc, p, tabelData, teksKaya,
 } from "../htmlHelpers";
 
 interface BarisDasar { instansi: string; nomor: string; tanggal: string; perihal: string }
@@ -28,10 +28,16 @@ const dasarIsi = (d: DataSurat): BarisDasar[] =>
 const timbangIsi = (d: DataSurat): BarisTimbang[] =>
   ((d.pertimbangan as BarisTimbang[]) || []).filter((r) => (r?.label || "").trim());
 
-/** angka jarak dari isian bebas ("30,34 mile" -> 30.34) */
+/**
+ * Angka jarak dari isian bebas ("30,34 mile" -> 30.34).
+ *
+ * Diambil angka PERTAMA saja: isian jarak boleh memuat rincian per ruas
+ * ("137,30 mile, dengan rincian: - Bastiong–Moti 27,74 mile …"), dan yang
+ * berlaku sebagai jarak lintasan adalah angka di depannya.
+ */
 const keJarak = (v: unknown): number => {
-  const t = String(v ?? "").replace(/[^\d.,]/g, "").replace(",", ".");
-  const n = Number(t);
+  const c = String(v ?? "").match(/\d+(?:[.,]\d+)?/);
+  const n = Number((c?.[0] || "").replace(",", "."));
   return isFinite(n) ? n : 0;
 };
 
@@ -62,19 +68,21 @@ export const exemptionStability: TemplateSurat = {
     { id: "grossTon", label: "Gross Ton", jenis: "teks", wajib: true, contoh: "598 GT", kolomBorang: 2 },
     { id: "lintasan", label: "Lintasan", jenis: "teks", wajib: true, contoh: "Tobelo – Daruba", kolomBorang: 2 },
     {
-      id: "jarakLintasan", label: "Jarak lintasan", jenis: "teks", wajib: true, contoh: "30,34 mile",
-      petunjuk: "Dipakai dua kali: pada data kapal dan pada perhitungan jarak ke dermaga terdekat.", kolomBorang: 2,
+      id: "jarakLintasan", label: "Jarak lintasan", jenis: "poin", wajib: true,
+      contoh: "137,30 mile, dengan rincian:\n- Bastiong–Moti : 27,74 mile\n- Moti–Makian : 7,83 mile",
+      petunjuk: "Dipakai dua kali: pada data kapal dan pada perhitungan jarak ke dermaga terdekat. "
+        + "Yang dihitung adalah angka pertama, jadi rincian per ruas boleh ditulis di bawahnya.",
     },
     {
-      id: "jarakDermaga", label: "Jarak ke dermaga terdekat", jenis: "teks", kolomBorang: 2,
+      id: "jarakDermaga", label: "Jarak ke dermaga terdekat", jenis: "poin", kolomBorang: 2,
       petunjuk: "Dikosongkan = dihitung sendiri, setengah jarak lintasan seperti surat lama.",
     },
     {
-      id: "jarakDaratan", label: "Jarak ke daratan terdekat", jenis: "teks", wajib: true, kolomBorang: 2,
-      contoh: "16,82 mile (Desa Dodowo – Halmahera Utara)",
+      id: "jarakDaratan", label: "Jarak ke daratan terdekat", jenis: "poin", wajib: true,
+      contoh: "4,00 – 6,00 mile, dengan rincian:\n- Daratan Pulau Moti : 4,00 mile\n- Desa Hafo : 6,00 mile",
     },
     {
-      id: "geografis", label: "Geografis pelayaran", jenis: "textarea", wajib: true,
+      id: "geografis", label: "Geografis pelayaran", jenis: "poin", wajib: true,
       contoh: "Pelayaran terlindungi oleh daratan Pantai Desa Dodowo (Kabupaten Halmahera Utara) dan Daratan Desa Marimoi (Kabupaten Halmahera Timur)",
       petunjuk: "Keterlindungan inilah yang paling menentukan diterimanya permohonan.",
     },
@@ -173,19 +181,19 @@ export const exemptionStability: TemplateSurat = {
       ["Call Sign", esc(d.callSign)],
       ["Gross Ton", esc(d.grossTon)],
       ["Lintasan", esc(d.lintasan)],
-      ["Jarak Lintasan", esc(d.jarakLintasan)],
+      ["Jarak Lintasan", teksKaya(d.jarakLintasan)],
     ]));
 
     bagian.push(p("Adapun sebagai bahan pertimbangan, bersama ini dapat kami sampaikan antara lain:"));
     bagian.push(tabelData([
       ["Lintasan Operasional Kapal", esc(d.lintasan)],
-      ["Jarak Lintasan Kapal", esc(d.jarakLintasan)],
-      ["Jarak ke Dermaga Terdekat", esc(dermagaTerdekat(d))],
-      ["Jarak ke Daratan Terdekat", esc(d.jarakDaratan)],
-      ["Geografis Pelayaran", esc(d.geografis)],
+      ["Jarak Lintasan Kapal", teksKaya(d.jarakLintasan)],
+      ["Jarak ke Dermaga Terdekat", teksKaya(dermagaTerdekat(d))],
+      ["Jarak ke Daratan Terdekat", teksKaya(d.jarakDaratan)],
+      ["Geografis Pelayaran", teksKaya(d.geografis)],
       ["Status Docking", esc(d.statusDocking)],
       ["Nama Galangan", esc(d.galangan)],
-      ...timbangIsi(d).map((r) => [r.label, esc(r.isi)] as [string, string]),
+      ...timbangIsi(d).map((r) => [r.label, teksKaya(r.isi)] as [string, string]),
       ["Peta Lintasan", esc(d.petaLintasan || "Terlampir")],
     ]));
 
