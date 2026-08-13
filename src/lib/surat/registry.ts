@@ -12,6 +12,7 @@ import { classMatter } from "./templates/classMatter";
 import { surveyStatutori } from "./templates/surveyStatutori";
 import { perpanjanganSertifikat } from "./templates/perpanjanganSertifikat";
 import { permohonanIO } from "./templates/permohonanIO";
+import { exemptionStability } from "./templates/exemptionStability";
 import { suratKustom } from "./templates/suratKustom";
 
 export const TEMPLATE_SURAT: TemplateSurat[] = [
@@ -21,6 +22,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   surveyStatutori,
   perpanjanganSertifikat,
   permohonanIO,
+  exemptionStability,
   suratKustom,
 ];
 

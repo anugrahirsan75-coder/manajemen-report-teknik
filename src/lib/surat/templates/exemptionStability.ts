@@ -1,0 +1,195 @@
+/**
+ * TEMPLATE 8 — Permohonan Bantuan Pengurusan Pembebasan (Exemption)
+ * Persyaratan Damage Stability.
+ *
+ * Surat ini bersandar pada aturan dan surat-surat sebelumnya, lalu menyodorkan
+ * DUA blok data: identitas kapal dan bahan pertimbangan lintasan. Yang
+ * menentukan diterima tidaknya permohonan justru blok kedua — jarak ke dermaga
+ * dan daratan terdekat serta keterlindungan geografisnya — jadi keduanya dibuat
+ * sebagai isian tersendiri, bukan satu kotak teks bebas yang gampang tertinggal
+ * salah satu barisnya.
+ *
+ * Jarak ke dermaga terdekat dihitung sendiri (setengah jarak lintasan) mengikuti
+ * cara surat lama, tetapi tetap boleh ditimpa: ada lintasan yang dermaga
+ * antaranya tidak persis di tengah.
+ */
+import { DataSurat, TemplateSurat } from "../types";
+import { GALANGAN, KAPAL_SURAT, namaKapalSurat, tanggalSurat } from "../format";
+import {
+  PENUTUP_SAMPAI, SALAM, b, bungkus, daftarButir, esc, p, tabelData,
+} from "../htmlHelpers";
+
+interface BarisDasar { instansi: string; nomor: string; tanggal: string; perihal: string }
+interface BarisTimbang { label: string; isi: string }
+
+const dasarIsi = (d: DataSurat): BarisDasar[] =>
+  ((d.dasar as BarisDasar[]) || []).filter((r) => (r?.perihal || r?.nomor || "").trim());
+
+const timbangIsi = (d: DataSurat): BarisTimbang[] =>
+  ((d.pertimbangan as BarisTimbang[]) || []).filter((r) => (r?.label || "").trim());
+
+/** angka jarak dari isian bebas ("30,34 mile" -> 30.34) */
+const keJarak = (v: unknown): number => {
+  const t = String(v ?? "").replace(/[^\d.,]/g, "").replace(",", ".");
+  const n = Number(t);
+  return isFinite(n) ? n : 0;
+};
+
+const angkaId = (n: number) =>
+  n.toLocaleString("id-ID", { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+/** setengah jarak lintasan — dermaga terdekat saat kapal berada di tengah lintasan */
+export const dermagaTerdekat = (d: DataSurat): string => {
+  const manual = String(d.jarakDermaga || "").trim();
+  if (manual) return manual;
+  const j = keJarak(d.jarakLintasan);
+  return j ? `${angkaId(j)} mile : 2 = ${angkaId(j / 2)} mile` : "";
+};
+
+export const exemptionStability: TemplateSurat = {
+  id: "exemption-stability",
+  nama: "Permohonan Exemption Damage Stability",
+  perihal: "Permohonan Bantuan Pengurusan Pembebasan (Exemption) Persyaratan Damage Stability KMP. {kapal}",
+  tujuan: "Group Head Optimasi dan Manajemen Armada — Jakarta",
+  deskripsi: "Pembebasan damage stability pasca docking, lengkap dengan data kapal dan pertimbangan lintasan.",
+  ikon: "⚖️",
+  isian: [
+    { id: "kapal", label: "Nama kapal", jenis: "pilih", pilihan: KAPAL_SURAT, bebas: true, wajib: true, kolomBorang: 2 },
+    { id: "tahunDocking", label: "Tahun docking", jenis: "angka", wajib: true, awal: String(new Date().getFullYear()), kolomBorang: 2 },
+    { id: "noRegister", label: "No. Register", jenis: "teks", wajib: true, contoh: "15588", kolomBorang: 2 },
+    { id: "noIMO", label: "No. IMO", jenis: "teks", wajib: true, contoh: "8677055", kolomBorang: 2 },
+    { id: "callSign", label: "Call Sign", jenis: "teks", wajib: true, contoh: "POAK", kolomBorang: 2 },
+    { id: "grossTon", label: "Gross Ton", jenis: "teks", wajib: true, contoh: "598 GT", kolomBorang: 2 },
+    { id: "lintasan", label: "Lintasan", jenis: "teks", wajib: true, contoh: "Tobelo – Daruba", kolomBorang: 2 },
+    {
+      id: "jarakLintasan", label: "Jarak lintasan", jenis: "teks", wajib: true, contoh: "30,34 mile",
+      petunjuk: "Dipakai dua kali: pada data kapal dan pada perhitungan jarak ke dermaga terdekat.", kolomBorang: 2,
+    },
+    {
+      id: "jarakDermaga", label: "Jarak ke dermaga terdekat", jenis: "teks", kolomBorang: 2,
+      petunjuk: "Dikosongkan = dihitung sendiri, setengah jarak lintasan seperti surat lama.",
+    },
+    {
+      id: "jarakDaratan", label: "Jarak ke daratan terdekat", jenis: "teks", wajib: true, kolomBorang: 2,
+      contoh: "16,82 mile (Desa Dodowo – Halmahera Utara)",
+    },
+    {
+      id: "geografis", label: "Geografis pelayaran", jenis: "textarea", wajib: true,
+      contoh: "Pelayaran terlindungi oleh daratan Pantai Desa Dodowo (Kabupaten Halmahera Utara) dan Daratan Desa Marimoi (Kabupaten Halmahera Timur)",
+      petunjuk: "Keterlindungan inilah yang paling menentukan diterimanya permohonan.",
+    },
+    {
+      id: "statusDocking", label: "Status docking", jenis: "pilih", wajib: true, bebas: true, kolomBorang: 2,
+      awal: "Selesai pelaksanaan Docking Spesial Survey (SS)",
+      pilihan: [
+        "Selesai pelaksanaan Docking Spesial Survey (SS)",
+        "Selesai pelaksanaan Docking Intermediate Survey (IS)",
+        "Selesai pelaksanaan Docking Annual Survey (AS)",
+        "Sedang dalam pelaksanaan docking",
+      ],
+    },
+    { id: "galangan", label: "Galangan", jenis: "pilih", pilihan: GALANGAN, bebas: true, wajib: true, kolomBorang: 2 },
+    {
+      id: "petaLintasan", label: "Peta lintasan", jenis: "teks", awal: "Terlampir", kolomBorang: 2,
+      petunjuk: "Ditulis apa adanya pada baris terakhir bahan pertimbangan.",
+    },
+    {
+      id: "dasar", label: "Dasar dan rujukan surat", jenis: "tabel", wajib: true,
+      petunjuk: "Aturan maupun surat. Baris yang tak punya nomor ditulis sebagai dasar tanpa nomor — mis. memorandum klasifikasi.",
+      bacaBerkas:
+        "Daftar aturan dan surat yang menjadi dasar permohonan, biasanya ditulis sebagai butir a, b, c pada surat lama. "
+        + "Tiap butir memuat instansi atau penerbitnya, nomor surat/peraturan, tanggal, dan perihalnya. Contoh bentuk: "
+        + "“Surat PJ. VP Survey Biro Klasifikasi Indonesia nomor A.03107/SV.201/KI-26 tanggal 13 Juli 2026 perihal …”.",
+      awal: [
+        { instansi: "Peraturan Menteri Perhubungan RI", nomor: "PM 44 Tahun 2021", tanggal: "", perihal: "Stabilitas Kapal" },
+        { instansi: "Memorandum Badan Klasifikasi atas Kapal PT ASDP Indonesia Ferry (Persero)", nomor: "", tanggal: "", perihal: "pemenuhan damage stability kapal yang dibangun sebelum 1 Juli 2021" },
+      ],
+      kolom: [
+        { id: "instansi", label: "Penerbit / instansi", jenis: "teks", saran: [
+          { nilai: "Peraturan Menteri Perhubungan RI", label: "Peraturan Menteri Perhubungan RI" },
+          { nilai: "Surat PJ. VP Survey Biro Klasifikasi Indonesia", label: "Surat PJ. VP Survey Biro Klasifikasi Indonesia" },
+          { nilai: "Surat PGS. General Manager Cabang Ternate", label: "Surat PGS. General Manager Cabang Ternate" },
+          { nilai: "Memorandum Badan Klasifikasi atas Kapal PT ASDP Indonesia Ferry (Persero)", label: "Memorandum Badan Klasifikasi" },
+        ] },
+        { id: "nomor", label: "Nomor", jenis: "teks", lebar: "13rem" },
+        { id: "tanggal", label: "Tanggal", jenis: "tanggal", lebar: "10rem" },
+        { id: "perihal", label: "Perihal / tentang", jenis: "teks" },
+      ],
+    },
+    {
+      id: "pertimbangan", label: "Bahan pertimbangan tambahan", jenis: "tabel",
+      petunjuk: "Baris data kapal dan lintasan sudah ditulis sendiri oleh surat. Tabel ini untuk tambahan di luar itu.",
+      bacaBerkas: "Daftar bahan pertimbangan berbentuk “label : isi”, mis. kondisi perairan, jam operasional, atau catatan lain.",
+      kolom: [
+        { id: "label", label: "Keterangan", jenis: "teks", lebar: "16rem" },
+        { id: "isi", label: "Isi", jenis: "teks" },
+      ],
+    },
+  ],
+
+  periksa(d) {
+    const pesan: string[] = [];
+    dasarIsi(d).forEach((r, idx) => {
+      if (!r.instansi?.trim()) pesan.push(`Dasar baris ${idx + 1} belum menyebut penerbitnya.`);
+    });
+    const j = keJarak(d.jarakLintasan);
+    const dt = keJarak(d.jarakDaratan);
+    if (j && dt && dt > j) {
+      pesan.push(
+        `Jarak ke daratan terdekat (${angkaId(dt)} mile) lebih jauh daripada jarak lintasannya sendiri `
+        + `(${angkaId(j)} mile). Periksa lagi — angka inilah yang dinilai penerima surat.`,
+      );
+    }
+    return pesan;
+  },
+
+  generate(d) {
+    const kapal = namaKapalSurat(String(d.kapal || ""));
+    const bagian: string[] = [];
+
+    bagian.push(p(SALAM));
+    bagian.push(p("Memperhatikan dan mendasari hal-hal sebagai berikut:"));
+    bagian.push(daftarButir(dasarIsi(d).map((r) => {
+      const tgl = tanggalSurat(String(r.tanggal || ""));
+      return [
+        esc(r.instansi || ""),
+        r.nomor ? `nomor ${b(esc(r.nomor))}` : "",
+        tgl ? `tanggal ${esc(tgl)}` : "",
+        r.perihal ? `perihal ${esc(r.perihal)}` : "",
+      ].filter(Boolean).join(" ") + ";";
+    })));
+
+    bagian.push(p(
+      `Sehubungan dengan hal tersebut di atas, dan dalam rangka pengurusan surat-surat kapal pasca selesainya `
+      + `pelaksanaan docking tahun ${esc(String(d.tahunDocking || new Date().getFullYear()))}, `
+      + `bersama ini kami mengajukan ${b("permohonan bantuan pengurusan pembebasan (exemption) persyaratan damage stability")} `
+      + `untuk kapal sebagai berikut:`,
+    ));
+
+    bagian.push(tabelData([
+      ["Nama Kapal", esc(kapal)],
+      ["No. Register", esc(d.noRegister)],
+      ["No. IMO", esc(d.noIMO)],
+      ["Call Sign", esc(d.callSign)],
+      ["Gross Ton", esc(d.grossTon)],
+      ["Lintasan", esc(d.lintasan)],
+      ["Jarak Lintasan", esc(d.jarakLintasan)],
+    ]));
+
+    bagian.push(p("Adapun sebagai bahan pertimbangan, bersama ini dapat kami sampaikan antara lain:"));
+    bagian.push(tabelData([
+      ["Lintasan Operasional Kapal", esc(d.lintasan)],
+      ["Jarak Lintasan Kapal", esc(d.jarakLintasan)],
+      ["Jarak ke Dermaga Terdekat", esc(dermagaTerdekat(d))],
+      ["Jarak ke Daratan Terdekat", esc(d.jarakDaratan)],
+      ["Geografis Pelayaran", esc(d.geografis)],
+      ["Status Docking", esc(d.statusDocking)],
+      ["Nama Galangan", esc(d.galangan)],
+      ...timbangIsi(d).map((r) => [r.label, esc(r.isi)] as [string, string]),
+      ["Peta Lintasan", esc(d.petaLintasan || "Terlampir")],
+    ]));
+
+    bagian.push(p(PENUTUP_SAMPAI));
+    return bungkus(bagian.join("\n"));
+  },
+};
