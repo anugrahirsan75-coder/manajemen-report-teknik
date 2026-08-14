@@ -3,6 +3,8 @@ const nextConfig = {
   reactStrictMode: true,
   // sertakan file template (docx/xlsx + logo) ke bundle serverless function /api/generate
   experimental: {
+    // menyalakan src/instrumentation.ts — di situ Juru Baca sisi server dijadwalkan
+    instrumentationHook: true,
     outputFileTracingIncludes: {
       "/api/generate": ["./templates/**/*"],
       "/api/generate-all": ["./templates/**/*"],

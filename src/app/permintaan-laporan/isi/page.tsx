@@ -21,7 +21,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useJuruBaca } from "@/components/lapor/PilJuruBaca";
 import { BarisPermintaan, keJumlah, titipkanKeSppbj } from "@/lib/lapor/bacaPermintaan";
 import { bacaSekarang, nyalakanJuruBaca, putaran } from "@/lib/lapor/juruBaca";
-import { BacaanBerkas, BarisBacaan, muatBacaan, simpanBacaan } from "@/lib/lapor/simpananBacaan";
+import {
+  BacaanBerkas, BarisBacaan, StatusJuruBaca, denyutSegar, muatBacaan, muatStatusJuruBaca, simpanBacaan,
+} from "@/lib/lapor/simpananBacaan";
 import { BerkasLapor, KirimanLapor, bulanIndo, singkatJenis } from "@/lib/lapor/types";
 
 interface Entri {
@@ -47,6 +49,14 @@ const namaPendek = (n: string) => {
 const statusEntri = (e: Entri, sibuk: boolean) =>
   sibuk ? "proses" : (e.bacaan?.status || "belum");
 
+/** "2 menit lalu" — umur denyut laptop, dipakai untuk menilai ia hidup atau tidak */
+const umurDenyut = (s: { waktu?: string } | null): string => {
+  if (!s?.waktu) return "belum pernah";
+  const menit = Math.max(0, Math.round((Date.now() - new Date(s.waktu).getTime()) / 60000));
+  return menit < 1 ? "barusan" : menit < 60 ? `${menit} menit lalu`
+    : `${Math.round(menit / 60)} jam lalu`;
+};
+
 export default function IsiPermintaanKapal() {
   const router = useRouter();
   const jb = useJuruBaca();
@@ -62,21 +72,38 @@ export default function IsiPermintaanKapal() {
   const [tutupKapal, setTutupKapal] = useState<Set<string>>(new Set());
   const [sibukBerkas, setSibukBerkas] = useState("");
   const [buktiGalat, setBuktiGalat] = useState(false);
+  const [denyut, setDenyut] = useState<StatusJuruBaca | null>(null);
   const jadwalSimpan = useRef<Map<string, number>>(new Map());
 
   const ambil = useCallback(async () => {
     setGalat("");
     try {
-      const [r, p] = await Promise.all([fetch("/api/lapor/daftar", { cache: "no-store" }), muatBacaan()]);
+      const [r, p, s] = await Promise.all([
+        fetch("/api/lapor/daftar", { cache: "no-store" }), muatBacaan(), muatStatusJuruBaca().catch(() => null),
+      ]);
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || "Gagal memuat kiriman");
       setKiriman((d.baris as KirimanLapor[]).filter((k) => k.jenis.startsWith("permintaan")));
-      setPeta(p);
+      setPeta(p); setDenyut(s);
     } catch (e: any) { setGalat(e?.message || String(e)); }
     finally { setMuat(false); }
   }, []);
 
   useEffect(() => { void ambil(); }, [ambil]);
+
+  /**
+   * Selama masih ada yang belum terbaca, layar menyegarkan dirinya tiap 20
+   * detik. Tanpa itu orang harus menekan Muat ulang berkali-kali untuk melihat
+   * apakah laptop di kantor sudah sampai ke berkasnya — dan menekan tombol
+   * untuk menunggu sesuatu yang memang butuh menit adalah kerja sia-sia.
+   */
+  useEffect(() => {
+    const t = window.setInterval(() => {
+      void muatStatusJuruBaca().then(setDenyut).catch(() => { /* jaringan sesaat */ });
+      void muatBacaan().then(setPeta).catch(() => { /* biarkan tampilan lama */ });
+    }, 20_000);
+    return () => window.clearInterval(t);
+  }, []);
 
   /** hasil baru dari juru baca ikut tampil tanpa perlu memuat ulang halaman */
   useEffect(() => {
@@ -227,6 +254,8 @@ export default function IsiPermintaanKapal() {
   };
 
   const saringanAktif = !!(kapal || periode || cari || saring !== "semua");
+  /** laptop kantor berdenyut = ada yang membaca, walau layar ini tak bisa */
+  const hidup = denyutSegar(denyut);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6">
@@ -239,8 +268,12 @@ export default function IsiPermintaanKapal() {
               <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-emerald-800 ring-1 ring-emerald-200">Hasil Bacaan Tersimpan</span>
               {jb.siap
                 ? <span className="chip bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">● AI lokal siap</span>
-                : <span className="chip bg-slate-100 text-slate-500 ring-1 ring-slate-200">○ perangkat ini tak membaca</span>}
-              {jb.jalan && jb.sedang && <span className="text-[10px] font-medium text-sky-600">membaca {jb.antre} berkas lagi…</span>}
+                : hidup
+                  ? <span className="chip bg-sky-50 text-sky-700 ring-1 ring-sky-200">● laptop kantor membaca</span>
+                  : <span className="chip bg-slate-100 text-slate-500 ring-1 ring-slate-200">○ tak ada yang membaca</span>}
+              {(jb.jalan || denyut?.jalan) && <span className="text-[10px] font-medium text-sky-600">
+                {(jb.antre || denyut?.antre || 0)} berkas di antrean…
+              </span>}
             </div>
             <h1 className="asdp-text-gradient text-2xl font-extrabold leading-tight">Isi Permintaan Kapal</h1>
             <p className="mt-0.5 text-sm text-slate-500">
@@ -280,14 +313,41 @@ export default function IsiPermintaanKapal() {
             {jb.aktif ? "Jeda" : "Lanjutkan"}
           </button>
         </section>
+      ) : hidup ? (
+        /**
+         * Perangkat ini tak punya AI, tapi laptop kantor sedang bekerja. Yang
+         * perlu diketahui orang di sini bukan "kenapa saya tak bisa membaca",
+         * melainkan "apakah berkas saya sedang diproses" — jadi itu yang
+         * ditampilkan: berkas yang sedang dibaca dan sisanya.
+         */
+        <section className="anim-in mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50/90 px-4 py-3 dark:border-sky-800 dark:bg-sky-950/25">
+          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500 text-lg text-white ${denyut?.jalan ? "animate-pulse" : ""}`}>💻</span>
+          <div className="min-w-[14rem] flex-1">
+            <p className="text-xs font-extrabold text-sky-900 dark:text-sky-200">
+              Laptop kantor sedang membaca sendiri{denyut?.mesin ? ` — ${denyut.mesin}` : ""}
+            </p>
+            <p className="truncate text-[11px] text-sky-800/80 dark:text-sky-300/80">
+              {denyut?.jalan && denyut.sedang
+                ? `${namaPendek(denyut.sedang)} · ${denyut.tahap || "membaca…"}`
+                : `Menunggu putaran berikutnya. ${denyut?.antre ? `${denyut.antre} berkas di antrean.` : "Antrean kosong."}`}
+              {" "}Denyut {umurDenyut(denyut)}.
+            </p>
+          </div>
+          <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-sky-800 ring-1 ring-sky-300 dark:bg-slate-900 dark:text-sky-300">
+            Layar ini menyegar sendiri
+          </span>
+        </section>
       ) : (
         <section className="anim-in mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/25">
           <div className="flex flex-wrap items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400 text-lg text-white">👁</span>
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400 text-lg text-white">💤</span>
             <div className="min-w-[14rem] flex-1">
-              <p className="text-xs font-extrabold text-amber-900 dark:text-amber-200">Mode lihat — perangkat ini tidak membaca berkas</p>
+              <p className="text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                Laptop kantor sedang mati — tidak ada yang membaca berkas saat ini
+              </p>
               <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
-                Hasil yang sudah dibaca laptop ber-Ollama tetap tampil lengkap di bawah.
+                Hasil yang sudah dibaca tetap tampil lengkap di bawah. Sisanya lanjut sendiri begitu laptop menyala.
+                {denyut && <> Denyut terakhir {umurDenyut(denyut)}.</>}
               </p>
             </div>
             <button onClick={() => setBuktiGalat((v) => !v)}
@@ -298,11 +358,16 @@ export default function IsiPermintaanKapal() {
           {buktiGalat && (
             <div className="mt-3 rounded-xl bg-white/70 px-3 py-2.5 text-[11px] leading-relaxed text-amber-900 ring-1 ring-amber-200 dark:bg-slate-900/60 dark:text-amber-200">
               <p>
-                Peramban melarang halaman <b>https</b> memanggil alamat <b>http</b>, dan Ollama melayani http di laptop.
-                Jadi AI lokal hanya bisa dipakai bila aplikasi dibuka lewat <b>http://localhost:3001</b> di laptop itu —
-                pintasannya <code>buka-aplikasi.vbs</code>.
+                AI lokal (Ollama) hidup di laptop kantor dan melayani alamat <b>http</b>. Peramban melarang halaman
+                <b> https</b> seperti Vercel memanggil alamat http, jadi pembacaan tidak mungkin terjadi dari layar ini —
+                siapa pun yang membukanya.
               </p>
-              {jb.galat && <p className="mt-1.5 text-amber-700/80">Pesan mesin: {jb.galat}</p>}
+              <p className="mt-1.5">
+                Yang membaca adalah <b>server aplikasi di laptop itu sendiri</b> (port 3001, dijaga watchdog). Selama
+                laptop menyala, seluruh permintaan terbaca sendiri tanpa siapa pun membuka aplikasi. Kalau laptopnya
+                mati, nyalakan lalu jalankan <code>buka-aplikasi.vbs</code> sekali.
+              </p>
+              {jb.galat && <p className="mt-1.5 text-amber-700/80">Pesan mesin di perangkat ini: {jb.galat}</p>}
             </div>
           )}
         </section>

@@ -127,6 +127,40 @@ di laptop itu sendiri, jadi larangan tersebut tidak berlaku sama sekali.
 Pintasan sekali klik: `buka-aplikasi.vbs` — menyalakan server bila belum
 menyala, menunggu siap, lalu membuka halaman Isi Permintaan Kapal.
 
+## Siapa yang sebenarnya membaca
+
+Ada DUA juru baca, dan yang utama bukan yang di peramban.
+
+| | Juru baca **server** | Juru baca **peramban** |
+|---|---|---|
+| Tinggal di | server Next di laptop (port 3001) | tab yang sedang terbuka |
+| Menyala saat | server hidup — dijaga `watchdog.vbs` tiap 5 menit | aplikasi dibuka dari laptop ber-Ollama |
+| Perlu tab terbuka? | **tidak** | ya |
+| PDF pindaian | foto JPEG-nya dipotong keluar dari PDF | halaman dirender jadi gambar |
+
+Yang server tak sanggup baca (PDF tanpa lapisan teks DAN tanpa foto tertanam)
+ditandai jelas di layar, lengkap dengan apa yang harus dilakukan.
+
+Peramban otomatis **diam** bila denyut server masih segar (< 6 menit). Keduanya
+memakai Ollama yang sama di laptop yang sama; dua pembaca berebut satu model
+hanya membuat keduanya merangkak.
+
+## Denyut
+
+Server menulis satu baris `payload.kind = "juru-baca-status"` tiap menit selama
+bekerja. Gunanya: orang yang membuka aplikasi dari Vercel atau dari ponsel bisa
+melihat *"Laptop kantor sedang membaca — 29 berkas di antrean, denyut 1 menit
+lalu"*. Tanpa denyut itu, layar "34 belum terbaca" tak menjelaskan apakah
+berkasnya sedang diproses atau tak akan pernah diproses.
+
+Denyut diperbarui juga DI TENGAH pembacaan, bukan cuma di antara berkas — satu
+foto borang pada model 7b bisa memakan sepuluh menit, dan diam selama itu akan
+terbaca sebagai "laptop mati".
+
+## Mematikannya
+
+Set `JURU_BACA_OTOMATIS=0` di `.env.local` lalu jalankan ulang servernya.
+
 ## Membaca ulang semua berkas
 
 Bila mesin bacanya diperbaiki dan seluruh berkas layak dibaca ulang, naikkan

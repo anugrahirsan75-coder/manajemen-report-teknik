@@ -23,7 +23,8 @@
 import { KirimanLapor } from "./types";
 import { bacaPermintaan } from "./bacaPermintaan";
 import {
-  BacaanBerkas, BarisBacaan, VERSI_BACAAN, bacaanBaru, idPerangkat, muatBacaan, perluDibaca, simpanBacaan,
+  BacaanBerkas, BarisBacaan, VERSI_BACAAN, bacaanBaru, denyutSegar, idPerangkat, muatBacaan,
+  muatStatusJuruBaca, perluDibaca, simpanBacaan,
 } from "./simpananBacaan";
 import { BERKAS_DITERIMA, periksaMesin } from "@/lib/surat/bacaTabel";
 
@@ -45,6 +46,8 @@ export interface KeadaanJuruBaca {
   jalan: boolean;
   /** kapan putaran terakhir selesai */
   terakhir: string;
+  /** pembacaan sedang ditangani juru baca sisi server, peramban tinggal diam */
+  diServer: boolean;
 }
 
 const KUNCI_SAKLAR = "juru_baca_aktif";
@@ -70,7 +73,7 @@ const JEDA_PUTARAN_MS = 3 * 60_000;
 
 let keadaan: KeadaanJuruBaca = {
   aktif: true, siap: false, mesin: "", jalur: "", antre: 0, sedang: "", tahap: "",
-  selesai: 0, gagal: 0, galat: "", jalan: false, terakhir: "",
+  selesai: 0, gagal: 0, galat: "", jalan: false, terakhir: "", diServer: false,
 };
 let pendengar: ((k: KeadaanJuruBaca) => void)[] = [];
 let jadwal: number | null = null;
@@ -164,6 +167,22 @@ export async function putaran(): Promise<void> {
       return;
     }
     kabari({ siap: true, mesin: m.ollama, jalur: m.jalur, galat: "" });
+
+    /**
+     * Kalau juru baca SISI SERVER masih berdenyut, peramban tidak ikut membaca.
+     * Keduanya memakai Ollama yang sama di laptop yang sama; dua pembaca
+     * berebut satu model hanya membuat keduanya merangkak, dan berkas yang
+     * sudah diklaim server toh akan dilewati.
+     */
+    const denyut = await muatStatusJuruBaca().catch(() => null);
+    if (denyutSegar(denyut)) {
+      kabari({
+        diServer: true, antre: denyut!.antre, sedang: denyut!.sedang,
+        tahap: denyut!.tahap || "dikerjakan server lokal",
+      });
+      return;
+    }
+    kabari({ diServer: false });
 
     const aku = idPerangkat();
     const [kiriman, peta] = await Promise.all([ambilKiriman(), muatBacaan()]);

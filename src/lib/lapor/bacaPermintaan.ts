@@ -11,32 +11,13 @@
  * bacaTabel) — satu mesin untuk seluruh aplikasi, jadi perbaikan di satu tempat
  * terasa di semua tempat.
  */
-import { KolomTabel } from "@/lib/surat/types";
 import { Kemajuan, OpsiBaca, bacaBerkasTabel } from "@/lib/surat/bacaTabel";
+import { KOLOM_PERMINTAAN, KONTEKS_PERMINTAAN, BarisPermintaan, keJumlah } from "./skemaPermintaan";
 
-/** kolom yang dicari dari borang permintaan kapal */
-export const KOLOM_PERMINTAAN: KolomTabel[] = [
-  { id: "nama", label: "Nama barang / pekerjaan", jenis: "teks" },
-  { id: "spesifikasi", label: "Spesifikasi / part number", jenis: "teks" },
-  { id: "jumlah", label: "Jumlah", jenis: "teks" },
-  { id: "satuan", label: "Satuan", jenis: "teks" },
-  { id: "keterangan", label: "Keterangan", jenis: "teks" },
-];
-
-export const KONTEKS_PERMINTAAN =
-  "Borang permintaan barang dari kapal (Deck atau Mesin) milik PT ASDP. Tiap baris adalah satu barang "
-  + "atau pekerjaan yang diminta ABK: nama barangnya, spesifikasi atau part number bila ada, jumlah, dan "
-  + "satuan (pcs, set, liter, buah, unit). Kolom keterangan diisi bila borangnya memuat catatan seperti "
-  + "merek mesin, letak pemakaian, atau kondisi kerusakan. Abaikan kop surat, nama kapal, tanda tangan, "
-  + "dan baris tanda terima.";
-
-export interface BarisPermintaan {
-  nama: string;
-  spesifikasi: string;
-  jumlah: string;
-  satuan: string;
-  keterangan: string;
-}
+// skema kolomnya kini tinggal di modul murni supaya juru baca sisi server
+// memakai definisi yang sama persis
+export { KOLOM_PERMINTAAN, KONTEKS_PERMINTAAN, keJumlah } from "./skemaPermintaan";
+export type { BarisPermintaan } from "./skemaPermintaan";
 
 export interface HasilPermintaan {
   baris: BarisPermintaan[];
@@ -94,12 +75,6 @@ export async function bacaPermintaan(
     catatan: hasil.catatan,
   };
 }
-
-/** angka jumlah dari isian bebas ("4", "4 pcs", "±2") */
-export const keJumlah = (v: string): number => {
-  const m = /(\d+(?:[.,]\d+)?)/.exec(String(v || ""));
-  return m ? Math.max(1, Math.round(Number(m[1].replace(",", ".")))) : 1;
-};
 
 const KUNCI_TITIPAN = "sppbj_titipan";
 
