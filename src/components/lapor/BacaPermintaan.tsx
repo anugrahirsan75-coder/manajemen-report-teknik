@@ -7,19 +7,23 @@
  * paling gampang meleset, dan keduanya justru yang paling mahal akibatnya
  * kalau salah masuk ke SPPBJ.
  */
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Kemajuan } from "@/lib/surat/bacaTabel";
 import { BarisPermintaan, bacaPermintaan, keJumlah, titipkanKeSppbj } from "@/lib/lapor/bacaPermintaan";
+import { bacaanBaru, idPerangkat, muatBacaan, simpanBacaan } from "@/lib/lapor/simpananBacaan";
 
 export interface BerkasDibaca { fileId: string; nama: string }
 
-export default function BacaPermintaan({ buka, tutup, kapal, jenis, berkas }: {
+export default function BacaPermintaan({ buka, tutup, kapal, jenis, berkas, kiriman }: {
   buka: boolean;
   tutup: () => void;
   kapal: string;
   jenis: string;
   berkas: BerkasDibaca[];
+  /** dipakai untuk menyimpan hasil bacaan supaya tak perlu dibaca dua kali */
+  kiriman?: { id: string; kapal: string; jenis: string; periode: string };
 }) {
   const router = useRouter();
   const [sibuk, setSibuk] = useState(false);
@@ -29,12 +33,34 @@ export default function BacaPermintaan({ buka, tutup, kapal, jenis, berkas }: {
   const [catatan, setCatatan] = useState<string[]>([]);
   const [galat, setGalat] = useState("");
   const [sudah, setSudah] = useState<string[]>([]);
+  /**
+   * Kunci daftar berkas, bukan larik itu sendiri: pemanggilnya merakit larik
+   * baru pada tiap gambar ulang, dan memakainya sebagai kebergantungan efek
+   * akan membuat jendela ini memuat simpanan tanpa henti.
+   */
+  const kunciBerkas = berkas.map((b) => b.fileId).join(",");
 
   useEffect(() => {
     if (!buka) return;
     setSibuk(false); setTahap({ tahap: "" }); setBaris([]); setMesin("");
     setCatatan([]); setGalat(""); setSudah([]);
-  }, [buka]);
+
+    /**
+     * Hasil yang SUDAH pernah dibaca langsung dipasang begitu jendela terbuka.
+     * Membaca ulang berkas yang sama hanya membakar satu-dua menit lagi untuk
+     * jawaban yang sudah ada — dan di perangkat tanpa AI lokal, jawabannya tak
+     * akan pernah datang.
+     */
+    void muatBacaan().then((peta) => {
+      const ambil = berkas.map((b) => ({ b, s: peta.get(b.fileId)?.bacaan }))
+        .filter((x) => x.s?.status === "selesai" && x.s.baris.length);
+      if (!ambil.length) return;
+      setBaris(ambil.flatMap((x) => x.s!.baris));
+      setSudah(ambil.map((x) => x.b.fileId));
+      setMesin(`${ambil[0].s!.mesin} — dari simpanan`);
+    }).catch(() => { /* simpanan tak terbaca: jalur baca manual tetap ada */ });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [buka, kunciBerkas]);
 
   const baca = useCallback(async (b: BerkasDibaca) => {
     setSibuk(true); setGalat("");
@@ -45,10 +71,21 @@ export default function BacaPermintaan({ buka, tutup, kapal, jenis, berkas }: {
       setCatatan((l) => [...l, ...h.catatan]);
       setSudah((l) => [...l, b.fileId]);
       if (!h.baris.length) setGalat(`Tidak ada barang yang terbaca dari ${b.nama}. Coba berkas lain, atau ketik sendiri di SPPBJ.`);
+
+      // hasilnya disimpan, jadi ongkos bacanya cuma dibayar sekali untuk selamanya
+      if (kiriman && h.baris.length) {
+        const peta = await muatBacaan().catch(() => new Map());
+        const ada = peta.get(b.fileId);
+        await simpanBacaan(ada?.id || null, {
+          ...(ada?.bacaan || bacaanBaru(b.fileId, b.nama, kiriman, idPerangkat())),
+          status: "selesai", baris: h.baris, mesin: h.mesin, catatan: h.catatan,
+          galat: "", waktu: new Date().toISOString(),
+        }).catch(() => { /* simpanan gagal — hasil tetap dipakai di layar */ });
+      }
     } catch (e: any) {
       setGalat(e?.message || String(e));
     } finally { setSibuk(false); setTahap({ tahap: "" }); }
-  }, []);
+  }, [kiriman]);
 
   if (!buka) return null;
 
@@ -157,6 +194,7 @@ export default function BacaPermintaan({ buka, tutup, kapal, jenis, berkas }: {
 
         <div className="flex flex-wrap items-center gap-2 border-t bg-slate-50 px-5 py-3">
           <button onClick={tutup} className="btn btn-ghost text-xs">Tutup</button>
+          <Link href="/permintaan-laporan/isi" className="btn btn-ghost text-xs">🧾 Semua permintaan terbaca</Link>
           <div className="ml-auto flex items-center gap-2">
             <button onClick={() => navigator.clipboard?.writeText(
               baris.map((b, i) => `${i + 1}. ${b.nama}${b.spesifikasi ? ` (${b.spesifikasi})` : ""} — ${keJumlah(b.jumlah)} ${b.satuan || "pcs"}`).join("\n"))}

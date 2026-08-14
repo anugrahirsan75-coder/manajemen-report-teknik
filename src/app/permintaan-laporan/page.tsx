@@ -244,6 +244,7 @@ function IsiPermintaanLaporanKapal() {
             <button onClick={salinTautan} className="btn bg-slate-900 text-xs text-white shadow-lg shadow-slate-900/15 hover:bg-slate-800 dark:bg-slate-700 dark:hover:bg-slate-600">
               🔗 Salin tautan ABK
             </button>
+            <Link href="/permintaan-laporan/isi" className="btn btn-ghost text-xs">🧾 Isi permintaan (terbaca)</Link>
             <Link href="/lapor" target="_blank" className="btn btn-ghost text-xs">👁 Halaman kirim</Link>
             <button onClick={ambil} disabled={muat} className="btn btn-primary text-xs disabled:opacity-50">
               {muat ? "Memuat…" : "⟳ Muat ulang"}
@@ -628,6 +629,7 @@ function IsiPermintaanLaporanKapal() {
           kapal={bacaKiriman.kapal}
           jenis={labelJenis(bacaKiriman.jenis)}
           berkas={(bacaKiriman.berkas || []).map((f: any) => ({ fileId: f.fileId, nama: f.nama }))}
+          kiriman={{ id: bacaKiriman.id, kapal: bacaKiriman.kapal, jenis: bacaKiriman.jenis, periode: bacaKiriman.periode }}
         />
       )}
     </main>

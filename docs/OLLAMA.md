@@ -82,3 +82,54 @@ localStorage.setItem("ollama_host", "http://192.168.1.10:11434")
 
 Mesin itu perlu `OLLAMA_HOST=0.0.0.0` supaya mau menerima dari luar dirinya —
 dan sadari konsekuensinya: dokumen berpindah lewat jaringan kantor.
+
+---
+
+# Juru Baca — permintaan kapal terbaca sendiri
+
+Membaca satu lembar borang tulisan tangan dengan model lokal memakan satu
+sampai tiga menit. Selama hasilnya tidak disimpan, ongkos itu dibayar ULANG
+tiap kali orang membuka kiriman yang sama — dan hanya bisa dibayar di laptop
+yang punya Ollama. Maka pembacaannya dipindahkan ke latar belakang, dan
+hasilnya disimpan.
+
+## Cara kerjanya
+
+1. Aplikasi dibuka **dari laptop yang menjalankan Ollama** (lewat
+   `http://localhost:3001`). Juru Baca menyala sendiri di halaman mana pun —
+   tak perlu membuka halaman permintaan lebih dulu.
+2. Ia mengambil daftar kiriman ABK, mencari berkas permintaan yang belum punya
+   hasil bacaan, lalu membacanya **satu per satu** (bukan berbarengan: AI lokal
+   memakai seluruh inti prosesor, membaca dua berkas sekaligus membuat keduanya
+   lambat).
+3. Tiap hasil disimpan ke Supabase sebagai `payload.kind = "bacaan-berkas"`,
+   satu baris per BERKAS.
+4. Perangkat lain — ponsel, atau aplikasi yang dibuka dari Vercel — membuka
+   **Isi Permintaan Kapal** dan langsung melihat isinya. Tanpa AI sama sekali.
+
+Pil kecil di pojok kanan bawah menunjukkan berkas yang sedang dibaca dan berapa
+yang masih mengantre. Tombol ✕ pada pil menjedanya sampai halaman dimuat ulang.
+
+## Tiga hal yang dijaga
+
+| Hal | Cara |
+|---|---|
+| Satu berkas tidak dibaca dua laptop | Klaim ditulis ke basis data **sebelum** berkas diambil; klaim yang menggantung lebih dari 15 menit dianggap batal |
+| Koreksi orang tidak tertimpa | Bacaan yang disunting di layar ditandai `disunting` dan tak pernah dibaca ulang otomatis |
+| Laptop baru menyala tidak tenggelam | Maksimal 20 berkas per putaran, terbaru dulu; sisanya di putaran berikutnya (tiap 3 menit) |
+
+## Kenapa harus localhost, bukan Vercel
+
+Peramban melarang halaman **https** memanggil alamat **http** — dan Ollama
+melayani http. Dari `localhost`, yang menghubungi Ollama adalah server Next.js
+di laptop itu sendiri, jadi larangan tersebut tidak berlaku sama sekali.
+
+Pintasan sekali klik: `buka-aplikasi.vbs` — menyalakan server bila belum
+menyala, menunggu siap, lalu membuka halaman Isi Permintaan Kapal.
+
+## Membaca ulang semua berkas
+
+Bila mesin bacanya diperbaiki dan seluruh berkas layak dibaca ulang, naikkan
+`VERSI_BACAAN` di `src/lib/lapor/simpananBacaan.ts`. Bacaan berversi lama tetap
+tampil — hanya diantre ulang di belakang, jadi tak ada layar yang mendadak
+kosong.

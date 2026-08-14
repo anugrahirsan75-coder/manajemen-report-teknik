@@ -12,7 +12,7 @@
  * terasa di semua tempat.
  */
 import { KolomTabel } from "@/lib/surat/types";
-import { Kemajuan, bacaBerkasTabel } from "@/lib/surat/bacaTabel";
+import { Kemajuan, OpsiBaca, bacaBerkasTabel } from "@/lib/surat/bacaTabel";
 
 /** kolom yang dicari dari borang permintaan kapal */
 export const KOLOM_PERMINTAAN: KolomTabel[] = [
@@ -49,6 +49,7 @@ export async function bacaPermintaan(
   fileId: string,
   namaBerkas: string,
   lapor: (k: Kemajuan) => void = () => {},
+  opsi: OpsiBaca = {},
 ): Promise<HasilPermintaan> {
   lapor({ tahap: "Mengambil berkas dari Google Drive…" });
 
@@ -86,7 +87,7 @@ export async function bacaPermintaan(
   const file = new File([buf], namaAsli, { type: r.headers.get("Content-Type") || "application/octet-stream" });
 
   lapor({ tahap: "Membaca isi permintaan…" });
-  const hasil = await bacaBerkasTabel(file, KOLOM_PERMINTAAN, KONTEKS_PERMINTAAN, lapor);
+  const hasil = await bacaBerkasTabel(file, KOLOM_PERMINTAAN, KONTEKS_PERMINTAAN, lapor, opsi);
   return {
     baris: (hasil.baris as unknown as BarisPermintaan[]).filter((b) => (b.nama || "").trim()),
     mesin: hasil.mesin,

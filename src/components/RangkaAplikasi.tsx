@@ -12,6 +12,7 @@
  */
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
+import PilJuruBaca from "@/components/lapor/PilJuruBaca";
 
 export default function RangkaAplikasi({ sidebar, loneng, children }: {
   sidebar: ReactNode; loneng: ReactNode; children: ReactNode;
@@ -30,6 +31,14 @@ export default function RangkaAplikasi({ sidebar, loneng, children }: {
       </div>
       {/* lonceng pengingat mengapung di kanan atas seluruh halaman aplikasi */}
       {loneng}
+      {/*
+        Juru Baca dipasang di rangka, bukan di halaman permintaan — supaya
+        membuka aplikasi di halaman mana pun dari laptop ber-Ollama sudah cukup
+        membuat kiriman ABK terbaca. Orang kantor jarang membuka halaman
+        permintaan lebih dulu, dan bacaan yang menunggu dibuka bukan bacaan
+        yang siap dipakai.
+      */}
+      <PilJuruBaca />
     </>
   );
 }
