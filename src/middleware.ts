@@ -69,5 +69,19 @@ export const config = {
   //    Route-nya hanya melayani GET dan isinya sudah dipangkas di server (tanpa
   //    vendor, nomor kontrak, foto, catatan), jadi tak ada yang bisa diubah
   //    maupun digali lebih dalam dari halaman terbuka ini.
-  matcher: ["/((?!login|monitoring|lapor(?:$|/)|kinerja-anggaran(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|_next/static|_next/image|favicon.ico|logo-asdp.png).*)"],
+  /**
+   * Berkas statis di /public TIDAK dilewatkan gerbang ini.
+   *
+   * Dulu hanya logo-asdp.png yang dikecualikan, sehingga foto latar
+   * (/bg-port.jpg) dijawab 307 ke /login setiap kali diminta tanpa sesi yang
+   * sah — dan peramban menyimpan pengalihan itu. Akibatnya latar belakang
+   * aplikasi hilang sampai singgahan dibersihkan, sementara logonya tetap
+   * ada: gejala yang tak masuk akal bagi pemakainya.
+   *
+   * Gambar, font, dan skrip statis memang bukan rahasia — yang dijaga adalah
+   * DATA, dan itu tetap lewat sini. Pengecualiannya sengaja dibatasi berkas di
+   * AKAR ([^/]+): kalau ditulis .* maka /api/db/apa-saja.png akan ikut lolos,
+   * dan gerbangnya bisa dilewati hanya dengan menambahkan akhiran nama.
+   */
+  matcher: ["/((?!login|monitoring|lapor(?:$|/)|kinerja-anggaran(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|_next/static|_next/image|favicon.ico|[^/]+\.(?:png|jpe?g|svg|webp|gif|ico|mjs|css|woff2?)$).*)"],
 };
