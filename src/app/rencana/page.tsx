@@ -25,6 +25,11 @@ import {
 import { rupiah } from "@/lib/format";
 import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
+import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
+import {
+  kandidatDariRiwayat, paguBulan, rencanaTersimpan, susunKendali,
+} from "@/lib/rr/usulanRiwayat";
+import { labelMA } from "@/lib/anggaran/types";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
 const barisKosong = (): RrItem => ({ id: uid(), deskripsi: "", spesifikasi: "", jumlah: 0, satuan: "", harga: 0 });
@@ -49,7 +54,7 @@ const WARNA_TENGGAT: Record<string, string> = {
 
 export default function RencanaPage() {
   const { ready, loading, dok, simpan, hapus, reload, simpanErr } = useRR();
-  const { pengadaan } = useAnggaran();   // untuk menarik realisasi dari SPPBJ/Non PR PO
+  const { pengadaan, plafon } = useAnggaran();   // pengadaan: tarikan realisasi & riwayat usulan; plafon: pagu RKA
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => { setNow(new Date()); }, []);   // hindari beda server/klien
 
@@ -486,6 +491,68 @@ export default function RencanaPage() {
   };
 
   /** salin isi dari dokumen lain (bulan lalu / rencana bulan yang sama) */
+  /* ── penyusun usulan dari riwayat + kendali RKA ────────────────────── */
+  const [bukaSusun, setBukaSusun] = useState(false);
+
+  /**
+   * Barang yang biasa dibeli kapal ini pada bulan-bulan sebelumnya. Dihitung
+   * hanya untuk RENCANA: pada realisasi yang berlaku adalah dokumen bulan itu
+   * sendiri, bukan kebiasaan.
+   */
+  const kandidatRiwayat = useMemo(
+    () => (tipe === "rencana" && bulan ? kandidatDariRiwayat(pengadaan, kapal, bulan, 12) : []),
+    [tipe, bulan, kapal, pengadaan]);
+
+  const paguRka = useMemo(() => paguBulan(plafon, bulan), [plafon, bulan]);
+  const rencanaKapalLain = useMemo(
+    () => rencanaTersimpan(dok, bulan, kapal), [dok, bulan, kapal]);
+  const rencanaKapalIni = useMemo(
+    () => (kerja && tipe === "rencana" ? totalPerMA(kerja) : {}), [kerja, tipe]);
+
+  /** kapal yang usulannya belum terisi bulan ini — dasar pembagian jatah pagu */
+  const kapalBelumSusun = useMemo(() => {
+    if (tipe !== "rencana") return 1;
+    const belum = KAPAL_ANGGARAN.filter((k) =>
+      !dok.some((d) => d.tipe === "rencana" && d.bulan === bulan && d.kapal === k && totalDoc(d).total > 0));
+    // kapal yang sedang disusun ikut dihitung walau dokumennya sudah ada isinya
+    return Math.max(1, belum.includes(kapal) ? belum.length : belum.length + 1);
+  }, [dok, bulan, kapal, tipe]);
+
+  const kendaliRka = useMemo(
+    () => susunKendali(paguRka, rencanaKapalLain, rencanaKapalIni, {}),
+    [paguRka, rencanaKapalLain, rencanaKapalIni]);
+
+  const totalKendali = useMemo(() => {
+    const j = (f: (b: typeof kendaliRka[number]) => number) => kendaliRka.reduce((s, b) => s + f(b), 0);
+    return { pagu: j((b) => b.pagu), lain: j((b) => b.kapalLain), ini: j((b) => b.kapalIni), sisa: j((b) => b.sisa) };
+  }, [kendaliRka]);
+
+  /**
+   * Masukkan pilihan dari penyusun ke kelompok yang tepat.
+   *
+   * 'asal' sengaja TIDAK diisi: penanda itu dipakai pemeriksa dobel realisasi
+   * untuk mengenali baris hasil tarikan, dan usulan bukan tarikan — kalau diisi,
+   * seluruh baris usulan akan dilaporkan sebagai dobel yang harus dirapikan.
+   */
+  const tambahDariRiwayat = (pilihan: PilihanUsulan[]) => {
+    ubah((d) => {
+      pilihan.forEach((p) => {
+        const g = d.kelompok.find((x) => x.kunci === p.kandidat.kunci)
+          || d.kelompok[d.kelompok.length - 1];
+        if (!g) return;
+        (g.items ||= []).push({
+          id: uid(),
+          deskripsi: p.kandidat.deskripsi,
+          spesifikasi: p.kandidat.spesifikasi,
+          jumlah: p.jumlah, satuan: p.kandidat.satuan, harga: p.harga,
+        });
+      });
+    });
+    setBukaSusun(false);
+    setPesan(`${pilihan.length} barang masuk ke usulan — periksa jumlah & harganya, lalu simpan.`);
+    setTimeout(() => setPesan(""), 5000);
+  };
+
   const salinDari = (sumber?: RrDoc) => {
     if (!sumber) { setPesan("Sumber salinan belum ada isinya."); setTimeout(() => setPesan(""), 3000); return; }
     ubah((d) => {
@@ -622,6 +689,56 @@ export default function RencanaPage() {
         <p className="text-[10px] text-slate-400 mt-2">🔒 = sudah ditandai terkirim (terkunci) · • = draf tersimpan</p>
       </div>
 
+      {/* ================= kendali RKA (khusus rencana) ================= */}
+      {tipe === "rencana" && bulan && (
+        <div className="mt-4 rounded-2xl bg-white px-5 py-4 elev-sm ring-line dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="min-w-[14rem]">
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">🎯 Kendali RKA — {namaBulan(bulan)}</h3>
+              <p className="text-[11px] text-slate-500">
+                Total usulan seluruh kapal diukur terhadap pagu rutin bulan ini, bukan per kapal sendiri-sendiri.
+              </p>
+            </div>
+            <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+              <span className="text-slate-500">Pagu <b className="tabular-nums text-slate-800 dark:text-slate-100">{rupiah(totalKendali.pagu)}</b></span>
+              <span className="text-slate-500">Kapal lain <b className="tabular-nums">{rupiah(totalKendali.lain)}</b></span>
+              <span className="text-slate-500">{ringkasKapal(kapal)} <b className="tabular-nums text-indigo-700">{rupiah(totalKendali.ini)}</b></span>
+              <span className="text-slate-500">Sisa <b className={`tabular-nums ${totalKendali.sisa < 0 ? "text-rose-700" : "text-emerald-700"}`}>{rupiah(totalKendali.sisa)}</b></span>
+            </div>
+          </div>
+
+          {totalKendali.pagu > 0 ? (
+            <div className="mt-3 grid gap-1.5 sm:grid-cols-2 lg:grid-cols-3">
+              {kendaliRka.filter((b) => b.pagu > 0 || b.kapalIni > 0 || b.kapalLain > 0).map((b) => {
+                const pakai = b.kapalLain + b.kapalIni;
+                const persen = b.pagu > 0 ? Math.min(100, Math.round((pakai / b.pagu) * 100)) : 0;
+                const lewat = b.pagu > 0 && pakai > b.pagu;
+                return (
+                  <div key={b.kode} className="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
+                    <div className="flex items-baseline justify-between gap-2">
+                      <span className="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200">{labelMA(b.kode)}</span>
+                      <span className={`shrink-0 text-[10px] font-extrabold tabular-nums ${lewat ? "text-rose-600" : "text-slate-400"}`}>{persen}%</span>
+                    </div>
+                    <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                      <div className={`h-full ${lewat ? "bg-rose-500" : "bg-indigo-500"}`} style={{ width: `${persen}%` }} />
+                    </div>
+                    <p className="mt-1 text-[10px] tabular-nums text-slate-500">
+                      sisa {rupiah(b.sisa)} <span className="text-slate-400">dari {rupiah(b.pagu)}</span>
+                      {b.kapalIni > 0 && <span className="text-indigo-600"> · kapal ini {rupiah(b.kapalIni)}</span>}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
+              Pagu {namaBulan(bulan)} belum ada di Dashboard Anggaran, jadi kendali RKA belum bisa dihitung.
+              Isi dulu pagunya supaya total usulan seluruh kapal punya pembanding.
+            </p>
+          )}
+        </div>
+      )}
+
       {/* ================= editor ================= */}
       {kerja && bulan && (
         <div className={`mt-4 bg-white rounded-2xl elev-md ring-1 ${nada.ring} anim-in`}>
@@ -643,6 +760,12 @@ export default function RencanaPage() {
                     className="btn btn-ghost text-xs" title={`Salin isi ${tipe} ${namaBulan(bulanKe(bulan, -1))} kapal ini`}>
                     ⧉ Salin bulan lalu
                   </button>
+                  {tipe === "rencana" && (
+                    <button onClick={() => setBukaSusun(true)} className="btn btn-ghost text-xs"
+                      title="Pilih barang dari riwayat SPPBJ kapal ini, dengan kendali pagu RKA bulan ini">
+                      🧩 Susun dari riwayat
+                    </button>
+                  )}
                   {tipe === "realisasi" && (
                     <>
                       <button onClick={() => salinDari(dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === kapal))}
@@ -776,6 +899,19 @@ export default function RencanaPage() {
 
       {loading && <p className="mt-4 text-xs text-slate-400">memuat…</p>}
       {dialogKonfirmasi}
+
+      <SusunRencana
+        buka={bukaSusun && tipe === "rencana" && !terkunci}
+        tutup={() => setBukaSusun(false)}
+        bulan={bulan}
+        kapal={kapal}
+        kandidat={kandidatRiwayat}
+        pagu={paguRka}
+        kapalLain={rencanaKapalLain}
+        kapalIni={rencanaKapalIni}
+        kapalBelum={kapalBelumSusun}
+        tambah={tambahDariRiwayat}
+      />
     </main>
   );
 }
