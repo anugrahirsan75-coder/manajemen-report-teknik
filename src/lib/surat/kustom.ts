@@ -26,6 +26,18 @@ const GAYA_SEL = `border:1px solid ${GARIS};padding:4px 6px;vertical-align:top;w
 const GAYA_KEPALA = `${GAYA_SEL}background-color:${WARNA.kepala};color:#FFFFFF;font-weight:bold;text-align:center;`;
 const GAYA_LI = `margin:0 0 4px 0;font-family:Arial,Helvetica,sans-serif;font-size:${UKURAN_ISI};line-height:1.5;color:${TEKS};`;
 
+/** tabel data tanpa garis: "Label : Isi", bentuk yang dipakai blok identitas kapal */
+const GAYA_TABEL_DATA = `border-collapse:collapse;width:100%;font-family:Arial,Helvetica,sans-serif;font-size:${UKURAN_ISI};color:${TEKS};margin:0 0 10px 0;`;
+const GAYA_SEL_DATA = "vertical-align:top;padding:3px;";
+
+/**
+ * Judul bagian. E-office tidak mengenal <h2> dengan gaya sendiri — yang
+ * bertahan hanya paragraf bergaya inline, jadi judul ditulis sebagai paragraf
+ * tebal, bukan sebagai tag judul yang gayanya pasti hilang.
+ */
+const GAYA_JUDUL = (besar: boolean) =>
+  `${GAYA_P}font-weight:bold;text-align:left;${besar ? "font-size:11pt;" : ""}`;
+
 const esc = (s: string) =>
   s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 
@@ -59,7 +71,35 @@ const rata = (el: HTMLElement): string => {
   return a === "center" || a === "right" || a === "left" ? a : "";
 };
 
+/**
+ * Tabel "Label : Isi" tanpa garis.
+ *
+ * Ditandai data-gaya="data" oleh penyunting. Tanpa penanda itu, blok identitas
+ * kapal akan keluar sebagai tabel bergaris tiga kolom — bentuk yang tak pernah
+ * dipakai surat dinas untuk menuliskan data.
+ */
+function bangunTabelData(tabel: HTMLTableElement): string {
+  const baris = Array.from(tabel.querySelectorAll("tr")).map((tr) => {
+    const sel = Array.from(tr.children).filter((c) => /^T[DH]$/.test(c.tagName)) as HTMLTableCellElement[];
+    if (!sel.length) return "";
+    const isi = (i: number) => Array.from(sel[i]?.childNodes || []).map(isiSebaris).join("").trim();
+    const kiri = isi(0);
+    const kanan = sel.length >= 3 ? isi(2) : isi(1);
+    if (!kiri && !kanan) return "";
+    return `<tr>`
+      + `<td width="170" valign="top" style="width:170px;${GAYA_SEL_DATA}">${kiri || "&nbsp;"}</td>`
+      + `<td width="14" valign="top" style="width:14px;${GAYA_SEL_DATA}">:</td>`
+      + `<td valign="top" style="${GAYA_SEL_DATA}">${kanan || "&nbsp;"}</td>`
+      + `</tr>`;
+  }).filter(Boolean);
+  if (!baris.length) return "";
+  // penanda ikut ditulis ulang supaya bentuknya bertahan saat surat dirapikan
+  // berkali-kali — tanpa itu, sekali dirapikan ia berubah jadi tabel bergaris
+  return `<table data-gaya="data" border="0" cellpadding="3" cellspacing="0" width="100%" style="${GAYA_TABEL_DATA}"><tbody>${baris.join("")}</tbody></table>`;
+}
+
 function bangunTabel(tabel: HTMLTableElement): string {
+  if (tabel.getAttribute("data-gaya") === "data") return bangunTabelData(tabel);
   const baris: string[] = [];
   const semuaBaris = Array.from(tabel.querySelectorAll("tr"));
   semuaBaris.forEach((tr, iBaris) => {
@@ -93,9 +133,26 @@ function bangunBlok(el: HTMLElement): string {
         .join("");
       if (!li) return "";
       const tag = el.tagName.toLowerCase();
-      return `<${tag} style="margin:0 0 10px 0;padding-left:22px;">${li}</${tag}>`;
+      /**
+       * Jenis penomoran ikut dipertahankan. Surat dinas kerap memakai butir
+       * a, b, c — kalau tipenya dibuang, seluruhnya berubah jadi 1, 2, 3 dan
+       * rujukan "sebagaimana huruf b" di paragraf lain jadi menunjuk entah ke mana.
+       */
+      const tipe = (el.getAttribute("type") || "").toLowerCase();
+      const gayaTipe = tipe === "a" ? "list-style-type:lower-alpha;"
+        : tipe === "i" ? "list-style-type:lower-roman;"
+          : tipe === "a".toUpperCase() ? "list-style-type:upper-alpha;" : "";
+      const tipeLawas = tipe ? ` type="${tipe}"` : "";
+      return `<${tag}${tipeLawas} style="margin:0 0 10px 0;padding-left:22px;${gayaTipe}">${li}</${tag}>`;
     }
     case "HR": return `<hr style="border:none;border-top:1px solid ${GARIS};margin:10px 0;" />`;
+    case "H1":
+    case "H2":
+    case "H3":
+    case "H4": {
+      const isi = Array.from(el.childNodes).map(isiSebaris).join("").trim();
+      return isi ? `<p style="${GAYA_JUDUL(el.tagName === "H1" || el.tagName === "H2")}">${isi}</p>` : "";
+    }
     case "BLOCKQUOTE": {
       const isi = Array.from(el.childNodes).map(isiSebaris).join("").trim();
       return isi ? `<p style="${GAYA_P}margin-left:24px;">${isi}</p>` : "";
