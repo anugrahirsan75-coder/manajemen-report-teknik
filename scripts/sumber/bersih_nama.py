@@ -42,6 +42,43 @@ EKOR_BULAN = re.compile(rf"\s*[-–—,]?\s*(?:bu?la?n\.?\s+)?(?:{BULAN})\.?\s*\
 EKOR_TAHUN = re.compile(r"\s*[-–—,]?\s*(?:tahun\s+)?(?:t\.?a\.?\s*)?20\d{2}\s*$", re.I)
 EKOR_KAPAL_POLOS = re.compile(r"\s*[-–—,]\s*kapal\s*$", re.I)
 
+# Awalan sampah yang menempel dengan tanda hubung: baris bantu spreadsheet,
+# judul kolom yang ikut tersalin, bulan, dan nama kapal.
+#   "Insert diatas ini - Alat Pel Lantai"  -> "Alat Pel Lantai"
+#   "HARGA SAT (Rp) - HANDLE PINTU"        -> "HANDLE PINTU"
+#   "SEPTEMBER - Grease"                   -> "Grease"
+AWALAN_SAMPAH = re.compile(
+    rf"^\s*(?:insert\s*di\s*atas\s*ini|insert\s*diatas\s*ini|"
+    rf"harga(?:\s+(?:pjk|sat|satuan|total|net|nego|awal|akhir|lama|baru))?(?:\s*\(\s*rp\.?\s*\))?|"
+    rf"[a-d]\s*[:.]\s*(?:fast|slow|death|dead|non)[\s-]*moving|(?:fast|slow|death|dead|non)[\s-]*moving|"
+    rf"(?:mesin\s+induk|mesin\s+bantu|gen\s*set|genset)\s*[:\-]\s*.{{0,40}}?|"
+    rf"(?:m/?e|a/?e)\s*[:\-]?\s*"
+    rf"(?:yanmar|mitsubishi|cummins|perkins|caterpillar|weichai|deutz|volvo|niigata|daihatsu|hanshin|"
+    rf"nissan|isuzu|doosan|scania|baudouin)\s*.{{0,40}}?|"
+    rf"uraian(?:\s+barang)?(?:\s*/\s*jasa)?|nama\s+barang(?:\s*/\s*part\s*number)?|"
+    rf"part\s*number|deskripsi|keterangan|"
+    rf"spesifikasi[^-–—:]{{0,60}}|"
+    rf"(?:{BULAN})(?:\s*\d{{4}})?|"
+    rf"(?:bus\s*air\s+)?(?:kmp|km)\.?\s*[A-Za-z][A-Za-z0-9.'\-]*(?:\s+[A-Za-z0-9.'\-]+)*?"
+    rf")\s+[-–—:]\s+", re.I)
+
+# nama kapal yang menempel langsung ke sebutan pekerjaan, tanpa pemisah
+KAPAL_MENEMPEL = re.compile(
+    r"^\s*(?:bus\s*air\s+)?(?:kmp|km)\.?\s*[A-Za-z][A-Za-z0-9.'\-]*(?=Pem\.|Pel\.|Pemeliharaan|Permesinan|Akomodasi|Perlengkapan)", re.I)
+
+# hasil pengupasan yang ternyata cuma nama kapal — bukan nama barang
+HANYA_KAPAL = re.compile(r"^\s*(?:bus\s*air\s+)?(?:kmp|km)\.?\s*[A-Za-z][A-Za-z0-9 .'\-]*$", re.I)
+
+# baris yang seluruhnya bukan nama barang — dibuang, bukan dibersihkan
+BUKAN_NAMA = re.compile(
+    rf"^\s*(?:insert\s*di\s*ata?s\s*ini|isi\s*di\s*sini|ketik\s*di\s*sini|"
+    rf"no|nomor|uraian(?:\s+pekerjaan)?|spesifikasi|satuan|jumlah|qty|volume|keterangan|"
+    rf"deskripsi|nama\s+barang|harga(?:\s+satuan)?|sub\s*total|total|grand\s*total|rekap|"
+    rf"(?:{BULAN})(?:\s*\d{{4}})?)\s*[:.\-]?\s*$", re.I)
+
+# kalimat catatan, bukan nama barang: panjang DAN memuat kata sambung
+KATA_SAMBUNG = re.compile(r"\b(yang|pada|dengan|namun|tidak|karena|agar|sehingga|apabila|dalam usulan)\b", re.I)
+
 # catatan penyusun yang ikut terbawa, bukan bagian nama barang
 CATATAN = [
     re.compile(r"\(\s*by\s+tim[^)]*\)", re.I),
@@ -62,6 +99,25 @@ KATA_KELOMPOK = re.compile(
     r"filter|suku\s+cadang|persiapan|pelumas|oli|cat|labour|material|umum|lain[\s-]*lain|"
     r"barang(?:\s+rutin)?|jasa(?:\s+rutin)?|rutin|bahan)"
     r"(?:\s+(?:kapal|mesin|deck|dek|bagian\s+\w+|tambahan|rutin))*$", re.I)
+
+# konteks mesin yang menempel di depan nama suku cadang:
+# "ME : YANMAR 6 AYM-WET, JAM KERJA ME KA/KI : 3571.5 JAM - O-RING"
+KONTEKS_MESIN = re.compile(
+    r"(jam\s*kerja|yanmar|mitsubishi|cummins|perkins|caterpillar|weichai|deutz|volvo|niigata|"
+    r"daihatsu|hanshin|mesin\s+induk|mesin\s+bantu|m/?e|a/?e|^\d[\d.,]*\s*jam)", re.I)
+
+
+def _buang_konteks_mesin(t: str) -> str:
+    """Ruas kiri yang isinya keterangan mesin, bukan nama barangnya, dibuang."""
+    potong = re.split(r"\s+[-–—]\s+", t)
+    if len(potong) < 2:
+        return t
+    kanan = potong[-1].strip()
+    kiri = " - ".join(potong[:-1])
+    if len(kanan) >= 3 and KONTEKS_MESIN.search(kiri):
+        return kanan
+    return t
+
 
 def _buang_awalan_kelompok(t: str) -> str:
     """Ruas kiri tanda hubung yang cuma sebutan kelompok dibuang."""
@@ -84,17 +140,31 @@ def bersih_nama(mentah: str) -> str:
     if HANYA_NOMOR.match(t):
         return ""
 
+    if BUKAN_NAMA.match(t):
+        return ""
+    # catatan berbentuk kalimat: panjang dan penuh kata sambung
+    if len(t) >= 80 and len(KATA_SAMBUNG.findall(t)) >= 2:
+        # "…rekomendasi dapat dibuat exemption agar ditunda - Pompa sewage"
+        # ruas kanannya justru nama barangnya; itu yang diselamatkan
+        ekor = re.split(r"\s+[-–—]\s+", t)[-1].strip()
+        return ekor if 3 <= len(ekor) <= 60 and not KATA_SAMBUNG.search(ekor) else ""
+
     asli = t
-    t = NOMOR_DEPAN.sub("", t)
     for pola in CATATAN:
         t = pola.sub(" ", t)
 
-    # narasi bisa bertumpuk: "Pengadaan Belanja Majun"
-    for _ in range(3):
-        baru = NARASI_DEPAN.sub("", t)
-        if baru == t:
+    # Awalan bisa bertumpuk dan berselang-seling: "Kebutuhan SEPTEMBER - Grease"
+    # punya narasi di depan awalan sampah, sedangkan "Insert diatas ini -
+    # Pengadaan Majun" sebaliknya. Karena itu ketiganya dikupas bergantian
+    # sampai tak ada lagi yang berubah.
+    for _ in range(4):
+        sebelum = t
+        t = NOMOR_DEPAN.sub("", t)
+        t = AWALAN_SAMPAH.sub("", t)
+        t = NARASI_DEPAN.sub("", t)
+        t = SISA_TANDA.sub("", t).strip()
+        if t == sebelum:
             break
-        t = baru
 
     # ekor dikupas berulang: "… KMP. TUNA Juli 2026" punya dua ekor sekaligus
     for _ in range(4):
@@ -106,8 +176,19 @@ def bersih_nama(mentah: str) -> str:
         if t == sebelum:
             break
 
+    t = KAPAL_MENEMPEL.sub("", t)
+    t = _buang_konteks_mesin(t)
     t = _buang_awalan_kelompok(SISA_TANDA.sub("", SPASI.sub(" ", t)).strip())
     t = SISA_TANDA.sub("", t).strip()
+
+    # yang tersisa cuma nama kapal berarti barangnya memang tak pernah disebut
+    if HANYA_KAPAL.match(t) or BUKAN_NAMA.match(t):
+        return ""
+
+    # habis sama sekali = memang tak ada nama barang di dalamnya (mis. "Insert
+    # diatas ini - KMP. ARIWANGAN": baris bantu berisi nama kapal, bukan barang)
+    if not t:
+        return ""
 
     # terlalu pendek berarti pengupasannya kebablasan — kembalikan yang asli
     if len(t) < 3:
@@ -160,6 +241,20 @@ if __name__ == "__main__":
         "Paketisasi Perawatan Kebersihan Kapal Bagian Mesin Bln Februari 2026",
         "Pemeliharaan Alat Keselamatan dan Navigasi - Mata Gergaji",
         "Barang Rutin - Isolasi Listrik",
+        "Insert diatas ini - Alat Pel Lantai",
+        "HARGA SAT (Rp) - HANDLE PINTU TOGGLE SS",
+        "SEPTEMBER - Grease",
+        "BUS AIR KM. JURUNG-JURUNG - Roll Block",
+        "insert diatas ini",
+        "SUB TOTAL",
+        "Dalam Usulan Cabang Dinding dilapisi dengan HPL Namun pada Pada KD. 55 tidak demikian sehingga perlu disesuaikan lagi",
+        "Material Pompa Belum tersedia, rekomendasi dapat dibuat exemption agar pemasangan ditunda pada dock berikutnya - Pompa sewage",
+        "URAIAN BARANG / JASA - Isi Kuas Roll Kecil",
+        "Insert diatas ini - KMP. ARIWANGAN",
+        "KMP.MAMING - Ganti lantai vinyl",
+        "KMP. AWU-AWUPem. Akomodasi dan Perlengkapan",
+        "Kebutuhan SEPTEMBER - Grease",
+        "Dilaksanakan megger test seluruh instalasi listrik dan panel-panel listrik dan semua electromotor MSB, Altenator, Generator",
     ]
     for c in contoh:
         print(f"{c!r:70} -> {bersih_nama(c)!r}")

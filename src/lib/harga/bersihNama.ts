@@ -36,6 +36,30 @@ const EKOR_BULAN = new RegExp(`\\s*[-–—,]?\\s*(?:bu?la?n\\.?\\s+)?(?:${BULAN
 const EKOR_TAHUN = /\s*[-–—,]?\s*(?:tahun\s+)?(?:t\.?a\.?\s*)?20\d{2}\s*$/i;
 const EKOR_KAPAL_POLOS = /\s*[-–—,]\s*kapal\s*$/i;
 
+/**
+ * Awalan sampah yang menempel dengan tanda hubung — kembaran aturan di
+ * scripts/sumber/bersih_nama.py. Baris bantu spreadsheet ("Insert diatas ini"),
+ * judul kolom yang ikut tersalin, label perputaran barang, bulan, dan nama
+ * kapal. Semuanya pernah muncul sebagai "nama barang" di berkas nyata.
+ */
+const AWALAN_SAMPAH = new RegExp(
+  String.raw`^\s*(?:insert\s*di\s*atas\s*ini|insert\s*diatas\s*ini|`
+  + String.raw`harga(?:\s+(?:pjk|sat|satuan|total|net|nego|awal|akhir|lama|baru))?(?:\s*\(\s*rp\.?\s*\))?|`
+  + String.raw`uraian(?:\s+barang)?(?:\s*/\s*jasa)?|nama\s+barang(?:\s*/\s*part\s*number)?|part\s*number|`
+  + String.raw`deskripsi|keterangan|[a-d]\s*[:.]\s*(?:fast|slow|death|dead|non)[\s-]*moving|`
+  + `(?:${BULAN})` + String.raw`(?:\s*\d{4})?|`
+  + String.raw`(?:bus\s*air\s+)?(?:kmp|km)\.?\s*[A-Za-z][A-Za-z0-9.'-]*(?:\s+[A-Za-z0-9.'-]+)*?`
+  + String.raw`)\s+[-–—:]\s+`, "i");
+
+/** baris yang seluruhnya bukan nama barang */
+const BUKAN_NAMA = new RegExp(
+  String.raw`^\s*(?:insert\s*di\s*ata?s\s*ini|no|nomor|uraian|spesifikasi|satuan|jumlah|qty|volume|`
+  + String.raw`keterangan|deskripsi|nama\s+barang|harga(?:\s+satuan)?|sub\s*total|total|grand\s*total|`
+  + `(?:${BULAN})` + String.raw`(?:\s*\d{4})?)\s*[:.-]?\s*$`, "i");
+
+/** hasil pengupasan yang ternyata cuma nama kapal */
+const HANYA_KAPAL = /^\s*(?:bus\s*air\s+)?(?:kmp|km)\.?\s*[A-Za-z][A-Za-z0-9 .'-]*$/i;
+
 const CATATAN: RegExp[] = [
   /\(\s*by\s+tim[^)]*\)/i,
   /\(\s*lihat\s+kontrak[^)]*\)/i,
@@ -67,18 +91,23 @@ function buangAwalanKelompok(t: string): string {
 }
 
 export function bersihNamaItem(mentah: string): string {
-  let t = String(mentah || "").replace(/\s+/g, " ").trim();
+  // spasi aneh dari salinan Excel disamakan lebih dulu
+  let t = String(mentah || "").replace(/[  -​ 　﻿]/g, " ")
+    .replace(/\s+/g, " ").trim();
   if (!t) return "";
   if (HANYA_NOMOR.test(t)) return "";
+  if (/^[\d\W]+$/.test(t)) return "";
+  if (BUKAN_NAMA.test(t)) return "";
 
   const asli = t;
-  t = t.replace(NOMOR_DEPAN, "");
   CATATAN.forEach((p) => { t = t.replace(p, " "); });
 
-  for (let i = 0; i < 3; i++) {
-    const baru = t.replace(NARASI_DEPAN, "");
-    if (baru === t) break;
-    t = baru;
+  // awalan bisa bertumpuk & berselang-seling: nomor surat, sampah, lalu narasi
+  for (let i = 0; i < 4; i++) {
+    const sebelum = t;
+    t = t.replace(NOMOR_DEPAN, "").replace(AWALAN_SAMPAH, "").replace(NARASI_DEPAN, "");
+    t = rapikan(t);
+    if (t === sebelum) break;
   }
   for (let i = 0; i < 4; i++) {
     const sebelum = t;
@@ -87,5 +116,6 @@ export function bersihNamaItem(mentah: string): string {
   }
 
   t = rapikan(buangAwalanKelompok(rapikan(t.replace(/\s+/g, " "))));
+  if (!t || HANYA_KAPAL.test(t) || BUKAN_NAMA.test(t)) return "";
   return t.length < 3 ? rapikan(asli) : t;
 }
