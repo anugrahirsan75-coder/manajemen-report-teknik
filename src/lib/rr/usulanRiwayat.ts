@@ -222,6 +222,8 @@ export interface HasilOtomatis {
   kurang: { kode: string; sisa: number }[];
   /** jumlah yang disarankan berbeda dari kebiasaan, dipakai layar untuk menampilkannya */
   jumlahSaran: Record<string, number>;
+  /** berapa persen jatah tiap Mata Anggaran akhirnya terisi */
+  capai: Record<string, number>;
 }
 
 export interface OpsiOtomatis {
@@ -235,6 +237,13 @@ export interface OpsiOtomatis {
   hindari?: Set<string>;
   /** jumlah ikut divariasikan ±20% supaya angkanya tak persis sama tiap bulan */
   variasiJumlah?: boolean;
+  /**
+   * Berapa persen jatah boleh dilewati bila itu justru MENDEKATKAN total ke
+   * jatah. Riwayat pelumas satu kapal cuma "Meditrans SAE 40" seharga 6,05 juta
+   * sedangkan jatahnya 11,75 juta: satu drum berhenti di 52%, dua drum 103%.
+   * Berhenti di 52% jauh lebih meleset daripada lewat 3%.
+   */
+  toleransiPersen?: number;
 }
 
 /** pengacak berbenih (mulberry32) — hasilnya bisa diulang, tak seperti Math.random */
@@ -276,50 +285,105 @@ export function isiOtomatis(
   sisaPerMA: Record<string, number>,
   opsi: OpsiOtomatis = {},
 ): HasilOtomatis {
-  const batas = (opsi.batasPersen ?? 97) / 100;
+  const batas = (opsi.batasPersen ?? 99.5) / 100;
   const pilih = new Set(opsi.sudahDipilih || []);
-  const terpakai: Record<string, number> = {};
   const jumlahSaran: Record<string, number> = {};
+  const terpakai: Record<string, number> = {};
   const acak = pengacak(opsi.benih ?? 1);
   const hindari = opsi.hindari || new Set<string>();
 
+  const jumlahAkhir = (k: Kandidat) => jumlahSaran[k.id] ?? k.jumlah;
   kandidat.forEach((k) => {
-    if (pilih.has(k.id)) terpakai[k.kode] = (terpakai[k.kode] || 0) + nilaiKandidat(k);
+    if (pilih.has(k.id)) terpakai[k.kode] = (terpakai[k.kode] || 0) + jumlahAkhir(k) * (k.harga || 0);
   });
 
-  /** jumlah yang disarankan: kebiasaan, digeser sedikit bila variasi dinyalakan */
-  const jumlahUntuk = (k: Kandidat) => {
-    if (!opsi.variasiJumlah) return k.jumlah;
-    const geser = 0.8 + acak() * 0.4;                    // 80%–120%
-    return Math.max(1, Math.round((k.jumlah || 1) * geser));
+  /** jumlah kebiasaan, digeser sedikit bila variasi dinyalakan */
+  const jumlahAwal = (k: Kandidat) => {
+    if (!opsi.variasiJumlah) return Math.max(1, k.jumlah || 1);
+    return Math.max(1, Math.round((k.jumlah || 1) * (0.8 + acak() * 0.4)));   // 80%–120%
   };
 
-  const urut = opsi.acak
-    ? kandidat.map((k) => {
-      const bobotUlang = hindari.has(sidikNama(k.deskripsi)) ? 0.45 : 1;
-      const skor = (k.kali + 1) * bobotUlang * (0.65 + acak() * 0.7);
-      return { k, skor };
-    }).sort((a, b) => b.skor - a.skor).map((x) => x.k)
-    : kandidat;
+  /** urutan pemilihan: sering & baru dibeli didahulukan, diacak bila variasi menyala */
+  const urutkan = (isi: Kandidat[]) => (opsi.acak
+    ? isi.map((k) => ({
+      k, skor: (k.kali + 1) * (hindari.has(sidikNama(k.deskripsi)) ? 0.45 : 1) * (0.65 + acak() * 0.7),
+    })).sort((a, b) => b.skor - a.skor).map((x) => x.k)
+    : isi);
 
-  for (const k of urut) {
-    if (pilih.has(k.id)) continue;
-    const langit = (sisaPerMA[k.kode] || 0) * batas;
-    if (langit <= 0) continue;
-    const jml = jumlahUntuk(k);
-    const nilai = jml * (k.harga || 0);
-    if (!nilai) continue;
-    if ((terpakai[k.kode] || 0) + nilai > langit) continue;
-    pilih.add(k.id);
-    if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
-    terpakai[k.kode] = (terpakai[k.kode] || 0) + nilai;
-  }
+  /**
+   * Boleh menambah satu satuan lagi? Ya bila hasilnya lebih dekat ke jatah
+   * daripada berhenti sekarang, DAN tidak melewati langit toleransi.
+   */
+  const lebihDekat = (dipakai: number, harga: number, target: number, langit: number) => {
+    const sesudah = dipakai + harga;
+    return sesudah <= langit && Math.abs(target - sesudah) < Math.abs(target - dipakai);
+  };
 
+  const perMA = new Map<string, Kandidat[]>();
+  kandidat.forEach((k) => perMA.set(k.kode, [...(perMA.get(k.kode) || []), k]));
+
+  perMA.forEach((isiMA, kode) => {
+    const jatah = sisaPerMA[kode] || 0;
+    const target = jatah * batas;
+    const langitLuar = jatah * (1 + (opsi.toleransiPersen ?? 5) / 100);
+    if (target <= 0) return;
+
+    /**
+     * Tahap 1 — masukkan barang satu per satu.
+     *
+     * Barang yang jumlah kebiasaannya tak muat TIDAK dilewati begitu saja,
+     * melainkan dikurangi jumlahnya sampai muat. Riwayat pelumas satu kapal
+     * kerap cuma satu jenis ("Meditrans SAE 40, 2 drum"); kalau dua drum tak
+     * muat lalu barangnya dibuang, Mata Anggaran itu berakhir 0% padahal satu
+     * drum jelas muat.
+     */
+    urutkan(isiMA).forEach((k) => {
+      if (pilih.has(k.id) || !k.harga) return;
+      const dipakai = terpakai[kode] || 0;
+      const ruang = target - dipakai;
+      let jml = Math.min(jumlahAwal(k), Math.floor(ruang / k.harga));
+      // satu satuan pun tak muat: masih boleh diambil bila justru mendekatkan
+      // total ke jatah dan tidak melewati batas toleransi
+      if (jml < 1) jml = lebihDekat(dipakai, k.harga, target, langitLuar) ? 1 : 0;
+      if (jml < 1) return;
+      pilih.add(k.id);
+      if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
+      terpakai[kode] = dipakai + jml * k.harga;
+    });
+
+    /**
+     * Tahap 2 — habiskan sisa jatah dengan menambah jumlah barang yang sudah
+     * terpilih, termurah dulu. Tanpa tahap ini, jatah berhenti di angka yang
+     * kebetulan pas dengan barang terakhir yang muat — pada uji nyata baru 67%
+     * dari jatah, dan yang menyusun harus menambal sendiri sisanya.
+     *
+     * Batas kewajaran: paling banyak tiga kali jumlah kebiasaannya. Usulan yang
+     * benar bukan usulan yang menghabiskan pagu dengan satu barang ditumpuk
+     * dua puluh kali.
+     */
+    const terpilihMA = isiMA.filter((k) => pilih.has(k.id) && k.harga > 0)
+      .sort((a, b) => a.harga - b.harga);
+    let aman = 0;
+    while (aman++ < 2000) {
+      const dipakai = terpakai[kode] || 0;
+      const layak = (k: Kandidat) => jumlahAkhir(k) < Math.max(3, (k.jumlah || 1) * 3)
+        && (k.harga <= target - dipakai || lebihDekat(dipakai, k.harga, target, langitLuar));
+      const bisa = terpilihMA.find(layak);
+      if (!bisa) break;
+      jumlahSaran[bisa.id] = jumlahAkhir(bisa) + 1;
+      terpakai[kode] = dipakai + bisa.harga;
+    }
+  });
+
+  const capai: Record<string, number> = {};
+  Object.entries(sisaPerMA).forEach(([kode, jatah]) => {
+    capai[kode] = jatah > 0 ? Math.round(((terpakai[kode] || 0) / jatah) * 100) : 0;
+  });
   const kurang = Object.entries(sisaPerMA)
     .map(([kode, sisa]) => ({ kode, sisa: sisa - (terpakai[kode] || 0) }))
-    .filter((x) => x.sisa > 0 && (terpakai[x.kode] || 0) < x.sisa * 0.5);
+    .filter((x) => x.sisa > 0 && (capai[x.kode] || 0) < 80);
 
-  return { pilih, terpakai, kurang, jumlahSaran };
+  return { pilih, terpakai, kurang, jumlahSaran, capai };
 }
 
 /** sidik nama barang yang dipakai rencana bulan tertentu — bahan penalti variasi */

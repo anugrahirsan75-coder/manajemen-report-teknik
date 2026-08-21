@@ -71,6 +71,8 @@ export default function SusunRencana({
   }, [buka, bulan, kapal]);
 
   const pembagi = modeJatah === "rata" ? Math.max(1, kapalBelum) : 1;
+  /** jatah satu Mata Anggaran untuk kapal ini = sisa pagunya dibagi kapal yang belum menyusun */
+  const jatahMA = (b: BarisKendali) => Math.max(0, (b.pagu - b.kapalLain - b.kapalIni) / pembagi);
 
   /** kandidat setelah suntingan jumlah/harga di layar ini */
   const denganUbahan = useMemo(() => kandidat.map((k) => ({
@@ -131,13 +133,18 @@ export default function SusunRencana({
         return n;
       });
     }
+    const jatahTotal = Object.values(sisa).reduce((s, v) => s + v, 0);
+    const dipakai = Object.values(h.terpakai).reduce((s, v) => s + v, 0);
+    const persen = jatahTotal ? Math.round((dipakai / jatahTotal) * 100) : 0;
     const kurang = h.kurang.filter((x) => x.sisa > 0);
     setPesan(
-      `${h.pilih.size} barang terpilih senilai ${rupiah(Object.values(h.terpakai).reduce((s, v) => s + v, 0))}`
-      + (modeJatah === "rata" ? ` (jatah ${kapal.replace("KMP. ", "")}: sisa pagu dibagi ${pembagi} kapal)` : "")
+      `${h.pilih.size} barang terpilih senilai ${rupiah(dipakai)} — ${persen}% dari jatah ${rupiah(jatahTotal)}`
+      + (modeJatah === "rata" ? ` (sisa pagu dibagi ${pembagi} kapal)` : "")
       + (variasi ? " · susunan divariasikan, tekan Acak ulang untuk kombinasi lain." : ".")
       + (kurang.length
-        ? ` Riwayat belum cukup untuk memenuhi ${kurang.map((k) => labelMA(k.kode)).join(", ")} — sisanya diketik sendiri.`
+        // riwayat Mata Anggaran ini terlalu sedikit/terlalu mahal untuk memenuhi jatahnya —
+        // yang menyusun perlu tahu MA mana, bukan cuma melihat angka totalnya kurang
+        ? ` Riwayat belum cukup untuk ${kurang.map((k) => `${labelMA(k.kode)} (${h.capai[k.kode] || 0}%)`).join(", ")} — sisanya diketik sendiri.`
         : ""));
   };
 
@@ -230,9 +237,23 @@ export default function SusunRencana({
                   <p className="mt-1 text-[10px] tabular-nums text-slate-500">
                     sisa {rupiah(b.sisa)} <span className="text-slate-400">dari {rupiah(b.pagu)}</span>
                     {pembagi > 1 && (
-                      <span className="text-indigo-600"> · jatah {rupiah(Math.max(0, (b.pagu - b.kapalLain - b.kapalIni) / pembagi))}</span>
+                      <span className="text-indigo-600"> · jatah {rupiah(jatahMA(b))}</span>
                     )}
                   </p>
+                  {/*
+                    Persen di pojok atas mengukur pemakaian terhadap pagu SELURUH armada,
+                    jadi angkanya selalu kecil untuk satu kapal. Yang perlu dilihat saat
+                    menyusun adalah seberapa penuh JATAH kapal ini — itu yang ditandai di sini.
+                  */}
+                  {jatahMA(b) > 0 && b.dipilih > 0 && (() => {
+                    const capai = Math.round((b.dipilih / jatahMA(b)) * 100);
+                    return (
+                      <p className={`mt-0.5 text-[10px] font-bold tabular-nums ${
+                        capai > 105 ? "text-rose-600" : capai >= 90 ? "text-emerald-600" : "text-amber-600"}`}>
+                        terisi {capai}% dari jatah · {rupiah(b.dipilih)}
+                      </p>
+                    );
+                  })()}
                 </button>
               );
             })}
