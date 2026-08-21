@@ -27,7 +27,7 @@ import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
-  kandidatDariRiwayat, paguPembanding, rencanaTersimpan, susunKendali,
+  kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, susunKendali,
 } from "@/lib/rr/usulanRiwayat";
 import { labelMA } from "@/lib/anggaran/types";
 
@@ -505,6 +505,11 @@ export default function RencanaPage() {
 
   const pembanding = useMemo(() => paguPembanding(plafon, rka, bulan), [plafon, rka, bulan]);
   const paguRka = pembanding.nilai;
+
+  /** barang yang sudah dipakai rencana bulan lalu kapal ini — bahan penalti variasi */
+  const dipakaiBulanLalu = useMemo(
+    () => (bulan ? namaDipakai(dok, bulanKe(bulan, -1), kapal) : new Set<string>()),
+    [dok, bulan, kapal]);
   const rencanaKapalLain = useMemo(
     () => rencanaTersimpan(dok, bulan, kapal), [dok, bulan, kapal]);
   const rencanaKapalIni = useMemo(
@@ -917,6 +922,7 @@ export default function RencanaPage() {
         kapalLain={rencanaKapalLain}
         kapalIni={rencanaKapalIni}
         kapalBelum={kapalBelumSusun}
+        dipakaiBulanLalu={dipakaiBulanLalu}
         tambah={tambahDariRiwayat}
       />
     </main>

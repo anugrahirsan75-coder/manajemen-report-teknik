@@ -25,7 +25,7 @@ export interface PilihanUsulan {
 }
 
 export default function SusunRencana({
-  buka, tutup, bulan, kapal, kandidat, pagu, kapalLain, kapalIni, kapalBelum, tambah,
+  buka, tutup, bulan, kapal, kandidat, pagu, kapalLain, kapalIni, kapalBelum, dipakaiBulanLalu, tambah,
 }: {
   buka: boolean;
   tutup: () => void;
@@ -37,6 +37,8 @@ export default function SusunRencana({
   kapalIni: Record<string, number>;
   /** kapal yang usulannya belum terisi bulan ini, termasuk kapal ini — dasar pembagian jatah */
   kapalBelum: number;
+  /** nama barang yang dipakai rencana bulan lalu — diberi penalti supaya usulan tak jadi salinan */
+  dipakaiBulanLalu?: Set<string>;
   tambah: (pilihan: PilihanUsulan[]) => void;
 }) {
   const [pilih, setPilih] = useState<Set<string>>(new Set());
@@ -48,13 +50,25 @@ export default function SusunRencana({
    * berikutnya menemukan pagunya sudah habis padahal belum menyusun apa pun.
    */
   const [modeJatah, setModeJatah] = useState<"rata" | "penuh">("rata");
+  /**
+   * Variasi menyala secara bawaan. Usulan yang tiap bulan sama persis — barang
+   * sama, jumlah sama, urutan sama — terbaca sebagai salinan bulan lalu, bukan
+   * sebagai perencanaan. Benihnya disimpan supaya susunan yang sama bisa
+   * ditampilkan ulang, dan tombol Acak ulang menggantinya.
+   */
+  const [variasi, setVariasi] = useState(true);
+  const [benih, setBenih] = useState(1);
   const [maSaring, setMaSaring] = useState("");
   const [pesan, setPesan] = useState("");
 
   useEffect(() => {
     if (!buka) return;
     setPilih(new Set()); setUbahan({}); setCari(""); setMaSaring(""); setPesan(""); setModeJatah("rata");
-  }, [buka]);
+    setVariasi(true);
+    // benih diturunkan dari bulan & kapal: membuka layar yang sama dua kali
+    // memberi susunan yang sama, tapi kapal lain tetap dapat susunan berbeda
+    setBenih(Array.from(`${bulan}|${kapal}`).reduce((s, c) => (s * 31 + c.charCodeAt(0)) >>> 0, 7));
+  }, [buka, bulan, kapal]);
 
   const pembagi = modeJatah === "rata" ? Math.max(1, kapalBelum) : 1;
 
@@ -104,12 +118,24 @@ export default function SusunRencana({
     /** jatah kapal ini = (pagu − rencana kapal lain − isi dokumen ini) dibagi kapal yang belum menyusun */
     const sisa: Record<string, number> = {};
     kendali.forEach((b) => { sisa[b.kode] = Math.max(0, (b.pagu - b.kapalLain - b.kapalIni) / pembagi); });
-    const h = isiOtomatis(denganUbahan, sisa, { sudahDipilih: pilih });
+    const h = isiOtomatis(denganUbahan, sisa, {
+      sudahDipilih: pilih, acak: variasi, benih, variasiJumlah: variasi, hindari: dipakaiBulanLalu,
+    });
     setPilih(h.pilih);
+    // jumlah hasil variasi ikut dipasang, bukan cuma dipakai menghitung —
+    // kalau tidak, nilai di layar akan beda dengan yang barusan dihitung
+    if (Object.keys(h.jumlahSaran).length) {
+      setUbahan((u) => {
+        const n = { ...u };
+        Object.entries(h.jumlahSaran).forEach(([id, jml]) => { n[id] = { ...n[id], jumlah: jml }; });
+        return n;
+      });
+    }
     const kurang = h.kurang.filter((x) => x.sisa > 0);
     setPesan(
       `${h.pilih.size} barang terpilih senilai ${rupiah(Object.values(h.terpakai).reduce((s, v) => s + v, 0))}`
-      + (modeJatah === "rata" ? ` (jatah ${kapal.replace("KMP. ", "")}: sisa pagu dibagi ${pembagi} kapal).` : ".")
+      + (modeJatah === "rata" ? ` (jatah ${kapal.replace("KMP. ", "")}: sisa pagu dibagi ${pembagi} kapal)` : "")
+      + (variasi ? " · susunan divariasikan, tekan Acak ulang untuk kombinasi lain." : ".")
       + (kurang.length
         ? ` Riwayat belum cukup untuk memenuhi ${kurang.map((k) => labelMA(k.kode)).join(", ")} — sisanya diketik sendiri.`
         : ""));
@@ -160,10 +186,23 @@ export default function SusunRencana({
                 <option value="penuh">seluruh sisa pagu</option>
               </select>
             </label>
+            <label className="flex items-center gap-1.5 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
+              title="Susunan & jumlah divariasikan, dan barang bulan lalu diberi penalti — supaya usulan tak tampak seperti salinan">
+              <input type="checkbox" className="accent-indigo-600" checked={variasi}
+                onChange={(e) => setVariasi(e.target.checked)} />
+              Variasi
+            </label>
             <button onClick={otomatis}
               className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-700">
               ⚡ Isi otomatis mendekati jatah
             </button>
+            {variasi && (
+              <button onClick={() => { setBenih((b) => (b * 1664525 + 1013904223) >>> 0); setPilih(new Set()); setUbahan({}); setPesan("Benih diganti — tekan Isi otomatis untuk kombinasi baru."); }}
+                title="Ganti kombinasi: barang dan jumlah yang terpilih akan berbeda"
+                className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-indigo-700 ring-1 ring-indigo-300 hover:bg-indigo-50 dark:bg-slate-800 dark:ring-indigo-800">
+                🎲 Acak ulang
+              </button>
+            )}
             {jumlahDipilih > 0 && (
               <button onClick={() => { setPilih(new Set()); setPesan(""); }}
                 className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-bold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">

@@ -8,9 +8,12 @@ Disimpan sebagai larik-dalam-larik + kamus (kategori/satuan/tren) supaya jauh
 lebih kecil daripada larik objek — berkasnya ikut masuk repo dan dimuat di sisi
 server, bukan dikirim ke peramban.
 """
-import json, re, collections, openpyxl
+import json, re, collections, os, sys, openpyxl
 
-SRC = r"D:/ASDP/01. ASDP TERNATE/2024 ASDP TERNATE/ASDP TERNATE/DATABASE HARGA/DATABASE HARGA RAB ASDP TERNATE.xlsx"
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from bersih_nama import bersih_nama
+
+SRC = r"D:/ASDP/01. ASDP TERNATE/2024 ASDP TERNATE/ASDP TERNATE/2026/RKA 2027/DATABASE HARGA RAB ASDP TERNATE.xlsx"
 OUT = "data/hargaIndex.json"
 SHEET = {"DB BARANG": "B", "DB JASA": "J", "SUKU CADANG MESIN": "S"}
 # uraian yang isinya cuma nomor surat/berkas — bukan nama barang
@@ -24,7 +27,7 @@ def idx(d, v):
     if v not in d: d[v] = len(d)
     return d[v]
 
-baris, buang, mutu = [], 0, collections.Counter()
+baris, buang, dibersihkan, mutu = [], 0, 0, collections.Counter()
 for sheet, jenis in SHEET.items():
     ws = wb[sheet]
     it = ws.iter_rows(min_row=1, max_row=1, values_only=True)
@@ -34,8 +37,13 @@ for sheet, jenis in SHEET.items():
     for r in ws.iter_rows(min_row=2, values_only=True):
         kode = g(r, "Kode")
         if not kode: continue
-        uraian = (str(g(r, "Uraian Barang / Jasa") or "")).replace("\n", " ").strip()
+        mentah = (str(g(r, "Uraian Barang / Jasa") or "")).replace(chr(10), " ").strip()
+        # NAMA BARANG saja yang masuk indeks: nomor surat, kata "Pengadaan",
+        # nama kapal, dan bulan dibuang. Daftar usulan menampilkan nama ini apa
+        # adanya, jadi narasi yang ikut terbawa akan terbaca di dokumen resmi.
+        uraian = bersih_nama(mentah)
         if len(uraian) < 3 or SAMPAH.match(uraian): buang += 1; continue
+        if uraian != mentah: dibersihkan += 1
         mutu[str(g(r, "Catatan Mutu Data") or "-")[:40]] += 1
         n = lambda k: (lambda v: round(v) if isinstance(v, (int, float)) else 0)(g(r, k))
         spek = (str(g(r, "Spesifikasi") or "")).replace("\n", " ").strip()
@@ -60,6 +68,6 @@ data = {
     "baris": baris,
 }
 json.dump(data, open(OUT, "w", encoding="utf8"), ensure_ascii=False, separators=(",", ":"))
-print(f"{OUT}: {len(baris)} item ({buang} baris nomor-surat dibuang) · "
-      f"{len(kat)} kategori · {len(sat)} satuan")
+print(f"{OUT}: {len(baris)} item ({buang} baris nomor-surat dibuang, "
+      f"{dibersihkan} nama dibersihkan) · {len(kat)} kategori · {len(sat)} satuan")
 for k, v in mutu.most_common(8): print(f"   mutu {v:>6}  {k}")

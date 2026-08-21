@@ -24,6 +24,7 @@ import { PengadaanRow } from "@/lib/anggaran/store";
 import { maKey, paguTotal } from "@/lib/anggaran/types";
 import { pecahKapal } from "@/lib/kapal/nama";
 import { namaKapalPenuh } from "@/lib/anggaran/types";
+import { bersihNamaItem } from "@/lib/harga/bersihNama";
 import { tentukanKelompok } from "./penempatan";
 import { RrDoc, bulanKe, totalPerMA } from "./types";
 
@@ -88,7 +89,15 @@ export function kandidatDariRiwayat(
       const tempat = tentukanKelompok(kode, p.nama || "", it.nama || "", it.spesifikasi || "");
       if (!tempat.kunci) continue;
 
-      const id = [kode, rapi(it.nama), rapi(it.spesifikasi), rapi(it.satuan)].join("|");
+      /**
+       * Nama barangnya dibersihkan lebih dulu. SPPBJ menulis judul pekerjaan
+       * ("Pengadaan Majun Kapal KMP. TUNA Juli 2026"), sedangkan Lampiran 3
+       * memuat nama BARANG — narasi yang ikut terbawa akan terbaca di dokumen
+       * yang dikirim ke pusat. Sidik jarinya juga memakai nama bersih, jadi
+       * barang sama yang ditulis berbeda-beda tiap bulan tetap terkumpul jadi satu.
+       */
+      const nama = bersihNamaItem(it.nama || "") || (it.nama || "").trim();
+      const id = [kode, rapi(nama), rapi(it.spesifikasi), rapi(it.satuan)].join("|");
       const ada = peta.get(id);
       if (ada) {
         ada.n++;
@@ -103,7 +112,7 @@ export function kandidatDariRiwayat(
       } else {
         peta.set(id, {
           id, kunci: tempat.kunci, kode, judul: tempat.judul,
-          deskripsi: it.nama || "(tanpa nama)",
+          deskripsi: nama || "(tanpa nama)",
           spesifikasi: it.spesifikasi || "",
           satuan: it.satuan || "",
           jumlah: it.jumlah || 1,
@@ -211,42 +220,98 @@ export interface HasilOtomatis {
   terpakai: Record<string, number>;
   /** MA yang pagunya masih jauh dari terisi setelah seluruh kandidat dicoba */
   kurang: { kode: string; sisa: number }[];
+  /** jumlah yang disarankan berbeda dari kebiasaan, dipakai layar untuk menampilkannya */
+  jumlahSaran: Record<string, number>;
 }
+
+export interface OpsiOtomatis {
+  batasPersen?: number;
+  sudahDipilih?: Set<string>;
+  /** susunan berbeda tiap kali diacak; tanpa ini hasilnya selalu daftar yang sama persis */
+  acak?: boolean;
+  /** benih keacakan — angka sama menghasilkan susunan sama, jadi bisa diulang */
+  benih?: number;
+  /** sidik nama barang yang dipakai rencana bulan sebelumnya (dari bersihNamaItem) */
+  hindari?: Set<string>;
+  /** jumlah ikut divariasikan ±20% supaya angkanya tak persis sama tiap bulan */
+  variasiJumlah?: boolean;
+}
+
+/** pengacak berbenih (mulberry32) — hasilnya bisa diulang, tak seperti Math.random */
+function pengacak(benih: number): () => number {
+  let a = (benih || 1) >>> 0;
+  return () => {
+    a = (a + 0x6D2B79F5) >>> 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+export const sidikNama = (s: string) => bersihNamaItem(s).toLowerCase().replace(/\s+/g, " ").trim();
 
 /**
  * Pilih kandidat sampai mendekati sisa pagu tiap Mata Anggaran.
  *
- * Urutannya bukan asal muat: barang yang paling sering dibeli dan paling baru
- * dibeli didahulukan, karena itulah kebutuhan yang paling mungkin berulang
- * bulan depan. Barang yang tak lagi muat DILEWATI, bukan menghentikan
- * pemilihan — satu barang mahal di tengah daftar tidak boleh mengubur
- * belasan barang kecil yang sebenarnya masih muat.
+ * Urutannya bukan asal muat: barang yang paling sering dan paling baru dibeli
+ * didahulukan, karena itulah kebutuhan yang paling mungkin berulang bulan depan.
  *
- * Sisa pagu sengaja tidak dihabiskan sampai nol: batas bawaan 97% menyisakan
- * ruang untuk pembulatan harga dan ongkos kirim yang baru muncul di SPPBJ.
+ * VARIASI. Menyalin bulan lalu bulat-bulat memang paling cepat, tapi usulan yang
+ * tiap bulan sama persis — barang sama, jumlah sama, urutan sama — terbaca
+ * sebagai salinan, bukan sebagai perencanaan. Maka:
+ *   · skor tiap barang dikalikan faktor acak 0,65–1,35, sehingga barang peringkat
+ *     tengah punya peluang naik dan susunannya berbeda tiap kali diacak;
+ *   · barang yang dipakai rencana BULAN LALU diberi penalti (bukan dilarang) —
+ *     kebutuhan pokok seperti pelumas tetap boleh muncul lagi, hanya tidak
+ *     mendominasi;
+ *   · jumlahnya digeser ±20% dari kebiasaan.
+ * Yang TIDAK ikut diacak: batas pagu. Berapa pun variasinya, total tetap tunduk
+ * pada jatah tiap Mata Anggaran.
+ *
+ * Barang yang tak lagi muat DILEWATI, bukan menghentikan pemilihan — satu barang
+ * mahal di tengah daftar tidak boleh mengubur belasan barang kecil yang masih muat.
  */
 export function isiOtomatis(
   kandidat: Kandidat[],
   sisaPerMA: Record<string, number>,
-  opsi: { batasPersen?: number; sudahDipilih?: Set<string> } = {},
+  opsi: OpsiOtomatis = {},
 ): HasilOtomatis {
   const batas = (opsi.batasPersen ?? 97) / 100;
   const pilih = new Set(opsi.sudahDipilih || []);
   const terpakai: Record<string, number> = {};
+  const jumlahSaran: Record<string, number> = {};
+  const acak = pengacak(opsi.benih ?? 1);
+  const hindari = opsi.hindari || new Set<string>();
 
-  // yang sudah dipilih sebelumnya tetap dihitung memakan pagu
   kandidat.forEach((k) => {
     if (pilih.has(k.id)) terpakai[k.kode] = (terpakai[k.kode] || 0) + nilaiKandidat(k);
   });
 
-  for (const k of kandidat) {
+  /** jumlah yang disarankan: kebiasaan, digeser sedikit bila variasi dinyalakan */
+  const jumlahUntuk = (k: Kandidat) => {
+    if (!opsi.variasiJumlah) return k.jumlah;
+    const geser = 0.8 + acak() * 0.4;                    // 80%–120%
+    return Math.max(1, Math.round((k.jumlah || 1) * geser));
+  };
+
+  const urut = opsi.acak
+    ? kandidat.map((k) => {
+      const bobotUlang = hindari.has(sidikNama(k.deskripsi)) ? 0.45 : 1;
+      const skor = (k.kali + 1) * bobotUlang * (0.65 + acak() * 0.7);
+      return { k, skor };
+    }).sort((a, b) => b.skor - a.skor).map((x) => x.k)
+    : kandidat;
+
+  for (const k of urut) {
     if (pilih.has(k.id)) continue;
     const langit = (sisaPerMA[k.kode] || 0) * batas;
     if (langit <= 0) continue;
-    const nilai = nilaiKandidat(k);
+    const jml = jumlahUntuk(k);
+    const nilai = jml * (k.harga || 0);
     if (!nilai) continue;
-    if ((terpakai[k.kode] || 0) + nilai > langit) continue;   // dilewati, bukan dihentikan
+    if ((terpakai[k.kode] || 0) + nilai > langit) continue;
     pilih.add(k.id);
+    if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
     terpakai[k.kode] = (terpakai[k.kode] || 0) + nilai;
   }
 
@@ -254,5 +319,17 @@ export function isiOtomatis(
     .map(([kode, sisa]) => ({ kode, sisa: sisa - (terpakai[kode] || 0) }))
     .filter((x) => x.sisa > 0 && (terpakai[x.kode] || 0) < x.sisa * 0.5);
 
-  return { pilih, terpakai, kurang };
+  return { pilih, terpakai, kurang, jumlahSaran };
+}
+
+/** sidik nama barang yang dipakai rencana bulan tertentu — bahan penalti variasi */
+export function namaDipakai(dok: RrDoc[], bulan: string, kapal: string): Set<string> {
+  const out = new Set<string>();
+  (dok || [])
+    .filter((d) => d.tipe === "rencana" && d.bulan === bulan && d.kapal === kapal)
+    .forEach((d) => (d.kelompok || []).forEach((g) => (g.items || []).forEach((i) => {
+      const s = sidikNama(i.deskripsi || "");
+      if (s) out.add(s);
+    })));
+  return out;
 }
