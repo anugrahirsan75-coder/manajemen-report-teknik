@@ -500,7 +500,8 @@ export default function RencanaPage() {
    * sendiri, bukan kebiasaan.
    */
   const kandidatRiwayat = useMemo(
-    () => (tipe === "rencana" && bulan ? kandidatDariRiwayat(pengadaan, kapal, bulan, 12) : []),
+    // riwayat 12 bulan, kapal ini DAN kapal lain (asalnya ditandai di layar susun)
+    () => (tipe === "rencana" && bulan ? kandidatDariRiwayat(pengadaan, kapal, bulan, 12, true) : []),
     [tipe, bulan, kapal, pengadaan]);
 
   const pembanding = useMemo(() => paguPembanding(plafon, rka, bulan), [plafon, rka, bulan]);
@@ -540,23 +541,70 @@ export default function RencanaPage() {
    * untuk mengenali baris hasil tarikan, dan usulan bukan tarikan — kalau diisi,
    * seluruh baris usulan akan dilaporkan sebagai dobel yang harus dirapikan.
    */
-  const tambahDariRiwayat = (pilihan: PilihanUsulan[]) => {
-    ubah((d) => {
-      pilihan.forEach((p) => {
-        const g = d.kelompok.find((x) => x.kunci === p.kandidat.kunci)
-          || d.kelompok[d.kelompok.length - 1];
-        if (!g) return;
-        (g.items ||= []).push({
-          id: uid(),
-          deskripsi: p.kandidat.deskripsi,
-          spesifikasi: p.kandidat.spesifikasi,
-          jumlah: p.jumlah, satuan: p.kandidat.satuan, harga: p.harga,
-        });
+  /**
+   * Pindah kapal dari dalam layar susun.
+   *
+   * Dokumen yang sedang dikerjakan DISIMPAN dulu: berpindah kapal mengganti
+   * salinan kerja, dan tanpa disimpan seluruh barang yang baru saja dimasukkan
+   * akan hilang tanpa jejak. Menyimpannya juga membuat jatah kapal berikutnya
+   * langsung berkurang — persis yang dibutuhkan saat menyusun kapal demi kapal.
+   */
+  const pindahKapalSusun = async (tujuan: string) => {
+    if (kerja && berubah && !terkunci) { try { await simpanDoc(); } catch { /* galat sudah tampil */ } }
+    setKapal(tujuan);
+  };
+
+  /** kapal berikutnya yang usulannya masih kosong bulan ini */
+  const kapalBerikut = (dari: string) => {
+    const urut = [...KAPAL_ANGGARAN.slice(KAPAL_ANGGARAN.indexOf(dari) + 1), ...KAPAL_ANGGARAN];
+    return urut.find((k) => k !== dari
+      && !dok.some((d) => d.tipe === "rencana" && d.bulan === bulan && d.kapal === k && totalDoc(d).total > 0)) || "";
+  };
+
+  const opsiKapalSusun = useMemo(() => KAPAL_ANGGARAN.map((k) => {
+    const d = dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === k);
+    const nilai = d ? totalDoc(d).total : 0;
+    return {
+      nama: k,
+      status: (d?.status === "terkirim" ? "terkirim" : nilai > 0 ? "draf" : "kosong") as "kosong" | "draf" | "terkirim",
+      nilai,
+    };
+  }), [dok, bulan]);
+
+  const tambahDariRiwayat = (pilihan: PilihanUsulan[], lanjut = false) => {
+    if (!kerja || terkunci) return;
+    /**
+     * Dokumen barunya dirakit di sini, bukan lewat ubah() lalu dibaca lagi dari
+     * state. Menyimpan sambil berpindah kapal harus memakai isi yang SUDAH
+     * memuat barang-barang ini — state React baru terbarui pada gambar ulang
+     * berikutnya, dan menyimpan salinan lama berarti seluruh pilihan hilang.
+     */
+    const salin: RrDoc = JSON.parse(JSON.stringify(kerja));
+    pilihan.forEach((p) => {
+      const g = salin.kelompok.find((x) => x.kunci === p.kandidat.kunci)
+        || salin.kelompok[salin.kelompok.length - 1];
+      if (!g) return;
+      (g.items ||= []).push({
+        id: uid(),
+        deskripsi: p.kandidat.deskripsi,
+        spesifikasi: p.kandidat.spesifikasi,
+        jumlah: p.jumlah, satuan: p.kandidat.satuan, harga: p.harga,
       });
     });
-    setBukaSusun(false);
-    setPesan(`${pilihan.length} barang masuk ke usulan — periksa jumlah & harganya, lalu simpan.`);
+    setKerja(salin);
+    setBerubah(true);
+    setPesan(`${pilihan.length} barang masuk ke usulan ${ringkasKapal(kapal)} — periksa jumlah & harganya, lalu simpan.`);
     setTimeout(() => setPesan(""), 5000);
+
+    if (!lanjut) { setBukaSusun(false); return; }
+    // disimpan dulu, baru pindah: jatah kapal berikutnya dihitung dari rencana
+    // kapal-kapal yang SUDAH tersimpan
+    const berikut = kapalBerikut(kapal);
+    void (async () => {
+      try { await simpanDoc(salin); } catch { /* galat sudah tampil di layar */ }
+      if (berikut) setKapal(berikut);
+      else { setBukaSusun(false); setPesan("Semua kapal bulan ini sudah punya usulan."); }
+    })();
   };
 
   const salinDari = (sumber?: RrDoc) => {
@@ -923,6 +971,8 @@ export default function RencanaPage() {
         kapalIni={rencanaKapalIni}
         kapalBelum={kapalBelumSusun}
         dipakaiBulanLalu={dipakaiBulanLalu}
+        kapalOpsi={opsiKapalSusun}
+        gantiKapal={(k) => { void pindahKapalSusun(k); }}
         tambah={tambahDariRiwayat}
       />
     </main>

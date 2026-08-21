@@ -46,6 +46,8 @@ export interface Kandidat {
   bulanTerakhir: string;
   bulanMuncul: string[];
   contohDokumen: string;
+  /** dari mana barang ini datang — menentukan urutan dan lencana di layar */
+  asal: "kapal" | "armada" | "db";
 }
 
 const rapi = (s: string) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -66,6 +68,14 @@ export function kandidatDariRiwayat(
   kapal: string,
   bulanTarget: string,
   bulanKeBelakang = 12,
+  /**
+   * Sertakan juga barang milik KAPAL LAIN. Riwayat satu kapal kerap cuma
+   * puluhan barang — tak cukup untuk menyusun usulan sebulan, apalagi setelah
+   * dibagi per Mata Anggaran. Armada memakai barang yang sebagian besar sama,
+   * jadi riwayat kapal lain adalah bahan yang sah; asalnya tetap ditandai
+   * supaya yang menyusun tahu itu bukan kebiasaan kapal ini sendiri.
+   */
+  semuaKapal = false,
 ): Kandidat[] {
   const batasAwal = bulanKe(bulanTarget, -Math.max(1, bulanKeBelakang));
   const peta = new Map<string, Kandidat & { totJumlah: number; totHarga: number; n: number }>();
@@ -81,7 +91,8 @@ export function kandidatDariRiwayat(
 
     for (const it of arr) {
       const kapals = pecahKapal(it.kapal || "").map(namaKapalPenuh);
-      if (!kapals.includes(kapal)) continue;
+      const milikKapal = kapals.includes(kapal);
+      if (!milikKapal && !semuaKapal) continue;
       const harga = hargaSatuan(it, adaFinal, kapals.length);
       if (!harga) continue;
 
@@ -100,6 +111,9 @@ export function kandidatDariRiwayat(
       const id = [kode, rapi(nama), rapi(it.spesifikasi), rapi(it.satuan)].join("|");
       const ada = peta.get(id);
       if (ada) {
+        // barang yang juga pernah dibeli kapal ini naik pangkat jadi "kapal":
+        // kebiasaan kapal sendiri lebih kuat daripada kebiasaan armada
+        if (milikKapal) { ada.asal = "kapal"; ada.kali = ada.kali; }
         ada.n++;
         ada.totJumlah += it.jumlah || 0;
         ada.totHarga += harga;
@@ -120,6 +134,7 @@ export function kandidatDariRiwayat(
           hargaRata: Math.round(harga),
           kali: 0, bulanTerakhir: bulan, bulanMuncul: [bulan],
           contohDokumen: `${p.sumber} ${p.nama}`,
+          asal: milikKapal ? "kapal" : "armada",
           totJumlah: it.jumlah || 0, totHarga: harga, n: 1,
         });
       }
@@ -136,7 +151,8 @@ export function kandidatDariRiwayat(
       hargaRata: Math.round(totHarga / Math.max(1, n)),
       bulanMuncul: k.bulanMuncul.sort(),
     };
-  }).sort((a, b) => b.kali - a.kali || b.bulanTerakhir.localeCompare(a.bulanTerakhir)
+  }).sort((a, b) => (a.asal === b.asal ? 0 : a.asal === "kapal" ? -1 : 1)
+    || b.kali - a.kali || b.bulanTerakhir.localeCompare(a.bulanTerakhir)
     || (b.jumlah * b.harga) - (a.jumlah * a.harga));
 }
 
@@ -304,11 +320,14 @@ export function isiOtomatis(
   };
 
   /** urutan pemilihan: sering & baru dibeli didahulukan, diacak bila variasi menyala */
+  /** riwayat kapal sendiri paling dipercaya, lalu armada, terakhir database harga */
+  const bobotAsal = (k: Kandidat) => (k.asal === "kapal" ? 1 : k.asal === "armada" ? 0.6 : 0.35);
+
   const urutkan = (isi: Kandidat[]) => (opsi.acak
     ? isi.map((k) => ({
-      k, skor: (k.kali + 1) * (hindari.has(sidikNama(k.deskripsi)) ? 0.45 : 1) * (0.65 + acak() * 0.7),
+      k, skor: (k.kali + 1) * bobotAsal(k) * (hindari.has(sidikNama(k.deskripsi)) ? 0.45 : 1) * (0.65 + acak() * 0.7),
     })).sort((a, b) => b.skor - a.skor).map((x) => x.k)
-    : isi);
+    : [...isi].sort((a, b) => bobotAsal(b) - bobotAsal(a)));
 
   /**
    * Boleh menambah satu satuan lagi? Ya bila hasilnya lebih dekat ke jatah
