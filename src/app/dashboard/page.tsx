@@ -865,7 +865,7 @@ function AnggaranRutin({ rkaData, plafon, pengadaan, onSave, onSaveRka, onExcel,
           </div>
         )}
         {adaRka && <span className="text-[11px] text-indigo-800 bg-indigo-50 ring-1 ring-indigo-200 rounded-full px-2 py-0.5">
-          RKA {bulan.slice(0, 4)} ikut ditampilkan{rka.manual ? " · sudah disesuaikan per bulan" : " · data acuan awal"} · pagu tetap dari Persetujuan Pusat
+          RKA {labelPeriode} ikut ditampilkan{rka.manual ? " · angka bulan itu sendiri, bukan bagi rata setahun" : " · data acuan awal"} · pagu tetap dari Persetujuan Pusat
         </span>}
         <span className="text-[11px] text-slate-500">realisasi = SPPBJ + Non PR PO ber-<b className="text-slate-700">Jenis Anggaran: Rutin</b>, per Mata Anggaran (Docking terpisah, tak overlap)</span>
         <div className="ml-auto flex items-center gap-2">
@@ -909,7 +909,7 @@ function AnggaranRutin({ rkaData, plafon, pengadaan, onSave, onSaveRka, onExcel,
 
       {/* KPI mini */}
       <div className={`grid grid-cols-2 ${adaRka ? "sm:grid-cols-5" : "sm:grid-cols-4"} gap-2 mb-3`}>
-        {adaRka && <MiniStat label={`RKA ${bulan.slice(0, 4)}`} val={rupiah(rka.total)} tint="text-indigo-800" bar="bg-indigo-500" />}
+        {adaRka && <MiniStat label={`RKA ${labelPeriode}`} val={rupiah(rka.total)} tint="text-indigo-800" bar="bg-indigo-500" />}
         <MiniStat label="Total Pagu" val={rupiah(totalPagu)} tint="text-slate-900" bar="bg-slate-400" />
         <MiniStat label="Terpakai" val={rupiah(totalPakai)} tint="text-blue-800" bar="bg-blue-600" />
         <MiniStat label="Sisa" val={rupiah(sisa)} tint={sisa < 0 ? "text-red-700" : "text-emerald-800"} bar={sisa < 0 ? "bg-red-500" : "bg-emerald-500"} />
@@ -983,7 +983,7 @@ function AnggaranRutin({ rkaData, plafon, pengadaan, onSave, onSaveRka, onExcel,
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className={TBL_HEAD}>
-              <tr><th className="p-2 text-left">Mata Anggaran</th>{adaRka && <th className="p-2 text-right" title={`RKA ${TAHUN_RKA} cabang — rencana awal, dibanding pagu Persetujuan Pusat`}>RKA</th>}<th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
+              <tr><th className="p-2 text-left">Mata Anggaran</th>{adaRka && <th className="p-2 text-right" title={`RKA ${labelPeriode} — rencana awal cabang untuk periode ini, dibanding pagu Persetujuan Pusat`}>RKA</th>}<th className="p-2 text-right">Pagu</th><th className="p-2 text-right">Terpakai</th><th className="p-2 text-right">Sisa</th><th className="p-2 text-right w-40">Serapan</th><th className="p-2 text-center">Status</th></tr>
             </thead>
             <tbody>
               {merged.map((m) => {
