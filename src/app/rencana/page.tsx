@@ -27,7 +27,7 @@ import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
-  kandidatDariRiwayat, paguBulan, rencanaTersimpan, susunKendali,
+  kandidatDariRiwayat, paguPembanding, rencanaTersimpan, susunKendali,
 } from "@/lib/rr/usulanRiwayat";
 import { labelMA } from "@/lib/anggaran/types";
 
@@ -54,7 +54,7 @@ const WARNA_TENGGAT: Record<string, string> = {
 
 export default function RencanaPage() {
   const { ready, loading, dok, simpan, hapus, reload, simpanErr } = useRR();
-  const { pengadaan, plafon } = useAnggaran();   // pengadaan: tarikan realisasi & riwayat usulan; plafon: pagu RKA
+  const { pengadaan, plafon, rka } = useAnggaran();   // pengadaan: tarikan realisasi & riwayat usulan; plafon: pagu RKA
   const [now, setNow] = useState<Date | null>(null);
   useEffect(() => { setNow(new Date()); }, []);   // hindari beda server/klien
 
@@ -503,7 +503,8 @@ export default function RencanaPage() {
     () => (tipe === "rencana" && bulan ? kandidatDariRiwayat(pengadaan, kapal, bulan, 12) : []),
     [tipe, bulan, kapal, pengadaan]);
 
-  const paguRka = useMemo(() => paguBulan(plafon, bulan), [plafon, bulan]);
+  const pembanding = useMemo(() => paguPembanding(plafon, rka, bulan), [plafon, rka, bulan]);
+  const paguRka = pembanding.nilai;
   const rencanaKapalLain = useMemo(
     () => rencanaTersimpan(dok, bulan, kapal), [dok, bulan, kapal]);
   const rencanaKapalIni = useMemo(
@@ -696,7 +697,13 @@ export default function RencanaPage() {
             <div className="min-w-[14rem]">
               <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">🎯 Kendali RKA — {namaBulan(bulan)}</h3>
               <p className="text-[11px] text-slate-500">
-                Total usulan seluruh kapal diukur terhadap pagu rutin bulan ini, bukan per kapal sendiri-sendiri.
+                Total usulan seluruh kapal diukur terhadap {pembanding.sumber === "rka" ? "RKA" : "pagu rilis"} bulan ini,
+                bukan per kapal sendiri-sendiri.{" "}
+                {pembanding.sumber === "rka" && (
+                  <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-bold text-amber-800">
+                    pagu belum rilis — dipakai RKA
+                  </span>
+                )}
               </p>
             </div>
             <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
@@ -732,8 +739,8 @@ export default function RencanaPage() {
             </div>
           ) : (
             <p className="mt-3 rounded-lg bg-amber-50 px-3 py-2 text-[11px] text-amber-800 ring-1 ring-amber-200">
-              Pagu {namaBulan(bulan)} belum ada di Dashboard Anggaran, jadi kendali RKA belum bisa dihitung.
-              Isi dulu pagunya supaya total usulan seluruh kapal punya pembanding.
+              {namaBulan(bulan)} belum punya pagu rilis maupun RKA di Dashboard Anggaran, jadi kendalinya belum bisa
+              dihitung. Isi salah satunya supaya total usulan seluruh kapal punya pembanding.
             </p>
           )}
         </div>

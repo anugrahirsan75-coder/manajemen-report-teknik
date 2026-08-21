@@ -160,6 +160,24 @@ export function paguBulan(plafon: any[], bulan: string): Record<string, number> 
   return out;
 }
 
+/**
+ * Pembanding yang dipakai layar: pagu rilis bila sudah ada, kalau belum RKA.
+ *
+ * Rencana disusun JAUH sebelum pagu bulan itu dirilis pusat — rencana September
+ * & Oktober ditulis paling lambat 22 Agustus, sedangkan rilisnya belum tentu
+ * turun. Tanpa cadangan ini, layar kendali kosong justru pada bulan yang sedang
+ * disusun, dan penyusunnya kehilangan satu-satunya pembanding yang dia punya.
+ */
+export function paguPembanding(
+  plafon: any[], rka: { bulanan?: Record<string, Record<string, number>> } | null, bulan: string,
+): { nilai: Record<string, number>; sumber: "rilis" | "rka" | "kosong" } {
+  const rilis = paguBulan(plafon, bulan);
+  if (Object.values(rilis).some((v) => v > 0)) return { nilai: rilis, sumber: "rilis" };
+  const dariRka = (rka?.bulanan || {})[bulan] || {};
+  if (Object.values(dariRka).some((v) => v > 0)) return { nilai: { ...dariRka }, sumber: "rka" };
+  return { nilai: {}, sumber: "kosong" };
+}
+
 /** total rencana yang sudah tersimpan pada bulan itu, per MA — kapal tertentu bisa dikecualikan */
 export function rencanaTersimpan(dok: RrDoc[], bulan: string, kecualiKapal?: string): Record<string, number> {
   const out: Record<string, number> = {};
