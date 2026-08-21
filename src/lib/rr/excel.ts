@@ -33,6 +33,14 @@ export interface DataRR {
   maUrut: { kode: string; ma: string }[];
   usulan: XLembar[];
   realisasi: XLembar[];
+  /** RKA bulan rencana per kapal per Mata Anggaran (dari RKA tahun berjalan) */
+  rkaKapal?: Record<string, Record<string, number>>;
+  /** pagu rilis bulan rencana, dialokasikan per kapal menurut porsi RKA-nya */
+  rkacKapal?: Record<string, Record<string, number>>;
+  /** pagu rilis bulan sebelumnya, dialokasikan dengan cara yang sama */
+  persetujuanLaluKapal?: Record<string, Record<string, number>>;
+  /** keterangan asal angka ketiga kolom itu, ditulis di kaki lembar */
+  sumberPagu?: string;
 }
 
 const amanSheet = (s: string) => (s || "Sheet").replace(/[\\/*?:\[\]']/g, "-").slice(0, 31).trim();
@@ -189,7 +197,8 @@ export async function buatExcelRR(d: DataRR): Promise<Uint8Array> {
   d.usulan.forEach((l) => sheetUsl.set(l.kapal, lembarKapal(wb, l, "USL", `Rencana ${d.bulanRencana}`, BIRU)));
   d.realisasi.forEach((l) => sheetReal.set(l.kapal, lembarKapal(wb, l, "REAL", `Realisasi ${d.bulanRealisasi}`, HIJAU)));
 
-  kop(wr, d.judul, `dicetak ${d.dicetak} · angka ditarik otomatis (SUMIFS) dari lembar USL/REAL tiap kapal — kolom RKA, RKAC & Persetujuan Bulan Lalu diisi manual sesuai rilis pusat`, 8, BIRU);
+  kop(wr, d.judul, `dicetak ${d.dicetak} · realisasi & usulan ditarik otomatis (SUMIFS) dari lembar USL/REAL tiap kapal`
+    + ` — RKA, RKAC & Persetujuan Bulan Lalu diisi dari data anggaran aplikasi`, 8, BIRU);
   const kepala = ["Kapal", "Mata Anggaran", "RKA", "RKAC BULAN INI", "PERSETUJUAN BULAN LALU", `REALISASI ${d.bulanRealisasi.toUpperCase()}`, `USULAN PROGRAM PERAWATAN ${d.bulanRencana.toUpperCase()}`, "Lembar"];
   const hr = wr.getRow(6);
   kepala.forEach((t, i) => {
@@ -212,6 +221,15 @@ export async function buatExcelRR(d: DataRR): Promise<Uint8Array> {
       const row = wr.getRow(r);
       row.getCell(1).value = kapal;
       row.getCell(2).value = m.ma;
+      // kolom RKA / RKAC / Persetujuan bulan lalu: angka, bukan rumus — sumbernya
+      // di luar berkas ini (RKA tahun berjalan & rilis pusat), jadi tak ada
+      // lembar yang bisa dirujuk
+      const rka = d.rkaKapal?.[kapal]?.[m.kode] || 0;
+      const rkac = d.rkacKapal?.[kapal]?.[m.kode] || 0;
+      const lalu = d.persetujuanLaluKapal?.[kapal]?.[m.kode] || 0;
+      if (rka) row.getCell(3).value = rka;
+      if (rkac) row.getCell(4).value = rkac;
+      if (lalu) row.getCell(5).value = lalu;
       row.getCell(6).value = sr ? { formula: `SUMIFS('${sr}'!$H:$H,'${sr}'!$A:$A,$B${r})` } : 0;
       row.getCell(7).value = su ? { formula: `SUMIFS('${su}'!$H:$H,'${su}'!$A:$A,$B${r})` } : 0;
       [3, 4, 5, 6, 7].forEach((c) => angka(row.getCell(c)));
@@ -257,7 +275,8 @@ export async function buatExcelRR(d: DataRR): Promise<Uint8Array> {
   const n = wr.getCell(rN, 1);
   n.value =
     `Kolom REALISASI & USULAN ditarik otomatis dari lembar REAL/USL tiap kapal (SUMIFS pada baris Mata Anggaran) — memperbaiki satu item di lembar kapal langsung mengubah angka di sini.\n` +
-    `Kolom RKA, RKAC BULAN INI, dan PERSETUJUAN BULAN LALU diisi manual mengikuti rilis budget dari kantor pusat (dirilis per 2 bulan).`;
+    (d.sumberPagu
+      || `Kolom RKA, RKAC BULAN INI, dan PERSETUJUAN BULAN LALU diisi dari data anggaran aplikasi.`);
   n.font = { name: "Calibri", size: 9, color: { argb: "FF1E3A8A" } };
   n.alignment = { wrapText: true, vertical: "top" };
   n.fill = { type: "pattern", pattern: "solid", fgColor: { argb: LANGIT } };

@@ -138,6 +138,8 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <NavLink href="/armada" icon="⚓" label="Profil Armada" desc="Lihat spesifikasi & inventaris" active={path.startsWith("/armada")} onNavigate={onNavigate} />
         <NavLink href="/kapal" icon="🚢" label="Ship Database" desc="Isi & edit data kapal" active={path.startsWith("/kapal")} onNavigate={onNavigate} />
 
+        <NavLink href="/database-rab" icon="🗃️" label="Database RAB" desc="Harga acuan barang, jasa &amp; suku cadang 2024–2026" active={path.startsWith("/database-rab")} onNavigate={onNavigate} />
+
         <SectionLabel>Dokumen</SectionLabel>
         <NavLink href="/surat" icon="✉️" label="Buat Surat E-Office" desc="Badan surat siap tempel ke e-office" active={path.startsWith("/surat")} onNavigate={onNavigate} />
 

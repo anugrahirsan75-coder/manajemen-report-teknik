@@ -32,7 +32,7 @@ HANYA_NOMOR = re.compile(r"^[\d\W]{0,6}\d{2,4}\s*[/.]\s*[A-Z]{2,}[A-Z0-9./\-]*\s
 NARASI_DEPAN = re.compile(
     r"^\s*(?:jasa\s+)?(?:pengadaan|belanja|pembelian|penyediaan|pekerjaan|biaya|"
     r"paketisasi|perawatan\s+rutin|perawatan|pemeliharaan|perbaikan\s+rutin|"
-    r"kebutuhan|usulan|permintaan|penggantian\s+rutin)\s+"
+    r"kebutuhan|usulan|permintaan|penggantian\s+rutin|barang\s+rutin|jasa\s+rutin)\s+"
     r"(?:barang\s+|jasa\s+|rutin\s+)?", re.I)
 
 # ekor: nama kapal, bulan, tahun, kata "kapal" yang menggantung
@@ -59,7 +59,8 @@ KATA_KELOMPOK = re.compile(
     r"^(?:mesin|deck|dek|kamar\s+mesin|permesinan|kelistrikan|listrik|akomodasi|"
     r"perlengkapan|peralatan|alat\s+kerja(?:\s+mesin|\s+deck)?|alat\s+keselamatan"
     r"(?:\s+dan\s+navigasi)?|keselamatan|navigasi|kebersihan|cleaning|consumable|"
-    r"filter|suku\s+cadang|persiapan|pelumas|oli|cat|labour|material|umum|lain[\s-]*lain)"
+    r"filter|suku\s+cadang|persiapan|pelumas|oli|cat|labour|material|umum|lain[\s-]*lain|"
+    r"barang(?:\s+rutin)?|jasa(?:\s+rutin)?|rutin|bahan)"
     r"(?:\s+(?:kapal|mesin|deck|dek|bagian\s+\w+|tambahan|rutin))*$", re.I)
 
 def _buang_awalan_kelompok(t: str) -> str:
@@ -114,6 +115,35 @@ def bersih_nama(mentah: str) -> str:
     return t
 
 
+def bersih_spek(spek: str, uraian: str = "") -> str:
+    """
+    Spesifikasi saja.
+
+    Kolom spesifikasi di berkas RAB kerap kejatuhan isian lain: nama kapal,
+    bulan, bahkan nama barangnya sendiri diulang. Yang begitu lebih baik kosong
+    daripada menyesatkan — pembacanya akan mengira "Majun" punya spesifikasi
+    "KMP. GORANGO".
+    """
+    t = SPASI.sub(" ", (spek or "").replace(chr(10), " ")).strip()
+    if not t:
+        return ""
+    # nama kapal saja, atau nama kapal di ujung
+    if re.match(r"^(?:kmp|km|bus\s*air)\.?\s+[A-Za-z][A-Za-z .'/]*$", t, re.I):
+        return ""
+    t = EKOR_KAPAL.sub("", t)
+    t = EKOR_BULAN.sub("", t)
+    for pola in CATATAN:
+        t = pola.sub(" ", t)
+    t = SISA_TANDA.sub("", SPASI.sub(" ", t)).strip()
+    # pengulangan nama barangnya sendiri
+    if uraian and t.lower() == uraian.strip().lower():
+        return ""
+    # sisa yang tak bermakna: angka polos, satu huruf, tanda baca
+    if len(t) < 2 or re.fullmatch(r"[\d\W]+", t):
+        return ""
+    return t
+
+
 if __name__ == "__main__":
     contoh = [
         "035/TN.202/ASDP-TTE/2024 - Oli Filter",
@@ -129,6 +159,11 @@ if __name__ == "__main__":
         "PERAWATAN MESIN - Amplas/kertas Gosok 600",
         "Paketisasi Perawatan Kebersihan Kapal Bagian Mesin Bln Februari 2026",
         "Pemeliharaan Alat Keselamatan dan Navigasi - Mata Gergaji",
+        "Barang Rutin - Isolasi Listrik",
     ]
     for c in contoh:
         print(f"{c!r:70} -> {bersih_nama(c)!r}")
+    print()
+    for s, u in [("KMP. GORANGO", "Majun"), ("Sikat Kloset", "Sikat Kloset"),
+                 ("Setara Daikin", "AC 1 PK"), ("Racor2020 - KMP. TUNA", "Filter Solar"), ("-", "Keset")]:
+        print(f"spek {s!r:28} pada {u!r:16} -> {bersih_spek(s, u)!r}")

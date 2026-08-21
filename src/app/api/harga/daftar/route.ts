@@ -29,14 +29,18 @@ export async function GET(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   const kategori = (sp.get("kategori") || "").split("|").map((s) => s.trim()).filter(Boolean);
   const batas = Math.min(400, Math.max(10, parseInt(sp.get("batas") || "150", 10) || 150));
+  const lewati = Math.max(0, parseInt(sp.get("lewati") || "0", 10) || 0);
   const hargaMaks = Number(sp.get("hargaMaks") || 0);
+  const jenis = (sp.get("jenis") || "").toUpperCase();      // B | J | S
+  const minData = Math.max(1, parseInt(sp.get("minData") || "2", 10) || 2);
 
   const pilih: { b: any[]; skor: number }[] = [];
   for (const b of db.baris) {
     const kat = db.kamus.kategori[b[2]] || "";
     if (kategori.length && !kategori.includes(kat)) continue;
+    if (jenis && b[1] !== jenis) continue;
     const n = b[6] || 0;
-    if (n < 2) continue;                                   // harga kejadian tunggal
+    if (n < minData) continue;                             // harga kejadian tunggal
     const harga = b[12] || b[11] || 0;                     // 2026, lalu 2025
     if (!harga) continue;
     if (hargaMaks && harga > hargaMaks) continue;          // tak mungkin muat di jatah
@@ -47,7 +51,7 @@ export async function GET(req: NextRequest) {
   return NextResponse.json({
     ok: true,
     total: pilih.length,
-    hasil: pilih.slice(0, batas).map((x) => keHasil(db, x.b)),
+    hasil: pilih.slice(lewati, lewati + batas).map((x) => keHasil(db, x.b)),
     kategori: db.kamus.kategori,
   });
 }

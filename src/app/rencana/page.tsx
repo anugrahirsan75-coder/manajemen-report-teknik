@@ -794,7 +794,7 @@ export default function RencanaPage() {
       // dokumen yang sedang dilihat (buka Realisasi Juli -> REAL Juli, bukan Juni).
       const bulanRencana = tipe === "realisasi" ? bulanKe(bulan, 1) : bulan;
       const bulanRealisasi = tipe === "realisasi" ? bulan : bulanKe(bulan, -1);
-      await exportRrExcel({ bulanRencana, bulanRealisasi, dok });
+      await exportRrExcel({ bulanRencana, bulanRealisasi, dok, rka, plafon });
     } catch (e: any) {
       setPesan(`Gagal export: ${e?.message || e}`);
     } finally { setXlsSibuk(false); }

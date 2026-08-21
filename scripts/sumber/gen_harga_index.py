@@ -11,7 +11,7 @@ server, bukan dikirim ke peramban.
 import json, re, collections, os, sys, openpyxl
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from bersih_nama import bersih_nama
+from bersih_nama import bersih_nama, bersih_spek
 
 SRC = r"D:/ASDP/01. ASDP TERNATE/2024 ASDP TERNATE/ASDP TERNATE/2026/RKA 2027/DATABASE HARGA RAB ASDP TERNATE.xlsx"
 OUT = "data/hargaIndex.json"
@@ -46,8 +46,10 @@ for sheet, jenis in SHEET.items():
         if uraian != mentah: dibersihkan += 1
         mutu[str(g(r, "Catatan Mutu Data") or "-")[:40]] += 1
         n = lambda k: (lambda v: round(v) if isinstance(v, (int, float)) else 0)(g(r, k))
-        spek = (str(g(r, "Spesifikasi") or "")).replace("\n", " ").strip()
-        merk = (str(g(r, "Merk / Tipe Mesin") or "")).replace("\n", " ").strip()
+        # spesifikasi ikut dibersihkan: kolom ini kerap kejatuhan nama kapal,
+        # bulan, atau nama barangnya sendiri yang diulang
+        spek = bersih_spek(str(g(r, "Spesifikasi") or ""), uraian)
+        merk = bersih_spek(str(g(r, "Merk / Tipe Mesin") or ""), uraian)
         part = (str(g(r, "Part Number") or "")).strip()
         baris.append([
             str(kode), jenis, idx(kat, str(g(r, "Kategori") or "")), uraian[:160],

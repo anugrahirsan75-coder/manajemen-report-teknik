@@ -135,6 +135,12 @@ export interface RKA {
   nilai: Record<string, number>; // kode MA -> nilai disetujui
   /** Penyesuaian RKA rutin per bulan: YYYY-MM -> kode MA -> nilai. */
   bulanan?: Record<string, Record<string, number>>;
+  /**
+   * RKA rutin per KAPAL: YYYY-MM -> nama kapal -> kode MA -> nilai.
+   * Dipakai Lampiran 3, yang memang disusun per kapal — tanpa ini kolom RKA di
+   * Budget Control cuma bisa diisi angka cabang yang dibagi-bagi menebak.
+   */
+  bulananKapal?: Record<string, Record<string, Record<string, number>>>;
   catatan?: string;
 }
 
