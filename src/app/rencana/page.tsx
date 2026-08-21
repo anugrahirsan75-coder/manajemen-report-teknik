@@ -638,7 +638,7 @@ export default function RencanaPage() {
       judul: `Isi usulan ${belum.length} kapal sekaligus?`,
       pesan: `${namaBulan(bulan)} · tiap kapal diisi sampai mendekati jatahnya, lalu disimpan.`,
       rincian: [
-        `Sumber: riwayat kapal${opsi.armada ? " + riwayat armada" : ""}${opsi.db ? " + database harga" : ""}`,
+        `Sumber: riwayat kapal${opsi.armada ? " + riwayat armada" : ""}${opsi.db ? " + Database RAB" : ""}`,
         dilewati ? `${dilewati} kapal dilewati karena sudah ada isinya` : "Semua kapal masih kosong",
         `Pembanding: ${pembanding.sumber === "rka" ? "RKA" : "pagu rilis"} ${rupiah(totalKendali.pagu)}`,
       ],
@@ -654,7 +654,7 @@ export default function RencanaPage() {
     /** barang database harga per Mata Anggaran — diambil sekali, dipakai semua kapal */
     const dbPerMA: Record<string, Kandidat[]> = {};
     if (opsi.db) {
-      setIsiSemuaSibuk("Memuat database harga…");
+      setIsiSemuaSibuk("Memuat Database RAB…");
       for (const kode of Object.keys(paguRka)) {
         const kel = KELOMPOK_RR.find((x) => x.kode === kode);
         const kat = KATEGORI_DB[kode];
@@ -669,7 +669,7 @@ export default function RencanaPage() {
             deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
             jumlah: 1, harga: Math.round(h.h2026 || h.h2025 || h.median || 0),
             hargaRata: Math.round(h.median || 0), kali: 0, bulanTerakhir: "", bulanMuncul: [],
-            contohDokumen: `database harga · ${h.n || 0} data`, asal: "db" as const,
+            contohDokumen: `Database RAB · ${h.n || 0} data`, asal: "db" as const,
           })).filter((x: Kandidat) => x.harga > 0);
         } catch { dbPerMA[kode] = []; }
       }

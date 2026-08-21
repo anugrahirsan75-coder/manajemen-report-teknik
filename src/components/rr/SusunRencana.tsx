@@ -121,6 +121,24 @@ export default function SusunRencana({
       "Zinc Anode & Proteksi Katodik", "Blasting & Persiapan Permukaan"],
   }), []);
 
+  /**
+   * Peta balik: kategori database -> Mata Anggaran. Tanpa ini, barang yang
+   * dimasukkan lewat pencarian jatuh ke kelompok pertama (Pelumas) apa pun
+   * isinya — kunci pas pun tercatat sebagai pelumas.
+   */
+  const maDariKategori = useMemo(() => {
+    const peta: Record<string, string> = {};
+    Object.entries(KATEGORI_MA).forEach(([kode, daftar]) =>
+      daftar.forEach((kat) => { if (!peta[kat]) peta[kat] = kode; }));
+    return peta;
+  }, [KATEGORI_MA]);
+
+  /** kelompok Lampiran 3 yang paling pas untuk satu baris database */
+  const kelompokUntuk = (kategori?: string) => {
+    const kode = (kategori && maDariKategori[kategori]) || maSaring || "";
+    return KELOMPOK_RR.find((k) => k.kode === kode) || KELOMPOK_RR[0];
+  };
+
   /** ambil barang database harga untuk Mata Anggaran yang punya jatah */
   useEffect(() => {
     if (!buka || !pakaiDb) { if (!pakaiDb) setKandidatDb([]); return; }
@@ -147,7 +165,7 @@ export default function SusunRencana({
               deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
               jumlah: 1, harga, hargaRata: Math.round(h.median || harga),
               kali: 0, bulanTerakhir: "", bulanMuncul: [],
-              contohDokumen: `database harga · ${h.n || 0} data`, asal: "db",
+              contohDokumen: `Database RAB · ${h.n || 0} data`, asal: "db",
             });
           });
         }
@@ -244,7 +262,7 @@ export default function SusunRencana({
 
   /** masukkan satu baris database harga sebagai barang usulan */
   const tambahDariDb = (h: any) => {
-    const kel = KELOMPOK_RR.find((k) => !maSaring || k.kode === maSaring) || KELOMPOK_RR[0];
+    const kel = kelompokUntuk(h.kategori);
     const id = `ketik-db-${h.kode}-${Math.random().toString(36).slice(2, 6)}`;
     // harga tahun berjalan kalau ada; kalau tidak, median seluruh riwayatnya —
     // harga 2024 pada barang yang tak pernah dibeli lagi jelas sudah usang
@@ -254,7 +272,7 @@ export default function SusunRencana({
       deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
       jumlah: 1, harga: Math.round(harga), hargaRata: Math.round(h.median || harga),
       kali: 0, bulanTerakhir: "", bulanMuncul: [],
-      contohDokumen: `database harga · ${h.n || 0} data`, asal: "db",
+      contohDokumen: `Database RAB · ${h.n || 0} data`, asal: "db",
     }, ...m]);
     setPilih((s) => new Set([...Array.from(s), id]));
   };
@@ -512,19 +530,19 @@ export default function SusunRencana({
             Riwayat armada
           </label>
           <label className="flex items-center gap-1 text-[11px] font-semibold text-slate-600 dark:text-slate-300"
-            title="Sertakan barang dari database harga RAB 2024–2026, disaring menurut Mata Anggaran dan jatah">
+            title="Sertakan seluruh barang Database RAB yang cocok dengan Mata Anggaran ini dan masih muat di jatah">
             <input type="checkbox" className="accent-indigo-600" checked={pakaiDb}
               onChange={(e) => setPakaiDb(e.target.checked)} />
-            Database harga
+            Database RAB{kandidatDb.length ? ` (${kandidatDb.length})` : ""}
           </label>
           <button onClick={() => setBukaDb((v) => !v)}
-            title="Cari barang di database harga RAB — 60 ribu item hasil pemindaian berkas 2024-2026"
+            title="Cari barang di Database RAB — 60 ribu item hasil pemindaian berkas 2024–2026"
             className={`rounded-lg px-2.5 py-1.5 text-[11px] font-extrabold ring-1 transition ${
               bukaDb ? "bg-indigo-600 text-white ring-indigo-600" : "bg-white text-indigo-700 ring-indigo-300 hover:bg-indigo-50 dark:bg-slate-900 dark:ring-indigo-800"}`}>
-            🔎 Cari di database harga
+            🔎 Cari di Database RAB
           </button>
           <button onClick={tambahManual}
-            title="Barang yang belum pernah ada di riwayat maupun database — diketik sendiri"
+            title="Barang yang belum ada di riwayat maupun Database RAB — diketik sendiri"
             className="rounded-lg bg-white px-2.5 py-1.5 text-[11px] font-extrabold text-indigo-700 ring-1 ring-indigo-300 hover:bg-indigo-50 dark:bg-slate-900 dark:ring-indigo-800">
             + Tambah barang
           </button>
@@ -536,10 +554,10 @@ export default function SusunRencana({
           <div className="border-b bg-indigo-50/60 px-5 py-3 dark:border-slate-700 dark:bg-indigo-950/20">
             <div className="flex flex-wrap items-center gap-2">
               <input value={cariDb} onChange={(e) => setCariDb(e.target.value)} autoFocus
-                placeholder="Ketik nama barang — mis. filter oli, majun, lampu navigasi…"
+                placeholder="Cari di Database RAB — mis. filter oli, majun, lampu navigasi…"
                 className="w-80 rounded-lg border border-indigo-300 px-3 py-1.5 text-xs outline-none focus:border-indigo-500 dark:border-indigo-800 dark:bg-slate-900" />
               <span className="text-[11px] text-slate-500">
-                {sibukDb ? "mencari…" : cariDb.trim().length < 2 ? "ketik minimal dua huruf"
+                {sibukDb ? "mencari…" : cariDb.trim().length < 2 ? "ketik minimal dua huruf — hasilnya masuk ke kelompok Lampiran 3 yang sesuai kategorinya"
                   : `${hasilDb.length} barang ditemukan · harga acuan dari berkas RAB 2024–2026`}
               </span>
             </div>
