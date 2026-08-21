@@ -27,11 +27,25 @@ import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
-  kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, susunKendali,
+  Kandidat, isiOtomatis, kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, susunKendali,
 } from "@/lib/rr/usulanRiwayat";
 import { labelMA } from "@/lib/anggaran/types";
 
 const uid = () => Math.random().toString(36).slice(2, 9);
+
+/**
+ * Mata Anggaran -> kategori database harga. Sama dengan yang dipakai layar
+ * susun; tanpa peta ini pelumas akan diusulkan sebagai suku cadang permesinan.
+ */
+const KATEGORI_DB: Record<string, string[]> = {
+  "5010303001": ["Bahan Bakar & Pelumas"],
+  "5010403009": ["Akomodasi & Interior Deck", "Bahan Kebersihan & Pantry", "Alat Keselamatan",
+    "Alat Navigasi & Komunikasi", "Perlengkapan Kapal & Tali Temali", "Alat Kerja & Consumable"],
+  "5010403100": ["Suku Cadang Mesin", "Permesinan & Kelistrikan", "Kelistrikan & Penerangan",
+    "Perpipaan & Katup", "Alat Kerja & Consumable"],
+  "5010403003": ["Konstruksi, Replating & Fabrikasi", "Cat, Thinner & Material Coating",
+    "Zinc Anode & Proteksi Katodik", "Blasting & Persiapan Permukaan"],
+};
 const barisKosong = (): RrItem => ({ id: uid(), deskripsi: "", spesifikasi: "", jumlah: 0, satuan: "", harga: 0 });
 
 const docBaru = (tipe: TipeRR, bulan: string, kapal: string): RrDoc => ({
@@ -561,6 +575,33 @@ export default function RencanaPage() {
       && !dok.some((d) => d.tipe === "rencana" && d.bulan === bulan && d.kapal === k && totalDoc(d).total > 0)) || "";
   };
 
+  /**
+   * Rekap per kapal: berapa jatah RKA-nya bulan ini dan berapa yang sudah
+   * diusulkan. Selama ini angka itu cuma bisa dilihat satu per satu dengan
+   * mengeklik tiap kapal — padahal pertanyaan yang selalu muncul justru
+   * "armada ini sudah mengusulkan berapa, dan siapa yang belum".
+   */
+  const rekapKapal = useMemo(() => {
+    const totalRka = Object.values(paguRka).reduce((s, v) => s + v, 0);
+    const baris = KAPAL_ANGGARAN.map((k) => {
+      const d = dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === k);
+      const usulan = d ? totalDoc(d).total : 0;
+      const status: "terkirim" | "draf" | "kosong" =
+        d?.status === "terkirim" ? "terkirim" : usulan > 0 ? "draf" : "kosong";
+      return { kapal: k, usulan, status };
+    });
+    const dipakai = baris.reduce((s, b) => s + b.usulan, 0);
+    // jatah rata dihitung dari SISA pagu dibagi kapal yang belum menyusun —
+    // sama dengan angka yang dipakai layar susun, supaya tak ada dua versi
+    const belum = baris.filter((b) => b.usulan <= 0).length;
+    // begitu semua kapal terisi, pembandingnya bukan lagi "sisa dibagi yang belum"
+    // (yang tinggal nol), melainkan bagian rata tiap kapal atas seluruh pagu
+    const jatah = belum > 0
+      ? Math.max(0, totalRka - dipakai) / belum
+      : totalRka / Math.max(1, baris.length);
+    return { baris, totalRka, dipakai, sisa: totalRka - dipakai, belum, jatah };
+  }, [dok, bulan, paguRka]);
+
   const opsiKapalSusun = useMemo(() => KAPAL_ANGGARAN.map((k) => {
     const d = dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === k);
     const nilai = d ? totalDoc(d).total : 0;
@@ -570,6 +611,116 @@ export default function RencanaPage() {
       nilai,
     };
   }), [dok, bulan]);
+
+  /**
+   * Isi usulan SELURUH kapal yang masih kosong, sekali jalan.
+   *
+   * Dikerjakan berurutan, bukan serentak: jatah tiap kapal dihitung dari sisa
+   * pagu SETELAH kapal-kapal sebelumnya terisi. Kalau dijalankan serentak,
+   * ketiga belas kapal akan sama-sama mengira pagunya masih utuh dan totalnya
+   * jebol berkali lipat.
+   *
+   * Kapal yang sudah ada isinya dilewati — termasuk yang masih draf. Menimpa
+   * pekerjaan orang tanpa diminta jauh lebih mahal daripada satu kapal yang
+   * harus disusun manual.
+   */
+  const [isiSemuaSibuk, setIsiSemuaSibuk] = useState("");
+
+  const isiSemuaKapal = async (opsi: { armada: boolean; db: boolean }) => {
+    const belum = KAPAL_ANGGARAN.filter((k) => {
+      const d = dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === k);
+      return !d || (d.status !== "terkirim" && totalDoc(d).total <= 0);
+    });
+    const dilewati = KAPAL_ANGGARAN.length - belum.length;
+    if (!belum.length) { setPesan("Semua kapal bulan ini sudah punya usulan."); return; }
+    if (!(await konfirmasi({
+      nada: "sukses", ikon: "⚡",
+      judul: `Isi usulan ${belum.length} kapal sekaligus?`,
+      pesan: `${namaBulan(bulan)} · tiap kapal diisi sampai mendekati jatahnya, lalu disimpan.`,
+      rincian: [
+        `Sumber: riwayat kapal${opsi.armada ? " + riwayat armada" : ""}${opsi.db ? " + database harga" : ""}`,
+        dilewati ? `${dilewati} kapal dilewati karena sudah ada isinya` : "Semua kapal masih kosong",
+        `Pembanding: ${pembanding.sumber === "rka" ? "RKA" : "pagu rilis"} ${rupiah(totalKendali.pagu)}`,
+      ],
+      tegasan: "Hasilnya tetap bisa diperiksa dan disunting per kapal setelah ini.",
+      tombolYa: "Ya, isi semuanya",
+    }))) return;
+
+    setBukaSusun(false);
+    let sudah = 0;
+    /** rencana yang sudah tersimpan bulan ini, ditambah hasil putaran ini */
+    const terpakai: Record<string, number> = { ...rencanaTersimpan(dok, bulan) };
+
+    /** barang database harga per Mata Anggaran — diambil sekali, dipakai semua kapal */
+    const dbPerMA: Record<string, Kandidat[]> = {};
+    if (opsi.db) {
+      setIsiSemuaSibuk("Memuat database harga…");
+      for (const kode of Object.keys(paguRka)) {
+        const kel = KELOMPOK_RR.find((x) => x.kode === kode);
+        const kat = KATEGORI_DB[kode];
+        if (!kel || !kat) continue;
+        const jatah = Math.max(0, ((paguRka[kode] || 0) - (terpakai[kode] || 0)) / Math.max(1, belum.length));
+        try {
+          const r = await fetch(`/api/harga/daftar?kategori=${encodeURIComponent(kat.join("|"))}`
+            + `&batas=200&hargaMaks=${Math.round(jatah)}`, { cache: "no-store" });
+          const d = await r.json();
+          dbPerMA[kode] = (d?.hasil || []).map((h: any) => ({
+            id: `db-${h.kode}`, kunci: kunciKelompok(kel), kode, judul: kel.judul,
+            deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
+            jumlah: 1, harga: Math.round(h.h2026 || h.h2025 || h.median || 0),
+            hargaRata: Math.round(h.median || 0), kali: 0, bulanTerakhir: "", bulanMuncul: [],
+            contohDokumen: `database harga · ${h.n || 0} data`, asal: "db" as const,
+          })).filter((x: Kandidat) => x.harga > 0);
+        } catch { dbPerMA[kode] = []; }
+      }
+    }
+
+    for (let i = 0; i < belum.length; i++) {
+      const k = belum[i];
+      setIsiSemuaSibuk(`Menyusun ${ringkasKapal(k)} — ${i + 1}/${belum.length}…`);
+      const sisaKapal = belum.length - i;              // termasuk kapal ini
+      const kand: Kandidat[] = [
+        ...kandidatDariRiwayat(pengadaan, k, bulan, 12, opsi.armada),
+        ...(opsi.db ? Object.values(dbPerMA).flat() : []),
+      ];
+      const jatah: Record<string, number> = {};
+      Object.keys(paguRka).forEach((kode) => {
+        jatah[kode] = Math.max(0, ((paguRka[kode] || 0) - (terpakai[kode] || 0)) / sisaKapal);
+      });
+      const benih = Array.from(`${bulan}|${k}`).reduce((s, c) => (s * 31 + c.charCodeAt(0)) >>> 0, 7);
+      const h = isiOtomatis(kand, jatah, {
+        acak: true, benih, variasiJumlah: true,
+        hindari: namaDipakai(dok, bulanKe(bulan, -1), k),
+        // makin sedikit kapal tersisa, makin ketat toleransinya; kapal terakhir
+        // tak boleh melewati jatah sama sekali — dialah yang menentukan apakah
+        // TOTAL armada melewati pagu bulan itu
+        toleransiPersen: sisaKapal === 1 ? 0 : sisaKapal <= 3 ? 1 : 3,
+      });
+      const terpilih = kand.filter((x) => h.pilih.has(x.id));
+      if (!terpilih.length) continue;
+
+      const lama = dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === k);
+      const doc: RrDoc = lama ? JSON.parse(JSON.stringify(lama)) : docBaru("rencana", bulan, k);
+      terpilih.forEach((x) => {
+        const g = doc.kelompok.find((y) => y.kunci === x.kunci) || doc.kelompok[doc.kelompok.length - 1];
+        if (!g) return;
+        (g.items ||= []).push({
+          id: uid(), deskripsi: x.deskripsi, spesifikasi: x.spesifikasi,
+          jumlah: h.jumlahSaran[x.id] ?? x.jumlah, satuan: x.satuan, harga: x.harga,
+        });
+      });
+      try {
+        await simpan(doc);
+        sudah++;
+        Object.entries(h.terpakai).forEach(([kode, v]) => { terpakai[kode] = (terpakai[kode] || 0) + v; });
+      } catch { /* galat simpan sudah tampil lewat simpanErr */ }
+    }
+
+    setIsiSemuaSibuk("");
+    await reload();
+    setPesan(`${sudah} kapal terisi otomatis${dilewati ? `, ${dilewati} dilewati karena sudah ada isinya` : ""}. `
+      + "Periksa tiap kapal sebelum ditandai terkirim.");
+  };
 
   const tambahDariRiwayat = (pilihan: PilihanUsulan[], lanjut = false) => {
     if (!kerja || terkunci) return;
@@ -799,6 +950,71 @@ export default function RencanaPage() {
         </div>
       )}
 
+      {/* ================= rekap usulan per kapal ================= */}
+      {tipe === "rencana" && bulan && (
+        <div className="mt-4 overflow-hidden rounded-2xl bg-white elev-sm ring-line dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-100 px-5 py-3 dark:border-slate-800">
+            <div className="min-w-[13rem]">
+              <h3 className="text-sm font-extrabold text-slate-800 dark:text-slate-100">🚢 Usulan per Kapal — {namaBulan(bulan)}</h3>
+              <p className="text-[11px] text-slate-500">
+                {rekapKapal.belum
+                  ? `${rekapKapal.belum} kapal belum menyusun · jatah tiap kapal ± ${rupiah(Math.round(rekapKapal.jatah))}`
+                  : "Seluruh kapal sudah punya usulan."}
+              </p>
+            </div>
+            <div className="ml-auto flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px]">
+              <span className="text-slate-500">
+                {pembanding.sumber === "rka" ? "RKA" : "Pagu"} bulan ini{" "}
+                <b className="tabular-nums text-slate-800 dark:text-slate-100">{rupiah(rekapKapal.totalRka)}</b>
+              </span>
+              <span className="text-slate-500">Total usulan <b className="tabular-nums text-indigo-700">{rupiah(rekapKapal.dipakai)}</b></span>
+              <span className="text-slate-500">
+                Sisa <b className={`tabular-nums ${rekapKapal.sisa < 0 ? "text-rose-700" : "text-emerald-700"}`}>{rupiah(rekapKapal.sisa)}</b>
+              </span>
+              {!terkunci && (
+                <button onClick={() => { void isiSemuaKapal({ armada: true, db: false }); }}
+                  disabled={!!isiSemuaSibuk || !rekapKapal.belum}
+                  title="Isi usulan semua kapal yang masih kosong, lalu simpan"
+                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-40">
+                  {isiSemuaSibuk || "🚢 Isi semua kapal"}
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-1.5 px-5 py-3 sm:grid-cols-2 lg:grid-cols-3">
+            {rekapKapal.baris.map((b) => {
+              const persen = rekapKapal.jatah > 0 ? Math.round((b.usulan / rekapKapal.jatah) * 100) : 0;
+              const aktif = b.kapal === kapal;
+              return (
+                <button key={b.kapal} onClick={() => setKapal(b.kapal)}
+                  className={`rounded-xl px-3 py-2 text-left ring-1 transition ${
+                    aktif ? "bg-indigo-50 ring-indigo-300 dark:bg-indigo-950/40"
+                      : "bg-slate-50 ring-slate-200 hover:bg-white dark:bg-slate-800 dark:ring-slate-700"}`}>
+                  <div className="flex items-baseline justify-between gap-2">
+                    <span className="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200">
+                      {ringkasKapal(b.kapal)}
+                      {b.status === "terkirim" && <span title="Sudah ditandai terkirim"> 🔒</span>}
+                    </span>
+                    <span className={`shrink-0 text-[11px] font-extrabold tabular-nums ${
+                      b.usulan > 0 ? "text-indigo-700 dark:text-indigo-300" : "text-slate-300"}`}>
+                      {b.usulan > 0 ? rupiah(b.usulan) : "belum"}
+                    </span>
+                  </div>
+                  <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                    <div className={`h-full ${persen > 115 ? "bg-rose-500" : persen >= 80 ? "bg-emerald-500" : "bg-indigo-400"}`}
+                      style={{ width: `${Math.min(100, persen)}%` }} />
+                  </div>
+                  <p className="mt-0.5 text-[10px] text-slate-400">
+                    {b.usulan > 0 ? `${persen}% dari jatah rata` : "klik untuk menyusun"}
+                  </p>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* ================= editor ================= */}
       {kerja && bulan && (
         <div className={`mt-4 bg-white rounded-2xl elev-md ring-1 ${nada.ring} anim-in`}>
@@ -973,6 +1189,7 @@ export default function RencanaPage() {
         dipakaiBulanLalu={dipakaiBulanLalu}
         kapalOpsi={opsiKapalSusun}
         gantiKapal={(k) => { void pindahKapalSusun(k); }}
+        isiSemua={(o) => { void isiSemuaKapal(o); }}
         tambah={tambahDariRiwayat}
       />
     </main>

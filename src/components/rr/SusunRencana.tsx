@@ -26,7 +26,7 @@ export interface PilihanUsulan {
 
 export default function SusunRencana({
   buka, tutup, bulan, kapal, kandidat, pagu, kapalLain, kapalIni, kapalBelum, dipakaiBulanLalu,
-  kapalOpsi, gantiKapal, tambah,
+  kapalOpsi, gantiKapal, isiSemua, tambah,
 }: {
   buka: boolean;
   tutup: () => void;
@@ -43,6 +43,8 @@ export default function SusunRencana({
   /** seluruh kapal beserta keadaan usulannya bulan ini — untuk berpindah tanpa menutup layar */
   kapalOpsi?: { nama: string; status: "kosong" | "draf" | "terkirim"; nilai: number }[];
   gantiKapal?: (kapal: string) => void;
+  /** isi seluruh kapal yang masih kosong sekali jalan — dikerjakan halaman induk */
+  isiSemua?: (opsi: { armada: boolean; db: boolean }) => void;
   tambah: (pilihan: PilihanUsulan[], lanjut?: boolean) => void;
 }) {
   const [pilih, setPilih] = useState<Set<string>>(new Set());
@@ -421,6 +423,13 @@ export default function SusunRencana({
               className="rounded-lg bg-indigo-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-indigo-700">
               ⚡ Isi otomatis mendekati jatah
             </button>
+            {isiSemua && (
+              <button onClick={() => isiSemua({ armada: pakaiArmada, db: pakaiDb })}
+                title="Isi usulan SEMUA kapal yang masih kosong bulan ini, lalu simpan — jatah tiap kapal dihitung berurutan dari sisa pagu"
+                className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700">
+                🚢 Isi semua kapal
+              </button>
+            )}
             {variasi && (
               <button onClick={() => { setBenih((b) => (b * 1664525 + 1013904223) >>> 0); setPilih(new Set()); setUbahan({}); setPesan("Benih diganti — tekan Isi otomatis untuk kombinasi baru."); }}
                 title="Ganti kombinasi: barang dan jumlah yang terpilih akan berbeda"
