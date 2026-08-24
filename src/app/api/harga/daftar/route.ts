@@ -33,6 +33,16 @@ export async function GET(req: NextRequest) {
   const hargaMaks = Number(sp.get("hargaMaks") || 0);
   const jenis = (sp.get("jenis") || "").toUpperCase();      // B | J | S
   const minData = Math.max(1, parseInt(sp.get("minData") || "2", 10) || 2);
+  /**
+   * mesin=1 menyaring barang yang jelas melayani mesin induk atau mesin bantu.
+   * Tanpa saringan ini, daftar diurut menurut seberapa sering barang muncul di
+   * berkas, dan yang menang selalu barang umum — lampu, baut, packing. Suku
+   * cadang mesin justru jarang berulang: tiap kapal beda merek mesin, jadi
+   * namanya tak pernah naik ke dua ratus teratas meski jumlahnya ribuan.
+   */
+  const hanyaMesin = sp.get("mesin") === "1";
+  const POLA_MESIN = new RegExp(String.raw`\b(m\s*\/?\s*e|a\s*\/?\s*e|main\s*engine`
+    + String.raw`|aux(?:iliary)?|mesin\s*induk|mesin\s*bantu|gen\s*?set)\b`, "i");
 
   const pilih: { b: any[]; skor: number }[] = [];
   for (const b of db.baris) {
@@ -44,6 +54,7 @@ export async function GET(req: NextRequest) {
     const harga = b[12] || b[11] || 0;                     // 2026, lalu 2025
     if (!harga) continue;
     if (hargaMaks && harga > hargaMaks) continue;          // tak mungkin muat di jatah
+    if (hanyaMesin && !POLA_MESIN.test(`${b[3] || ""} ${b[4] || ""}`)) continue;
     pilih.push({ b, skor: Math.min(n, 30) * (b[12] ? 2 : 1) });
   }
   pilih.sort((x, y) => y.skor - x.skor);

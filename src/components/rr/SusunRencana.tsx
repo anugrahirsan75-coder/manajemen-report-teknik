@@ -157,28 +157,44 @@ export default function SusunRencana({
       setMuatDb(true);
       try {
         const kumpul: Kandidat[] = [];
+        const sudah = new Set<string>();
+        const serap = (kode: string, hasil: any[]) => hasil.forEach((h: any) => {
+          const harga = Math.round(h.h2026 || h.h2025 || h.median || 0);
+          if (!harga || sudah.has(`db-${h.kode}`)) return;
+          sudah.add(`db-${h.kode}`);
+          const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "");
+          kumpul.push({
+            id: `db-${h.kode}`,
+            kunci: tempat.kunci || kunciKelompok(KELOMPOK_RR.find((k) => k.kode === kode) || KELOMPOK_RR[0]),
+            kode, judul: tempat.judul || "Lain - Lain",
+            deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
+            jumlah: 1, harga, hargaRata: Math.round(h.median || harga),
+            kali: 0, bulanTerakhir: "", bulanMuncul: [],
+            contohDokumen: `Database RAB · ${h.n || 0} data`, asal: "db",
+          });
+        });
+
         for (const b of kendali.filter((x) => x.pagu > 0)) {
           const kat = KATEGORI_MA[b.kode];
           if (!kat) continue;
           // barang yang harganya melebihi jatah tak mungkin terpakai — jangan ikut diambil
           const jatah = Math.max(0, (b.pagu - b.kapalLain - b.kapalIni) / pembagi);
-          const r = await fetch(`/api/harga/daftar?kategori=${encodeURIComponent(kat.join("|"))}`
-            + `&batas=200&hargaMaks=${Math.round(jatah || 0)}`, { cache: "no-store" });
-          const d = await r.json();
-          (d?.hasil || []).forEach((h: any) => {
-            const harga = Math.round(h.h2026 || h.h2025 || h.median || 0);
-            if (!harga) return;
-            const tempat = tentukanKelompok(b.kode, "", h.uraian || "", h.spek || "");
-            kumpul.push({
-              id: `db-${h.kode}`,
-              kunci: tempat.kunci || kunciKelompok(KELOMPOK_RR.find((k) => k.kode === b.kode) || KELOMPOK_RR[0]),
-              kode: b.kode, judul: tempat.judul || "Lain - Lain",
-              deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
-              jumlah: 1, harga, hargaRata: Math.round(h.median || harga),
-              kali: 0, bulanTerakhir: "", bulanMuncul: [],
-              contohDokumen: `Database RAB · ${h.n || 0} data`, asal: "db",
-            });
-          });
+          const alamat = `/api/harga/daftar?kategori=${encodeURIComponent(kat.join("|"))}`
+            + `&hargaMaks=${Math.round(jatah || 0)}`;
+          const d = await (await fetch(`${alamat}&batas=200`, { cache: "no-store" })).json();
+          serap(b.kode, d?.hasil || []);
+
+          /*
+           * Tarikan kedua khusus suku cadang mesin induk & mesin bantu. Daftar
+           * biasa diurut menurut seberapa sering barang muncul di berkas, dan
+           * yang menang selalu barang umum — lampu, baut, packing. Suku cadang
+           * mesin jarang berulang karena tiap kapal beda merek mesin, jadi tak
+           * pernah naik ke dua ratus teratas meski di database ada ribuan.
+           */
+          if (kat.includes("Suku Cadang Mesin")) {
+            const e = await (await fetch(`${alamat}&batas=250&mesin=1`, { cache: "no-store" })).json();
+            serap(b.kode, e?.hasil || []);
+          }
         }
         if (!batal) setKandidatDb(kumpul);
       } catch { if (!batal) setKandidatDb([]); }
@@ -305,6 +321,8 @@ export default function SusunRencana({
     kendali.forEach((b) => { sisa[b.kode] = Math.max(0, (b.pagu - b.kapalLain - b.kapalIni) / pembagi); });
     const h = isiOtomatis(denganUbahan, sisa, {
       sudahDipilih: pilih, acak: variasi, benih, variasiJumlah: variasi, hindari: dipakaiBulanLalu,
+      // perawatan rutin mesin sebagian besar suku cadang — beri jatahnya lebih dulu
+      porsiSukuCadang: 0.45,
     });
     setPilih(h.pilih);
     // jumlah hasil variasi ikut dipasang, bukan cuma dipakai menghitung —

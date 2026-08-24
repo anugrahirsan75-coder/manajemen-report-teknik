@@ -84,7 +84,7 @@ function petaKolom(baris: string[][]): { peta: PetaKolom; mulai: number; jenis: 
     };
     const uraian = cari(/uraian|deskripsi|nama barang|nama pekerjaan|jenis pekerjaan|pekerjaan|rincian|item/);
     if (uraian < 0) continue;
-    const qty = cari(/qty|jumlah|volume|vol|banyak/);
+    const qty = cari(new RegExp(String.raw`qty|jumlah|volume|vol\b|banyak`));
     const unit = cari(/unit|satuan|sat\.?$/);
     const merk = cari(/merk|katalog/);
     const ket = cari(/keterangan|ket\.?$/);

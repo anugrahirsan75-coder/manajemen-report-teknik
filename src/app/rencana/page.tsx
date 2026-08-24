@@ -752,6 +752,7 @@ export default function RencanaPage() {
       const h = isiOtomatis(kand, jatah, {
         acak: true, benih, variasiJumlah: true,
         hindari: namaDipakai(dok, bulanKe(bulan, -1), k),
+        porsiSukuCadang: 0.45,
         // makin sedikit kapal tersisa, makin ketat toleransinya; kapal terakhir
         // tak boleh melewati jatah sama sekali — dialah yang menentukan apakah
         // TOTAL armada melewati pagu bulan itu

@@ -262,6 +262,16 @@ export interface OpsiOtomatis {
   /** jumlah ikut divariasikan ±20% supaya angkanya tak persis sama tiap bulan */
   variasiJumlah?: boolean;
   /**
+   * Bagian jatah Mata Anggaran yang disediakan lebih dulu untuk SUKU CADANG
+   * (0–1). Perawatan rutin mesin sebagian besar memang suku cadang — filter,
+   * gasket, seal, impeller, belt — dan kelompok itu punya paling banyak jenis
+   * barang. Tanpa dijatah lebih dulu, satu jasa perbaikan yang mahal memakan
+   * jatah Permesinan dan suku cadangnya tinggal dua tiga baris.
+   */
+  porsiSukuCadang?: number;
+  /** perkiraan berapa BARIS suku cadang yang diinginkan di dalam kuotanya */
+  barisSukuCadang?: number;
+  /**
    * Berapa persen jatah boleh dilewati bila itu justru MENDEKATKAN total ke
    * jatah. Riwayat pelumas satu kapal cuma "Meditrans SAE 40" seharga 6,05 juta
    * sedangkan jatahnya 11,75 juta: satu drum berhenti di 52%, dua drum 103%.
@@ -279,6 +289,30 @@ function pengacak(benih: number): () => number {
     t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
     return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
   };
+}
+
+/**
+ * Mesin apa yang dilayani satu suku cadang: mesin induk (ME) atau mesin bantu
+ * (AE). Ditebak dari nama dan spesifikasinya — berkas RAB menulisnya di salah
+ * satu dari keduanya, kadang sebagai "M/E", kadang "Mesin Induk", kadang lewat
+ * merek mesinnya ("AE TIANJIN LOVOL").
+ *
+ * Gunanya bukan menggolongkan, melainkan MENYELANG-NYELING: usulan suku cadang
+ * yang seluruhnya untuk mesin induk saja terbaca sebagai daftar yang disalin,
+ * padahal tiap kapal punya dua mesin bantu yang juga butuh perawatan rutin.
+ */
+export type Mesin = "ME" | "AE" | "";
+
+const POLA_ME = /\b(m\s*\/?\s*e|main\s*engine|mesin\s*induk)\b/i;
+const POLA_AE = /\b(a\s*\/?\s*e|aux|auxiliary|mesin\s*bantu|gen\s*?set)\b/i;
+
+export function mesinDari(k: { deskripsi?: string; spesifikasi?: string }): Mesin {
+  const teks = `${k.deskripsi || ""} ${k.spesifikasi || ""}`;
+  const me = POLA_ME.test(teks);
+  const ae = POLA_AE.test(teks);
+  // menyebut keduanya = tak bisa dipakai membedakan, perlakukan sebagai netral
+  if (me && ae) return "";
+  return me ? "ME" : ae ? "AE" : "";
 }
 
 export const sidikNama = (s: string) => bersihNamaItem(s).toLowerCase().replace(/\s+/g, " ").trim();
@@ -304,6 +338,27 @@ export const sidikNama = (s: string) => bersihNamaItem(s).toLowerCase().replace(
  * Barang yang tak lagi muat DILEWATI, bukan menghentikan pemilihan — satu barang
  * mahal di tengah daftar tidak boleh mengubur belasan barang kecil yang masih muat.
  */
+/**
+ * Susun ulang daftar suku cadang supaya mesin induk & mesin bantu bergantian:
+ * ME, AE, netral, ME, AE, … Urutan di dalam tiap kelompok tidak diubah, jadi
+ * pembobotan dan keacakan yang sudah dihitung tetap berlaku.
+ */
+function selangSelingMesin(isi: Kandidat[]): Kandidat[] {
+  const me = isi.filter((k) => mesinDari(k) === "ME");
+  const ae = isi.filter((k) => mesinDari(k) === "AE");
+  const lain = isi.filter((k) => mesinDari(k) === "");
+  if (!me.length || !ae.length) return isi;      // tak ada yang bisa diselingi
+  const keluar: Kandidat[] = [];
+  const urutan = [me, ae, lain];
+  for (let i = 0; keluar.length < isi.length; i++) {
+    const sumber = urutan[i % urutan.length];
+    const k = sumber.shift();
+    if (k) keluar.push(k);
+    else if (!me.length && !ae.length && !lain.length) break;
+  }
+  return keluar;
+}
+
 export function isiOtomatis(
   kandidat: Kandidat[],
   sisaPerMA: Record<string, number>,
@@ -387,19 +442,142 @@ export function isiOtomatis(
      * muat lalu barangnya dibuang, Mata Anggaran itu berakhir 0% padahal satu
      * drum jelas muat.
      */
-    urutkan(isiMA).forEach((k) => {
-      if (pilih.has(k.id) || !k.harga) return;
-      const dipakai = terpakai[kode] || 0;
-      const ruang = target - dipakai;
-      let jml = Math.min(jumlahAwal(k), Math.floor(ruang / k.harga));
-      // satu satuan pun tak muat: masih boleh diambil bila justru mendekatkan
-      // total ke jatah dan tidak melewati batas toleransi
-      if (jml < 1) jml = lebihDekat(dipakai, k.harga, target, langitLuar) ? 1 : 0;
-      if (jml < 1) return;
-      pilih.add(k.id);
-      if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
-      terpakai[kode] = dipakai + jml * k.harga;
+    /**
+     * Antrean tiap kelompok. Untuk suku cadang, antreannya disusun
+     * MENYELANG-NYELING antara mesin induk dan mesin bantu — daftar yang
+     * seluruhnya melayani satu mesin saja terbaca sebagai salinan, padahal tiap
+     * kapal punya dua mesin bantu yang perawatannya juga rutin.
+     */
+    const antrean = new Map<string, Kandidat[]>();
+    perKelompok.forEach((isiKel, kunci) => {
+      const urut = urutkan(isiKel).filter((k) => !pilih.has(k.id) && k.harga > 0);
+      antrean.set(kunci, /suku cadang/i.test(kunci) ? selangSelingMesin(urut) : urut);
     });
+
+    /**
+     * Tahap 0b — jatah suku cadang diisi lebih dulu, ME dan AE bergantian.
+     *
+     * Diisi sampai porsinya tercapai atau antreannya habis, bukan sampai jatah
+     * Mata Anggaran penuh — sisanya tetap milik kelompok lain.
+     */
+    const porsi = Math.min(0.8, Math.max(0, opsi.porsiSukuCadang ?? 0));
+    if (porsi > 0) {
+      const kunciSc = Array.from(antrean.keys()).filter((k) => /suku cadang/i.test(k));
+      const batasSc = (terpakai[kode] || 0) + target * porsi;
+      /**
+       * Batas nilai TIAP BARIS di dalam kuota ini. Tanpa batas, satu servis
+       * pompa seharga empat juta menghabiskan kuota suku cadang sendirian dan
+       * yang tercatat cuma tiga baris — padahal maksud kuota ini justru
+       * memperbanyak jenis barangnya: filter, gasket, seal, belt, impeller.
+       */
+      const maksBaris = (target * porsi) / Math.max(3, opsi.barisSukuCadang ?? 12);
+      /*
+       * Dua giliran. Giliran pertama HANYA barang yang jelas melayani mesin
+       * induk atau mesin bantu; giliran kedua baru boleh barang mesin umum.
+       * Tanpa pemisahan ini, barang umum yang murah — lampu, baut, packing —
+       * memenuhi kuota lebih dulu, dan suku cadang mesinnya sendiri tak
+       * kebagian: nama barangnya jarang berulang, jadi selalu kalah urutan.
+       */
+      /*
+       * Kuota ini juga dibatasi JUMLAH BARISNYA. Suku cadang mesin harganya
+       * kecil-kecil — gasket, o-ring, seal — sehingga tanpa batas baris,
+       * empat puluh lima persen jatah bisa termakan enam puluh baris dan
+       * kelompok lain tinggal satu baris masing-masing.
+       */
+      const batasBaris = Math.max(3, opsi.barisSukuCadang ?? 12);
+      let barisSc = 0;
+      for (const wajibMesin of [true, false]) {
+        for (const kunci of kunciSc) {
+          const daftar = antrean.get(kunci) || [];
+          let aman2 = 0;
+          while (aman2++ < 500 && daftar.length && barisSc < batasBaris) {
+            const dipakai = terpakai[kode] || 0;
+            const ruang = Math.min(batasSc, target) - dipakai;
+            if (ruang <= 0) break;
+            const layak = (k: Kandidat, batasHarga: number) => !pilih.has(k.id) && k.harga > 0
+              && k.harga <= batasHarga && (!wajibMesin || mesinDari(k) !== "");
+            // barang wajar-kecil dulu; kalau memang tak ada yang semurah itu,
+            // barulah barang mahal boleh masuk asal masih muat
+            let idx = daftar.findIndex((k) => layak(k, Math.min(ruang, maksBaris)));
+            if (idx < 0) idx = daftar.findIndex((k) => layak(k, ruang));
+            if (idx < 0) break;
+            const k = daftar[idx];
+            // pada giliran mesin, barang umum yang terlewati JANGAN dibuang —
+            // giliran kedua masih membutuhkannya
+            if (wajibMesin) daftar.splice(idx, 1); else daftar.splice(0, idx + 1);
+            const jml = Math.min(jumlahAwal(k), Math.floor(ruang / k.harga));
+            if (jml < 1) continue;
+            pilih.add(k.id);
+            barisSc++;
+            if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
+            terpakai[kode] = dipakai + jml * k.harga;
+          }
+        }
+      }
+    }
+
+    /**
+     * Tahap 1 — diisi BERGILIR antar kelompok, bukan menurut satu peringkat
+     * panjang. Peringkat tunggal membuat kelompok yang barangnya kebetulan
+     * lebih sering dibeli memakan hampir seluruh jatah, dan kelompok lain cuma
+     * kebagian satu baris dari tahap 0.
+     */
+    /**
+     * Suku cadang mendapat DUA giliran tiap putaran: satu untuk mesin induk,
+     * satu untuk mesin bantu. Dengan satu giliran, kelompok ini kebagian
+     * sepertiga baris kelompok lain — padahal justru di sinilah kebutuhan rutin
+     * mesin paling banyak jenisnya.
+     */
+    const kunciKel = Array.from(antrean.keys())
+      .flatMap((k) => (/suku cadang/i.test(k) ? [k, k] : [k]));
+
+    /**
+     * Batas JENIS barang per kelompok. Satu kapal tak membeli delapan belas
+     * macam pelumas dalam sebulan — ia membeli tiga macam, beberapa drum
+     * masing-masing. Tanpa batas ini kelompok yang antreannya panjang
+     * menghabiskan jatah dengan menambah jenis, bukan menambah jumlah, dan
+     * usulannya terbaca seperti daftar katalog.
+     *
+     * Suku cadang mesin memang wajar lebih banyak jenisnya: satu mesin terdiri
+     * dari ratusan bagian kecil yang tak saling menggantikan.
+     */
+    const jumlahBaris = new Map<string, number>();
+    kunciKel.forEach((k) => jumlahBaris.set(k, 0));
+    perKelompok.forEach((isiKel, kunci) => {
+      // baris yang sudah masuk dari tahap sebelumnya ikut dihitung
+      jumlahBaris.set(kunci, isiKel.filter((k) => pilih.has(k.id)).length);
+    });
+    const batasKelompok = (kunci: string) => (/suku cadang/i.test(kunci) ? 18 : 8);
+
+    const bergilir = (pakaiBatas: boolean) => {
+      let putaran = 0;
+      while (putaran++ < 500) {
+        let ada = false;
+        for (const kunci of kunciKel) {
+          if (pakaiBatas && (jumlahBaris.get(kunci) || 0) >= batasKelompok(kunci)) continue;
+          const daftar = antrean.get(kunci) || [];
+          const dipakai = terpakai[kode] || 0;
+          const ruang = target - dipakai;
+          // barang pertama pada antrean kelompok ini yang masih muat
+          const idx = daftar.findIndex((k) => !pilih.has(k.id) && k.harga > 0
+            && (k.harga <= ruang || lebihDekat(dipakai, k.harga, target, langitLuar)));
+          if (idx < 0) continue;
+          const k = daftar[idx];
+          daftar.splice(0, idx + 1);
+          let jml = Math.min(jumlahAwal(k), Math.floor(ruang / k.harga));
+          // satu satuan pun tak muat: masih boleh diambil bila justru mendekatkan
+          // total ke jatah dan tidak melewati batas toleransi
+          if (jml < 1) jml = lebihDekat(dipakai, k.harga, target, langitLuar) ? 1 : 0;
+          if (jml < 1) continue;
+          pilih.add(k.id);
+          jumlahBaris.set(kunci, (jumlahBaris.get(kunci) || 0) + 1);
+          if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
+          terpakai[kode] = dipakai + jml * k.harga;
+          ada = true;
+        }
+        if (!ada) break;
+      }
+    };
 
     /**
      * Tahap 2 — habiskan sisa jatah dengan menambah jumlah barang yang sudah
@@ -411,17 +589,33 @@ export function isiOtomatis(
      * benar bukan usulan yang menghabiskan pagu dengan satu barang ditumpuk
      * dua puluh kali.
      */
-    const terpilihMA = isiMA.filter((k) => pilih.has(k.id) && k.harga > 0)
-      .sort((a, b) => a.harga - b.harga);
-    let aman = 0;
-    while (aman++ < 2000) {
-      const dipakai = terpakai[kode] || 0;
-      const layak = (k: Kandidat) => jumlahAkhir(k) < Math.max(3, (k.jumlah || 1) * 3)
-        && (k.harga <= target - dipakai || lebihDekat(dipakai, k.harga, target, langitLuar));
-      const bisa = terpilihMA.find(layak);
-      if (!bisa) break;
-      jumlahSaran[bisa.id] = jumlahAkhir(bisa) + 1;
-      terpakai[kode] = dipakai + bisa.harga;
+    const naikkanJumlah = () => {
+      const terpilihMA = isiMA.filter((k) => pilih.has(k.id) && k.harga > 0)
+        .sort((a, b) => a.harga - b.harga);
+      let aman = 0;
+      while (aman++ < 2000) {
+        const dipakai = terpakai[kode] || 0;
+        const layak = (k: Kandidat) => jumlahAkhir(k) < Math.max(3, (k.jumlah || 1) * 3)
+          && (k.harga <= target - dipakai || lebihDekat(dipakai, k.harga, target, langitLuar));
+        const bisa = terpilihMA.find(layak);
+        if (!bisa) break;
+        jumlahSaran[bisa.id] = jumlahAkhir(bisa) + 1;
+        terpakai[kode] = dipakai + bisa.harga;
+      }
+    };
+
+    /*
+     * Urutannya menentukan bentuk usulan. Sisa jatah ditutup dengan MENAMBAH
+     * JUMLAH barang yang sudah dipilih lebih dulu — kapal memang membeli tiga
+     * macam pelumas beberapa drum, bukan delapan belas macam pelumas satu drum.
+     * Menambah jenis di luar batas baru dilakukan bila menambah jumlah pun tak
+     * cukup menutup jatah.
+     */
+    bergilir(true);
+    naikkanJumlah();
+    if ((terpakai[kode] || 0) < target * 0.95) {
+      bergilir(false);
+      naikkanJumlah();
     }
   });
 
