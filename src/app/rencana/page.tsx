@@ -40,7 +40,8 @@ const uid = () => Math.random().toString(36).slice(2, 9);
 const KATEGORI_DB: Record<string, string[]> = {
   "5010303001": ["Bahan Bakar & Pelumas"],
   "5010403009": ["Akomodasi & Interior Deck", "Bahan Kebersihan & Pantry", "Alat Keselamatan",
-    "Alat Navigasi & Komunikasi", "Perlengkapan Kapal & Tali Temali", "Alat Kerja & Consumable"],
+    "Alat Navigasi & Komunikasi", "Perlengkapan Kapal & Tali Temali", "Alat Kerja & Consumable",
+    "Perawatan Rutin & Kebersihan Kapal (Jasa)"],
   "5010403100": ["Suku Cadang Mesin", "Permesinan & Kelistrikan", "Kelistrikan & Penerangan",
     "Perpipaan & Katup", "Alat Kerja & Consumable"],
   "5010403003": ["Konstruksi, Replating & Fabrikasi", "Cat, Thinner & Material Coating",
@@ -656,21 +657,29 @@ export default function RencanaPage() {
     if (opsi.db) {
       setIsiSemuaSibuk("Memuat Database RAB…");
       for (const kode of Object.keys(paguRka)) {
-        const kel = KELOMPOK_RR.find((x) => x.kode === kode);
         const kat = KATEGORI_DB[kode];
-        if (!kel || !kat) continue;
+        if (!kat) continue;
         const jatah = Math.max(0, ((paguRka[kode] || 0) - (terpakai[kode] || 0)) / Math.max(1, belum.length));
         try {
           const r = await fetch(`/api/harga/daftar?kategori=${encodeURIComponent(kat.join("|"))}`
             + `&batas=200&hargaMaks=${Math.round(jatah)}`, { cache: "no-store" });
           const d = await r.json();
-          dbPerMA[kode] = (d?.hasil || []).map((h: any) => ({
-            id: `db-${h.kode}`, kunci: kunciKelompok(kel), kode, judul: kel.judul,
+          dbPerMA[kode] = (d?.hasil || []).map((h: any) => {
+            // judul kelompok ditentukan barangnya: jasa service jatuh ke
+            // Service / Perbaikan, suku cadang ke Suku Cadang — bukan semua
+            // menumpuk di kelompok pertama Mata Anggaran itu
+            const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "");
+            const cadangan = KELOMPOK_RR.find((x) => x.kode === kode) || KELOMPOK_RR[0];
+            return {
+            id: `db-${h.kode}`,
+            kunci: tempat.kunci || kunciKelompok(cadangan),
+            kode, judul: tempat.judul || cadangan.judul,
             deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
             jumlah: 1, harga: Math.round(h.h2026 || h.h2025 || h.median || 0),
             hargaRata: Math.round(h.median || 0), kali: 0, bulanTerakhir: "", bulanMuncul: [],
             contohDokumen: `Database RAB · ${h.n || 0} data`, asal: "db" as const,
-          })).filter((x: Kandidat) => x.harga > 0);
+          };
+          }).filter((x: Kandidat) => x.harga > 0);
         } catch { dbPerMA[kode] = []; }
       }
     }
@@ -972,7 +981,7 @@ export default function RencanaPage() {
                 Sisa <b className={`tabular-nums ${rekapKapal.sisa < 0 ? "text-rose-700" : "text-emerald-700"}`}>{rupiah(rekapKapal.sisa)}</b>
               </span>
               {!terkunci && (
-                <button onClick={() => { void isiSemuaKapal({ armada: true, db: false }); }}
+                <button onClick={() => { void isiSemuaKapal({ armada: true, db: true }); }}
                   disabled={!!isiSemuaSibuk || !rekapKapal.belum}
                   title="Isi usulan semua kapal yang masih kosong, lalu simpan"
                   className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-40">

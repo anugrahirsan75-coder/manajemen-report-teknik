@@ -97,7 +97,15 @@ export function kandidatDariRiwayat(
       if (!harga) continue;
 
       const kode = maKey((it.mataAnggaran || "").trim() || maDefault);
-      const tempat = tentukanKelompok(kode, p.nama || "", it.nama || "", it.spesifikasi || "");
+      /**
+       * Nama pengadaan SENGAJA tidak diikutkan. Pada tarikan realisasi, judul
+       * dokumen memang penentu terbaik — satu paket satu maksud. Tapi di sini
+       * barangnya dilepas dari dokumennya untuk diusulkan ulang, dan pengadaan
+       * rutin bernama "Paketisasi Perawatan ... Mesin" membuat SEISI dokumen
+       * jatuh ke Cleaning — bearing pun tercatat alat kebersihan, dan kelompok
+       * Service serta Suku Cadang selalu kosong di Lampiran 3.
+       */
+      const tempat = tentukanKelompok(kode, "", it.nama || "", it.spesifikasi || "");
       if (!tempat.kunci) continue;
 
       /**
@@ -346,6 +354,29 @@ export function isiOtomatis(
     const target = jatah * batas;
     const langitLuar = jatah * (1 + (opsi.toleransiPersen ?? 5) / 100);
     if (target <= 0) return;
+
+    /**
+     * Tahap 0 — satu barang untuk TIAP KELOMPOK lebih dulu.
+     *
+     * Lampiran 3 memecah satu Mata Anggaran ke beberapa judul kebutuhan
+     * (cleaning / service / suku cadang / lain-lain), dan usulan yang seluruh
+     * nilainya menumpuk di satu judul terbaca asal-asalan. Sebelum pagu
+     * direbutkan bebas, tiap kelompok yang punya kandidat diberi satu barang —
+     * sesudah itu barulah sisanya diisi menurut peringkat.
+     */
+    const perKelompok = new Map<string, Kandidat[]>();
+    isiMA.forEach((k) => perKelompok.set(k.kunci, [...(perKelompok.get(k.kunci) || []), k]));
+    perKelompok.forEach((isiKel) => {
+      if (isiKel.some((k) => pilih.has(k.id))) return;     // kelompok ini sudah terwakili
+      const k = urutkan(isiKel).find((x) => x.harga > 0
+        && x.harga <= target - (terpakai[kode] || 0));
+      if (!k) return;
+      const jml = Math.min(jumlahAwal(k), Math.floor((target - (terpakai[kode] || 0)) / k.harga));
+      if (jml < 1) return;
+      pilih.add(k.id);
+      if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
+      terpakai[kode] = (terpakai[kode] || 0) + jml * k.harga;
+    });
 
     /**
      * Tahap 1 — masukkan barang satu per satu.

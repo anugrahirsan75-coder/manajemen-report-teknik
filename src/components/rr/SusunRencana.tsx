@@ -14,6 +14,7 @@ import { useEffect, useMemo, useState } from "react";
 import { rupiah } from "@/lib/format";
 import { labelMA } from "@/lib/anggaran/types";
 import { KELOMPOK_RR, kunciKelompok, namaBulan } from "@/lib/rr/types";
+import { tentukanKelompok } from "@/lib/rr/penempatan";
 import {
   BarisKendali, Kandidat, isiOtomatis, nilaiKandidat, susunKendali,
 } from "@/lib/rr/usulanRiwayat";
@@ -114,7 +115,8 @@ export default function SusunRencana({
   const KATEGORI_MA: Record<string, string[]> = useMemo(() => ({
     "5010303001": ["Bahan Bakar & Pelumas"],
     "5010403009": ["Akomodasi & Interior Deck", "Bahan Kebersihan & Pantry", "Alat Keselamatan",
-      "Alat Navigasi & Komunikasi", "Perlengkapan Kapal & Tali Temali", "Alat Kerja & Consumable"],
+      "Alat Navigasi & Komunikasi", "Perlengkapan Kapal & Tali Temali", "Alat Kerja & Consumable",
+      "Perawatan Rutin & Kebersihan Kapal (Jasa)"],
     "5010403100": ["Suku Cadang Mesin", "Permesinan & Kelistrikan", "Kelistrikan & Penerangan",
       "Perpipaan & Katup", "Alat Kerja & Consumable"],
     "5010403003": ["Konstruksi, Replating & Fabrikasi", "Cat, Thinner & Material Coating",
@@ -133,10 +135,18 @@ export default function SusunRencana({
     return peta;
   }, [KATEGORI_MA]);
 
-  /** kelompok Lampiran 3 yang paling pas untuk satu baris database */
-  const kelompokUntuk = (kategori?: string) => {
-    const kode = (kategori && maDariKategori[kategori]) || maSaring || "";
-    return KELOMPOK_RR.find((k) => k.kode === kode) || KELOMPOK_RR[0];
+  /**
+   * Kelompok Lampiran 3 untuk satu baris database: Mata Anggarannya dari
+   * kategori, JUDULNYA dari nama barangnya sendiri lewat aturan penempatan —
+   * "Service Dinamo Starter" harus jatuh ke Service / Perbaikan, bukan ke
+   * kelompok pertama Mata Anggaran itu.
+   */
+  const kelompokUntuk = (kategori: string | undefined, uraian: string, spek: string) => {
+    const kode = (kategori && maDariKategori[kategori]) || maSaring || KELOMPOK_RR[0].kode;
+    const tempat = tentukanKelompok(kode, "", uraian || "", spek || "");
+    if (tempat.kunci) return { kunci: tempat.kunci, kode, judul: tempat.judul };
+    const kel = KELOMPOK_RR.find((k) => k.kode === kode) || KELOMPOK_RR[0];
+    return { kunci: kunciKelompok(kel), kode: kel.kode, judul: kel.judul };
   };
 
   /** ambil barang database harga untuk Mata Anggaran yang punya jatah */
@@ -146,12 +156,10 @@ export default function SusunRencana({
     (async () => {
       setMuatDb(true);
       try {
-        const kelPerMA = new Map(KELOMPOK_RR.map((k) => [k.kode, k]));
         const kumpul: Kandidat[] = [];
         for (const b of kendali.filter((x) => x.pagu > 0)) {
           const kat = KATEGORI_MA[b.kode];
-          const kel = kelPerMA.get(b.kode);
-          if (!kat || !kel) continue;
+          if (!kat) continue;
           // barang yang harganya melebihi jatah tak mungkin terpakai — jangan ikut diambil
           const jatah = Math.max(0, (b.pagu - b.kapalLain - b.kapalIni) / pembagi);
           const r = await fetch(`/api/harga/daftar?kategori=${encodeURIComponent(kat.join("|"))}`
@@ -160,8 +168,11 @@ export default function SusunRencana({
           (d?.hasil || []).forEach((h: any) => {
             const harga = Math.round(h.h2026 || h.h2025 || h.median || 0);
             if (!harga) return;
+            const tempat = tentukanKelompok(b.kode, "", h.uraian || "", h.spek || "");
             kumpul.push({
-              id: `db-${h.kode}`, kunci: kunciKelompok(kel), kode: b.kode, judul: kel.judul,
+              id: `db-${h.kode}`,
+              kunci: tempat.kunci || kunciKelompok(KELOMPOK_RR.find((k) => k.kode === b.kode) || KELOMPOK_RR[0]),
+              kode: b.kode, judul: tempat.judul || "Lain - Lain",
               deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
               jumlah: 1, harga, hargaRata: Math.round(h.median || harga),
               kali: 0, bulanTerakhir: "", bulanMuncul: [],
@@ -262,13 +273,13 @@ export default function SusunRencana({
 
   /** masukkan satu baris database harga sebagai barang usulan */
   const tambahDariDb = (h: any) => {
-    const kel = kelompokUntuk(h.kategori);
+    const kel = kelompokUntuk(h.kategori, h.uraian, h.spek);
     const id = `ketik-db-${h.kode}-${Math.random().toString(36).slice(2, 6)}`;
     // harga tahun berjalan kalau ada; kalau tidak, median seluruh riwayatnya —
     // harga 2024 pada barang yang tak pernah dibeli lagi jelas sudah usang
     const harga = h.h2026 || h.h2025 || h.median || h.lo || 0;
     setManual((m) => [{
-      id, kunci: kunciKelompok(kel), kode: kel.kode, judul: kel.judul,
+      id, kunci: kel.kunci, kode: kel.kode, judul: kel.judul,
       deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "pcs",
       jumlah: 1, harga: Math.round(harga), hargaRata: Math.round(h.median || harga),
       kali: 0, bulanTerakhir: "", bulanMuncul: [],
