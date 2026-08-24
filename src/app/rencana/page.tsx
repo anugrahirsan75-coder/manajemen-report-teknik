@@ -180,6 +180,58 @@ export default function RencanaPage() {
   }, [dok, kerja, tipe, bulan]);
 
   /** Tandai SELURUH kapal bulan ini sebagai terkirim — sekali klik. */
+  /**
+   * Buka kunci SELURUH kapal bulan ini sekaligus.
+   *
+   * Membuka satu per satu tiga belas kapal berarti tiga belas konfirmasi untuk
+   * satu keputusan yang sama — dan yang mendorongnya biasanya memang satu
+   * sebab: pagu turun berubah, atau susunan mau diulang seluruh armada.
+   *
+   * Waktu pengiriman TIDAK dihapus. Dokumen yang pernah dikirim ke pusat tetap
+   * membawa jejak kapan ia dikirim; menghapusnya membuat revisi tak bisa
+   * dibedakan dari dokumen yang belum pernah dikirim sama sekali.
+   */
+  const bukaKunciSemua = async () => {
+    if (!bulan) return;
+    const terkunci = docBulan.filter((d) => d.status === "terkirim");
+    if (!terkunci.length) {
+      setPesan(`Tak ada dokumen ${tipe} ${namaBulan(bulan)} yang terkunci.`);
+      setTimeout(() => setPesan(""), 6000);
+      return;
+    }
+    const nilai = terkunci.reduce((s, d) => s + totalDoc(d).total, 0);
+
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "🔓",
+      judul: `Buka kunci SEMUA ${tipe} ${namaBulan(bulan)}?`,
+      pesan: `${terkunci.length} kapal akan bisa disunting lagi sekaligus.`,
+      rincian: [
+        `${terkunci.length} kapal dibuka · total ${rupiah(nilai)}`,
+        `Kapal: ${terkunci.map((d) => ringkasKapal(d.kapal)).join(", ")}`,
+        "Waktu pengiriman tetap tercatat sebagai jejak revisi",
+      ],
+      tegasan: "Isinya tidak berubah — yang dibuka hanya kuncinya. Jangan lupa menandai terkirim lagi setelah selesai merevisi.",
+      tombolYa: `Buka ${terkunci.length} kapal`,
+    }))) return;
+
+    setSibuk(true);
+    try {
+      let n = 0;
+      for (const d of terkunci) {
+        setPesan(`Membuka kunci… ${++n}/${terkunci.length} (${ringkasKapal(d.kapal)})`);
+        await simpan({ ...d, status: "draf" });
+      }
+      if (kerja && terkunci.some((d) => d.id === kerja.id)) {
+        setKerja({ ...kerja, status: "draf" });
+        setBerubah(false);
+      }
+      setPesan(`🔓 ${terkunci.length} kapal dibuka kuncinya untuk ${tipe} ${namaBulan(bulan)} — sekarang bisa disunting.`);
+      setTimeout(() => setPesan(""), 8000);
+    } catch (e: any) {
+      setPesan(`Gagal membuka kunci: ${e?.message || e}`);
+    } finally { setSibuk(false); }
+  };
+
   const tandaiSemua = async () => {
     if (!bulan) return;
     const kandidat = docBulan.filter((d) => d.status !== "terkirim" && totalDoc(d).total > 0);
@@ -881,6 +933,13 @@ export default function RencanaPage() {
               🔒 Tandai semua terkirim ({jumlahDraf})
             </button>
           )}
+          {jumlahTerkirim > 0 && (
+            <button onClick={bukaKunciSemua} disabled={sibuk}
+              className="btn btn-ghost text-xs disabled:opacity-50"
+              title={`Buka kunci ${jumlahTerkirim} kapal yang sudah terkirim, sekali klik — isinya tidak berubah`}>
+              🔓 Buka kunci semua ({jumlahTerkirim})
+            </button>
+          )}
         </div>
 
         <div className="flex flex-wrap gap-1.5 mt-3">
@@ -1180,7 +1239,8 @@ export default function RencanaPage() {
       )}
 
       {/* ================= rekap semua kapal ================= */}
-      <Rekap dok={dok} bulan={bulan} tipe={tipe} harap={harapBulan} dash={dashBulan} />
+      <Rekap dok={dok} bulan={bulan} tipe={tipe} harap={harapBulan} dash={dashBulan}
+        rkaKapal={rka?.bulananKapal?.[bulan] || {}} rkaPerMA={paguRka} sumberRka={pembanding.sumber} />
 
       {loading && <p className="mt-4 text-xs text-slate-400">memuat…</p>}
       {dialogKonfirmasi}
@@ -1396,16 +1456,26 @@ function hitungSeharusnya(pengadaan: PengadaanRow[], bulan: string) {
   };
 }
 
-function Rekap({ dok, bulan, tipe, harap, dash }: {
+function Rekap({ dok, bulan, tipe, harap, dash, rkaKapal, rkaPerMA, sumberRka }: {
   dok: RrDoc[]; bulan: string; tipe: TipeRR;
   harap: ReturnType<typeof hitungSeharusnya>; dash: number;
+  /** RKA bulan ini per kapal per Mata Anggaran — pembanding usulan */
+  rkaKapal?: Record<string, Record<string, number>>;
+  rkaPerMA?: Record<string, number>;
+  sumberRka?: "rilis" | "rka" | "kosong";
 }) {
   const baris = useMemo(() => KAPAL_ANGGARAN.map((k) => {
     const d = dok.find((x) => x.tipe === tipe && x.bulan === bulan && x.kapal === k);
     const per = d ? totalPerMA(d) : {};
     const t = d ? totalDoc(d) : { dasar: 0, ppn: 0, total: 0 };
-    return { kapal: k, per, total: t.total, dasar: t.dasar, status: d?.status, ada: !!d, harus: harap.perKapal[k] || 0 };
-  }), [dok, bulan, tipe, harap]);
+    // RKA kapal ini bulan ini — pembanding yang benar untuk usulan, karena RKA
+    // memang disusun per kapal, bukan dibagi rata dari angka cabang
+    const rkaK = Object.values(rkaKapal?.[k] || {}).reduce((s, v) => s + v, 0);
+    return {
+      kapal: k, per, total: t.total, dasar: t.dasar, status: d?.status, ada: !!d,
+      harus: harap.perKapal[k] || 0, rka: rkaK,
+    };
+  }), [dok, bulan, tipe, harap, rkaKapal]);
 
   const totalSemua = baris.reduce((s, b) => s + b.total, 0);
   const dasarSemua = baris.reduce((s, b) => s + b.dasar, 0);
@@ -1415,6 +1485,19 @@ function Rekap({ dok, bulan, tipe, harap, dash }: {
   const belumDiisi = baris.filter((b) => b.harus > 0 && b.dasar <= 0);
   const bedaKapal = baris.filter((b) => b.dasar > 0 && Math.abs(b.dasar - b.harus) >= 1000);
   const pas = Math.abs(selisih) < 1000;   // beda < Rp 1.000 = pembulatan harga satuan
+
+  /** perbandingan usulan vs RKA — hanya untuk rencana, dan hanya bila RKA-nya ada */
+  const totalRka = baris.reduce((s, b) => s + b.rka, 0);
+  /**
+   * Dua baris terakhir memakai dasar PER MATA ANGGARAN, bukan jumlah RKA tiap
+   * kapal. Keduanya semestinya sama; kalau berbeda (nama kapal tak dikenali,
+   * atau ada kapal tanpa RKA bulan itu), yang dipakai tetap angka Mata
+   * Anggarannya — sebab itulah yang dibandingkan pusat, dan satu baris tak
+   * boleh menjumlahkan dua dasar yang berbeda.
+   */
+  const totalRkaMA = Object.values(rkaPerMA || {}).reduce((s, v) => s + v, 0);
+  const adaRka = tipe === "rencana" && totalRka > 0;
+  const labelRka = sumberRka === "rilis" ? "Pagu rilis" : "RKA";
   if (!bulan) return null;
 
   return (
@@ -1496,6 +1579,11 @@ function Rekap({ dok, bulan, tipe, harap, dash }: {
               <th className="p-2 text-left">Kapal</th>
               {MA_RR.map((m) => <th key={m.kode} className="p-2 text-right whitespace-nowrap">{m.kode}</th>)}
               <th className="p-2 text-right">Total</th>
+              {adaRka && <>
+                <th className="p-2 text-right whitespace-nowrap" title={`${labelRka} ${namaBulan(bulan)} untuk kapal ini`}>{labelRka} kapal</th>
+                <th className="p-2 text-right whitespace-nowrap" title="Usulan dibanding RKA kapal itu sendiri">% RKA</th>
+                <th className="p-2 text-right whitespace-nowrap" title="RKA dikurangi usulan — merah berarti usulan melebihi RKA">Sisa</th>
+              </>}
               {tipe === "realisasi" && <>
                 <th className="p-2 text-right whitespace-nowrap" title="Nilai yang seharusnya masuk, dihitung dari SPPBJ / Non PR PO bulan ini">Seharusnya</th>
                 <th className="p-2 text-right">Selisih</th>
@@ -1513,6 +1601,21 @@ function Rekap({ dok, bulan, tipe, harap, dash }: {
                   </td>
                 ))}
                 <td className="p-2 text-right font-bold text-slate-800 tabular-nums">{b.total ? rupiah(b.total) : "–"}</td>
+                {adaRka && (() => {
+                  const persen = b.rka ? Math.round((b.total / b.rka) * 100) : 0;
+                  const sisaK = Math.round(b.rka - b.total);
+                  return <>
+                    <td className="p-2 text-right tabular-nums text-slate-500">{b.rka ? rupiah(Math.round(b.rka)) : "–"}</td>
+                    <td className={`p-2 text-right tabular-nums font-bold ${
+                      !b.rka || !b.total ? "text-slate-300" : persen > 105 ? "text-rose-700" : persen >= 90 ? "text-emerald-700" : "text-amber-700"}`}
+                      title={b.rka && b.total ? (persen > 105 ? "melebihi RKA kapal ini" : persen >= 90 ? "sudah mendekati RKA" : "masih jauh di bawah RKA") : undefined}>
+                      {b.rka && b.total ? `${persen}%` : "–"}
+                    </td>
+                    <td className={`p-2 text-right tabular-nums ${sisaK < 0 ? "text-rose-700 font-bold" : "text-slate-500"}`}>
+                      {b.rka ? rupiah(sisaK) : "–"}
+                    </td>
+                  </>;
+                })()}
                 {tipe === "realisasi" && (() => {
                   const bedaK = Math.round(b.dasar - b.harus);
                   const pasK = Math.abs(bedaK) < 1000;
@@ -1539,6 +1642,15 @@ function Rekap({ dok, bulan, tipe, harap, dash }: {
                 </td>
               ))}
               <td className="p-2 text-right text-slate-900 tabular-nums">{rupiah(totalSemua)}</td>
+              {adaRka && (() => {
+                const persen = totalRka ? Math.round((totalSemua / totalRka) * 100) : 0;
+                const sisaT = Math.round(totalRka - totalSemua);
+                return <>
+                  <td className="p-2 text-right tabular-nums text-slate-700">{rupiah(Math.round(totalRka))}</td>
+                  <td className={`p-2 text-right tabular-nums ${persen > 105 ? "text-rose-700" : persen >= 90 ? "text-emerald-700" : "text-amber-700"}`}>{persen}%</td>
+                  <td className={`p-2 text-right tabular-nums ${sisaT < 0 ? "text-rose-700" : "text-emerald-700"}`}>{rupiah(sisaT)}</td>
+                </>;
+              })()}
               {tipe === "realisasi" && <>
                 <td className="p-2 text-right tabular-nums text-slate-600">{rupiah(Math.round(harap.bisa))}</td>
                 <td className={`p-2 text-right tabular-nums ${pas ? "text-emerald-700" : "text-amber-700"}`}>
@@ -1547,6 +1659,42 @@ function Rekap({ dok, bulan, tipe, harap, dash }: {
               </>}
               <td />
             </tr>
+
+            {/*
+              Dua baris pembanding: RKA bulan ini per Mata Anggaran, lalu
+              sisanya. Tanpa ini tabel cuma menjawab "kita mengusulkan berapa",
+              padahal yang ditanya pusat justru "apakah masih di dalam RKA".
+            */}
+            {adaRka && <>
+              <tr className="bg-indigo-50/60 font-semibold text-indigo-900">
+                <td className="p-2 whitespace-nowrap">{labelRka} {namaBulan(bulan)}</td>
+                {MA_RR.map((m) => (
+                  <td key={m.kode} className="p-2 text-right tabular-nums">
+                    {rkaPerMA?.[m.kode] ? rupiah(Math.round(rkaPerMA[m.kode])) : "–"}
+                  </td>
+                ))}
+                <td className="p-2 text-right tabular-nums">{rupiah(Math.round(totalRkaMA))}</td>
+                <td colSpan={4} />
+              </tr>
+              <tr className="bg-slate-50 font-semibold">
+                <td className="p-2 whitespace-nowrap text-slate-700">Sisa terhadap {labelRka}</td>
+                {MA_RR.map((m) => {
+                  const pakai = baris.reduce((s, b) => s + (b.per[m.kode] || 0), 0);
+                  const punya = (rkaPerMA?.[m.kode] || 0) > 0 || pakai > 0;
+                  const sisaMA = Math.round((rkaPerMA?.[m.kode] || 0) - pakai);
+                  return (
+                    <td key={m.kode} className={`p-2 text-right tabular-nums ${
+                      !punya ? "text-slate-300" : sisaMA < 0 ? "text-rose-700" : "text-emerald-700"}`}>
+                      {punya ? rupiah(sisaMA) : "–"}
+                    </td>
+                  );
+                })}
+                <td className={`p-2 text-right tabular-nums ${totalRkaMA - totalSemua < 0 ? "text-rose-700" : "text-emerald-700"}`}>
+                  {rupiah(Math.round(totalRkaMA - totalSemua))}
+                </td>
+                <td colSpan={4} />
+              </tr>
+            </>}
           </tbody>
         </table>
       </div>
