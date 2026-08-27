@@ -78,5 +78,43 @@ export async function POST(req: NextRequest) {
     console.error("lapor/kirim gagal simpan:", error?.message);
     return NextResponse.json({ ok: false, error: "Kiriman gagal dibuka di server. Coba lagi sebentar." }, { status: 500 });
   }
+  await tandaiPercobaanLama(c, kapal, jenis, periode, pengirim, data.id);
   return NextResponse.json({ ok: true, id: data.id, token });
+}
+
+/**
+ * Tandai percobaan sebelumnya yang berkasnya NIHIL sebagai "digantikan".
+ *
+ * ABK yang unggahannya putus biasanya menutup halaman lalu mengisi borang dari
+ * awal — dan tiap pengulangan itu dulu meninggalkan satu catatan kosong baru.
+ * Pada 4 Agustus 2026 KMP. PORTLINK VIII meninggalkan LIMA catatan kosong untuk
+ * satu laporan yang sama, sehingga kantor mengira ada lima laporan gagal padahal
+ * hanya satu yang dicoba berulang.
+ *
+ * Yang ditandai hanya yang benar-benar kosong: catatan yang sudah membawa
+ * berkas tidak pernah disentuh, sekecil apa pun isinya.
+ */
+async function tandaiPercobaanLama(
+  c: any, kapal: string, jenis: string, periode: string, pengirim: string, idBaru: string,
+) {
+  try {
+    const sejak = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data } = await c.from("projects").select("id,payload")
+      .filter("payload->>kind", "eq", "lapor_kapal")
+      .filter("payload->>kapal", "eq", kapal)
+      .filter("payload->>jenis", "eq", jenis)
+      .filter("payload->>periode", "eq", periode);
+    for (const row of (data || []) as any[]) {
+      const p = row.payload || {};
+      if (row.id === idBaru) continue;
+      if ((p.berkas || []).length > 0) continue;
+      if (p.digantikan) continue;
+      if ((p.pengirim || "") !== pengirim) continue;
+      if ((p.dikirimPada || "") < sejak) continue;
+      await c.from("projects").update({ payload: { ...p, digantikan: idBaru } }).eq("id", row.id);
+    }
+  } catch (e: any) {
+    // Menandai percobaan lama itu kerapian, bukan syarat kiriman baru berhasil.
+    console.error("lapor/kirim tandai percobaan lama:", e?.message);
+  }
 }

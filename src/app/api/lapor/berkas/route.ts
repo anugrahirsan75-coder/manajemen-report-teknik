@@ -39,6 +39,30 @@ const MAKS_TOTAL_POTONGAN = 18;
  */
 const TENGGANG_GAS_MS = 45_000;
 
+/**
+ * Catat satu berkas pada kirimannya — SATU pintu untuk dua jalur: unggahan yang
+ * selesai normal, dan berkas yang ditemukan sudah utuh di Drive saat peramban
+ * bertanya "sampai mana".
+ *
+ * Payload dibaca ULANG tepat sebelum ditulis supaya perubahan yang masuk selagi
+ * berkas diunggah (status dari kantor, atau berkas lain dari kiriman yang sama)
+ * tidak tertimpa salinan lama. unggahId menjaga agar percobaan ulang tidak
+ * membuat baris kedua untuk berkas yang sama.
+ */
+async function catatBerkas(c: any, id: string, berkasBaru: Record<string, any>) {
+  const { data: terbaru } = await c.from("projects").select("payload").eq("id", id).single();
+  const p: any = terbaru?.payload || {};
+  const daftar: any[] = Array.isArray(p.berkas) ? p.berkas : [];
+  const lama = daftar.find((f) => f.unggahId && f.unggahId === berkasBaru.unggahId);
+  if (lama) return { berkas: lama, jumlah: daftar.length, baru: false };
+
+  const berkas = [...daftar, berkasBaru];
+  const { error } = await c.from("projects")
+    .update({ payload: { ...p, berkas, galatUnggah: "" } }).eq("id", id);
+  if (error) throw new Error(error.message);
+  return { berkas: berkasBaru, jumlah: berkas.length, baru: true };
+}
+
 /** galat yang layak dicoba lagi oleh peramban */
 const jawabUlangi = (pesan: string, status = 502) =>
   NextResponse.json({ ok: false, error: pesan, retryable: true }, { status });
@@ -88,7 +112,9 @@ export async function POST(req: NextRequest) {
 
   const c = dbLapor()!;
   const { data: ada, error: e1 } = await c.from("projects").select("payload").eq("id", id).single();
-  if (e1 || !ada) return NextResponse.json({ ok: false, error: "Kiriman tidak ditemukan" }, { status: 404 });
+  if (e1 || !ada) {
+    return NextResponse.json({ ok: false, hilang: true, error: "Kiriman tidak ditemukan" }, { status: 404 });
+  }
   const p: any = ada.payload || {};
   if (p.kind !== "lapor_kapal" || p.token !== token) {
     return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 403 });
@@ -112,11 +138,17 @@ export async function POST(req: NextRequest) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         secret: gasSecret,
-        // Berkas yang muat dalam satu potongan dikirim dengan cara lama, supaya
-        // Apps Script versi lama (yang belum kenal potongan) tetap melayaninya.
-        ...(total === 1
-          ? { dataBase64 }
-          : { aksi: "potongan", unggahId: idUnggah, indeks, total, data: dataBase64 }),
+        /*
+         * SELALU lewat jalur potongan, termasuk berkas yang muat sekali kirim.
+         *
+         * Jalur lama (dataBase64 polos) tidak mengenal unggahId, jadi tidak
+         * punya penjaga pengulangan sama sekali: satu foto yang dikirim ulang
+         * karena jawabannya hilang di jalan menjadi dua berkas di Drive. Itulah
+         * asal salinan berlipat pada KMP. MAMING 4 Agustus 2026 — semua
+         * berkasnya di bawah satu potongan. Jalur potongan mencatat penanda
+         * hasil, sehingga pengulangan dijawab dengan berkas yang sudah ada.
+         */
+        aksi: "potongan", unggahId: idUnggah, indeks, total, data: dataBase64,
         kapal: p.kapal, jenis: p.jenis, periode: p.periode,
         catatan: `${p.pengirim || ""}${p.jabatan ? ` (${p.jabatan})` : ""}`,
         namaBerkas, mime: jenis.mime,
@@ -134,7 +166,7 @@ export async function POST(req: NextRequest) {
       let pesan = String(hasil?.error || `Google Drive menolak (${res.status})`);
       // Apps Script versi lama tidak mengenali aksi "potongan": yang keluar
       // justru "berkas kosong", pesan yang tidak menjelaskan apa pun kepada ABK.
-      if (total > 1 && /berkas kosong/i.test(pesan)) {
+      if (/berkas kosong/i.test(pesan)) {
         pesan = "Penyimpanan Drive masih memakai Apps Script versi lama sehingga berkas besar ditolak. "
           + "Terbitkan versi baru: Deploy > Kelola deployment > Versi baru.";
       }
@@ -165,32 +197,20 @@ export async function POST(req: NextRequest) {
   }
 
   // ── berkas utuh: catat tautannya (bukan berkasnya) ────────────────────────
-  // Payload dibaca ULANG tepat sebelum menulis supaya perubahan yang masuk
-  // sementara berkas diunggah (status/tindak lanjut dari kantor, atau berkas
-  // lain dari kiriman yang sama) tidak tertimpa salinan lama.
-  const { data: terbaru } = await c.from("projects").select("payload").eq("id", id).single();
-  const pTerbaru: any = terbaru?.payload || p;
-  const daftarLama = Array.isArray(pTerbaru.berkas) ? pTerbaru.berkas : [];
-  if (daftarLama.some((f: any) => f.unggahId === idUnggah)) {
-    const lama = daftarLama.find((f: any) => f.unggahId === idUnggah);
-    return NextResponse.json({ ok: true, selesai: true, berkas: lama, jumlah: daftarLama.length });
-  }
-
-  const berkas = [...daftarLama, {
-    nama: hasil.nama || namaBerkas, mime: jenis.mime,
-    ukuran: hasil.ukuran || Math.round(dataBase64.length * 0.75),
-    fileId: hasil.fileId, url: hasil.url, diunggahPada: new Date().toISOString(), unggahId: idUnggah,
-  }];
-  const { error: e2 } = await c.from("projects")
-    .update({ payload: { ...pTerbaru, berkas, galatUnggah: "" } }).eq("id", id);
-  if (e2) {
-    console.error("lapor/berkas gagal catat:", e2.message);
+  try {
+    const dicatat = await catatBerkas(c, id, {
+      nama: hasil.nama || namaBerkas, mime: jenis.mime,
+      ukuran: hasil.ukuran || Math.round(dataBase64.length * 0.75),
+      fileId: hasil.fileId, url: hasil.url, diunggahPada: new Date().toISOString(), unggahId: idUnggah,
+    });
+    return NextResponse.json({ ok: true, selesai: true, berkas: dicatat.berkas, jumlah: dicatat.jumlah });
+  } catch (e: any) {
+    console.error("lapor/berkas gagal catat:", e?.message);
     // Berkasnya SUDAH ada di Drive. Peramban boleh mengulang: penjaga unggahId
-    // di atas mencegah berkas kedua terbentuk.
+    // di dalam catatBerkas mencegah berkas kedua terbentuk, dan pertanyaan
+    // "sampai mana" pun kini ikut menambalkan catatannya.
     return jawabUlangi("Berkas sudah masuk Drive tapi catatannya gagal disimpan. Tekan coba lagi.", 500);
   }
-
-  return NextResponse.json({ ok: true, selesai: true, berkas: berkas[berkas.length - 1], jumlah: berkas.length });
 }
 
 /**
@@ -206,12 +226,35 @@ export async function GET(req: NextRequest) {
   const id = q.get("id") || "";
   const token = q.get("token") || "";
   const unggahId = (q.get("unggahId") || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
-  if (!id || !token || !unggahId) return NextResponse.json({ ok: false }, { status: 400 });
+  if (!id || !token) return NextResponse.json({ ok: false }, { status: 400 });
 
   const c = dbLapor()!;
   const { data: ada } = await c.from("projects").select("payload").eq("id", id).single();
   const p: any = ada?.payload;
-  if (!p || p.kind !== "lapor_kapal" || p.token !== token) return NextResponse.json({ ok: false }, { status: 403 });
+  /*
+   * Kiriman yang catatannya sudah dihapus kantor harus dibedakan dari galat
+   * jaringan. Tanpa pembedaan ini, halaman ABK mengulang selamanya ke kiriman
+   * yang tak akan pernah ada lagi — dan berkas yang di tangan ABK terlihat
+   * "sedang dikirim" itu tidak akan pernah sampai ke mana pun.
+   */
+  if (!p || p.kind !== "lapor_kapal") {
+    return NextResponse.json({ ok: false, hilang: true, error: "Kiriman tidak ditemukan" }, { status: 404 });
+  }
+  if (p.token !== token) return NextResponse.json({ ok: false }, { status: 403 });
+
+  /*
+   * Tanpa unggahId: berapa berkas yang BENAR-BENAR tercatat pada kiriman ini.
+   * Halaman ABK memakainya sebagai bukti penutup — selama ini yang dilihat ABK
+   * hanya laporan dari ponselnya sendiri, padahal justru catatan di kantor yang
+   * menentukan berkas itu dianggap sampai atau tidak.
+   */
+  if (!unggahId) {
+    const daftar = Array.isArray(p.berkas) ? p.berkas : [];
+    return NextResponse.json({
+      ok: true, jumlah: daftar.length,
+      nama: daftar.map((f: any) => f.nama).slice(0, 12),
+    });
+  }
 
   const sudah = (p.berkas || []).find((f: any) => f.unggahId === unggahId);
   if (sudah) return NextResponse.json({ ok: true, selesai: true, hasil: sudah });
@@ -224,6 +267,25 @@ export async function GET(req: NextRequest) {
     });
     const d = JSON.parse(await res.text());
     if (d?.ok !== true) return NextResponse.json({ ok: true, potongan: [] });
+
+    /*
+     * Berkasnya SUDAH utuh di Drive, tapi catatannya belum ada di kiriman ini.
+     * Inilah lubang yang membuat berkas "hilang": jawaban unggahan terakhir tak
+     * sampai ke ponsel (jaringan kapal putus tepat saat Drive menyatukan
+     * berkas), lalu pertanyaan "sampai mana" ini dijawab "sudah selesai" —
+     * dan dulu jawabannya berhenti di situ. Berkasnya ada di Drive, kantor
+     * melihat kiriman kosong, dan tak ada satu pun yang tahu.
+     *
+     * Sekarang penemuan itu langsung dicatat, sama persis seperti jalur unggah.
+     */
+    if (d.selesai && d.hasil?.fileId && d.hasil?.url) {
+      const dicatat = await catatBerkas(c, id, {
+        nama: d.hasil.nama || "berkas", mime: d.hasil.mime || "application/octet-stream",
+        ukuran: Number(d.hasil.ukuran) || 0, fileId: d.hasil.fileId, url: d.hasil.url,
+        diunggahPada: new Date().toISOString(), unggahId,
+      });
+      return NextResponse.json({ ok: true, selesai: true, hasil: dicatat.berkas, jumlah: dicatat.jumlah });
+    }
     return NextResponse.json({ ok: true, selesai: !!d.selesai, hasil: d.hasil || null, potongan: d.potongan || [] });
   } catch {
     // gagal bertanya bukan alasan gagal kirim — anggap belum ada yang masuk

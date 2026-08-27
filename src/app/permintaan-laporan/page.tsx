@@ -47,7 +47,36 @@ function IsiPermintaanLaporanKapal() {
   const [bacaKiriman, setBacaKiriman] = useState<any | null>(null);
   const [hapusBerkasId, setHapusBerkasId] = useState("");
   const [salin, setSalin] = useState("");
+  /**
+   * Kabar melayang untuk perubahan yang MEMANG terjadi.
+   *
+   * Dulu mengubah status ke "Selesai" tidak menghasilkan tanda apa pun: kotak
+   * pilihan berganti tulisan, lalu senyap. Tidak ada yang menyatakan bahwa
+   * perubahan itu sudah sampai ke basis data, dan bila gagal pun tampilannya
+   * tetap memperlihatkan status baru — kantor merasa sudah menutup pekerjaan
+   * yang sebenarnya masih terbuka.
+   */
+  const [kabar, setKabar] = useState<{ teks: string; nada: "sukses" | "gagal" | "kerja"; urung?: () => void } | null>(null);
+  /** id kiriman yang statusnya sedang disimpan — mengunci tombol & menyalakan putaran */
+  const [simpanId, setSimpanId] = useState("");
+  /** id kiriman yang baru berubah — barisnya disorot sebentar supaya mata menemukannya */
+  const [sorot, setSorot] = useState("");
+  const [cariDrive, setCariDrive] = useState<{ sibuk: boolean; kandidat: any[]; pesan: string } | null>(null);
+  /** berkas Drive yang dicentang untuk ditautkan — bawaannya semua kandidat */
+  const [pilihDrive, setPilihDrive] = useState<Set<string>>(new Set());
   const sp = useSearchParams();
+
+  useEffect(() => {
+    if (!kabar || kabar.nada === "kerja") return;
+    const j = window.setTimeout(() => setKabar(null), kabar.urung ? 9000 : 4500);
+    return () => window.clearTimeout(j);
+  }, [kabar]);
+
+  useEffect(() => {
+    if (!sorot) return;
+    const j = window.setTimeout(() => setSorot(""), 2600);
+    return () => window.clearTimeout(j);
+  }, [sorot]);
 
   const ambil = async () => {
     setMuat(true); setGalat("");
@@ -97,12 +126,39 @@ function IsiPermintaanLaporanKapal() {
     return peta;
   }, [baris, periodeMatriks]);
 
-  /** kiriman yang catatannya ada tapi berkasnya tidak pernah sampai */
+  /**
+   * Kiriman yang catatannya ada tapi berkasnya tidak pernah sampai.
+   *
+   * Percobaan yang sudah DIGANTIKAN kiriman berikutnya tidak ikut dihitung:
+   * satu laporan yang dicoba lima kali bukan lima laporan gagal, dan angka yang
+   * dilebih-lebihkan membuat peringatan ini cepat diabaikan.
+   */
   const gagalKirim = useMemo(
-    () => baris.filter((b) => b.periode === periodeMatriks && b.berkas.length === 0),
+    () => baris.filter((b) => b.periode === periodeMatriks && b.berkas.length === 0 && !b.digantikan),
     [baris, periodeMatriks]);
 
-  const ubah = async (id: string, patch: Partial<KirimanLapor>) => {
+  /**
+   * Simpan perubahan, lalu KATAKAN apa yang terjadi.
+   *
+   * Tampilan diubah lebih dulu supaya terasa seketika, tetapi bila server
+   * menolak, keadaan lama dikembalikan dan kabarnya merah — status palsu yang
+   * bertahan di layar jauh lebih berbahaya daripada jeda sesaat.
+   */
+  const ubah = async (id: string, patch: Partial<KirimanLapor>, opsi: { diam?: boolean; otomatis?: boolean } = {}) => {
+    const sebelum = baris.find((x) => x.id === id);
+    const gantiStatus = typeof patch.status === "string" && patch.status !== sebelum?.status;
+
+    // perubahan tampil dulu (tanpa menunggu jaringan kapal-lambat)
+    if (sebelum) {
+      const ramalan = { ...sebelum, ...patch, statusPada: gantiStatus ? new Date().toISOString() : sebelum.statusPada };
+      setBaris((l) => l.map((x) => (x.id === id ? ramalan : x)));
+      setBuka((x) => (x && x.id === id ? ramalan : x));
+    }
+    if (gantiStatus) {
+      setSimpanId(id);
+      setKabar({ teks: `Menyimpan status ${labelStatus(patch.status as string)}…`, nada: "kerja" });
+    }
+
     let d: any;
     try {
       const r = await fetch("/api/lapor/daftar", {
@@ -112,18 +168,57 @@ function IsiPermintaanLaporanKapal() {
       d = await r.json();
     } catch (e: any) {
       // Tanpa ini, catatan tindak lanjut hilang diam-diam saat jaringan putus.
+      if (sebelum) {
+        setBaris((l) => l.map((x) => (x.id === id ? sebelum : x)));
+        setBuka((x) => (x && x.id === id ? sebelum : x));
+      }
+      setSimpanId("");
       setGalat(e?.message || "Perubahan gagal disimpan. Periksa koneksi lalu ulangi.");
+      setKabar({ teks: "Perubahan TIDAK tersimpan — koneksi terputus.", nada: "gagal" });
       return;
     }
-    if (!d.ok) { setGalat(d.error || "Gagal menyimpan"); return; }
+    setSimpanId("");
+    if (!d.ok) {
+      if (sebelum) {
+        setBaris((l) => l.map((x) => (x.id === id ? sebelum : x)));
+        setBuka((x) => (x && x.id === id ? sebelum : x));
+      }
+      setGalat(d.error || "Gagal menyimpan");
+      setKabar({ teks: d.error || "Perubahan TIDAK tersimpan.", nada: "gagal" });
+      return;
+    }
     setBaris((l) => l.map((x) => (x.id === id ? d.baris : x)));
     setBuka((x) => (x && x.id === id ? d.baris : x));
     window.dispatchEvent(new Event("pengingat:muat-ulang"));
+
+    if (!opsi.diam) {
+      setSorot(id);
+      const nama = `${d.baris.kapal} · ${singkatJenis(d.baris.jenis)}`;
+      setKabar(gantiStatus
+        ? {
+          teks: opsi.otomatis
+            // penandaan yang dilakukan aplikasi sendiri: cukup diberitahukan,
+            // tak perlu ditawari pembatalan seperti keputusan yang diambil orang
+            ? `${nama} otomatis ditandai DIBACA`
+            : `${nama} ditandai ${labelStatus(d.baris.status).toUpperCase()} ✓`,
+          nada: "sukses",
+          // Salah pencet pada daftar sepanjang ini wajar; membatalkannya harus
+          // semudah membuatnya, dan tanpa mencari-cari kirimannya lagi.
+          urung: !opsi.otomatis && sebelum && sebelum.status !== d.baris.status
+            ? () => { void ubah(id, { status: sebelum.status }, { diam: true }); setKabar({ teks: `Dikembalikan ke ${labelStatus(sebelum.status)}`, nada: "sukses" }); }
+            : undefined,
+        }
+        : { teks: `Tindak lanjut ${nama} tersimpan ✓`, nada: "sukses" });
+    }
   };
 
   const bukaKiriman = (b: KirimanLapor) => {
     setBuka(b);
-    if (b.status === "baru") void ubah(b.id, { status: "dibaca" });
+    setCariDrive(null);          // hasil pencarian kiriman sebelumnya tak boleh ikut terbawa
+    // Membuka kiriman menandainya "dibaca" — perubahan yang terjadi tanpa
+    // diminta pun harus terlihat, kalau tidak angka "kiriman baru" berkurang
+    // sendiri dan tampak seperti kekeliruan aplikasi.
+    if (b.status === "baru") void ubah(b.id, { status: "dibaca" }, { otomatis: true });
   };
 
   // Klik notifikasi lonceng membawa pengguna langsung ke kiriman yang tepat.
@@ -159,6 +254,55 @@ function IsiPermintaanLaporanKapal() {
     if (!d.ok) { setGalat(d.error || "Gagal menghapus"); return; }
     setBaris((l) => l.filter((x) => x.id !== b.id));
     setBuka(null);
+  };
+
+  /**
+   * Cari berkas kiriman ini di Google Drive.
+   *
+   * Unggahan yang jawabannya hilang di jalan meninggalkan berkas UTUH di Drive
+   * tanpa catatan pada kirimannya — kantor membaca "tidak membawa berkas" dan
+   * menyuruh kapal mengirim ulang sesuatu yang sudah ada. Tombol ini membuka
+   * folder kapal/jenis yang bersangkutan dan menawarkan berkas sekitar waktu
+   * kiriman itu untuk ditautkan.
+   */
+  const cariDiDrive = async (b: KirimanLapor) => {
+    setCariDrive({ sibuk: true, kandidat: [], pesan: "" });
+    try {
+      const r = await fetch("/api/lapor/daftar/cocok", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: b.id }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setCariDrive({ sibuk: false, kandidat: [], pesan: d.error || "Gagal membaca Drive" }); return; }
+      setCariDrive({
+        sibuk: false, kandidat: d.kandidat || [],
+        pesan: (d.kandidat || []).length ? "" : "Tidak ada berkas yang cocok di folder Drive kapal ini.",
+      });
+      // dicentang semua lebih dulu: yang lazim memang semuanya milik kiriman ini
+      setPilihDrive(new Set((d.kandidat || []).map((f: any) => f.id)));
+    } catch (e: any) {
+      setCariDrive({ sibuk: false, kandidat: [], pesan: e?.message || "Gagal membaca Drive" });
+    }
+  };
+
+  const tautkanDrive = async (b: KirimanLapor, fileIds: string[]) => {
+    setCariDrive((s) => (s ? { ...s, sibuk: true } : s));
+    try {
+      const r = await fetch("/api/lapor/daftar/cocok", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: b.id, aksi: "tautkan", fileIds }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setCariDrive({ sibuk: false, kandidat: [], pesan: d.error || "Gagal menautkan" }); return; }
+      setBaris((l) => l.map((x) => (x.id === b.id ? { ...x, berkas: d.berkas } : x)));
+      setBuka((x) => (x?.id === b.id ? { ...x, berkas: d.berkas } : x));
+      setCariDrive(null);
+      setPilihDrive(new Set());
+      setSorot(b.id);
+      setKabar({ teks: `${d.ditautkan} berkas dari Drive ditautkan ke kiriman ini ✓`, nada: "sukses" });
+    } catch (e: any) {
+      setCariDrive({ sibuk: false, kandidat: [], pesan: e?.message || "Gagal menautkan" });
+    }
   };
 
   const hapusDokumen = async (b: KirimanLapor, f: BerkasLapor) => {
@@ -200,7 +344,8 @@ function IsiPermintaanLaporanKapal() {
   };
 
   const ringkas = useMemo(() => {
-    const kiriman = baris.filter((b) => b.periode === periodeMatriks);
+    // percobaan ulang yang kosong bukan kiriman tersendiri — lihat gagalKirim
+    const kiriman = baris.filter((b) => b.periode === periodeMatriks && !b.digantikan);
     let kapalMengirim = 0;
     let kapalLengkap = 0;
     let slotTerisi = 0;
@@ -306,7 +451,9 @@ function IsiPermintaanLaporanKapal() {
               {gagalKirim.length} kiriman {bulanIndo(periodeMatriks)} tidak membawa berkas
             </span>
             <span className="block text-[10px] text-amber-800 dark:text-amber-300">
-              Unggahan ABK putus di tengah jalan. Kiriman ini TIDAK dihitung sebagai dokumen diterima.
+              Unggahan ABK putus di tengah jalan. Kiriman ini TIDAK dihitung sebagai dokumen diterima —
+              buka kirimannya, lalu tekan &ldquo;Cari berkasnya di Drive&rdquo;: berkas yang terlanjur naik
+              sering sudah ada di sana walau catatannya tidak sampai.
               {gagalKirim[0]?.galatUnggah ? ` Sebab terakhir: ${gagalKirim[0].galatUnggah}` : ""}
             </span>
           </span>
@@ -441,7 +588,8 @@ function IsiPermintaanLaporanKapal() {
           {tampil.map((b) => {
             const metaJenis = JENIS_LAPOR.find((j) => j.id === b.jenis);
             return (
-              <article key={b.id} className="group relative overflow-hidden rounded-2xl bg-white p-4 elev-sm ring-line transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900">
+              <article key={b.id} className={`group relative overflow-hidden rounded-2xl bg-white p-4 elev-sm ring-line transition hover:-translate-y-0.5 hover:shadow-lg dark:bg-slate-900 ${
+                sorot === b.id ? "ring-2 ring-emerald-400 shadow-lg shadow-emerald-500/10" : ""}`}>
                 <span className={`absolute inset-y-0 left-0 w-1 ${b.status === "selesai" ? "bg-emerald-500" : b.status === "baru" ? "bg-rose-500" : b.status === "ditindaklanjuti" ? "bg-amber-500" : "bg-slate-300"}`} />
                 <div className="flex flex-wrap items-center gap-3">
                   <div className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">{metaJenis?.ikon || "📄"}</div>
@@ -450,6 +598,10 @@ function IsiPermintaanLaporanKapal() {
                       <h3 className="font-extrabold text-slate-900">{b.kapal}</h3>
                       <span className="rounded-md bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-600 ring-1 ring-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">{singkatJenis(b.jenis)}</span>
                       <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${kelasStatus(b.status)}`}>{labelStatus(b.status)}</span>
+                      {/* kapan status itu diputuskan — tanpa ini perubahan tak meninggalkan bekas apa pun */}
+                      {b.statusPada && <span className="text-[10px] text-slate-400">diubah {waktuSingkat(b.statusPada)}</span>}
+                      {simpanId === b.id && <span className="text-[10px] font-bold text-sky-600">menyimpan…</span>}
+                      {b.digantikan && <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">percobaan lama</span>}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
                       <span className="font-semibold text-slate-700">📅 {bulanIndo(b.periode)}</span>
@@ -499,12 +651,45 @@ function IsiPermintaanLaporanKapal() {
                     ) : "—"}
                   </div>
                 </div>
-                <div>
-                  <span className="text-slate-500">Status</span>
-                  <select value={buka.status} onChange={(e) => ubah(buka.id, { status: e.target.value as any })}
-                    className="mt-0.5 w-full rounded-lg ring-1 ring-slate-300 px-2 py-1.5 text-sm bg-white">
-                    {STATUS_LAPOR.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
-                  </select>
+                {/*
+                  Status dipilih dengan tombol, bukan kotak pilihan.
+                  Kotak pilihan menyembunyikan pilihan yang sedang berlaku di
+                  balik satu baris teks kecil dan tidak menyisakan tanda apa pun
+                  setelah ditekan; di sini pilihan yang berlaku menyala penuh
+                  warna, dan yang sedang disimpan berputar di tempatnya.
+                */}
+                <div className="sm:col-span-2">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-slate-500">Status kiriman</span>
+                    <span className="text-[11px] text-slate-400">
+                      {simpanId === buka.id ? "menyimpan…"
+                        : buka.statusPada ? `terakhir diubah ${waktuSingkat(buka.statusPada)}` : "belum pernah diubah"}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+                    {STATUS_LAPOR.map((s) => {
+                      const aktif = buka.status === s.id;
+                      return (
+                        <button key={s.id} type="button"
+                          disabled={simpanId === buka.id}
+                          onClick={() => !aktif && ubah(buka.id, { status: s.id })}
+                          className={`rounded-xl px-2 py-2 text-xs font-extrabold ring-1 transition disabled:opacity-60 ${
+                            aktif
+                              ? s.id === "selesai" ? "bg-emerald-600 text-white ring-emerald-700 shadow"
+                                : s.id === "ditindaklanjuti" ? "bg-amber-500 text-white ring-amber-600 shadow"
+                                  : s.id === "baru" ? "bg-rose-600 text-white ring-rose-700 shadow"
+                                    : "bg-slate-700 text-white ring-slate-800 shadow"
+                              : "bg-white text-slate-600 ring-slate-300 hover:bg-slate-50"}`}>
+                          {aktif && <span className="mr-1">✓</span>}{s.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {!!buka.riwayatStatus?.length && (
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      Jejak: {buka.riwayatStatus.slice(-4).map((j) => `${labelStatus(j.status)} (${waktuSingkat(j.pada)})`).join(" → ")}
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -529,7 +714,58 @@ function IsiPermintaanLaporanKapal() {
                   <div className="rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 ring-1 ring-amber-200 dark:bg-amber-950/30 dark:text-amber-200 dark:ring-amber-900">
                     <b>Belum ada berkas yang sampai.</b> Unggahan ABK terputus sebelum selesai.
                     {buka.galatUnggah && <span className="mt-1 block text-xs">Sebab terakhir: {buka.galatUnggah}</span>}
-                    <span className="mt-1 block text-xs">Minta pengirim membuka kembali tautan Lapor Kapal dan menekan kirim ulang.</span>
+                    <span className="mt-1 block text-xs">
+                      Berkasnya bisa saja sudah ada di Drive tanpa sempat tercatat. Periksa dulu sebelum
+                      meminta kapal mengirim ulang.
+                    </span>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      <button type="button" onClick={() => cariDiDrive(buka)} disabled={cariDrive?.sibuk}
+                        className="rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-amber-700 disabled:opacity-60">
+                        {cariDrive?.sibuk ? "Mencari di Drive…" : "🔎 Cari berkasnya di Drive"}
+                      </button>
+                      {buka.kontak && (
+                        <a target="_blank" rel="noopener noreferrer"
+                           href={`https://wa.me/${buka.kontak.replace(/\D/g, "").replace(/^0/, "62")}?text=${encodeURIComponent(`Halo ${buka.pengirim}, ${labelJenis(buka.jenis)} ${buka.kapal} periode ${bulanIndo(buka.periode)} belum membawa berkas. Mohon dikirim ulang lewat tautan Lapor Kapal.`)}`}
+                           className="rounded-lg bg-green-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-green-700">
+                          💬 Tagih ke pengirim
+                        </a>
+                      )}
+                    </div>
+                    {cariDrive && !cariDrive.sibuk && (
+                      <div className="mt-2 rounded-lg bg-white/80 p-2 ring-1 ring-amber-200">
+                        {cariDrive.pesan && <p className="text-xs text-amber-800">{cariDrive.pesan}</p>}
+                        {!!cariDrive.kandidat.length && (
+                          <>
+                            <p className="text-xs font-bold text-slate-700">
+                              {cariDrive.kandidat.length} berkas di folder kapal ini sekitar waktu kiriman:
+                            </p>
+                            <ul className="mt-1 space-y-1">
+                              {cariDrive.kandidat.map((f: any) => (
+                                <li key={f.id} className="flex items-center gap-2 rounded-md bg-slate-50 px-2 py-1 text-xs ring-1 ring-slate-200">
+                                  {/* tiap berkas dicentang sendiri: folder kapal bisa memuat berkas
+                                      milik kiriman lain pada bulan yang sama */}
+                                  <input type="checkbox" checked={pilihDrive.has(f.id)}
+                                    onChange={(e) => setPilihDrive((s) => {
+                                      const b2 = new Set(s);
+                                      if (e.target.checked) b2.add(f.id); else b2.delete(f.id);
+                                      return b2;
+                                    })}
+                                    className="h-3.5 w-3.5 shrink-0 accent-emerald-600" />
+                                  <span className="min-w-0 flex-1 truncate">{f.nama}</span>
+                                  <span className="shrink-0 text-slate-400">{ukuranSingkat(f.ukuran || 0)}</span>
+                                  <a href={f.url} target="_blank" rel="noopener noreferrer" className="shrink-0 font-bold text-sky-700 hover:underline">lihat</a>
+                                </li>
+                              ))}
+                            </ul>
+                            <button type="button" disabled={!pilihDrive.size}
+                              onClick={() => tautkanDrive(buka, cariDrive.kandidat.map((f: any) => f.id).filter((x: string) => pilihDrive.has(x)))}
+                              className="mt-2 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-emerald-700 disabled:bg-slate-300">
+                              ➜ Tautkan {pilihDrive.size} berkas ke kiriman ini
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <ul className="space-y-1.5">
@@ -619,6 +855,25 @@ function IsiPermintaanLaporanKapal() {
             <p className="border-t bg-slate-50 px-5 py-2.5 text-[11px] text-slate-500 dark:border-slate-700 dark:bg-slate-800">
               Beberapa kiriman pada satu slot biasanya berarti kapal mengirim ulang atau melengkapi berkas menyusul.
             </p>
+          </div>
+        </div>
+      )}
+      {/* kabar melayang — bukti bahwa perubahan benar-benar tersimpan */}
+      {kabar && (
+        <div className="fixed inset-x-0 bottom-4 z-[80] flex justify-center px-4">
+          <div className={`anim-in flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-bold shadow-2xl ring-1 ${
+            kabar.nada === "sukses" ? "bg-emerald-600 text-white ring-emerald-700"
+              : kabar.nada === "gagal" ? "bg-rose-600 text-white ring-rose-700"
+                : "bg-slate-900 text-white ring-slate-800"}`}>
+            <span className="text-base">{kabar.nada === "sukses" ? "✓" : kabar.nada === "gagal" ? "⚠" : "⏳"}</span>
+            <span>{kabar.teks}</span>
+            {kabar.urung && (
+              <button onClick={() => kabar.urung?.()}
+                className="rounded-lg bg-white/15 px-2.5 py-1 text-xs font-extrabold uppercase tracking-wide hover:bg-white/25">
+                Urungkan
+              </button>
+            )}
+            <button onClick={() => setKabar(null)} aria-label="Tutup kabar" className="text-white/70 hover:text-white">✕</button>
           </div>
         </div>
       )}

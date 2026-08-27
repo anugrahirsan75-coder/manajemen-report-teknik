@@ -101,11 +101,68 @@ async function siapkan(file: File): Promise<Siap> {
 
 const kunciBerkas = (f: File) => `${f.name}|${f.size}|${f.lastModified}`;
 
+/** sidik jari pendek yang tetap sama untuk teks yang sama (FNV-1a) */
+const sidik = (s: string) => {
+  let a = 0x811c9dc5;
+  for (let i = 0; i < s.length; i++) { a ^= s.charCodeAt(i); a = Math.imul(a, 0x01000193) >>> 0; }
+  return a.toString(36);
+};
+
+/**
+ * Id unggahan yang STABIL: berkas yang sama dari kapal & periode yang sama
+ * selalu memakai id yang sama, walau borangnya diisi ulang dari awal setelah
+ * halaman ditutup.
+ *
+ * Ini yang mencegah Drive terisi salinan berulang. Sebelumnya id dibuat acak
+ * tiap kali, sehingga satu berkas yang dikirim ulang tiga kali karena sinyal
+ * putus menjadi tiga berkas di Drive — kejadian nyata pada KMP. MAMING
+ * 4 Agustus 2026. Dengan id tetap, Google Drive mengenali unggahan itu sebagai
+ * unggahan yang sama dan mengembalikan berkas yang sudah ada.
+ */
+const idUnggahBerkas = (rincian: string, f: File) => {
+  const k = `${rincian}|${kunciBerkas(f)}`;
+  return `u${sidik(k)}${sidik(k.split("").reverse().join(""))}`;
+};
+
+/** rincian kiriman yang ikut menentukan id unggahan */
+const rincianKiriman = (kapal: string, jenis: string, periode: string, pengirim: string) =>
+  `${kapal}|${jenis}|${periode}|${pengirim.trim().toLowerCase()}`;
+
+/**
+ * Kiriman yang belum tuntas disimpan di peramban ABK.
+ *
+ * Tanpa ini, tab yang mati di tengah unggahan berarti kiriman menggantung
+ * selamanya: ABK mengisi borang dari nol, catatan kosong bertambah satu lagi di
+ * kantor, dan berkas yang sudah separuh naik diulang dari potongan pertama.
+ */
+const KUNCI_SIMPAN = "lapor-kapal:kiriman";
+const UMUR_SIMPAN_MS = 48 * 60 * 60 * 1000;
+
+interface BerkasSimpan { kunci: string; nama: string; ukuran: number; masuk: boolean }
+interface Simpanan {
+  id: string; token: string; kapal: string; jenis: string; periode: string;
+  pengirim: string; jabatan: string; kontak: string; catatan: string;
+  dibuatPada: number; berkas: BerkasSimpan[];
+}
+
+const bacaSimpanan = (): Simpanan | null => {
+  try {
+    const s = JSON.parse(localStorage.getItem(KUNCI_SIMPAN) || "null") as Simpanan | null;
+    if (!s?.id || !s?.token) return null;
+    if (Date.now() - (s.dibuatPada || 0) > UMUR_SIMPAN_MS) { localStorage.removeItem(KUNCI_SIMPAN); return null; }
+    return s;
+  } catch { return null; }
+};
+const tulisSimpanan = (s: Simpanan) => { try { localStorage.setItem(KUNCI_SIMPAN, JSON.stringify(s)); } catch { /* mode penyamaran */ } };
+const hapusSimpanan = () => { try { localStorage.removeItem(KUNCI_SIMPAN); } catch { /* biarkan */ } };
+
 interface GagalUnggah { file: File; pesan: string }
 interface HasilKiriman {
   kiriman: { id: string; token: string };
   masuk: number;
   gagal: GagalUnggah[];
+  /** berapa berkas yang tercatat di kantor — null bila belum sempat diperiksa */
+  tercatat?: number | null;
 }
 
 export default function KirimLaporKapal() {
@@ -114,6 +171,8 @@ export default function KirimLaporKapal() {
   const [periode, setPeriode] = useState(bulanIni);
   const [pengirim, setPengirim] = useState("");
   const [jabatan, setJabatan] = useState("");
+  /** nomor WA pengirim — kantor perlu jalan menagih berkas yang tak kunjung sampai */
+  const [kontak, setKontak] = useState("");
   const [catatan, setCatatan] = useState("");
   const [berkas, setBerkas] = useState<File[]>([]);
 
@@ -123,9 +182,16 @@ export default function KirimLaporKapal() {
   const [galat, setGalat] = useState("");
   const [selesai, setSelesai] = useState<HasilKiriman | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-  const idUnggah = useRef(new WeakMap<File, string>());
   const batal = useRef<AbortController | null>(null);
   const dibatalkan = useRef(false);
+  /** kiriman yang tertinggal separuh jalan dari kunjungan sebelumnya */
+  const [lanjutan, setLanjutan] = useState<Simpanan | null>(null);
+  /** hitung mundur percobaan ulang otomatis (detik); 0 = tidak sedang menunggu */
+  const [mundur, setMundur] = useState(0);
+  const simpanan = useRef<Simpanan | null>(null);
+  const putaranUlang = useRef(0);
+  /** berapa kali satu berkas harus diunggah BENAR-BENAR ulang (bukan dilanjutkan) */
+  const ulangBersih = useRef<Record<string, number>>({});
 
   const totalByte = useMemo(() => berkas.reduce((s, f) => s + f.size, 0), [berkas]);
   const siap = kapal && jenis && /^\d{4}-\d{2}$/.test(periode) && pengirim.trim().length >= 3 && berkas.length > 0;
@@ -137,6 +203,44 @@ export default function KirimLaporKapal() {
     window.addEventListener("beforeunload", jaga);
     return () => window.removeEventListener("beforeunload", jaga);
   }, [kirim]);
+
+  /**
+   * Kiriman yang belum tuntas dari kunjungan sebelumnya dibangkitkan kembali:
+   * borangnya terisi sendiri dan kirimannya DIPAKAI ULANG, bukan dibuat baru.
+   * Berkas yang sudah masuk tidak akan naik dua kali, dan kantor tidak menerima
+   * catatan kosong tambahan.
+   */
+  useEffect(() => {
+    const s = bacaSimpanan();
+    if (!s) return;
+    if (!s.berkas.some((b) => !b.masuk)) { hapusSimpanan(); return; }
+    simpanan.current = s;
+    setLanjutan(s);
+    setKapal(s.kapal); setJenis(s.jenis as JenisLapor); setPeriode(s.periode);
+    setPengirim(s.pengirim); setJabatan(s.jabatan); setKontak(s.kontak); setCatatan(s.catatan);
+  }, []);
+
+  /**
+   * Halaman ditutup selagi mengunggah — beri tahu kantor sebabnya sebelum tab
+   * hilang. sendBeacon tetap terkirim walau tabnya sudah ditutup; fetch biasa
+   * dibatalkan peramban di detik yang sama.
+   */
+  useEffect(() => {
+    const pamit = () => {
+      const s = simpanan.current;
+      if (!s) return;
+      const belum = s.berkas.filter((b) => !b.masuk).length;
+      if (!belum) return;
+      try {
+        navigator.sendBeacon?.("/api/lapor/gagal", new Blob([JSON.stringify({
+          id: s.id, token: s.token,
+          pesan: `Halaman ditutup saat mengunggah — ${belum} berkas belum masuk.`,
+        })], { type: "application/json" }));
+      } catch { /* tak ada yang bisa dilakukan lagi di sini */ }
+    };
+    window.addEventListener("pagehide", pamit);
+    return () => window.removeEventListener("pagehide", pamit);
+  }, []);
 
   const tambahBerkas = (l: FileList | null) => {
     if (!l) return;
@@ -216,27 +320,42 @@ export default function KirimLaporKapal() {
   };
 
   /** kirim satu berkas: pecah, lanjutkan dari potongan yang belum sampai */
+  /** tandai satu berkas sudah masuk pada simpanan, supaya bertahan walau tab mati */
+  const tandaiMasuk = (kunci: string) => {
+    const s = simpanan.current;
+    if (!s) return;
+    s.berkas = s.berkas.map((b) => (b.kunci === kunci ? { ...b, masuk: true } : b));
+    tulisSimpanan(s);
+  };
+
   const unggahSatu = async (
     kiriman: { id: string; token: string }, f: File, urut: string,
   ) => {
     const s = await siapkan(f);
     if (s.ukuran === 0) throw new Error("Berkas kosong (0 byte). Pilih ulang berkasnya.");
     const total = Math.max(1, Math.ceil(s.blob.size / BYTE_PER_POTONGAN));
-
-    let unggahId = idUnggah.current.get(f);
-    if (!unggahId) {
-      unggahId = `${kiriman.id.slice(0, 8)}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-      idUnggah.current.set(f, unggahId);
-    }
+    const kunci = kunciBerkas(f);
+    // id dihitung dari isi kirimannya, bukan diacak — lihat idUnggahBerkas()
+    const bersih = ulangBersih.current[kunci] || 0;
+    /*
+     * Ukuran hasil siapkan() ikut mengunci id. Foto dikecilkan ulang tiap
+     * percobaan, dan bila hasilnya sedikit berbeda ukuran, batas potongannya
+     * ikut bergeser — potongan lama dan baru bisa tercampur menjadi satu berkas
+     * yang panjangnya benar tapi isinya rusak. Ukuran yang berbeda kini
+     * menghasilkan id berbeda, jadi percampuran itu mustahil.
+     */
+    const unggahId = idUnggahBerkas(rincianKiriman(kapal, jenis as string, periode, pengirim), f)
+      + `-${s.blob.size}` + (bersih ? `-r${bersih}` : "");
 
     // Melanjutkan, bukan mengulang: inilah yang membuat berkas besar akhirnya
     // selesai di jaringan yang putus-nyambung.
+    // Ditanyakan untuk BERKAS APA PUN, bukan cuma yang berpotongan banyak:
+    // berkas satu potongan yang jawabannya hilang di jalan pun sudah ada di
+    // Drive, dan pertanyaan ini yang menautkan catatannya tanpa unggah ulang.
     let sudah = new Set<number>();
-    if (total > 1) {
-      const cek = await tanyaSampaiMana(kiriman, unggahId);
-      if (cek.hasil) { setPersen(100); return; }
-      sudah = cek.sudah;
-    }
+    const cek = await tanyaSampaiMana(kiriman, unggahId);
+    if (cek.hasil) { setPersen(100); tandaiMasuk(kunci); return; }
+    sudah = cek.sudah;
 
     for (let k = 0; k < total; k++) {
       if (dibatalkan.current) throw new Error("Pengiriman dihentikan.");
@@ -266,7 +385,25 @@ export default function KirimLaporKapal() {
           setPersen(Math.round(((k + 1) / total) * 100));
           // Server bisa menyatakan berkas sudah utuh lebih cepat (mis. unggahan
           // ini pengulangan). Berhenti, jangan kirim sisa potongan percuma.
-          if (d.selesai === true) return;
+          if (d.selesai === true) {
+            /*
+             * Ukuran yang tercatat dibandingkan dengan ukuran aslinya. Berkas
+             * yang sampai TIDAK UTUH lebih berbahaya daripada berkas yang gagal:
+             * yang gagal terlihat, yang tak utuh tercatat hijau dan baru
+             * ketahuan saat dibuka berminggu-minggu kemudian.
+             */
+            const tercatat = Number(d.berkas?.ukuran) || 0;
+            if (tercatat && Math.abs(tercatat - s.blob.size) > 1024) {
+              // Percobaan berikutnya harus benar-benar mengunggah ulang, bukan
+              // dijawab berkas cacat yang sama dari singgahan Drive.
+              ulangBersih.current[kunci] = bersih + 1;
+              const er: Error & { retryable?: boolean } = new Error("Berkas sampai tidak utuh di Drive. Coba kirim ulang berkas ini.");
+              er.retryable = true;
+              throw er;
+            }
+            tandaiMasuk(kunci);
+            return;
+          }
           break;
         } catch (e) {
           galatTerakhir = e;
@@ -314,32 +451,117 @@ export default function KirimLaporKapal() {
     return { masuk, gagal };
   };
 
+  /** tunggu sekian detik sambil menghitung mundur; bisa dipotong tombol Hentikan */
+  const tungguMundur = async (detik: number) => {
+    for (let sisa = detik; sisa > 0 && !dibatalkan.current; sisa--) {
+      setMundur(sisa);
+      setMaju(`Menunggu sinyal — mencoba lagi otomatis dalam ${sisa} detik…`);
+      await tunggu(1000);
+    }
+    setMundur(0);
+  };
+
+  /** tanya kantor: berapa berkas yang BENAR-BENAR tercatat pada kiriman ini */
+  const periksaTercatat = async (kiriman: { id: string; token: string }) => {
+    try {
+      const r = await fetch(`/api/lapor/berkas?id=${encodeURIComponent(kiriman.id)}&token=${encodeURIComponent(kiriman.token)}`,
+        { cache: "no-store" });
+      const d = await r.json();
+      return d?.ok ? Number(d.jumlah) || 0 : null;
+    } catch { return null; }
+  };
+
+  /**
+   * Kirim satu rombongan berkas, lalu ULANGI SENDIRI yang gagal.
+   *
+   * Percobaan ulang otomatis inilah yang membedakan "berkas sampai" dari
+   * "berkas seharusnya sampai": sinyal kapal biasa hilang setengah menit sampai
+   * beberapa menit, sementara ABK sudah menutup halaman jauh sebelum itu karena
+   * mengira kirimannya selesai.
+   */
+  const prosesKiriman = async (kiriman: { id: string; token: string }, daftar: File[], sudahMasuk = 0) => {
+    let hasil = await jalankanUnggah(kiriman, daftar);
+    let masuk = sudahMasuk + hasil.masuk;
+    setSelesai({ kiriman, masuk, gagal: hasil.gagal, tercatat: null });
+
+    const JEDA_PUTARAN = [15, 30, 60];
+    while (hasil.gagal.length && putaranUlang.current < JEDA_PUTARAN.length && !dibatalkan.current) {
+      const jeda = JEDA_PUTARAN[putaranUlang.current];
+      putaranUlang.current++;
+      await tungguMundur(jeda);
+      if (dibatalkan.current) break;
+      hasil = await jalankanUnggah(kiriman, hasil.gagal.map((g) => g.file));
+      masuk += hasil.masuk;
+      setSelesai({ kiriman, masuk, gagal: hasil.gagal, tercatat: null });
+    }
+
+    // Bukti terakhir dari sisi kantor, bukan dari sisi ponsel. Selama ini ABK
+    // hanya bisa percaya pada layar hijau di tangannya sendiri.
+    const tercatat = await periksaTercatat(kiriman);
+    setSelesai({ kiriman, masuk, gagal: hasil.gagal, tercatat });
+
+    if (!hasil.gagal.length) hapusSimpanan();
+    return hasil;
+  };
+
   const kirimSemua = async () => {
     setKirim(true); setGalat(""); setPersen(0); dibatalkan.current = false;
+    putaranUlang.current = 0;
     setMaju("Membuka kiriman…");
     try {
-      const d = await mintaJson("/api/lapor/kirim", { kapal, jenis, periode, pengirim, jabatan, catatan });
-      const kiriman = { id: d.id, token: d.token };
-      const { masuk, gagal } = await jalankanUnggah(kiriman, berkas);
-      // Kiriman sudah dibuat. Walau semua berkas gagal karena sinyal, simpan ID
-      // dan tokennya supaya tombol coba lagi memakai kiriman yang sama.
-      setSelesai({ kiriman, masuk, gagal });
+      /*
+       * Kiriman yang tertinggal DIPAKAI ULANG bila borangnya masih sama.
+       * Tanpa ini, tiap percobaan meninggalkan satu catatan kosong baru di
+       * kantor — lima catatan untuk satu laporan, seperti yang terjadi pada
+       * KMP. PORTLINK VIII.
+       */
+      const rincian = rincianKiriman(kapal, jenis as string, periode, pengirim);
+      /*
+       * Kiriman lama dipakai ulang HANYA bila catatannya masih ada. Kantor bisa
+       * saja sudah menghapusnya, dan kiriman yang sudah tiada menolak setiap
+       * berkas dengan galat yang tak akan pernah berubah — ABK akan menekan
+       * "coba lagi" sampai menyerah, dan berkasnya tak sampai ke mana pun.
+       */
+      const bisaLanjut = Boolean(lanjutan
+        && rincianKiriman(lanjutan.kapal, lanjutan.jenis, lanjutan.periode, lanjutan.pengirim) === rincian
+        && (await periksaTercatat({ id: lanjutan.id, token: lanjutan.token })) !== null);
+      if (lanjutan && !bisaLanjut) { hapusSimpanan(); simpanan.current = null; setLanjutan(null); }
+
+      const kiriman = bisaLanjut
+        ? { id: lanjutan!.id, token: lanjutan!.token }
+        : await (async () => {
+          const d = await mintaJson("/api/lapor/kirim", { kapal, jenis, periode, pengirim, jabatan, kontak, catatan });
+          return { id: d.id as string, token: d.token as string };
+        })();
+
+      const catatan_ = bisaLanjut ? simpanan.current : null;
+      simpanan.current = {
+        ...kiriman, kapal, jenis: jenis as string, periode, pengirim, jabatan, kontak, catatan,
+        dibuatPada: bisaLanjut && catatan_ ? catatan_.dibuatPada : Date.now(),
+        berkas: berkas.map((f) => ({
+          kunci: kunciBerkas(f), nama: f.name, ukuran: f.size,
+          masuk: Boolean(catatan_?.berkas.find((b) => b.kunci === kunciBerkas(f))?.masuk),
+        })),
+      };
+      tulisSimpanan(simpanan.current);
+      setLanjutan(null);
+
+      await prosesKiriman(kiriman, berkas);
     } catch (e) {
       setGalat(pesanRamah(e));
     } finally {
-      setKirim(false); setMaju(""); setPersen(0);
+      setKirim(false); setMaju(""); setPersen(0); setMundur(0);
     }
   };
 
   const ulangiGagal = async () => {
     if (!selesai?.gagal.length) return;
     setKirim(true); setGalat(""); dibatalkan.current = false;
+    putaranUlang.current = 0;
     try {
-      const daftar = selesai.gagal.map((g) => g.file);
-      const { masuk, gagal } = await jalankanUnggah(selesai.kiriman, daftar);
-      setSelesai((lama) => (lama ? { ...lama, masuk: lama.masuk + masuk, gagal } : lama));
+      await prosesKiriman(selesai.kiriman, selesai.gagal.map((g) => g.file), selesai.masuk);
     } finally {
-      setKirim(false); setMaju(""); setPersen(0);
+      setKirim(false); setMaju(""); setPersen(0); setMundur(0);
     }
   };
 
@@ -351,7 +573,10 @@ export default function KirimLaporKapal() {
 
   const ulangi = () => {
     setSelesai(null); setBerkas([]); setCatatan("");
-    idUnggah.current = new WeakMap<File, string>();
+    hapusSimpanan();
+    simpanan.current = null;
+    ulangBersih.current = {};
+    putaranUlang.current = 0;
   };
 
   // ── layar hasil ───────────────────────────────────────────────────────────
@@ -359,9 +584,10 @@ export default function KirimLaporKapal() {
     const semuaMasuk = selesai.gagal.length === 0;
     const belumAdaYangMasuk = selesai.masuk === 0;
     const pesan = `Halo, saya ${pengirim}${jabatan ? ` (${jabatan})` : ""} dari ${kapal}.\n`
-      + `Sudah mengirim ${labelJenis(jenis as string)} periode ${bulanIni() === periode ? bulanIndo(periode) : bulanIndo(periode)} `
-      + `sebanyak ${selesai.masuk} berkas lewat halaman Lapor Kapal.`
-      + (selesai.gagal.length ? ` Masih ada ${selesai.gagal.length} berkas yang belum berhasil.` : "")
+      + (selesai.masuk > 0
+        ? `Sudah mengirim ${labelJenis(jenis as string)} periode ${bulanIndo(periode)} sebanyak ${selesai.masuk} berkas lewat halaman Lapor Kapal.`
+        : `Saya mencoba mengirim ${labelJenis(jenis as string)} periode ${bulanIndo(periode)} lewat halaman Lapor Kapal, tetapi berkasnya belum berhasil naik.`)
+      + (selesai.gagal.length ? ` Masih ada ${selesai.gagal.length} berkas yang belum berhasil (${selesai.gagal[0].pesan}).` : "")
       + ` Mohon dicek. Terima kasih.`;
     return (
       <main className="max-w-2xl mx-auto px-4 py-10">
@@ -374,6 +600,21 @@ export default function KirimLaporKapal() {
             {selesai.masuk > 0 ? <><b>{selesai.masuk} berkas</b> sudah tersimpan untuk </> : "Belum ada berkas yang tersimpan untuk "}
             <b>{labelJenis(jenis as string)}</b> dari <b>{kapal}</b> periode <b>{bulanIndo(periode)}</b>.
           </p>
+          {/*
+            Bukti dari sisi KANTOR. Layar hijau di ponsel tidak membuktikan apa
+            pun bila catatannya tak ikut sampai — dan justru itu yang pernah
+            terjadi: berkas duduk di Drive, kantor membaca kiriman kosong.
+          */}
+          {typeof selesai.tercatat === "number" && (
+            <div className={`mt-4 rounded-2xl px-4 py-3 text-sm ring-1 ${
+              selesai.tercatat > 0
+                ? "bg-emerald-50 text-emerald-900 ring-emerald-200"
+                : "bg-amber-50 text-amber-900 ring-amber-200"}`}>
+              {selesai.tercatat > 0
+                ? <><b>{selesai.tercatat} berkas tercatat di kantor.</b> Sudah terhitung sebagai dokumen diterima.</>
+                : <><b>Belum ada berkas yang tercatat di kantor.</b> Tekan coba lagi, atau kabari lewat WhatsApp di bawah.</>}
+            </div>
+          )}
           {!!selesai.gagal.length && (
             <div className="mt-5 text-left text-sm bg-amber-50 ring-1 ring-amber-200 rounded-2xl p-4 text-amber-900">
               <b>{selesai.gagal.length} berkas menunggu dikirim:</b>
@@ -385,7 +626,9 @@ export default function KirimLaporKapal() {
               ))}</ul>
               <p className="mt-3 text-xs">
                 Tidak perlu mengisi ulang formulir, dan bagian yang sudah terkirim tidak diulang.
-                Pastikan sinyal aktif, lalu tekan tombol coba lagi.
+                {mundur > 0
+                  ? ` Aplikasi mencoba lagi sendiri dalam ${mundur} detik — halaman ini jangan ditutup dulu.`
+                  : " Pastikan sinyal aktif, lalu tekan tombol coba lagi."}
               </p>
             </div>
           )}
@@ -410,10 +653,13 @@ export default function KirimLaporKapal() {
                 Hentikan
               </button>
             )}
-            {selesai.masuk > 0 && !kirim && (
+            {/* Dulu tombol ini hanya muncul bila ada berkas yang masuk — persis
+                kebalikan dari kebutuhannya. Yang unggahannya gagal total justru
+                paling perlu jalan untuk mengabari kantor. */}
+            {!kirim && (
               <a href={tautanWa(pesan)} target="_blank" rel="noopener noreferrer"
                  className="inline-flex items-center justify-center gap-2 rounded-xl bg-green-600 px-5 py-3 font-bold text-white hover:bg-green-700">
-                💬 Konfirmasi lewat WhatsApp
+                💬 {selesai.masuk > 0 ? "Konfirmasi lewat WhatsApp" : "Kabari kantor lewat WhatsApp"}
               </a>
             )}
           </div>
@@ -445,6 +691,38 @@ export default function KirimLaporKapal() {
         Kirim permintaan atau laporan kapal di sini. Tidak perlu akun. Berkas langsung
         masuk ke arsip kantor dan terbaca oleh Teknik ASDP Ternate.
       </div>
+
+      {/*
+        Kiriman yang tertinggal separuh jalan. Berkasnya sendiri tak bisa ikut
+        disimpan peramban, jadi yang diminta hanya memilih ulang berkas yang
+        belum masuk — kirimannya, potongan yang sudah naik, dan berkas yang
+        sudah sampai semuanya dipakai kembali.
+      */}
+      {lanjutan && !selesai && (
+        <div className="mb-5 rounded-2xl bg-amber-50 p-4 text-sm text-amber-900 ring-1 ring-amber-200">
+          <div className="font-extrabold">Ada kiriman yang belum selesai</div>
+          <p className="mt-1">
+            {labelJenis(lanjutan.jenis)} · {lanjutan.kapal} · {bulanIndo(lanjutan.periode)} —{" "}
+            <b>{lanjutan.berkas.filter((b) => b.masuk).length} dari {lanjutan.berkas.length} berkas</b> sudah masuk.
+          </p>
+          {lanjutan.berkas.some((b) => !b.masuk) && (
+            <ul className="mt-2 space-y-1 text-xs">
+              {lanjutan.berkas.filter((b) => !b.masuk).map((b) => (
+                <li key={b.kunci} className="truncate rounded-lg bg-white/70 px-2 py-1 ring-1 ring-amber-200/70">📄 {b.nama}</li>
+              ))}
+            </ul>
+          )}
+          <p className="mt-2 text-xs">
+            Pilih ulang berkas di atas pada langkah 5, lalu tekan kirim. Berkas yang sudah masuk
+            tidak akan naik dua kali dan kantor tidak menerima catatan kosong tambahan.
+          </p>
+          <button type="button"
+            onClick={() => { hapusSimpanan(); simpanan.current = null; setLanjutan(null); }}
+            className="mt-2 text-xs font-bold text-amber-800 underline">
+            Buang kiriman lama, mulai dari awal
+          </button>
+        </div>
+      )}
 
       <div className="rounded-3xl bg-white ring-1 ring-slate-200 shadow-sm p-5 space-y-5">
         {/* jenis dokumen */}
@@ -493,6 +771,17 @@ export default function KirimLaporKapal() {
             <input value={jabatan} onChange={(e) => setJabatan(e.target.value)} placeholder="Mualim I / KKM / …" disabled={kirim}
               className="w-full rounded-xl ring-1 ring-slate-300 px-3 py-2.5 disabled:bg-slate-100" />
           </div>
+          {/* Nomor WA: satu-satunya jalan kantor menagih berkas yang tak sampai.
+              Tanpa ini, kiriman kosong berhenti sebagai teka-teki tanpa alamat. */}
+          <div className="sm:col-span-2">
+            <label className="block text-sm font-bold text-slate-700 mb-1">
+              Nomor WhatsApp <span className="font-normal text-slate-400">(sangat dianjurkan)</span>
+            </label>
+            <input value={kontak} onChange={(e) => setKontak(e.target.value)} inputMode="tel"
+              placeholder="08xx…" disabled={kirim}
+              className="w-full rounded-xl ring-1 ring-slate-300 px-3 py-2.5 disabled:bg-slate-100" />
+            <p className="text-xs text-slate-500 mt-1">Dipakai kantor kalau berkasnya tidak sampai atau perlu ditanyakan.</p>
+          </div>
         </div>
 
         {/* berkas */}
@@ -510,6 +799,10 @@ export default function KirimLaporKapal() {
               {berkas.map((f, i) => (
                 <li key={kunciBerkas(f)} className="flex items-center gap-2 text-sm bg-slate-50 ring-1 ring-slate-200 rounded-lg px-3 py-2">
                   <span className="truncate flex-1">{f.name}</span>
+                  {/* berkas ini sudah pernah sampai pada kiriman yang sama — tak akan naik dua kali */}
+                  {lanjutan?.berkas.some((b) => b.kunci === kunciBerkas(f) && b.masuk) && (
+                    <span className="shrink-0 rounded-md bg-emerald-100 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700">sudah masuk</span>
+                  )}
                   <span className="text-xs text-slate-500 shrink-0">{ukuranSingkat(f.size)}</span>
                   <button onClick={() => setBerkas((b) => b.filter((_, k) => k !== i))} disabled={kirim}
                     className="text-rose-600 hover:text-rose-800 text-xs font-bold shrink-0 disabled:text-slate-300">hapus</button>
@@ -533,9 +826,10 @@ export default function KirimLaporKapal() {
         {kirim && (
           <div>
             <div className="h-2 rounded-full bg-slate-200 overflow-hidden">
-              <div className="h-full bg-blue-600 transition-all" style={{ width: `${persen}%` }} />
+              <div className={`h-full transition-all ${mundur > 0 ? "bg-amber-500" : "bg-blue-600"}`} style={{ width: `${mundur > 0 ? 100 : persen}%` }} />
             </div>
             <p className="mt-1 text-xs text-slate-600">{maju}</p>
+            {mundur > 0 && <p className="text-xs text-amber-700 font-semibold">Jangan tutup halaman — pengiriman dilanjutkan sendiri.</p>}
           </div>
         )}
 

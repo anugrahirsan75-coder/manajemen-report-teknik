@@ -30,6 +30,9 @@ function keKiriman(row: any): KirimanLapor {
     status: p.status || "baru",
     tindakLanjut: p.tindakLanjut || "",
     galatUnggah: p.galatUnggah || "",
+    statusPada: p.statusPada || "",
+    riwayatStatus: Array.isArray(p.riwayatStatus) ? p.riwayatStatus : [],
+    digantikan: p.digantikan || "",
   };
 }
 
@@ -62,17 +65,30 @@ export async function PATCH(req: NextRequest) {
   // sebelum ditulis. Kalau tidak, berkas yang baru selesai diunggah ABK bisa
   // terhapus dari rekap hanya karena kantor menyimpan catatan tindak lanjut.
   const { data: kini } = await c.from("projects").select("payload").eq("id", id).single();
-  const pTulis: any = kini?.payload || p;
-  if (typeof status === "string" && STATUS_LAPOR.some((s) => s.id === status)) pTulis.status = status;
+  const pTulis: any = { ...(kini?.payload || p) };
+
+  if (typeof status === "string" && STATUS_LAPOR.some((s) => s.id === status) && status !== pTulis.status) {
+    pTulis.status = status;
+    pTulis.statusPada = new Date().toISOString();
+    /*
+     * Jejak perubahan status disimpan, bukan sekadar status terakhirnya.
+     * Tanpa ini tak ada yang bisa menjawab "kapan ini dinyatakan selesai" —
+     * dan perubahan yang tak meninggalkan bekas mudah diragukan sendiri oleh
+     * yang mengubahnya. Dibatasi 20 langkah supaya payload tidak menggelembung.
+     */
+    const jejak = Array.isArray(pTulis.riwayatStatus) ? pTulis.riwayatStatus : [];
+    pTulis.riwayatStatus = [...jejak, { status, pada: pTulis.statusPada }].slice(-20);
+  }
   if (typeof tindakLanjut === "string") pTulis.tindakLanjut = tindakLanjut.slice(0, 2000);
-  Object.assign(p, pTulis);
 
   const { error: e2 } = await c.from("projects").update({ payload: pTulis }).eq("id", id);
   if (e2) {
     console.error("lapor/daftar PATCH:", e2.message);
     return NextResponse.json({ ok: false, error: "Perubahan gagal disimpan. Coba lagi." }, { status: 500 });
   }
-  return NextResponse.json({ ok: true, baris: keKiriman({ id, nama_kapal: p.kapal, payload: p }) });
+  // yang dikembalikan adalah isi yang BENAR-BENAR tersimpan, termasuk berkas
+  // yang mungkin baru masuk dari kapal sedetik sebelumnya
+  return NextResponse.json({ ok: true, baris: keKiriman({ id, nama_kapal: pTulis.kapal, payload: pTulis }) });
 }
 
 /**

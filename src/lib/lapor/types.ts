@@ -16,6 +16,19 @@ export const JENIS_LAPOR: { id: JenisLapor; label: string; singkat: string; ikon
   { id: "laporan_mesin", label: "Laporan Mesin", singkat: "Laporan Mesin", ikon: "📈", bagian: "Mesin" },
 ];
 
+/**
+ * Nama folder Drive untuk tiap jenis — kembaran LABEL di docs/lapor-apps-script.gs.
+ * Dipakai kantor saat mencocokkan kiriman kosong dengan berkas yang ternyata
+ * sudah ada di Drive; kalau daftar ini melenceng dari skripnya, foldernya tak
+ * akan ketemu dan berkas yang ada tetap terbaca hilang.
+ */
+export const LABEL_FOLDER_DRIVE: Record<string, string> = {
+  permintaan_deck: "Permintaan Deck",
+  permintaan_mesin: "Permintaan Mesin",
+  laporan_deck: "Laporan Deck",
+  laporan_mesin: "Laporan Mesin",
+};
+
 export const labelJenis = (j: string) => JENIS_LAPOR.find((x) => x.id === j)?.label || j;
 export const singkatJenis = (j: string) => JENIS_LAPOR.find((x) => x.id === j)?.singkat || j;
 
@@ -39,6 +52,14 @@ export interface BerkasLapor {
   diunggahPada: string;
   /** kunci idempotensi: retry jaringan tidak membuat salinan Drive baru */
   unggahId?: string;
+  /** tautannya ditambalkan kantor dari isi Drive, bukan datang dari unggahan ABK */
+  ditautkanKantor?: boolean;
+}
+
+/** satu perubahan status — jejak supaya kantor tahu kapan sesuatu diputuskan */
+export interface JejakStatus {
+  status: StatusLapor;
+  pada: string;
 }
 
 export interface KirimanLapor {
@@ -58,6 +79,12 @@ export interface KirimanLapor {
   tindakLanjut: string;
   /** sebab kegagalan unggahan terakhir, diisi halaman ABK; kosong bila lancar */
   galatUnggah: string;
+  /** kapan status terakhir diubah kantor — kosong bila belum pernah disentuh */
+  statusPada?: string;
+  /** riwayat perubahan status, terbaru di belakang (maksimal 20 langkah) */
+  riwayatStatus?: JejakStatus[];
+  /** kiriman ini digantikan kiriman lain (percobaan ulang yang berkasnya nihil) */
+  digantikan?: string;
 }
 
 /** kiriman yang catatannya ada tapi berkasnya tidak pernah sampai */
