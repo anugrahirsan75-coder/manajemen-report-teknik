@@ -24,6 +24,15 @@ export const maxDuration = 60;
 
 
 const MAKS_BERKAS = 12;
+/**
+ * Jenis kiriman yang boleh menempelkan berkas lewat route ini.
+ *
+ * "permintaan_uji" adalah borang permintaan digital yang masih diuji coba. Ia
+ * memakai jalur unggah yang sama persis — potongan, lanjut setelah putus,
+ * penjaga salinan ganda — karena menulis jalur kedua berarti menguji ulang
+ * semua yang sudah terbukti di sini. Yang dipisah hanya folder Drive-nya.
+ */
+const KIND_DILAYANI = ["lapor_kapal", "permintaan_uji"];
 /** panjang teks base64 maksimal per potongan — di bawah batas badan permintaan hosting */
 const MAKS_POTONGAN = 3_200_000;
 /**
@@ -116,7 +125,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, hilang: true, error: "Kiriman tidak ditemukan" }, { status: 404 });
   }
   const p: any = ada.payload || {};
-  if (p.kind !== "lapor_kapal" || p.token !== token) {
+  if (!KIND_DILAYANI.includes(p.kind) || p.token !== token) {
     return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 403 });
   }
   // Peramban dapat tidak menerima respons walaupun server sudah selesai. Saat
@@ -150,6 +159,9 @@ export async function POST(req: NextRequest) {
          */
         aksi: "potongan", unggahId: idUnggah, indeks, total, data: dataBase64,
         kapal: p.kapal, jenis: p.jenis, periode: p.periode,
+        // borang uji coba menyebut foldernya sendiri, jadi berkas percobaan
+        // tidak pernah tercampur dengan arsip laporan kapal yang asli
+        ...(Array.isArray(p.jalurDrive) && p.jalurDrive.length ? { jalur: p.jalurDrive } : {}),
         catatan: `${p.pengirim || ""}${p.jabatan ? ` (${p.jabatan})` : ""}`,
         namaBerkas, mime: jenis.mime,
       }),
@@ -237,7 +249,7 @@ export async function GET(req: NextRequest) {
    * yang tak akan pernah ada lagi — dan berkas yang di tangan ABK terlihat
    * "sedang dikirim" itu tidak akan pernah sampai ke mana pun.
    */
-  if (!p || p.kind !== "lapor_kapal") {
+  if (!p || !KIND_DILAYANI.includes(p.kind)) {
     return NextResponse.json({ ok: false, hilang: true, error: "Kiriman tidak ditemukan" }, { status: 404 });
   }
   if (p.token !== token) return NextResponse.json({ ok: false }, { status: 403 });

@@ -391,6 +391,9 @@ function IsiPermintaanLaporanKapal() {
             </button>
             <Link href="/permintaan-laporan/isi" className="btn btn-ghost text-xs">🧾 Isi permintaan (terbaca)</Link>
             <Link href="/lapor" target="_blank" className="btn btn-ghost text-xs">👁 Halaman kirim</Link>
+            {/* borang permintaan digital yang masih diuji — sengaja lewat tautan
+                sendiri, tidak menggantikan halaman kirim yang dipakai armada */}
+            <Link href="/uji-permintaan" target="_blank" className="btn btn-ghost text-xs">🧪 Borang permintaan (uji)</Link>
             <button onClick={ambil} disabled={muat} className="btn btn-primary text-xs disabled:opacity-50">
               {muat ? "Memuat…" : "⟳ Muat ulang"}
             </button>

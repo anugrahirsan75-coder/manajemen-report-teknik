@@ -19,6 +19,7 @@ export default function RangkaAplikasi({ sidebar, loneng, children }: {
 }) {
   const path = usePathname() || "";
   const terbuka = path.startsWith("/monitoring") || path.startsWith("/lapor")
+    || path.startsWith("/uji-permintaan")
     || path.startsWith("/kinerja-anggaran") || path.startsWith("/scm");
 
   if (terbuka) return <div className="min-h-screen">{children}</div>;

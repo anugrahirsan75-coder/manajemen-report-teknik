@@ -65,6 +65,11 @@ export const config = {
   //  · /lapor + api/lapor/kirim + api/lapor/berkas — ABK kapal mengirim berkas
   //    tanpa akun. Perhatikan: HANYA dua route api/lapor itu yang dibuka;
   //    api/lapor/daftar (isi seluruh kiriman, dipakai kantor) tetap terkunci.
+  //  · /uji-permintaan + api/uji-permintaan/(cari|kirim) — borang permintaan
+  //    digital yang masih DIUJI COBA, sengaja dipisah dari /lapor supaya
+  //    percobaan tidak mengganggu jalur yang sedang dipakai. Route "cari"
+  //    menjawab TANPA HARGA: halamannya terbuka, dan harga pengadaan tidak ada
+  //    urusannya dengan borang permintaan kapal.
   //  · /kinerja-anggaran + api/publik/anggaran — tautan LIHAT SAJA untuk Direksi.
   //    Route-nya hanya melayani GET dan isinya sudah dipangkas di server (tanpa
   //    vendor, nomor kontrak, foto, catatan), jadi tak ada yang bisa diubah
@@ -83,5 +88,5 @@ export const config = {
    * AKAR ([^/]+): kalau ditulis .* maka /api/db/apa-saja.png akan ikut lolos,
    * dan gerbangnya bisa dilewati hanya dengan menambahkan akhiran nama.
    */
-  matcher: ["/((?!login|monitoring|lapor(?:$|/)|kinerja-anggaran(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|_next/static|_next/image|favicon.ico|[^/]+\.(?:png|jpe?g|svg|webp|gif|ico|mjs|css|woff2?)$).*)"],
+  matcher: ["/((?!login|monitoring|lapor(?:$|/)|uji-permintaan(?:$|/)|kinerja-anggaran(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|api/uji-permintaan/(?:cari|kirim)(?:$|/)|_next/static|_next/image|favicon.ico|[^/]+\.(?:png|jpe?g|svg|webp|gif|ico|mjs|css|woff2?)$).*)"],
 };
