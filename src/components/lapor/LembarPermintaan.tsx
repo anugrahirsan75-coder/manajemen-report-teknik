@@ -15,8 +15,18 @@
  */
 import { BARIS_CETAK_MINIMAL, FormulirPermintaan, tanggalIndo } from "@/lib/lapor/formulir";
 
-/** 1pt = 0,3528mm — lebar kolom borang asli, apa adanya */
-const KOLOM_MM = { no: 9.98, jumlah: 17.46, satuan: 15.88, merk: 31.54, uraian: 115.18 };
+/**
+ * 1pt = 0,3528mm — lebar kolom borang asli, apa adanya.
+ *
+ * Satu penyimpangan yang disengaja: kolom terakhir borang lama
+ * ("Uraian / Spesifikasi Barang", 326,5pt = 115,18mm) DIBELAH menjadi dua —
+ * uraian dan spesifikasi berdiri sendiri. Alasannya, di borang lama keduanya
+ * ditulis berdempet dalam satu sel, dan ukuran barang ("2 inci", "4 x 1,5 mm")
+ * kerap hilang di ekor kalimat sehingga kantor menebak sendiri. Lebar
+ * gabungannya tidak berubah sedikit pun (69,18 + 46 = 115,18mm), jadi lembar
+ * ini tetap setumpuk dengan berkas lama.
+ */
+const KOLOM_MM = { no: 9.98, jumlah: 17.46, satuan: 15.88, merk: 31.54, uraian: 69.18, spek: 46 };
 const LEBAR_MM = 190;
 
 export default function LembarPermintaan({ f }: { f: FormulirPermintaan }) {
@@ -80,11 +90,12 @@ export default function LembarPermintaan({ f }: { f: FormulirPermintaan }) {
             <col style={{ width: `${KOLOM_MM.satuan}mm` }} />
             <col style={{ width: `${KOLOM_MM.merk}mm` }} />
             <col style={{ width: `${KOLOM_MM.uraian}mm` }} />
+            <col style={{ width: `${KOLOM_MM.spek}mm` }} />
           </colgroup>
           <thead>
             <tr>
               <th>No</th><th>Jumlah</th><th>Satuan</th><th>Merk/Katalog</th>
-              <th>Uraian / Spesifikasi Barang</th>
+              <th>Uraian Barang</th><th>Spesifikasi</th>
             </tr>
           </thead>
           <tbody>
@@ -94,10 +105,8 @@ export default function LembarPermintaan({ f }: { f: FormulirPermintaan }) {
                 <td className="lp-tengah">{b.jumlah}</td>
                 <td className="lp-tengah">{b.satuan}</td>
                 <td>{b.merk}</td>
-                <td>
-                  {b.uraian}
-                  {b.spesifikasi ? <span className="lp-spek"> — {b.spesifikasi}</span> : null}
-                </td>
+                <td>{b.uraian}</td>
+                <td className="lp-spek">{b.spesifikasi}</td>
               </tr>
             ))}
             {/*
@@ -108,7 +117,7 @@ export default function LembarPermintaan({ f }: { f: FormulirPermintaan }) {
             */}
             {Array.from({ length: kosong }).map((_, i) => (
               <tr key={`kosong-${i}`}>
-                <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
+                <td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td><td>&nbsp;</td>
               </tr>
             ))}
           </tbody>
