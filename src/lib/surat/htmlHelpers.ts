@@ -187,6 +187,67 @@ export function teksKaya(v: unknown): string {
   return keping.join("\n");
 }
 
+/**
+ * BADAN SURAT BERNOMOR — bentuk baku surat cabang.
+ *
+ * Surat keluar Ternate tidak memakai salam pembuka: isinya langsung berupa
+ * butir bernomor 1, 2, 3, dengan rincian dokumen sebagai sub-butir a, b, c.
+ * Contoh yang dipakai sebagai acuan (KU.3/00751/XII/ASDP-TTE/2024):
+ *
+ *   1. Mendasari dan Menindaklanjuti :
+ *      a. Surat Direktur Teknik ... Nomor : ... tanggal ... perihal ...;
+ *      b. Pengaplikasian System Analysis and Product (SAP) ...;
+ *   2. Terkait butir 1 (satu) di atas, ... bersama ini kami mengajukan ...
+ *   3. Demikian kami sampaikan, atas perhatian dan kerjasamanya diucapkan terimakasih.
+ *
+ * Penomorannya dipasang lewat atribut lawas type="1" dan type="a", BUKAN lewat
+ * list-style CSS: editor e-office rutin membuang gaya, dan surat bernomor yang
+ * kehilangan nomornya berubah jadi paragraf tak beraturan.
+ *
+ * Butir yang membawa tabel/blok memutus daftarnya: blok ditaruh selebar
+ * halaman, lalu penomoran disambung dengan atribut start. Tabel di dalam <li>
+ * ikut terdorong indentasi dan kolom terakhirnya keluar dari batas kertas.
+ */
+export interface ButirSurat {
+  teks: string;
+  /** rincian a, b, c — dipakai untuk daftar surat dasar */
+  sub?: string[];
+  /** tabel atau blok HTML lain yang menyusul di bawah butir ini */
+  blok?: string;
+}
+
+const GAYA_OL = `margin:0 0 8px 0;padding-left:26px;font-size:${UKURAN_ISI};`;
+const GAYA_LI = "margin:0 0 6px 0;text-align:justify;";
+
+const daftarSub = (sub: string[]) =>
+  `<ol type="a" style="${GAYA_OL}list-style-type:lower-alpha;margin-top:4px;">`
+  + sub.map((x) => `<li style="${GAYA_LI}">${x}</li>`).join("")
+  + "</ol>";
+
+export function suratBernomor(butir: ButirSurat[]): string {
+  const keping: string[] = [];
+  let kumpul: string[] = [];
+  let mulai = 1;
+
+  const tutup = () => {
+    if (!kumpul.length) return;
+    keping.push(
+      `<ol type="1" start="${mulai}" style="${GAYA_OL}list-style-type:decimal;">`
+      + kumpul.join("") + "</ol>");
+    mulai += kumpul.length;
+    kumpul = [];
+  };
+
+  butir.filter((x) => x && (x.teks || x.blok)).forEach((x) => {
+    kumpul.push(`<li style="${GAYA_LI}">${x.teks}${x.sub?.length ? daftarSub(x.sub) : ""}</li>`);
+    // butir bertabel memutus daftar: tabel di dalam <li> ikut terdorong
+    // indentasi dan kolom terakhirnya keluar dari batas kertas
+    if (x.blok) { tutup(); keping.push(x.blok); }
+  });
+  tutup();
+  return keping.join("");
+}
+
 /** daftar berbutir bulat kosong, dipakai pada surat perpanjangan sertifikat */
 export const daftarButir = (butir: string[]) =>
   `<ul style="list-style-type:circle;margin:0 0 8px 0;padding-left:26px;font-size:${UKURAN_ISI};">\n`
@@ -200,6 +261,10 @@ export const PENUTUP_PERMOHONAN =
 export const PENUTUP_SAMPAI =
   "Demikian kami sampaikan, atas perhatiannya diucapkan terima kasih.";
 
+/** penutup baku surat cabang, mengikuti surat yang sudah terbit */
+export const PENUTUP_PERHATIAN =
+  "Demikian kami sampaikan, atas perhatian dan kerjasamanya diucapkan terimakasih.";
+
 export const PENUTUP_KERJASAMA =
   "Demikian kami sampaikan, atas kerja samanya diucapkan terima kasih.";
 
@@ -207,4 +272,4 @@ export const LAMPIRAN =
   "Sebagai bahan pertimbangan, bersama ini kami lampirkan dokumen persyaratan sesuai dengan "
   + "ketentuan yang berlaku.";
 
-export const SALAM = "Dengan Hormat,";
+

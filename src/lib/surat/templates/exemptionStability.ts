@@ -16,7 +16,7 @@
 import { DataSurat, TemplateSurat } from "../types";
 import { GALANGAN, KAPAL_SURAT, namaKapalSurat, tanggalSurat } from "../format";
 import {
-  PENUTUP_SAMPAI, SALAM, b, bungkus, daftarButir, esc, p, tabelData, teksKaya,
+  ButirSurat, PENUTUP_SAMPAI, b, bungkus, esc, suratBernomor, tabelData, teksKaya,
 } from "../htmlHelpers";
 
 interface BarisDasar { instansi: string; nomor: string; tanggal: string; perihal: string }
@@ -155,49 +155,53 @@ export const exemptionStability: TemplateSurat = {
     const kapal = namaKapalSurat(String(d.kapal || ""));
     const bagian: string[] = [];
 
-    bagian.push(p(SALAM));
-    bagian.push(p("Memperhatikan dan mendasari hal-hal sebagai berikut:"));
-    bagian.push(daftarButir(dasarIsi(d).map((r) => {
-      const tgl = tanggalSurat(String(r.tanggal || ""));
-      return [
-        esc(r.instansi || ""),
-        r.nomor ? `nomor ${b(esc(r.nomor))}` : "",
-        tgl ? `tanggal ${esc(tgl)}` : "",
-        r.perihal ? `perihal ${esc(r.perihal)}` : "",
-      ].filter(Boolean).join(" ") + ";";
-    })));
+    const butir: ButirSurat[] = [{
+      teks: "Memperhatikan dan mendasari hal-hal sebagai berikut :",
+      sub: dasarIsi(d).map((r) => {
+        const tgl = tanggalSurat(String(r.tanggal || ""));
+        return [
+          esc(r.instansi || ""),
+          r.nomor ? `nomor ${b(esc(r.nomor))}` : "",
+          tgl ? `tanggal ${esc(tgl)}` : "",
+          r.perihal ? `perihal ${esc(r.perihal)}` : "",
+        ].filter(Boolean).join(" ") + ";";
+      }),
+    }];
 
-    bagian.push(p(
-      `Sehubungan dengan hal tersebut di atas, dan dalam rangka pengurusan surat-surat kapal pasca selesainya `
-      + `pelaksanaan docking tahun ${esc(String(d.tahunDocking || new Date().getFullYear()))}, `
-      + `bersama ini kami mengajukan ${b("permohonan bantuan pengurusan pembebasan (exemption) persyaratan damage stability")} `
-      + `untuk kapal sebagai berikut:`,
-    ));
+    butir.push({
+      teks: `Terkait butir 1 (satu) di atas, dan dalam rangka pengurusan surat-surat kapal pasca `
+        + `selesainya pelaksanaan docking tahun ${esc(String(d.tahunDocking || new Date().getFullYear()))}, `
+        + `bersama ini kami mengajukan `
+        + `${b("permohonan bantuan pengurusan pembebasan (exemption) persyaratan damage stability")} `
+        + `untuk kapal sebagai berikut:`,
+      blok: tabelData([
+        ["Nama Kapal", esc(kapal)],
+        ["No. Register", esc(d.noRegister)],
+        ["No. IMO", esc(d.noIMO)],
+        ["Call Sign", esc(d.callSign)],
+        ["Gross Ton", esc(d.grossTon)],
+        ["Lintasan", esc(d.lintasan)],
+        ["Jarak Lintasan", teksKaya(d.jarakLintasan)],
+      ]),
+    });
 
-    bagian.push(tabelData([
-      ["Nama Kapal", esc(kapal)],
-      ["No. Register", esc(d.noRegister)],
-      ["No. IMO", esc(d.noIMO)],
-      ["Call Sign", esc(d.callSign)],
-      ["Gross Ton", esc(d.grossTon)],
-      ["Lintasan", esc(d.lintasan)],
-      ["Jarak Lintasan", teksKaya(d.jarakLintasan)],
-    ]));
+    butir.push({
+      teks: "Adapun sebagai bahan pertimbangan, bersama ini dapat kami sampaikan antara lain:",
+      blok: tabelData([
+        ["Lintasan Operasional Kapal", esc(d.lintasan)],
+        ["Jarak Lintasan Kapal", teksKaya(d.jarakLintasan)],
+        ["Jarak ke Dermaga Terdekat", teksKaya(dermagaTerdekat(d))],
+        ["Jarak ke Daratan Terdekat", teksKaya(d.jarakDaratan)],
+        ["Geografis Pelayaran", teksKaya(d.geografis)],
+        ["Status Docking", esc(d.statusDocking)],
+        ["Nama Galangan", esc(d.galangan)],
+        ...timbangIsi(d).map((r) => [r.label, teksKaya(r.isi)] as [string, string]),
+        ["Peta Lintasan", esc(d.petaLintasan || "Terlampir")],
+      ]),
+    });
 
-    bagian.push(p("Adapun sebagai bahan pertimbangan, bersama ini dapat kami sampaikan antara lain:"));
-    bagian.push(tabelData([
-      ["Lintasan Operasional Kapal", esc(d.lintasan)],
-      ["Jarak Lintasan Kapal", teksKaya(d.jarakLintasan)],
-      ["Jarak ke Dermaga Terdekat", teksKaya(dermagaTerdekat(d))],
-      ["Jarak ke Daratan Terdekat", teksKaya(d.jarakDaratan)],
-      ["Geografis Pelayaran", teksKaya(d.geografis)],
-      ["Status Docking", esc(d.statusDocking)],
-      ["Nama Galangan", esc(d.galangan)],
-      ...timbangIsi(d).map((r) => [r.label, teksKaya(r.isi)] as [string, string]),
-      ["Peta Lintasan", esc(d.petaLintasan || "Terlampir")],
-    ]));
-
-    bagian.push(p(PENUTUP_SAMPAI));
-    return bungkus(bagian.join("\n"));
+    butir.push({ teks: PENUTUP_SAMPAI });
+    bagian.push(suratBernomor(butir));
+    return bungkus(bagian.join(""));
   },
 };

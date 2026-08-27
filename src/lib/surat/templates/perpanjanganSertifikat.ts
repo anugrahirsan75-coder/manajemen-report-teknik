@@ -6,7 +6,7 @@
  */
 import { TemplateSurat } from "../types";
 import { KAPAL_SURAT, namaKapalSurat, rangkai, tanggalSurat } from "../format";
-import { LAMPIRAN, PENUTUP_PERMOHONAN, SALAM, b, bungkus, daftarButir, esc, p } from "../htmlHelpers";
+import { ButirSurat, LAMPIRAN, PENUTUP_PERMOHONAN, b, bungkus, esc, suratBernomor } from "../htmlHelpers";
 
 export const JENIS_SERTIFIKAT = [
   "Sertifikat Nasional Garis Muat",
@@ -44,24 +44,26 @@ export const perpanjanganSertifikat: TemplateSurat = {
     const lintasan = rangkai(((d.lintasan as string[]) || []).map((x) => esc(x)), "dan");
 
     const bagian: string[] = [];
-    bagian.push(p(SALAM));
-    bagian.push(p(
-      `Mendasari dan menindaklanjuti ${b(esc(label))} ${b(esc(kapal))} Nomor ${esc(d.noSertifikat || "")}, `
-      + `yang masa berlakunya akan berakhir pada tanggal ${b(esc(tanggalSurat(String(d.tglBerakhir || ""))))}.`,
-    ));
-    bagian.push(p(
-      `Sehubungan dengan akan berakhirnya masa berlaku sertifikat sebagaimana dimaksud di atas, serta guna `
-      + `mendukung kelancaran operasional ${b(esc(kapal))} pada lintasan penyeberangan perintis ${lintasan}, `
-      + `bersama ini kami mengajukan ${b(`permohonan perpanjangan ${esc(jenis)} ${esc(kapal)}`)} `
-      + `dengan data sebagai berikut:`,
-    ));
-    bagian.push(daftarButir([
-      `${b("Nama Kapal")} : ${esc(kapal)};`,
-      `${b("Nomor Register")} : ${esc(d.noRegister || "")};`,
-      `${b("IMO Number")} : ${esc(d.imo || "")}.`,
-    ]));
-    bagian.push(p(LAMPIRAN));
-    bagian.push(p(PENUTUP_PERMOHONAN));
-    return bungkus(bagian.join("\n"));
+    const butir: ButirSurat[] = [
+      {
+        teks: `Mendasari dan menindaklanjuti ${b(esc(label))} ${b(esc(kapal))} `
+          + `Nomor ${esc(d.noSertifikat || "")}, yang masa berlakunya akan berakhir pada tanggal `
+          + `${b(esc(tanggalSurat(String(d.tglBerakhir || ""))))}.`,
+      },
+      {
+        teks: `Terkait butir 1 (satu) di atas, serta guna mendukung kelancaran operasional `
+          + `${b(esc(kapal))} pada lintasan penyeberangan perintis ${lintasan}, bersama ini kami mengajukan `
+          + `${b(`permohonan perpanjangan ${esc(jenis)} ${esc(kapal)}`)} dengan data sebagai berikut:`,
+        sub: [
+          `${b("Nama Kapal")} : ${esc(kapal)};`,
+          `${b("Nomor Register")} : ${esc(d.noRegister || "")};`,
+          `${b("IMO Number")} : ${esc(d.imo || "")}.`,
+        ],
+      },
+      { teks: LAMPIRAN },
+      { teks: PENUTUP_PERMOHONAN },
+    ];
+    bagian.push(suratBernomor(butir));
+    return bungkus(bagian.join(""));
   },
 };

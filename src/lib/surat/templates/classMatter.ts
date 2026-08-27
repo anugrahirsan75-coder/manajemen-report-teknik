@@ -6,7 +6,7 @@
  */
 import { DataSurat, TemplateSurat } from "../types";
 import { GALANGAN, JENIS_SURVEY, KAPAL_SURAT, namaKapalSurat, rangkai, tanggalSurat } from "../format";
-import { PENUTUP_KERJASAMA, SALAM, b, bungkus, esc, p } from "../htmlHelpers";
+import { ButirSurat, PENUTUP_KERJASAMA, b, bungkus, esc, suratBernomor } from "../htmlHelpers";
 
 export const PEKERJAAN_KLASS = [
   "Pengukuran Ketebalan Plat (Ultrasonic Test)",
@@ -50,24 +50,26 @@ export const classMatter: TemplateSurat = {
     const daftar = ((d.pekerjaan as string[]) || []).map((x) => esc(x));
     const bagian: string[] = [];
 
-    bagian.push(p(SALAM));
-    bagian.push(p(
-      `Sehubungan dengan pelaksanaan ${b(esc(d.jenisSurvey || ""))} ${b(esc(kapal))} Tahun ${esc(d.tahun || "")} `
-      + `di Galangan ${esc(d.galangan || "")}.`,
-    ));
-    bagian.push(p(
-      `Sehubungan dengan hal tersebut di atas, bersama ini kami sampaikan `
-      + `${b(`permohonan pelaksanaan pekerjaan Klass Matter untuk ${esc(kapal)}`)}, antara lain `
-      + `${rangkai(daftar)}.`,
-    ));
-    bagian.push(p(
-      `Adapun pelaksanaan pekerjaan dimaksud kiranya dapat dilakukan mulai tanggal `
-      + `${b(esc(tanggalSurat(String(d.tanggalMulai || ""))))} dengan berkoordinasi dengan Owner Surveyor `
-      + `${esc(kapal)} Sdr. ${esc(d.namaOs || "")} (HP ${esc(d.hpOs || "")}). Terkait biaya yang timbul dari `
-      + `pekerjaan dimaksud kiranya dapat ditagihkan kepada kami PT. ASDP Indonesia Ferry (Persero) Cabang `
-      + `Ternate dengan melampirkan record hasil pekerjaan dan bukti pendukung lainnya.`,
-    ));
-    bagian.push(p(PENUTUP_KERJASAMA));
-    return bungkus(bagian.join("\n"));
+    const butir: ButirSurat[] = [
+      {
+        teks: `Mendasari pelaksanaan ${b(esc(d.jenisSurvey || ""))} ${b(esc(kapal))} `
+          + `Tahun ${esc(d.tahun || "")} di Galangan ${esc(d.galangan || "")}.`,
+      },
+      {
+        teks: `Terkait butir 1 (satu) di atas, bersama ini kami sampaikan `
+          + `${b(`permohonan pelaksanaan pekerjaan Klass Matter untuk ${esc(kapal)}`)}, antara lain `
+          + `${rangkai(daftar)}.`,
+      },
+      {
+        teks: `Adapun pelaksanaan pekerjaan dimaksud kiranya dapat dilakukan mulai tanggal `
+          + `${b(esc(tanggalSurat(String(d.tanggalMulai || ""))))} dengan berkoordinasi dengan Owner Surveyor `
+          + `${esc(kapal)} Sdr. ${esc(d.namaOs || "")} (HP ${esc(d.hpOs || "")}). Terkait biaya yang timbul dari `
+          + `pekerjaan dimaksud kiranya dapat ditagihkan kepada kami PT. ASDP Indonesia Ferry (Persero) Cabang `
+          + `Ternate dengan melampirkan record hasil pekerjaan dan bukti pendukung lainnya.`,
+      },
+      { teks: PENUTUP_KERJASAMA },
+    ];
+    bagian.push(suratBernomor(butir));
+    return bungkus(bagian.join(""));
   },
 };

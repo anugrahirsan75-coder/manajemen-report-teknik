@@ -10,7 +10,7 @@ import { DataSurat, TemplateSurat } from "../types";
 import { KAPAL_SURAT, NAMA_BULAN, angkaRibuan, keAngka, rupiahSurat } from "../format";
 import { terbilangRupiah } from "../terbilang";
 import {
-  PENUTUP_SAMPAI, SALAM, WARNA, b, baris, bungkus, esc, i, p, tabel, td, tdAngka, th,
+  ButirSurat, PENUTUP_SAMPAI, WARNA, b, baris, bungkus, esc, i, suratBernomor, tabel, td, tdAngka, th,
 } from "../htmlHelpers";
 
 interface BarisKapal { kapal: string; rka: string; cabang: string }
@@ -75,16 +75,12 @@ export const realisasiRutin: TemplateSurat = {
     const h = hitungRutin(d);
     const bagian: string[] = [];
 
-    bagian.push(p(SALAM));
-    bagian.push(p(`Berdasarkan Usulan Rencana Kerja dan Anggaran (RKA) Pemeliharaan Cabang Ternate Tahun ${esc(d.tahunRka || "")}.`));
-    bagian.push(p(
-      `Sehubungan dengan hal tersebut di atas, bersama ini kami sampaikan `
-      + `${b(`laporan realisasi perawatan rutin kapal bulan ${esc(d.bulanRealisasi || "")} Tahun ${esc(d.tahunRealisasi || "")}`)} `
-      + `dan ${b(`rencana perawatan kapal bulan ${esc(d.bulanRencana || "")} Tahun ${esc(d.tahunRencana || "")}`)} `
-      + `Cabang Ternate dengan nilai sebesar ${b(rupiahSurat(h.totalCabang))} `
-      + `(terbilang: ${i(terbilangRupiah(h.totalCabang))}), dengan rincian sebagai berikut:`,
-    ));
+    const butir: ButirSurat[] = [{
+      teks: `Mendasari Usulan Rencana Kerja dan Anggaran (RKA) Pemeliharaan Cabang Ternate `
+        + `Tahun ${esc(d.tahunRka || "")}.`,
+    }];
 
+    let tabelRutin = "";
     if (h.isi.length) {
       const gaya = { bg: WARNA.kepalaKuning, putih: false, tebal: true, align: "center" as const };
       // kepala dipisah supaya tercetak ulang bila daftar kapal jatuh ke halaman berikutnya
@@ -107,10 +103,20 @@ export const realisasiRutin: TemplateSurat = {
           tdAngka(angkaRibuan(h.totalCabang), { tebal: true }),
         ]),
       ];
-      bagian.push(tabel(barisTabel, kepala));
+      tabelRutin = tabel(barisTabel, kepala);
     }
 
-    bagian.push(p(PENUTUP_SAMPAI));
-    return bungkus(bagian.join("\n"));
+    butir.push({
+      teks: `Terkait butir 1 (satu) di atas, bersama ini kami sampaikan `
+        + `${b(`laporan realisasi perawatan rutin kapal bulan ${esc(d.bulanRealisasi || "")} Tahun ${esc(d.tahunRealisasi || "")}`)} `
+        + `dan ${b(`rencana perawatan kapal bulan ${esc(d.bulanRencana || "")} Tahun ${esc(d.tahunRencana || "")}`)} `
+        + `Cabang Ternate dengan nilai sebesar ${b(rupiahSurat(h.totalCabang))} `
+        + `(terbilang: ${i(terbilangRupiah(h.totalCabang))}), dengan rincian sebagai berikut:`,
+      blok: tabelRutin || undefined,
+    });
+
+    butir.push({ teks: PENUTUP_SAMPAI });
+    bagian.push(suratBernomor(butir));
+    return bungkus(bagian.join(""));
   },
 };

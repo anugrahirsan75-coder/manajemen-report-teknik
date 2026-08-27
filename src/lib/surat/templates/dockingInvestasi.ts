@@ -13,7 +13,7 @@ import {
 } from "../format";
 import { terbilangRupiah } from "../terbilang";
 import {
-  LAMPIRAN, PENUTUP_PERMOHONAN, SALAM, WARNA, b, baris, bungkus, esc, i, p, tabel, td, tdAngka, th,
+  ButirSurat, LAMPIRAN, PENUTUP_PERMOHONAN, WARNA, b, baris, bungkus, esc, i, suratBernomor, tabel, td, tdAngka, th,
 } from "../htmlHelpers";
 
 /** mata anggaran yang biasa dipakai; kode investasi diawali 1020604 */
@@ -198,26 +198,35 @@ export const dockingInvestasi: TemplateSurat = {
     const total = hitungDocking(d).totalCabang;
     const bagian: string[] = [];
 
-    bagian.push(p(SALAM));
-    bagian.push(p(
-      `Mendasari Usulan Rencana Kerja dan Anggaran (RKA) Docking ${b(esc(kapal))} Tahun ${tahun}, `
-      + `jatuh tempo Docking Survey ${b(esc(kapal))} (${esc(d.jenisSurvey || "")}) pada tanggal `
-      + `${esc(tanggalSurat(String(d.tglJatuhTempo || "")))}, serta rencana pelaksanaan Docking ${b(esc(kapal))} `
-      + `pada Minggu Ke-${esc(d.minggu || "")} Bulan ${esc(d.bulan || "")} Tahun ${esc(d.tahunPelaksanaan || tahun)}.`,
-    ));
-    bagian.push(p(
-      `Sehubungan dengan hal tersebut di atas, bersama ini kami mengajukan `
-      + `${b(`permohonan persetujuan pelaksanaan Docking dan Investasi ${esc(kapal)} Tahun ${tahun}`)} `
-      + `yang direncanakan dilaksanakan di Galangan ${esc(d.galangan || "")} pada bulan ${esc(d.bulan || "")} `
-      + `${esc(d.tahunPelaksanaan || tahun)} dengan nilai sebesar ${b(rupiahSurat(total))} `
-      + `(terbilang: ${i(terbilangRupiah(total))}), dengan rincian estimasi biaya sebagai berikut:`,
-    ));
+    /*
+     * Tiga hal yang menjadi dasar surat ini — RKA, jatuh tempo survey, dan
+     * rencana pelaksanaan — dipisah sebagai butir a, b, c. Sebelumnya ketiganya
+     * ditulis sebagai satu kalimat panjang, dan tanggal jatuh temponya, yang
+     * justru menjadi alasan mendesaknya permohonan, tenggelam di tengahnya.
+     */
+    const butir: ButirSurat[] = [{
+      teks: "Mendasari dan Menindaklanjuti :",
+      sub: [
+        `Usulan Rencana Kerja dan Anggaran (RKA) Docking ${b(esc(kapal))} Tahun ${tahun};`,
+        `Jatuh tempo Docking Survey ${b(esc(kapal))} (${esc(d.jenisSurvey || "")}) pada tanggal `
+          + `${b(esc(tanggalSurat(String(d.tglJatuhTempo || ""))))};`,
+        `Rencana pelaksanaan Docking ${b(esc(kapal))} pada Minggu Ke-${esc(d.minggu || "")} `
+          + `Bulan ${esc(d.bulan || "")} Tahun ${esc(d.tahunPelaksanaan || tahun)};`,
+      ],
+    }];
 
-    const t = tabelAnggaran(d);
-    if (t) bagian.push(t);
+    butir.push({
+      teks: `Terkait butir 1 (satu) di atas, bersama ini kami mengajukan `
+        + `${b(`permohonan persetujuan pelaksanaan Docking dan Investasi ${esc(kapal)} Tahun ${tahun}`)} `
+        + `yang direncanakan dilaksanakan di Galangan ${esc(d.galangan || "")} pada bulan ${esc(d.bulan || "")} `
+        + `${esc(d.tahunPelaksanaan || tahun)} dengan nilai sebesar ${b(rupiahSurat(total))} `
+        + `(terbilang: ${i(terbilangRupiah(total))}), dengan rincian estimasi biaya sebagai berikut:`,
+      blok: tabelAnggaran(d) || undefined,
+    });
 
-    bagian.push(p(LAMPIRAN));
-    bagian.push(p(PENUTUP_PERMOHONAN));
-    return bungkus(bagian.join("\n"));
+    butir.push({ teks: LAMPIRAN });
+    butir.push({ teks: PENUTUP_PERMOHONAN });
+    bagian.push(suratBernomor(butir));
+    return bungkus(bagian.join(""));
   },
 };

@@ -14,7 +14,7 @@ import { TemplateSurat } from "../types";
 import { KAPAL_SURAT, NAMA_BULAN, angkaRibuan, keAngka, rupiahSurat, tanggalSurat } from "../format";
 import { terbilangRupiah } from "../terbilang";
 import {
-  PENUTUP_KERJASAMA, SALAM, WARNA, b, baris, bungkus, daftarButir, esc, p, tabel, td, tdAngka, th,
+  ButirSurat, PENUTUP_PERHATIAN, WARNA, b, baris, bungkus, esc, suratBernomor, tabel, td, tdAngka, th,
 } from "../htmlHelpers";
 
 interface BarisRujukan { instansi: string; nomor: string; tanggal: string; perihal: string }
@@ -104,27 +104,29 @@ export const permohonanIO: TemplateSurat = {
     const rincian = ioIsi(d);
     const total = totalIo(d);
 
-    bagian.push(p(SALAM));
-    bagian.push(p(
-      rujuk.length > 1
-        ? "Mendasari dan menindaklanjuti surat-surat sebagai berikut:"
-        : "Mendasari dan menindaklanjuti surat sebagai berikut:",
-    ));
-    bagian.push(daftarButir(rujuk.map((r, i) => {
+    /*
+     * Butir 1 selalu ditutup dengan dasar yang sama: pengaplikasian SAP. Itu
+     * yang membuat permohonan nomor IO punya alasan — tanpa SAP tidak ada
+     * nomor IO yang perlu diminta — dan pada surat-surat cabang yang sudah
+     * terbit ia memang selalu berdiri sebagai butir terakhir.
+     */
+    const dasar = rujuk.map((r) => {
       const tgl = tanggalSurat(String(r.tanggal || ""));
       return `Surat ${esc(r.instansi || "")} Nomor ${b(esc(r.nomor || ""))}`
         + (tgl ? ` tanggal ${esc(tgl)}` : "")
-        + (r.perihal ? ` perihal ${esc(r.perihal)}` : "")
-        + (i === rujuk.length - 1 ? "." : ";");
-    })));
+        + (r.perihal ? ` perihal ${esc(r.perihal)}` : "") + ";";
+    });
+    dasar.push("Pengaplikasian System Analysis and Product (SAP) pada proses bisnis "
+      + "PT. ASDP Indonesia Ferry (Persero);");
 
-    const pembuka =
-      `Sehubungan dengan hal tersebut di atas, guna kelancaran pencatatan pada SAP, bersama ini kami `
+    const permohonan =
+      `Terkait butir 1 (satu) di atas, guna kelancaran dalam pencatatan pada SAP, bersama ini kami `
       + `mengajukan ${b(`permohonan nomor IO (Internal Order) untuk investasi ${esc(String(d.jenisInvestasi || ""))} `
         + `Cabang Ternate ${esc(String(d.bulan || ""))} ${esc(String(d.tahun || ""))}`)}`;
 
+    const butir: ButirSurat[] = [{ teks: "Mendasari dan Menindaklanjuti :", sub: dasar }];
+
     if (rincian.length) {
-      bagian.push(p(`${pembuka}, dengan rincian sebagai berikut:`));
       const kepala = baris([
         th("No", { width: "5%" }),
         th("KAPAL", { width: "18%" }),
@@ -143,16 +145,17 @@ export const permohonanIO: TemplateSurat = {
         td("TOTAL", { colspan: 4, align: "right", tebal: true, bg: WARNA.total }),
         tdAngka(angkaRibuan(total), { tebal: true, bg: WARNA.total }),
       ]));
-      bagian.push(tabel(isi, kepala));
-      bagian.push(p(
-        `Nilai keseluruhan yang dimohonkan sebesar ${b(rupiahSurat(total))} `
-        + `(terbilang: <i>${terbilangRupiah(total)}</i>).`,
-      ));
+      butir.push({ teks: `${permohonan}, dengan rincian sebagai berikut:`, blok: tabel(isi, kepala) });
+      butir.push({
+        teks: `Nilai keseluruhan yang dimohonkan sebesar ${b(rupiahSurat(total))} `
+          + `(terbilang: <i>${terbilangRupiah(total)}</i>).`,
+      });
     } else {
-      bagian.push(p(`${pembuka} sebagaimana form terlampir.`));
+      butir.push({ teks: `${permohonan} sebagaimana form terlampir.` });
     }
 
-    bagian.push(p(PENUTUP_KERJASAMA));
-    return bungkus(bagian.join("\n"));
+    butir.push({ teks: PENUTUP_PERHATIAN });
+    bagian.push(suratBernomor(butir));
+    return bungkus(bagian.join(""));
   },
 };

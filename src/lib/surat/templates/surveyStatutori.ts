@@ -7,7 +7,7 @@
  */
 import { TemplateSurat } from "../types";
 import { GALANGAN, KAPAL_SURAT, namaKapalSurat, tanggalSurat } from "../format";
-import { SALAM, b, bungkus, esc, p, tabelData } from "../htmlHelpers";
+import { ButirSurat, b, bungkus, esc, suratBernomor, tabelData } from "../htmlHelpers";
 
 export const surveyStatutori: TemplateSurat = {
   id: "survey-statutori",
@@ -38,27 +38,30 @@ export const surveyStatutori: TemplateSurat = {
       .filter(Boolean).join(" ");
 
     const bagian: string[] = [];
-    bagian.push(p(SALAM));
-    bagian.push(p(
-      `Memperhatikan dan mendasari Undang-Undang RI Nomor 17 Tahun 2008 tentang Pelayaran Pasal 216, `
-      + `serta proses pelaksanaan Docking ${b(esc(kapal))} Tahun ${tahun} di Galangan ${galangan}.`,
-    ));
-    bagian.push(p(
-      `Sehubungan dengan hal tersebut di atas, bersama ini kami mengajukan `
-      + `${b(`permohonan Survey Statutori dalam rangka pelaksanaan Docking ${esc(kapal)} Tahun ${tahun}`)} `
-      + `di Galangan ${galangan}, dengan spesifikasi kapal sebagai berikut:`,
-    ));
-    bagian.push(tabelData([
-      ["Nama Kapal", esc(kapal)],
-      ["Nakhoda", esc(d.nakhoda || "")],
-      ["Bendera", esc(d.bendera || "Indonesia")],
-      ["Isi Kotor", esc(d.isiKotor || "")],
-      ["Pemilik Agen", esc(d.pemilik || "PT. ASDP Indonesia Ferry (Persero)")],
-      ["Tempat Pelaksanaan", esc(d.tempat || "")],
-      ["Pada Tanggal", esc(tgl)],
-      ["Untuk Keperluan", esc(d.keperluan || "")],
-    ]));
-    bagian.push(p("Demikian kami sampaikan sebagai permohonan, atas kerja samanya diucapkan terima kasih."));
-    return bungkus(bagian.join("\n"));
+    const butir: ButirSurat[] = [
+      {
+        teks: `Memperhatikan dan mendasari Undang-Undang RI Nomor 17 Tahun 2008 tentang Pelayaran `
+          + `Pasal 216, serta proses pelaksanaan Docking ${b(esc(kapal))} Tahun ${tahun} `
+          + `di Galangan ${galangan}.`,
+      },
+      {
+        teks: `Terkait butir 1 (satu) di atas, bersama ini kami mengajukan `
+          + `${b(`permohonan Survey Statutori dalam rangka pelaksanaan Docking ${esc(kapal)} Tahun ${tahun}`)} `
+          + `di Galangan ${galangan}, dengan spesifikasi kapal sebagai berikut:`,
+        blok: tabelData([
+          ["Nama Kapal", esc(kapal)],
+          ["Nakhoda", esc(d.nakhoda || "")],
+          ["Bendera", esc(d.bendera || "Indonesia")],
+          ["Isi Kotor", esc(d.isiKotor || "")],
+          ["Pemilik Agen", esc(d.pemilik || "PT. ASDP Indonesia Ferry (Persero)")],
+          ["Tempat Pelaksanaan", esc(d.tempat || "")],
+          ["Pada Tanggal", esc(tgl)],
+          ["Untuk Keperluan", esc(d.keperluan || "")],
+        ]),
+      },
+      { teks: "Demikian kami sampaikan sebagai permohonan, atas kerja samanya diucapkan terima kasih." },
+    ];
+    bagian.push(suratBernomor(butir));
+    return bungkus(bagian.join(""));
   },
 };

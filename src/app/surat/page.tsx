@@ -4,7 +4,7 @@
  *
  * Kop, nomor, tanggal, tujuan, tanda tangan, dan tembusan sudah dibuat sendiri
  * oleh aplikasi e-office. Yang dibuat di sini hanya BADAN SURAT — dari
- * "Dengan Hormat," sampai kalimat penutup — dalam bentuk HTML bergaya inline
+ * butir 1 sampai kalimat penutup — dalam bentuk HTML bergaya inline
  * yang tinggal ditempel ke editor e-office.
  *
  * Borangnya dirakit dari skema isian tiap template (lib/surat/registry.ts),
