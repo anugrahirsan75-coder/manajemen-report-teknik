@@ -12,11 +12,13 @@ import { classMatter } from "./templates/classMatter";
 import { surveyStatutori } from "./templates/surveyStatutori";
 import { perpanjanganSertifikat } from "./templates/perpanjanganSertifikat";
 import { permohonanIO } from "./templates/permohonanIO";
+import { pekerjaanTambahan } from "./templates/pekerjaanTambahan";
 import { exemptionStability } from "./templates/exemptionStability";
 import { suratKustom } from "./templates/suratKustom";
 
 export const TEMPLATE_SURAT: TemplateSurat[] = [
   dockingInvestasi,
+  pekerjaanTambahan,
   realisasiRutin,
   classMatter,
   surveyStatutori,

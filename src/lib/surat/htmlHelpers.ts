@@ -265,6 +265,10 @@ export const PENUTUP_SAMPAI =
 export const PENUTUP_PERHATIAN =
   "Demikian kami sampaikan, atas perhatian dan kerjasamanya diucapkan terimakasih.";
 
+/** penutup surat yang memohon persetujuan Direksi (mis. addendum docking) */
+export const PENUTUP_PERIKSA =
+  "Demikian kami sampaikan untuk menjadi periksa, atas persetujuan Direksi diucapkan terimakasih.";
+
 export const PENUTUP_KERJASAMA =
   "Demikian kami sampaikan, atas kerja samanya diucapkan terima kasih.";
 
