@@ -19,7 +19,8 @@
  * dengan kind "permintaan_uji" dan berkasnya masuk folder Drive tersendiri.
  */
 import Image from "next/image";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import { ACCEPT_BERKAS, kenaliBerkas } from "@/lib/lapor/berkasJenis";
 import { tautanWa, ukuranSingkat, WA_KONFIRMASI } from "@/lib/lapor/types";
@@ -54,7 +55,7 @@ const kosong = (): FormulirPermintaan => ({
   masinis: "", kontak: "", catatan: "", baris: [],
 });
 
-export default function BorangPermintaanUji() {
+function IsiBorangPermintaan() {
   const [f, setF] = useState<FormulirPermintaan>(kosong);
   const [cari, setCari] = useState("");
   const [kategori, setKategori] = useState("");
@@ -69,6 +70,8 @@ export default function BorangPermintaanUji() {
   const kotakCari = useRef<HTMLInputElement>(null);
 
   const ubah = useCallback((tambal: Partial<FormulirPermintaan>) => setF((l) => ({ ...l, ...tambal })), []);
+  const sp = useSearchParams();
+
 
   // ── draf disimpan di peramban ────────────────────────────────────────────
   // Borang ini bisa berisi tiga puluh barang. Kehilangan semuanya karena tab
@@ -82,6 +85,31 @@ export default function BorangPermintaanUji() {
   useEffect(() => {
     try { localStorage.setItem(KUNCI_DRAF, JSON.stringify(f)); } catch { /* mode penyamaran */ }
   }, [f]);
+
+  /*
+   * Borang bisa dibuka dari temuan inspeksi ("buat permintaan barang"), dengan
+   * kapal, bagian, dan barangnya sudah terbawa di alamat. Tanpa ini, orang yang
+   * menindaklanjuti temuan harus mengetik ulang nama barang yang baru saja
+   * dibacanya di layar sebelah — dan di situlah namanya mulai berbeda-beda.
+   */
+  useEffect(() => {
+    const uraian = sp.get("uraian");
+    if (!uraian) return;
+    setF((l) => {
+      if (l.baris.some((b) => b.uraian === uraian)) return l;      // jangan menumpuk saat halaman dirender ulang
+      return {
+        ...l,
+        kapal: sp.get("kapal") || l.kapal,
+        bagian: sp.get("bagian") === "mesin" ? "mesin" : l.bagian,
+        dasar: sp.get("dasar") || l.dasar,
+        baris: [...l.baris, {
+          ...barisBaru(), uraian,
+          spesifikasi: sp.get("spesifikasi") || "",
+        }],
+      };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp]);
 
   // ── pencarian Database RAB ───────────────────────────────────────────────
   useEffect(() => {
@@ -517,5 +545,16 @@ export default function BorangPermintaanUji() {
         Halaman uji coba · pertanyaan lewat WhatsApp kantor +{WA_KONFIRMASI}
       </p>
     </main>
+  );
+}
+
+/**
+ * useSearchParams menuntut batas Suspense saat halaman dirender di server.
+ */
+export default function BorangPermintaanUji() {
+  return (
+    <Suspense fallback={<main className="mx-auto max-w-5xl px-4 py-10 text-slate-500">Memuat…</main>}>
+      <IsiBorangPermintaan />
+    </Suspense>
   );
 }

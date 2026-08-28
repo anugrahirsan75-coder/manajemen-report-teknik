@@ -116,6 +116,8 @@ async function sampaiMana(kiriman: Kiriman, unggahId: string) {
 
 export async function unggahSatuBerkas(
   kiriman: Kiriman, f: File, urut: number, dari: number, lapor: (k: Kemajuan) => void,
+  /** label bebas; bukti temuan inspeksi memakainya untuk membedakan kondisi awal dan hasil perbaikan */
+  opsi: { jenis?: "sebelum" | "sesudah" } = {},
 ) {
   const s = await siapkan(f);
   if (s.blob.size === 0) throw new Error("Berkas kosong (0 byte). Pilih ulang berkasnya.");
@@ -139,6 +141,7 @@ export async function unggahSatuBerkas(
         const d = await mintaJson("/api/lapor/berkas", {
           id: kiriman.id, token: kiriman.token, nama: s.nama, mime: s.mime,
           unggahId, indeks: k, total, dataBase64,
+          ...(opsi.jenis ? { jenis: opsi.jenis } : {}),
         });
         beres = true;
         if (d.selesai === true) {

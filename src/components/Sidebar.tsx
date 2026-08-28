@@ -133,6 +133,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <NavLink href="/monitoring" icon="🌐" label="Monitoring Pengadaan Teknik" desc="Halaman terbuka — rekap SPPBJ untuk umum" active={path.startsWith("/monitoring")} onNavigate={onNavigate} />
         <NavLink href="/permintaan-laporan" icon="📨" label="Permintaan &amp; Laporan Kapal" desc="Kiriman ABK — Deck &amp; Mesin, berkas di Google Drive" active={path === "/permintaan-laporan"} onNavigate={onNavigate} />
         <NavLink href="/permintaan-laporan/isi" icon="🧾" label="Isi Permintaan Kapal" desc="Daftar barang hasil bacaan AI — langsung jadi SPPBJ" active={path.startsWith("/permintaan-laporan/isi")} onNavigate={onNavigate} />
+        <NavLink href="/inspeksi" icon="🔍" label="Inspeksi Kapal" desc="Temuan Marine Superintendent &amp; penutupannya" active={path.startsWith("/inspeksi")} onNavigate={onNavigate} />
         <NavLink href="/sertifikat" icon="📜" label="Monitor Sertifikat Kapal" desc="Masa berlaku sertifikat 13 kapal &amp; berkasnya" active={path.startsWith("/sertifikat")} onNavigate={onNavigate} />
         <NavLink href="/sensor" icon="📡" label="Monitoring Sensor" desc="Data sensor kapal Regional 4 (Looker)" active={path.startsWith("/sensor")} onNavigate={onNavigate} />
         <NavLink href="/armada" icon="⚓" label="Profil Armada" desc="Lihat spesifikasi & inventaris" active={path.startsWith("/armada")} onNavigate={onNavigate} />

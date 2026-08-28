@@ -27,12 +27,13 @@ const MAKS_BERKAS = 12;
 /**
  * Jenis kiriman yang boleh menempelkan berkas lewat route ini.
  *
- * "permintaan_uji" adalah borang permintaan digital yang masih diuji coba. Ia
- * memakai jalur unggah yang sama persis — potongan, lanjut setelah putus,
+ * "permintaan_uji" adalah borang permintaan digital yang masih diuji coba, dan
+ * "inspeksi_temuan" adalah bukti perbaikan temuan Marine Superintendent.
+ * Keduanya memakai jalur unggah yang sama persis — potongan, lanjut setelah putus,
  * penjaga salinan ganda — karena menulis jalur kedua berarti menguji ulang
  * semua yang sudah terbukti di sini. Yang dipisah hanya folder Drive-nya.
  */
-const KIND_DILAYANI = ["lapor_kapal", "permintaan_uji"];
+const KIND_DILAYANI = ["lapor_kapal", "permintaan_uji", "inspeksi_temuan"];
 /** panjang teks base64 maksimal per potongan — di bawah batas badan permintaan hosting */
 const MAKS_POTONGAN = 3_200_000;
 /**
@@ -88,6 +89,12 @@ export async function POST(req: NextRequest) {
 
   const b = await req.json().catch(() => ({} as any));
   const { id, token, nama, mime, dataBase64, unggahId } = b as Record<string, string>;
+  /**
+   * Label bebas dari pemanggil. Dipakai bukti temuan inspeksi untuk menandai
+   * mana foto kondisi awal dan mana hasil perbaikan — penutupan temuan
+   * mensyaratkan yang kedua, jadi bedanya harus ikut tercatat saat diunggah.
+   */
+  const jenisBerkas = ["sebelum", "sesudah"].includes(String(b?.jenis)) ? String(b.jenis) : "";
   const idUnggah = String(unggahId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
   const indeks = Number(b.indeks) || 0;
   const total = Number(b.total) || 1;
@@ -214,6 +221,7 @@ export async function POST(req: NextRequest) {
       nama: hasil.nama || namaBerkas, mime: jenis.mime,
       ukuran: hasil.ukuran || Math.round(dataBase64.length * 0.75),
       fileId: hasil.fileId, url: hasil.url, diunggahPada: new Date().toISOString(), unggahId: idUnggah,
+      ...(jenisBerkas ? { jenis: jenisBerkas } : {}),
     });
     return NextResponse.json({ ok: true, selesai: true, berkas: dicatat.berkas, jumlah: dicatat.jumlah });
   } catch (e: any) {
