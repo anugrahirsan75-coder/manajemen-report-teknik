@@ -90,6 +90,11 @@ for n, tr in enumerate(isiBaris, 1):
         sel[2] = gantiIsi(sel[2], '{{DASAR}}')
     elif n == 4:
         sel[2] = gantiIsi(sel[2], '{{DIBUTUHKAN}}')
+    elif n == 5:
+        # baris antara letterhead dan tabel barang: tingginya 3,85pt di berkas
+        # asli. Tanpa penanda, isinya (satu spasi) memaksa tinggi satu baris
+        # teks penuh dan seluruh tabel barang turun satu sentimeter lebih.
+        awalTr = awalTr.replace('<tr', '<tr class=lp-antara', 1)
     elif n == 6:
         kiri, kanan = belahUraian(sel[4])
         sel[4] = gantiIsi(kiri, 'Uraian Barang')
@@ -110,14 +115,22 @@ for n, tr in enumerate(isiBaris, 1):
         sel[0] = ganti(sel[0], PARAF_KIRI)
         sel[1] = ganti(sel[1], TENGAH.format('{{KAPAL_TANGGAL}}'))
     elif n == 29:
+        # Tinggi baris tanda tangan pada berkas asli "otomatis" (mengikuti isi
+        # Word), jadi tak ikut terekspor. Tanpa tinggi, ruang tanda tangannya
+        # menyusut lima milimeter dan bloknya tak lagi sejajar dengan arsip.
+        awalTr = awalTr.replace('<tr', '<tr class=lp-ttd', 1)
         sel[1] = ganti(sel[1], TENGAH.format('Peminta Barang,'))
     elif n in (30, 31):
+        awalTr = awalTr.replace('<tr', '<tr class=lp-ttd', 1)
         sel[1] = ganti(sel[1], TENGAH.format('&nbsp;'))
     elif n == 32:
+        awalTr = awalTr.replace('<tr', '<tr class=lp-ttd', 1)
         sel[1] = ganti(sel[1], TENGAH.format('<u>{{PEMINTA}}</u>'))
     elif n == 33:
+        awalTr = awalTr.replace('<tr', '<tr class=lp-ttd', 1)
         sel[1] = ganti(sel[1], TENGAH.format('<i>({{JABATAN}})</i>'))
     elif n == 34:
+        awalTr = awalTr.replace('<tr', '<tr class=lp-setuju', 1)
         sel[0] = ganti(sel[0], TTD.format('Persetujuan,', '{{NAKHODA}}', 'Nakhoda'))
         sel[1] = ganti(sel[1], TTD.format('&nbsp;', '{{MASINIS}}', '{{ATASAN}}'))
     elif n == 35:
@@ -129,7 +142,22 @@ for n, tr in enumerate(isiBaris, 1):
 
     hasil.append(awalTr + ''.join(sel) + '</tr>')
 
-tabel = kepala + ''.join(hasil) + '</table>'
+# ── kunci lebar kolom ───────────────────────────────────────────────────────
+# Baris pengunci Word hanya bekerja pada tata letak otomatis. Saat mencetak,
+# Chrome menghitung ulang lebar kolom menurut isinya dan hasilnya melenceng
+# beberapa milimeter. Colgroup + table-layout:fixed membuat lebar kolom
+# ditentukan angka, bukan isi — angkanya diambil dari grid sepuluh kolom milik
+# berkas aslinya (38+66+42+18+119+76+56+83+13+207 = 718px = 190mm).
+# Lebarnya ditulis dalam MILIMETER, bukan piksel. Saat mencetak, Chrome
+# memetakan px pada lembar ini 3,9% lebih besar dari 1/96 inci — terukur: batang
+# acuan selebar 718px keluar 197,3mm, bukan 190mm — sehingga seluruh kolom ikut
+# melar dan tabelnya melewati tepi kertas. Milimeter tidak bisa ditafsirkan
+# ulang seperti itu.
+GRID_PT = [28.5, 49.5, 31.5, 13.5, 89.25, 57.0, 42.0, 62.25, 9.75, 155.25]
+colgroup = '<colgroup>' + ''.join(
+    "<col style='width:%.2fmm'>" % (w * 25.4 / 72) for w in GRID_PT) + '</colgroup>'
+
+tabel = kepala + colgroup + ''.join(hasil) + '</table>'
 # tabel Word menggantung ke kiri; tepi kertasnya diatur lembar cetak, bukan di sini
 tabel = tabel.replace('margin-left:-17.7pt;', '')
 

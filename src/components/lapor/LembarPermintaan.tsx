@@ -27,6 +27,20 @@ export default function LembarPermintaan({ f }: { f: FormulirPermintaan }) {
       <div className="lp-lembar">
         {/* ── kop dokumen: tabel 4x4, kolom 106/220/95/118 pt ───────────── */}
         <table className="lp-kop">
+          {/*
+            Lebar kolom dipasang lewat <colgroup>, bukan pada selnya. Pada sel,
+            angka lebar itu lebar ISI — lapisan dalamnya (padding) ditambahkan di
+            luar itu, sehingga kop membengkak melewati tepi kertas. Akibatnya
+            bukan cuma kopnya: Chrome mengecilkan SELURUH halaman supaya muat,
+            dan seisi borang ikut menyusut tiga persen. Itu yang membuat lembar
+            ini tidak pernah sama dengan aslinya betapa pun ukurannya dibetulkan.
+          */}
+          <colgroup>
+            <col style={{ width: "37.40mm" }} />
+            <col style={{ width: "77.60mm" }} />
+            <col style={{ width: "33.50mm" }} />
+            <col style={{ width: "41.55mm" }} />
+          </colgroup>
           <tbody>
             <tr>
               <td className="lp-kop-logo" rowSpan={4}>
@@ -59,36 +73,68 @@ export default function LembarPermintaan({ f }: { f: FormulirPermintaan }) {
  */
 const gaya = `
 .lp-bingkai { display: flex; justify-content: center; }
+/*
+ * Tepi lembar diambil dari cetakan aslinya, bukan dari tepi teks Word: garis
+ * kiri tabel jatuh 12,7mm dari tepi kertas dan sisi kanannya 7,3mm — itu yang
+ * terukur pada berkas PDF cabang, sesudah tabelnya menggantung ke kiri.
+ */
 .lp-lembar {
   width: 210mm; min-height: 297mm; box-sizing: border-box;
-  padding: 12mm 5.8mm 12mm 14.2mm;
+  padding: 7.7mm 7.3mm 6mm 12.7mm;
   background: #fff; color: #000;
-  font-family: "FrutigerExt-Normal", Arial, Helvetica, sans-serif;
-  font-size: 10pt; line-height: 1.15;
+  /*
+   * FrutigerExt-Normal adalah huruf resmi borangnya, tetapi tidak terpasang di
+   * komputer mana pun di cabang — Word menggantinya dengan huruf berkait, dan
+   * ITULAH yang selama ini tercetak. Urutan ini menjaga dua-duanya: yang punya
+   * hurufnya dapat aslinya, yang tidak dapat hasil yang sama dengan arsipnya.
+   */
+  font-family: "FrutigerExt-Normal", "Times New Roman", Times, serif;
+  font-size: 10pt; line-height: 1.05;
 }
 .lp-lembar table { border-collapse: collapse; }
 .lp-lembar p { margin: 0; }
-.lp-badan table { width: 190mm; }   /* lebar kolom datang dari baris pengunci Word, bukan dari table-layout */
-.lp-badan td { word-wrap: break-word; overflow-wrap: break-word; font-size: 10pt; }
+/*
+ * Word menulis sebagian sel sebagai <h1>..<h6> (sisa gaya "Heading" di
+ * dokumennya), dan peramban memberi judul margin bawaan 2,3em. Satu baris
+ * kepala tabel jadi setinggi empat baris, dan seluruh borang mulur ke bawah.
+ * Di kertas, judul itu bukan judul — cuma teks tebal di dalam sel.
+ */
+.lp-lembar h1, .lp-lembar h2, .lp-lembar h3,
+.lp-lembar h4, .lp-lembar h5, .lp-lembar h6 {
+  margin: 0; font-size: inherit; font-weight: inherit; line-height: inherit;
+}
+.lp-badan table { width: 190.05mm; table-layout: fixed; }   /* kolomnya dikunci colgroup grid Word, dalam mm */
+.lp-badan td { word-wrap: break-word; overflow-wrap: break-word; font-size: 10pt; line-height: 1.05; }
+/* tinggi ruang tanda tangan: blok bawah 31,2mm pada cetakan asli — 6,65mm baris catatan + 5 x 4,9mm */
+.lp-badan tr.lp-ttd td { height: 4.9mm; }
+.lp-badan tr.lp-setuju td { height: 24.5mm; vertical-align: top; }
+/* baris antara letterhead dan tabel barang: 3,85pt pada berkas asli */
+.lp-badan tr.lp-antara td { height: 1.4mm; font-size: 1pt; line-height: 0; padding: 0; }
 
-.lp-kop { width: 190mm; table-layout: fixed; margin-bottom: 2mm; }
-.lp-kop td { border: 1pt solid #000; padding: 1mm 1.4mm; vertical-align: middle; }
-.lp-kop-logo { width: 37.4mm; text-align: center; }
-.lp-kop-logo img { width: 30mm; height: auto; display: inline-block; }
-.lp-kop-judul { width: 77.6mm; text-align: center; font-weight: bold; font-size: 12pt; }
-.lp-kop-label { width: 33.5mm; font-size: 9pt; }
-.lp-kop-isi { width: 41.6mm; font-size: 9pt; }
+.lp-kop { width: 190.05mm; table-layout: fixed; margin-bottom: 4.2mm; }
+.lp-kop td { border: 1pt solid #000; padding: 0 1.6mm; vertical-align: middle; line-height: 1.05; }
+.lp-kop tr { height: 4.35mm; }
+.lp-kop-logo { text-align: center; }
+/*
+ * Logo dibatasi TINGGINYA, bukan lebarnya: berkas logo di aplikasi lebih
+ * jangkung daripada logo pada borang, dan mengunci lebarnya membuat gambar
+ * setinggi 18mm — lebih tinggi dari seluruh kotak kop yang cuma 17,4mm.
+ */
+.lp-kop-logo img { height: 13mm; width: auto; display: inline-block; }
+.lp-kop-judul { text-align: center; font-weight: bold; font-size: 11.5pt; line-height: 1.15; }
+.lp-kop-label { font-size: 9.5pt; font-weight: bold; }
+.lp-kop-isi { font-size: 9.5pt; font-weight: bold; }
 
-.lp-footer { width: 190mm; margin-top: 2mm; font-size: 7.5pt; font-style: italic; text-align: center; }
+.lp-footer { width: 190mm; margin-top: 3mm; font-size: 9pt; font-style: italic; text-align: center; }
 
 @media screen and (max-width: 900px) { .lp-bingkai { overflow-x: auto; } }
 
 @media print {
-  @page { size: A4 portrait; margin: 0; }
-  html, body { background: #fff !important; }
+  @page { size: 210mm 297mm; margin: 0; }
+  html, body { background: #fff !important; width: 210mm; }
   body * { visibility: hidden !important; }
   .lp-bingkai, .lp-bingkai * { visibility: visible !important; }
-  .lp-bingkai { position: absolute; left: 0; top: 0; width: 100%; display: block; }
+  .lp-bingkai { position: absolute; left: 0; top: 0; width: 210mm; display: block; }
   .lp-lembar { box-shadow: none !important; margin: 0; }
   .lp-badan tr { page-break-inside: avoid; }
 }
