@@ -269,6 +269,10 @@ export const PENUTUP_PERHATIAN =
 export const PENUTUP_PERIKSA =
   "Demikian kami sampaikan untuk menjadi periksa, atas persetujuan Direksi diucapkan terimakasih.";
 
+/** penutup surat permohonan ke Regional (mis. penunjukan langsung vendor) */
+export const PENUTUP_PERSETUJUAN =
+  "Demikian kami sampaikan, atas persetujuannya diucapkan terima kasih.";
+
 export const PENUTUP_KERJASAMA =
   "Demikian kami sampaikan, atas kerja samanya diucapkan terima kasih.";
 
