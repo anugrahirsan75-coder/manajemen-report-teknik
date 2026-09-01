@@ -21,6 +21,32 @@ import { konfirmasi } from "@/components/Konfirmasi";
 
 const kelasStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.kelas || "bg-slate-100 text-slate-700 ring-slate-200";
 const labelStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.label || s;
+/**
+ * Tanggal berapa sebuah kiriman mulai dicurigai milik bulan berikutnya.
+ *
+ * Laporan dan permintaan bulanan lazimnya naik sesudah bulannya lewat. Yang
+ * masuk pada hari-hari terakhir bulan biasanya justru kebutuhan bulan DEPAN
+ * yang dikirim lebih awal — permintaan barang untuk September disetor 27
+ * Agustus supaya sempat diproses. Kalau periodenya dibiarkan ikut bulan kirim,
+ * rekap Agustus tampak lengkap sementara September lahir kosong.
+ *
+ * Ambangnya tanggal 25: cukup dekat ke tutup bulan untuk jadi pola, cukup jauh
+ * dari tengah bulan supaya kiriman biasa tidak ikut tertandai.
+ */
+const TANGGAL_UJUNG_BULAN = 25;
+
+const tanggalKirim = (b: KirimanLapor) => Number((b.dikirimPada || "").slice(8, 10)) || 0;
+
+/**
+ * Kiriman yang naik di ujung bulan DAN periodenya masih bulan itu juga.
+ *
+ * Yang periodenya sudah ditulis bulan berikutnya tidak ditandai: ABK-nya sudah
+ * memilih dengan benar, dan peringatan yang muncul pada hal yang sudah beres
+ * cepat diabaikan.
+ */
+const kirimUjungBulan = (b: KirimanLapor) =>
+  tanggalKirim(b) >= TANGGAL_UJUNG_BULAN && (b.dikirimPada || "").slice(0, 7) === b.periode;
+
 /** geser satu periode YYYY-MM sebanyak n bulan */
 const bulanKe = (periode: string, n: number) => {
   const [y, m] = (periode || "").split("-").map(Number);
@@ -101,7 +127,11 @@ function IsiPermintaanLaporanKapal() {
     () => Array.from(new Set(baris.map((b) => b.periode).filter(Boolean))).sort().reverse(),
     [baris]);
 
+  /** saringan daftar: hanya kiriman yang naik di ujung bulan */
+  const [hanyaUjung, setHanyaUjung] = useState(false);
+
   const tampil = useMemo(() => baris.filter((b) => {
+    if (hanyaUjung && !kirimUjungBulan(b)) return false;
     if (kapal && b.kapal !== kapal) return false;
     if (jenis && b.jenis !== jenis) return false;
     if (status && b.status !== status) return false;
@@ -109,7 +139,7 @@ function IsiPermintaanLaporanKapal() {
     if (!cari) return true;
     const t = [b.kapal, b.pengirim, b.jabatan, b.catatan, labelJenis(b.jenis), ...b.berkas.map((x) => x.nama)].join(" ").toLowerCase();
     return cari.toLowerCase().split(/\s+/).filter(Boolean).every((k) => t.includes(k));
-  }), [baris, kapal, jenis, status, periode, cari]);
+  }), [baris, hanyaUjung, kapal, jenis, status, periode, cari]);
 
   /**
    * Periode rekap punya state sendiri dan bawaannya BULAN BERJALAN. Sebelumnya
@@ -158,6 +188,18 @@ function IsiPermintaanLaporanKapal() {
    */
   const gagalKirim = useMemo(
     () => baris.filter((b) => cocokBulan(b) && b.berkas.length === 0 && !b.digantikan),
+    [baris, cocokBulan]);
+
+  /**
+   * Kiriman ujung bulan pada periode yang sedang direkap.
+   *
+   * Bukan kesalahan — kantor sendiri yang memutuskan ini punya bulan mana.
+   * Yang dilakukan di sini cuma menaruhnya di depan mata, lengkap dengan jalan
+   * memindahkannya, supaya keputusan itu diambil sadar dan bukan karena rekap
+   * bulan depan mendadak kosong.
+   */
+  const ujungBulan = useMemo(
+    () => baris.filter((b) => cocokBulan(b) && kirimUjungBulan(b) && !b.digantikan),
     [baris, cocokBulan]);
 
   /**
@@ -414,8 +456,8 @@ function IsiPermintaanLaporanKapal() {
   }, [baris, matriks, cocokBulan]);
   const jumlahBaru = baris.filter((b) => b.status === "baru").length;
 
-  const saringanAktif = !!(cari || kapal || jenis || status || periode);
-  const bersihkanSaringan = () => { setCari(""); setKapal(""); setJenis(""); setStatus(""); setPeriode(""); };
+  const saringanAktif = !!(cari || kapal || jenis || status || periode || hanyaUjung);
+  const bersihkanSaringan = () => { setCari(""); setKapal(""); setJenis(""); setStatus(""); setPeriode(""); setHanyaUjung(false); };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6">
@@ -534,6 +576,30 @@ function IsiPermintaanLaporanKapal() {
         </button>
       )}
 
+      {/*
+        Kiriman ujung bulan diberi spanduknya sendiri, terpisah dari spanduk
+        berkas gagal: yang satu kerusakan, yang ini keputusan. Menggabungkan
+        keduanya membuat kantor memperlakukan keduanya sebagai masalah.
+      */}
+      {!!ujungBulan.length && (
+        <button
+          onClick={() => { setHanyaUjung(true); window.setTimeout(() => document.getElementById("daftar-kiriman")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
+          className="anim-in mb-4 flex w-full flex-wrap items-center gap-3 rounded-2xl border border-violet-200 bg-violet-50/95 px-4 py-3 text-left shadow-sm transition hover:border-violet-300 dark:border-violet-900 dark:bg-violet-950/30">
+          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-violet-500 text-lg text-white">🕘</span>
+          <span className="flex-1">
+            <span className="block text-xs font-extrabold text-violet-900 dark:text-violet-200">
+              {ujungBulan.length} kiriman naik setelah tanggal {TANGGAL_UJUNG_BULAN} {bulanIndo(periodeMatriks)}
+            </span>
+            <span className="block text-[10px] text-violet-800 dark:text-violet-300">
+              Kiriman ujung bulan biasanya kebutuhan {bulanIndo(bulanKe(periodeMatriks, 1))} yang disetor lebih awal,
+              tetapi periodenya masih tertulis {bulanIndo(periodeMatriks)}. Periksa isinya — bila memang untuk bulan
+              depan, buka kirimannya dan pindahkan periodenya; bila memang untuk bulan ini, biarkan.
+            </span>
+          </span>
+          <span className="text-[10px] font-extrabold text-violet-800 dark:text-violet-300">PERIKSA →</span>
+        </button>
+      )}
+
       <div className="mt-3 flex items-center gap-3">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 dark:bg-slate-700 dark:ring-slate-600">
               <div className="h-full rounded-full bg-gradient-to-r from-[#14b8c4] via-[#1ca3dd] to-[#16357f] transition-all duration-500" style={{ width: `${ringkas.persen}%` }} />
@@ -571,6 +637,10 @@ function IsiPermintaanLaporanKapal() {
                     {JENIS_LAPOR.map((j) => {
                       const isi = matriks.get(`${k}|${j.id}`) || [];
                       const adaBaru = isi.some((x) => x.status === "baru");
+                      // slot yang isinya naik di ujung bulan diberi jam kecil:
+                      // rekap dibaca per kolom, dan kantor harus tahu slot mana
+                      // yang hijaunya masih perlu ditimbang
+                      const adaUjung = isi.some(kirimUjungBulan);
                       const utama = isi.find((x) => x.status === "baru") || isi[0];
                       return (
                         <td key={j.id} className="border-b border-slate-100 px-3 py-2 text-center dark:border-slate-800">
@@ -582,6 +652,12 @@ function IsiPermintaanLaporanKapal() {
                               <span className={`grid h-4 w-4 place-items-center rounded-full text-[9px] text-white ${adaBaru ? "bg-rose-500" : "bg-emerald-500"}`}>{adaBaru ? "!" : "✓"}</span>
                               {adaBaru ? "Baru" : isi.length > 1 ? `${isi.length} kiriman` : "Diterima"}
                               {adaBaru && <span className="absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />}
+                              {adaUjung && (
+                                <span title={`Naik setelah tanggal ${TANGGAL_UJUNG_BULAN} — periksa apakah ini untuk ${bulanIndo(bulanKe(periodeMatriks, 1))}`}
+                                  className="absolute -left-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-violet-500 text-[8px] text-white ring-2 ring-white dark:ring-slate-900">
+                                  🕘
+                                </span>
+                              )}
                             </button>
                           ) : (
                             <span className="inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
@@ -614,6 +690,11 @@ function IsiPermintaanLaporanKapal() {
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:ring-sky-800">{tampil.length} dari {baris.length} kiriman</span>
+            {hanyaUjung && (
+              <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800">
+                🕘 hanya kiriman ujung bulan
+              </span>
+            )}
             {saringanAktif && <button onClick={bersihkanSaringan} className="text-[10px] font-bold text-slate-500 hover:text-rose-600">✕ Reset filter</button>}
           </div>
         </div>
@@ -681,6 +762,14 @@ function IsiPermintaanLaporanKapal() {
                         <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 ring-1 ring-indigo-200"
                           title={`Periode laporan ${bulanIndo(b.periode)}, berkas masuk ${bulanIndo((b.dikirimPada || "").slice(0, 7))}`}>
                           dikirim {bulanIndo((b.dikirimPada || "").slice(0, 7))}
+                        </span>
+                      )}
+                      {/* ujung bulan: lencananya menyebut bulan yang mungkin
+                          dimaksud, karena itulah pertanyaan yang harus dijawab */}
+                      {kirimUjungBulan(b) && (
+                        <span className="rounded-md bg-violet-50 px-1.5 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800"
+                          title={`Naik tanggal ${tanggalKirim(b)} ${bulanIndo(b.periode)} — kiriman ujung bulan lazimnya untuk bulan berikutnya`}>
+                          🕘 ujung bulan · mungkin {bulanIndo(bulanKe(b.periode, 1))}
                         </span>
                       )}
                     </div>
@@ -759,6 +848,13 @@ function IsiPermintaanLaporanKapal() {
                       </button>
                     ))}
                   </div>
+                  {kirimUjungBulan(buka) && (
+                    <p className="mt-2 rounded-lg bg-violet-50 px-2.5 py-2 text-[11px] leading-relaxed text-violet-800 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800">
+                      Naik tanggal {tanggalKirim(buka)} — kiriman ujung bulan lazimnya kebutuhan{" "}
+                      <b>{bulanIndo(bulanKe(buka.periode, 1))}</b> yang disetor lebih awal. Periksa isinya lebih dulu;
+                      bila benar untuk bulan depan, tekan tombol <b>→ {bulanIndo(bulanKe(buka.periode, 1))}</b> di atas.
+                    </p>
+                  )}
                   {!!buka.riwayatPeriode?.length && (
                     <p className="mt-1.5 text-[11px] text-slate-400">
                       Dipindahkan: {buka.riwayatPeriode.slice(-3).map((j) =>
