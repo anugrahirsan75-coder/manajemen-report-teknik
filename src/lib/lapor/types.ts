@@ -85,6 +85,8 @@ export interface KirimanLapor {
   riwayatStatus?: JejakStatus[];
   /** kiriman ini digantikan kiriman lain (percobaan ulang yang berkasnya nihil) */
   digantikan?: string;
+  /** jejak pemindahan periode oleh kantor — rekap bulanan dipakai menagih */
+  riwayatPeriode?: { dari: string; ke: string; pada: string }[];
 }
 
 /** kiriman yang catatannya ada tapi berkasnya tidak pernah sampai */

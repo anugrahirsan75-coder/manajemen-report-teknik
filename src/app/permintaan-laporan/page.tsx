@@ -21,6 +21,14 @@ import { konfirmasi } from "@/components/Konfirmasi";
 
 const kelasStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.kelas || "bg-slate-100 text-slate-700 ring-slate-200";
 const labelStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.label || s;
+/** geser satu periode YYYY-MM sebanyak n bulan */
+const bulanKe = (periode: string, n: number) => {
+  const [y, m] = (periode || "").split("-").map(Number);
+  if (!y || !m) return "";
+  const d = new Date(y, m - 1 + n, 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
 const waktuSingkat = (iso: string) =>
   iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", year: "2-digit", hour: "2-digit", minute: "2-digit" }) : "—";
 
@@ -250,6 +258,29 @@ function IsiPermintaanLaporanKapal() {
     // URL dibersihkan sebelum status diperbarui, sehingga efek tidak berulang.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [baris, sp]);
+
+  /**
+   * Pindahkan kiriman ke periode lain.
+   *
+   * Yang dipindahkan hanya PENEMPATANNYA di rekap; berkas di Google Drive
+   * tidak ikut berganti nama, dan tanggal kirimnya tidak pernah diubah — itu
+   * jejak yang tidak boleh dikarang ulang. Perpindahannya sendiri dicatat,
+   * karena rekap bulanan inilah yang dipakai menagih kapal.
+   */
+  const pindahPeriode = async (b: KirimanLapor, ke: string) => {
+    if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(ke) || ke === b.periode) return;
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "📅", judul: "Pindahkan kiriman ke periode lain?",
+      pesan: `${singkatJenis(b.jenis)} · ${b.kapal}`,
+      rincian: [
+        `Dari ${bulanIndo(b.periode)} menjadi ${bulanIndo(ke)}.`,
+        "Rekap kelengkapan kedua bulan itu ikut berubah.",
+        "Berkas di Google Drive tetap dengan namanya yang lama.",
+      ],
+      tombolYa: `Pindahkan ke ${bulanIndo(ke)}`,
+    }))) return;
+    await ubah(b.id, { periode: ke } as Partial<KirimanLapor>);
+  };
 
   const hapus = async (b: KirimanLapor) => {
     if (!(await konfirmasi({
@@ -698,6 +729,41 @@ function IsiPermintaanLaporanKapal() {
                     <div className="mt-0.5 text-[11px] text-indigo-700">
                       Periode laporan {bulanIndo(buka.periode)} — berkas baru masuk {bulanIndo((buka.dikirimPada || "").slice(0, 7))}
                     </div>
+                  )}
+                </div>
+                {/*
+                  Periode boleh digeser kantor. Kekeliruan bulan paling sering
+                  terjadi pada hari-hari pertama bulan baru, dan tanpa kotak ini
+                  satu-satunya jalan membetulkannya adalah menyuruh kapal
+                  mengirim ulang seluruh berkasnya.
+                */}
+                <div className="sm:col-span-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-slate-500">Periode laporan</span>
+                    <span className="text-[11px] text-slate-400">
+                      dikirim {bulanIndo((buka.dikirimPada || "").slice(0, 7))}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    <input type="month" value={buka.periode}
+                      onChange={(e) => pindahPeriode(buka, e.target.value)}
+                      className="rounded-lg bg-white px-2 py-1.5 text-sm ring-1 ring-slate-300" />
+                    {Array.from(new Set([
+                      bulanKe(buka.periode, -1),
+                      (buka.dikirimPada || "").slice(0, 7),
+                      bulanKe(buka.periode, 1),
+                    ])).filter((x) => /^\d{4}-\d{2}$/.test(x) && x !== buka.periode).map((x) => (
+                      <button key={x} type="button" onClick={() => pindahPeriode(buka, x)}
+                        className="rounded-lg bg-white px-2.5 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-slate-300 hover:bg-slate-100">
+                        → {bulanIndo(x)}
+                      </button>
+                    ))}
+                  </div>
+                  {!!buka.riwayatPeriode?.length && (
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      Dipindahkan: {buka.riwayatPeriode.slice(-3).map((j) =>
+                        `${bulanIndo(j.dari)} → ${bulanIndo(j.ke)} (${waktuSingkat(j.pada)})`).join(" · ")}
+                    </p>
                   )}
                 </div>
                 <div>
