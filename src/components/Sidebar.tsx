@@ -178,10 +178,14 @@ function JudulKelompok({ judul, jumlah, buka, onKlik }: {
 }) {
   return (
     <button type="button" onClick={onKlik} aria-expanded={buka}
-      className="mt-5 mb-1.5 flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-left transition first:mt-1 hover:bg-white/5">
-      <span className={`text-[10px] text-white/40 transition-transform ${buka ? "rotate-90" : ""}`}>▶</span>
-      <span className="flex-1 text-[10px] font-bold uppercase tracking-[0.15em] text-white/35">{judul}</span>
-      {!buka && <span className="rounded-full bg-white/10 px-1.5 text-[9px] font-bold text-white/45">{jumlah}</span>}
+      className={`mt-4 mb-1 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition first:mt-1 ${
+        buka ? "bg-white/[0.06]" : "hover:bg-white/[0.06]"}`}>
+      <span className={`text-[11px] leading-none transition-transform ${
+        buka ? "rotate-90 text-[#7cc242]" : "text-white/60"}`}>▶</span>
+      <span className={`flex-1 text-[11px] font-extrabold uppercase tracking-[0.12em] ${
+        buka ? "text-white" : "text-white/70"}`}>{judul}</span>
+      <span className={`rounded-full px-1.5 py-px text-[10px] font-bold tabular-nums ${
+        buka ? "bg-white/15 text-white/70" : "bg-white/20 text-white"}`}>{jumlah}</span>
     </button>
   );
 }
@@ -189,15 +193,15 @@ function JudulKelompok({ judul, jumlah, buka, onKlik }: {
 function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: () => void }) {
   const aktif = aktifkan(m, path);
   return (
-    <div className={`rounded-xl transition ${aktif && m.sub ? "bg-white/[0.07] ring-1 ring-white/10" : ""}`}>
+    <div className={`rounded-xl transition ${aktif && m.sub ? "bg-white/[0.09] ring-1 ring-white/15" : ""}`}>
       <Link href={m.href} onClick={onNavigate}
         className={`relative flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition ${
-          aktif ? "text-white bg-white/[0.07] ring-1 ring-white/10" : "text-white/75 hover:bg-white/5 hover:text-white"}`}>
+          aktif ? "text-white bg-white/[0.12] ring-1 ring-white/20" : "text-white/85 hover:bg-white/[0.08] hover:text-white"}`}>
         {aktif && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
         <span className={`grid place-items-center h-8 w-8 rounded-lg text-base shrink-0 ${aktif ? "bg-white/15 shadow-inner" : "bg-white/5"}`}>{m.icon}</span>
         <span className="min-w-0 leading-tight">
           <span className="block text-sm font-semibold truncate">{m.label}</span>
-          <span className="block text-[10px] text-white/45 truncate">{m.desc}</span>
+          <span className="block text-[10px] text-white/60 truncate">{m.desc}</span>
         </span>
       </Link>
 
@@ -210,7 +214,7 @@ function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: ()
             return (
               <Link key={s.href} href={s.href} onClick={onNavigate}
                 className={`flex items-center gap-2 pl-3.5 pr-3 py-1.5 rounded-lg text-[13px] transition border-l-2 ${
-                  a ? "text-white border-[#14b8c4] bg-white/5 font-medium" : "text-white/55 border-white/10 hover:text-white hover:border-white/30"}`}>
+                  a ? "text-white border-[#14b8c4] bg-white/10 font-semibold" : "text-white/70 border-white/20 hover:text-white hover:border-white/40"}`}>
                 <span className="text-xs opacity-90">{s.icon}</span> {s.label}
               </Link>
             );
