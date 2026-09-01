@@ -166,6 +166,26 @@ function SectionLabel({ children }: { children: ReactNode }) {
   return <p className="text-[10px] uppercase tracking-[0.15em] text-white/35 font-bold px-2 mb-1.5 mt-5 first:mt-1">{children}</p>;
 }
 
+/**
+ * Judul kelompok yang bisa dibuka-tutup.
+ *
+ * Tujuh kelompok yang semuanya terbuka berarti dua puluh lebih menu terpampang
+ * sekaligus, dan yang sedang dikerjakan tenggelam di antaranya. Dilipat, yang
+ * terlihat hanya kelompok yang sedang dipakai — sisanya menunggu dibuka.
+ */
+function JudulKelompok({ judul, jumlah, buka, onKlik }: {
+  judul: string; jumlah: number; buka: boolean; onKlik: () => void;
+}) {
+  return (
+    <button type="button" onClick={onKlik} aria-expanded={buka}
+      className="mt-5 mb-1.5 flex w-full items-center gap-1.5 rounded-lg px-2 py-1 text-left transition first:mt-1 hover:bg-white/5">
+      <span className={`text-[10px] text-white/40 transition-transform ${buka ? "rotate-90" : ""}`}>▶</span>
+      <span className="flex-1 text-[10px] font-bold uppercase tracking-[0.15em] text-white/35">{judul}</span>
+      {!buka && <span className="rounded-full bg-white/10 px-1.5 text-[9px] font-bold text-white/45">{jumlah}</span>}
+    </button>
+  );
+}
+
 function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: () => void }) {
   const aktif = aktifkan(m, path);
   return (
@@ -204,6 +224,36 @@ function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: ()
 function NavContent({ onNavigate }: { onNavigate?: () => void }) {
   const path = usePathname() || "";
   const [cari, setCari] = useState("");
+
+  /** kelompok mana yang memuat halaman yang sedang dibuka */
+  const kelompokAktif = useMemo(
+    () => KELOMPOK.find((k) => k.menu.some((m) => aktifkan(m, path)))?.judul || "",
+    [path]);
+
+  /*
+   * Pilihan buka-tutup diingat peramban. Orang kantor bekerja berhari-hari di
+   * kelompok yang sama; melipat ulang tiap kali halaman dimuat hanya membuat
+   * pekerjaan yang sama diulang-ulang.
+   */
+  const [buka, setBuka] = useState<Record<string, boolean>>({});
+  useEffect(() => {
+    let simpan: Record<string, boolean> = {};
+    try { simpan = JSON.parse(localStorage.getItem("sidebar:kelompok") || "{}"); } catch { /* biarkan */ }
+    setBuka({ ...simpan, ...(kelompokAktif ? { [kelompokAktif]: true } : {}) });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // kelompok yang memuat halaman baru selalu ikut terbuka, walau tadinya dilipat
+  useEffect(() => {
+    if (!kelompokAktif) return;
+    setBuka((l) => (l[kelompokAktif] ? l : { ...l, [kelompokAktif]: true }));
+  }, [kelompokAktif]);
+
+  const alih = (judul: string) => setBuka((l) => {
+    const baru = { ...l, [judul]: !l[judul] };
+    try { localStorage.setItem("sidebar:kelompok", JSON.stringify(baru)); } catch { /* mode penyamaran */ }
+    return baru;
+  });
 
   /**
    * Pencarian menu. Dengan dua puluh lebih halaman, mengingat menu itu ada di
@@ -252,10 +302,13 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         ) : (
           KELOMPOK.map((k) => (
             <div key={k.judul}>
-              <SectionLabel>{k.judul}</SectionLabel>
-              <div className="space-y-0.5">
-                {k.menu.map((m) => <Baris key={m.href} m={m} path={path} onNavigate={onNavigate} />)}
-              </div>
+              <JudulKelompok judul={k.judul} jumlah={k.menu.length}
+                buka={!!buka[k.judul]} onKlik={() => alih(k.judul)} />
+              {buka[k.judul] && (
+                <div className="space-y-0.5 anim-in">
+                  {k.menu.map((m) => <Baris key={m.href} m={m} path={path} onNavigate={onNavigate} />)}
+                </div>
+              )}
             </div>
           ))
         )}

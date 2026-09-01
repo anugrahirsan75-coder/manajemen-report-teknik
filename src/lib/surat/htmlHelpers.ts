@@ -204,9 +204,14 @@ export function teksKaya(v: unknown): string {
  * list-style CSS: editor e-office rutin membuang gaya, dan surat bernomor yang
  * kehilangan nomornya berubah jadi paragraf tak beraturan.
  *
- * Butir yang membawa tabel/blok memutus daftarnya: blok ditaruh selebar
- * halaman, lalu penomoran disambung dengan atribut start. Tabel di dalam <li>
- * ikut terdorong indentasi dan kolom terakhirnya keluar dari batas kertas.
+ * Butir yang membawa tabel/blok memutus daftarnya, lalu penomoran disambung
+ * dengan atribut start. Tabel di dalam <li> ikut terbawa penomoran dan kolom
+ * terakhirnya keluar dari batas kertas.
+ *
+ * Blok yang lepas dari daftar itu tetap DIGESER sejauh indentasi daftarnya,
+ * supaya tepi kirinya segaris dengan kalimat butir di atasnya. Dibiarkan rata
+ * kiri halaman, tabelnya menonjol keluar melewati nomor butir dan surat
+ * terbaca seperti dua dokumen yang ditempel jadi satu.
  */
 export interface ButirSurat {
   teks: string;
@@ -216,7 +221,9 @@ export interface ButirSurat {
   blok?: string;
 }
 
-const GAYA_OL = `margin:0 0 8px 0;padding-left:26px;font-size:${UKURAN_ISI};`;
+/** indentasi daftar bernomor, dipakai ulang supaya blok lepas tetap segaris */
+const INDEN_DAFTAR = "26px";
+const GAYA_OL = `margin:0 0 8px 0;padding-left:${INDEN_DAFTAR};font-size:${UKURAN_ISI};`;
 const GAYA_LI = "margin:0 0 6px 0;text-align:justify;";
 
 const daftarSub = (sub: string[]) =>
@@ -242,7 +249,10 @@ export function suratBernomor(butir: ButirSurat[]): string {
     kumpul.push(`<li style="${GAYA_LI}">${x.teks}${x.sub?.length ? daftarSub(x.sub) : ""}</li>`);
     // butir bertabel memutus daftar: tabel di dalam <li> ikut terdorong
     // indentasi dan kolom terakhirnya keluar dari batas kertas
-    if (x.blok) { tutup(); keping.push(x.blok); }
+    if (x.blok) {
+      tutup();
+      keping.push(`<div style="margin:0 0 8px ${INDEN_DAFTAR};">${x.blok}</div>`);
+    }
   });
   tutup();
   return keping.join("");
