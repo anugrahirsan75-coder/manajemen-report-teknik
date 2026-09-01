@@ -13,7 +13,7 @@ import {
 } from "../format";
 import { terbilangRupiah } from "../terbilang";
 import {
-  ButirSurat, LAMPIRAN, PENUTUP_PERMOHONAN, WARNA, b, baris, bungkus, esc, i, suratBernomor, tabel, td, tdAngka, th,
+  ButirSurat, LAMPIRAN, PENUTUP_PERMOHONAN_DIRTEK, WARNA, b, baris, bungkus, esc, i, suratBernomor, tabel, td, tdAngka, th,
 } from "../htmlHelpers";
 
 /** mata anggaran yang biasa dipakai; kode investasi diawali 1020604 */
@@ -225,7 +225,7 @@ export const dockingInvestasi: TemplateSurat = {
     });
 
     butir.push({ teks: LAMPIRAN });
-    butir.push({ teks: PENUTUP_PERMOHONAN });
+    butir.push({ teks: PENUTUP_PERMOHONAN_DIRTEK });
     bagian.push(suratBernomor(butir));
     return bungkus(bagian.join(""));
   },

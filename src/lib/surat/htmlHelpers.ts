@@ -264,6 +264,17 @@ export const daftarButir = (butir: string[]) =>
   + butir.map((x) => `<li style="margin:0 0 4px 0;">${x}</li>`).join("\n")
   + `\n</ul>`;
 
+/**
+ * Penutup permohonan yang ditujukan ke Direktur Teknik.
+ *
+ * Usulan docking dan investasi dialamatkan ke Direktur Teknik, bukan ke pejabat
+ * mana pun yang kebetulan menerima suratnya; sapaan "Bapak/Ibu" yang netral
+ * justru terbaca seperti surat edaran. Mengikuti surat yang sudah terbit.
+ */
+export const PENUTUP_PERMOHONAN_DIRTEK =
+  "Demikian permohonan ini kami sampaikan. Besar harapan kami agar permohonan dimaksud dapat "
+  + "memperoleh persetujuan. Atas perhatian dan kerja sama Bapak Direktur Teknik, kami ucapkan terima kasih.";
+
 export const PENUTUP_PERMOHONAN =
   "Demikian permohonan ini kami sampaikan. Besar harapan kami agar permohonan dimaksud dapat "
   + "memperoleh persetujuan. Atas perhatian dan kerja sama Bapak/Ibu, kami ucapkan terima kasih.";
