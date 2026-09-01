@@ -16,6 +16,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { Ikon } from "./ikon";
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -27,8 +28,8 @@ function ThemeToggle() {
     try { localStorage.setItem("theme", next ? "dark" : "light"); } catch {}
   };
   return (
-    <button onClick={toggle} className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-white/80 hover:bg-white/10 transition">
-      <span className="text-base">{dark ? "☀️" : "🌙"}</span>
+    <button onClick={toggle} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-white/70 hover:bg-white/[0.07] hover:text-white transition">
+      <Ikon nama={dark ? "matahari" : "bulan"} className="h-4 w-4" />
       {dark ? "Mode Terang" : "Mode Gelap"}
     </button>
   );
@@ -53,92 +54,92 @@ const KELOMPOK: Kelompok[] = [
   {
     judul: "Anggaran & Rencana",
     menu: [
-      { href: "/dashboard", icon: "📊", label: "Dashboard Anggaran", desc: "Penyerapan & pagu" },
-      { href: "/rencana", icon: "📆", label: "Rencana & Realisasi", desc: "Lampiran 3 bulanan" },
-      { href: "/rencana-belanja", icon: "🧾", label: "Rencana Belanja", desc: "Pemakaian pagu rutin" },
-      { href: "/rka", icon: "🧮", label: "Rencana RKA", desc: "Usulan tahun depan" },
+      { href: "/dashboard", icon: "grafik", label: "Dashboard Anggaran", desc: "Penyerapan & pagu" },
+      { href: "/rencana", icon: "kalender", label: "Rencana & Realisasi", desc: "Lampiran 3 bulanan" },
+      { href: "/rencana-belanja", icon: "nota", label: "Rencana Belanja", desc: "Pemakaian pagu rutin" },
+      { href: "/rka", icon: "kalkulator", label: "Rencana RKA", desc: "Usulan tahun depan" },
     ],
   },
   {
     judul: "Docking",
     menu: [
-      { href: "/docking/rencana", icon: "🗓️", label: "Perencanaan Docking", desc: "Repair list & jadwal" },
-      { href: "/docking", icon: "🛠️", label: "Monitoring Docking", desc: "Lama docking & berita acara",
+      { href: "/docking/rencana", icon: "kalenderCentang", label: "Perencanaan Docking", desc: "Repair list & jadwal" },
+      { href: "/docking", icon: "kunci", label: "Monitoring Docking", desc: "Lama docking & berita acara",
         bukan: ["/docking/rencana", "/docking/laporan"] },
-      { href: "/docking/laporan", icon: "📂", label: "Laporan Docking", desc: "Berkas per kapal" },
+      { href: "/docking/laporan", icon: "folder", label: "Laporan Docking", desc: "Berkas per kapal" },
     ],
   },
   {
     judul: "Kapal & Armada",
     menu: [
-      { href: "/inspeksi", icon: "🔍", label: "Inspeksi Kapal", desc: "Temuan & penutupannya" },
-      { href: "/kerusakan", icon: "⚠️", label: "Kerusakan Kapal", desc: "Report accident" },
-      { href: "/sertifikat", icon: "📜", label: "Sertifikat Kapal", desc: "Masa berlaku 13 kapal" },
-      { href: "/armada", icon: "⚓", label: "Profil Armada", desc: "Spesifikasi & inventaris" },
-      { href: "/kapal", icon: "🚢", label: "Data Kapal", desc: "Isi & ubah data kapal" },
-      { href: "/sensor", icon: "📡", label: "Monitoring Sensor", desc: "Sensor Regional 4" },
+      { href: "/inspeksi", icon: "kaca", label: "Inspeksi Kapal", desc: "Temuan & penutupannya" },
+      { href: "/kerusakan", icon: "peringatan", label: "Kerusakan Kapal", desc: "Report accident" },
+      { href: "/sertifikat", icon: "sertifikat", label: "Sertifikat Kapal", desc: "Masa berlaku 13 kapal" },
+      { href: "/armada", icon: "jangkar", label: "Profil Armada", desc: "Spesifikasi & inventaris" },
+      { href: "/kapal", icon: "kapal", label: "Data Kapal", desc: "Isi & ubah data kapal" },
+      { href: "/sensor", icon: "sinyal", label: "Monitoring Sensor", desc: "Sensor Regional 4" },
     ],
   },
   {
     judul: "Kiriman dari Kapal",
     menu: [
       {
-        href: "/permintaan-laporan", icon: "📨", label: "Permintaan & Laporan", desc: "Kiriman ABK deck & mesin",
+        href: "/permintaan-laporan", icon: "kotakMasuk", label: "Permintaan & Laporan", desc: "Kiriman ABK deck & mesin",
         tepat: true,
         sub: [
-          { href: "/permintaan-laporan", label: "Rekap kiriman", icon: "📋", tepat: true },
-          { href: "/permintaan-laporan/isi", label: "Isi permintaan (terbaca)", icon: "🧾" },
+          { href: "/permintaan-laporan", label: "Rekap kiriman", icon: "daftar", tepat: true },
+          { href: "/permintaan-laporan/isi", label: "Isi permintaan (terbaca)", icon: "dokumen" },
         ],
       },
-      { href: "/uji-permintaan", icon: "🧪", label: "Borang Permintaan", desc: "Uji coba — input digital" },
+      { href: "/uji-permintaan", icon: "tabung", label: "Borang Permintaan", desc: "Uji coba — input digital" },
     ],
   },
   {
     judul: "Pengadaan",
     menu: [
       {
-        href: "/sppbj", icon: "📑", label: "SPPBJ Pengadaan", desc: "Riwayat & pembuatan", tepat: true,
+        href: "/sppbj", icon: "dokumen", label: "SPPBJ Pengadaan", desc: "Riwayat & pembuatan", tepat: true,
         sub: [
-          { href: "/sppbj", label: "Riwayat pengadaan", icon: "🏠", tepat: true },
-          { href: "/sppbj/isi", label: "Input / edit", icon: "✏️" },
+          { href: "/sppbj", label: "Riwayat pengadaan", icon: "rumah", tepat: true },
+          { href: "/sppbj/isi", label: "Input / edit", icon: "pensil" },
         ],
       },
       {
-        href: "/nonpr", icon: "🧾", label: "SPPBJ Non PR PO", desc: "Pengadaan tanpa PR", tepat: true,
+        href: "/nonpr", icon: "dokumenTambah", label: "SPPBJ Non PR PO", desc: "Pengadaan tanpa PR", tepat: true,
         sub: [
-          { href: "/nonpr", label: "Riwayat", icon: "🏠", tepat: true },
-          { href: "/nonpr/isi", label: "Input / edit", icon: "✏️" },
+          { href: "/nonpr", label: "Riwayat", icon: "rumah", tepat: true },
+          { href: "/nonpr/isi", label: "Input / edit", icon: "pensil" },
         ],
       },
       {
-        href: "/material", icon: "📦", label: "Kode Material", desc: "Pengajuan & cek kode SAP", tepat: true,
+        href: "/material", icon: "kotak", label: "Kode Material", desc: "Pengajuan & cek kode SAP", tepat: true,
         sub: [
-          { href: "/material", label: "Dashboard", icon: "🏠", tepat: true },
-          { href: "/material/cek", label: "Cek kode material", icon: "🔎" },
-          { href: "/material/isi", label: "Input item", icon: "✏️" },
+          { href: "/material", label: "Dashboard", icon: "rumah", tepat: true },
+          { href: "/material/cek", label: "Cek kode material", icon: "kaca" },
+          { href: "/material/isi", label: "Input item", icon: "pensil" },
         ],
       },
-      { href: "/database-rab", icon: "🗃️", label: "Database RAB", desc: "Harga acuan 2024–2026" },
-      { href: "/monitoring", icon: "🌐", label: "Monitoring Pengadaan", desc: "Halaman terbuka untuk umum" },
+      { href: "/database-rab", icon: "basisData", label: "Database RAB", desc: "Harga acuan 2024–2026" },
+      { href: "/monitoring", icon: "dunia", label: "Monitoring Pengadaan", desc: "Halaman terbuka untuk umum" },
     ],
   },
   {
     judul: "Dokumen & Alat",
     menu: [
-      { href: "/surat", icon: "✉️", label: "Surat E-Office", desc: "9 jenis surat siap tempel" },
+      { href: "/surat", icon: "amplop", label: "Surat E-Office", desc: "9 jenis surat siap tempel" },
       {
-        href: "/", icon: "⚙️", label: "Generator Swakelola", desc: "Dokumen docking swakelola", tepat: true,
+        href: "/", icon: "gerigi", label: "Generator Swakelola", desc: "Dokumen docking swakelola", tepat: true,
         sub: [
-          { href: "/", label: "Dashboard", icon: "🏠", tepat: true },
-          { href: "/isi-data", label: "Isi data", icon: "✏️" },
-          { href: "/distribusi", label: "Perhitungan swakelola", icon: "📐" },
+          { href: "/", label: "Dashboard", icon: "rumah", tepat: true },
+          { href: "/isi-data", label: "Isi data", icon: "pensil" },
+          { href: "/distribusi", label: "Perhitungan swakelola", icon: "penggaris" },
         ],
       },
       {
-        href: "/servis", icon: "🔧", label: "Servis Bengkel", desc: "Monitoring barang servis", tepat: true,
+        href: "/servis", icon: "obeng", label: "Servis Bengkel", desc: "Monitoring barang servis", tepat: true,
         sub: [
-          { href: "/servis", label: "Monitoring", icon: "🏠", tepat: true },
-          { href: "/servis/isi", label: "Input barang", icon: "✏️" },
+          { href: "/servis", label: "Monitoring", icon: "rumah", tepat: true },
+          { href: "/servis/isi", label: "Input barang", icon: "pensil" },
         ],
       },
     ],
@@ -146,8 +147,8 @@ const KELOMPOK: Kelompok[] = [
   {
     judul: "Pengaman Data",
     menu: [
-      { href: "/admin", icon: "🧮", label: "Panel Admin", desc: "Total data & kuota" },
-      { href: "/backup", icon: "🛡️", label: "Backup Data", desc: "Salinan ke laptop" },
+      { href: "/admin", icon: "meter", label: "Panel Admin", desc: "Total data & kuota" },
+      { href: "/backup", icon: "perisai", label: "Backup Data", desc: "Salinan ke laptop" },
     ],
   },
 ];
@@ -178,14 +179,17 @@ function JudulKelompok({ judul, jumlah, buka, onKlik }: {
 }) {
   return (
     <button type="button" onClick={onKlik} aria-expanded={buka}
-      className={`mt-4 mb-1 flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-left transition first:mt-1 ${
-        buka ? "bg-white/[0.06]" : "hover:bg-white/[0.06]"}`}>
-      <span className={`text-[11px] leading-none transition-transform ${
-        buka ? "rotate-90 text-[#7cc242]" : "text-white/60"}`}>▶</span>
-      <span className={`flex-1 text-[11px] font-extrabold uppercase tracking-[0.12em] ${
-        buka ? "text-white" : "text-white/70"}`}>{judul}</span>
-      <span className={`rounded-full px-1.5 py-px text-[10px] font-bold tabular-nums ${
-        buka ? "bg-white/15 text-white/70" : "bg-white/20 text-white"}`}>{jumlah}</span>
+      className="group mt-5 mb-1 flex w-full items-center gap-2 px-1 py-1 text-left first:mt-0">
+      <Ikon nama="chevron" className={`h-3 w-3 shrink-0 transition-transform duration-200 ${
+        buka ? "rotate-90 text-[#7cc242]" : "text-white/45 group-hover:text-white/80"}`} />
+      <span className={`shrink-0 text-[10.5px] font-bold uppercase tracking-[0.14em] transition-colors ${
+        buka ? "text-white" : "text-white/65 group-hover:text-white"}`}>{judul}</span>
+      {/* garis rambut menutup sisa lebar: kelompok terbaca sebagai bab, bukan
+          sebagai satu tombol lagi di antara tombol-tombol menu */}
+      <span className={`h-px flex-1 transition-colors ${
+        buka ? "bg-gradient-to-r from-[#7cc242]/70 to-transparent" : "bg-white/15 group-hover:bg-white/30"}`} />
+      <span className={`shrink-0 text-[10px] font-bold tabular-nums transition-colors ${
+        buka ? "text-white/45" : "text-white/60 group-hover:text-white"}`}>{jumlah}</span>
     </button>
   );
 }
@@ -193,29 +197,35 @@ function JudulKelompok({ judul, jumlah, buka, onKlik }: {
 function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: () => void }) {
   const aktif = aktifkan(m, path);
   return (
-    <div className={`rounded-xl transition ${aktif && m.sub ? "bg-white/[0.09] ring-1 ring-white/15" : ""}`}>
+    <div className={`rounded-lg transition ${aktif && m.sub ? "bg-white/[0.05]" : ""}`}>
       <Link href={m.href} onClick={onNavigate}
-        className={`relative flex items-center gap-2.5 px-2.5 py-2 rounded-xl transition ${
-          aktif ? "text-white bg-white/[0.12] ring-1 ring-white/20" : "text-white/85 hover:bg-white/[0.08] hover:text-white"}`}>
-        {aktif && <span className="absolute left-0 top-2 bottom-2 w-1 rounded-full bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
-        <span className={`grid place-items-center h-8 w-8 rounded-lg text-base shrink-0 ${aktif ? "bg-white/15 shadow-inner" : "bg-white/5"}`}>{m.icon}</span>
+        className={`relative flex items-center gap-2.5 rounded-lg py-1.5 pl-3 pr-2.5 transition-all duration-150 ${
+          aktif
+            ? "text-white bg-[linear-gradient(90deg,rgba(124,194,66,0.22),rgba(20,184,196,0.14)_45%,transparent)]"
+            : "text-white/80 hover:bg-white/[0.07] hover:pl-3.5 hover:text-white"}`}>
+        {/* rel kiri hanya pada menu aktif — satu tanda yang sama di seluruh
+            aplikasi, memakai gradasi merek ASDP */}
+        {aktif && <span className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
+        <Ikon nama={m.icon} className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+          aktif ? "text-[#9fe06a]" : "text-white/55"}`} />
         <span className="min-w-0 leading-tight">
-          <span className="block text-sm font-semibold truncate">{m.label}</span>
-          <span className="block text-[10px] text-white/60 truncate">{m.desc}</span>
+          <span className={`block truncate text-[13px] ${aktif ? "font-bold" : "font-medium"}`}>{m.label}</span>
+          <span className="block truncate text-[10px] text-white/45">{m.desc}</span>
         </span>
       </Link>
 
       {/* halaman anak hanya muncul saat menunya sedang dipakai — daftar yang
           selalu terbuka membuat sidebar sepanjang dua layar */}
       {aktif && m.sub && (
-        <div className="pb-2 pl-3.5 pr-1.5 anim-in">
+        <div className="pb-1.5 pl-6 pr-1.5 anim-in">
           {m.sub.map((s) => {
             const a = s.tepat ? path === s.href : path.startsWith(s.href);
             return (
               <Link key={s.href} href={s.href} onClick={onNavigate}
-                className={`flex items-center gap-2 pl-3.5 pr-3 py-1.5 rounded-lg text-[13px] transition border-l-2 ${
-                  a ? "text-white border-[#14b8c4] bg-white/10 font-semibold" : "text-white/70 border-white/20 hover:text-white hover:border-white/40"}`}>
-                <span className="text-xs opacity-90">{s.icon}</span> {s.label}
+                className={`flex items-center gap-2 rounded-r-md border-l-2 py-1 pl-3 pr-3 text-[12px] transition ${
+                  a ? "border-[#14b8c4] bg-white/[0.06] font-semibold text-white"
+                    : "border-white/15 text-white/60 hover:border-white/40 hover:text-white"}`}>
+                <Ikon nama={s.icon} className="h-3.5 w-3.5 shrink-0 opacity-80" /> {s.label}
               </Link>
             );
           })}
@@ -273,26 +283,30 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="px-4 py-5 border-b border-white/10">
+      <div className="relative px-4 pb-4 pt-5">
         <div className="flex items-center gap-3">
-          <div className="bg-white rounded-xl p-1.5 shadow-lg shrink-0 ring-1 ring-white/20">
-            <Image src="/logo-asdp.png" alt="ASDP" width={40} height={28} className="object-contain" />
+          <div className="shrink-0 rounded-lg bg-white p-1.5 shadow-lg shadow-black/30">
+            <Image src="/logo-asdp.png" alt="ASDP" width={38} height={26} className="object-contain" />
           </div>
           <div className="leading-tight">
-            <p className="text-white font-extrabold text-sm tracking-tight">Manajemen Report</p>
-            <p className="text-white/60 text-xs">Teknik ASDP · Ternate</p>
+            <p className="text-[13px] font-extrabold tracking-tight text-white">Manajemen Report</p>
+            <p className="text-[10px] uppercase tracking-[0.12em] text-white/45">Teknik · Ternate</p>
           </div>
         </div>
+        {/* garis merek: tiga warna ASDP, memisah kepala dari daftar menu */}
+        <div className="mt-4 h-px bg-gradient-to-r from-[#7cc242] via-[#14b8c4] to-transparent" />
       </div>
 
       <div className="px-3 pt-3">
         <label className="relative block">
-          <span className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-white/40 text-sm">⌕</span>
+          <Ikon nama="kaca" className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
           <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari menu…"
-            className="w-full rounded-xl bg-white/10 py-2 pl-8 pr-7 text-sm text-white placeholder:text-white/40 outline-none ring-1 ring-white/10 focus:ring-white/30" />
+            className="w-full rounded-lg bg-black/25 py-2 pl-9 pr-8 text-[13px] text-white placeholder:text-white/35 outline-none ring-1 ring-white/10 transition focus:bg-black/35 focus:ring-[#14b8c4]/60" />
           {cari && (
             <button onClick={() => setCari("")} aria-label="Bersihkan pencarian"
-              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/50 hover:text-white">✕</button>
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-white/45 hover:text-white">
+              <Ikon nama="silang" className="h-3.5 w-3.5" />
+            </button>
           )}
         </label>
       </div>
@@ -309,7 +323,13 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
               <JudulKelompok judul={k.judul} jumlah={k.menu.length}
                 buka={!!buka[k.judul]} onKlik={() => alih(k.judul)} />
               {buka[k.judul] && (
-                <div className="space-y-0.5 anim-in">
+                /*
+                 * Garis tegak tipis menyusuri menu satu kelompok. Tanpa itu,
+                 * tujuh kelompok yang dibuka bersamaan kembali terbaca sebagai
+                 * satu daftar panjang: batas antar kelompok cuma jarak kosong,
+                 * dan jarak kosong hilang begitu daftarnya digulir.
+                 */
+                <div className="relative ml-[7px] space-y-0.5 border-l border-white/10 pl-1.5 anim-in">
                   {k.menu.map((m) => <Baris key={m.href} m={m} path={path} onNavigate={onNavigate} />)}
                 </div>
               )}
@@ -318,16 +338,16 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         )}
       </nav>
 
-      <div className="px-3 pt-2 border-t border-white/10 space-y-1">
+      <div className="space-y-0.5 border-t border-white/10 px-3 pt-2">
         <ThemeToggle />
         <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; }}
-          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-white/80 hover:bg-white/10 transition">
-          <span className="text-base">🚪</span> Keluar
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-white/70 transition hover:bg-red-500/15 hover:text-white">
+          <Ikon nama="keluar" className="h-4 w-4" /> Keluar
         </button>
       </div>
-      <div className="px-4 py-3 text-[10px] text-white/40 leading-relaxed">
+      <div className="px-4 py-3 text-[9.5px] leading-relaxed text-white/30">
         PT. ASDP Indonesia Ferry (Persero)
-        <br />Dibuat oleh <span className="text-white/70 font-medium">Irsan Anugrah</span>
+        <br />Dibuat oleh <span className="font-medium text-white/50">Irsan Anugrah</span>
       </div>
     </div>
   );
@@ -342,12 +362,13 @@ export default function Sidebar() {
     <>
       {/* Topbar mobile */}
       <div className="no-print md:hidden sticky top-0 z-40 flex items-center gap-3 px-4 py-3 asdp-gradient text-white shadow">
-        <button onClick={() => setOpen(true)} aria-label="Menu" className="text-xl">☰</button>
+        <button onClick={() => setOpen(true)} aria-label="Menu"><Ikon nama="garisTiga" className="h-5 w-5" /></button>
         <span className="font-bold text-sm">Manajemen Report Teknik ASDP Ternate</span>
       </div>
 
       {/* Sidebar desktop */}
-      <aside className="no-print hidden md:flex w-64 shrink-0 sticky top-0 h-screen flex-col" style={{ background: "linear-gradient(180deg,#16357f,#0e2456)" }}>
+      <aside className="no-print sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-white/10 md:flex"
+        style={{ background: "radial-gradient(120% 60% at 0% 0%, rgba(20,184,196,0.20), transparent 60%), linear-gradient(180deg,#16357f 0%,#102a63 45%,#0a1a40 100%)" }}>
         <NavContent />
       </aside>
 
@@ -355,7 +376,8 @@ export default function Sidebar() {
       {open && (
         <div className="no-print md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <aside className="absolute left-0 top-0 h-full w-64 flex flex-col shadow-xl" style={{ background: "linear-gradient(180deg,#16357f,#0e2456)" }}>
+          <aside className="absolute left-0 top-0 flex h-full w-[248px] flex-col shadow-2xl"
+            style={{ background: "radial-gradient(120% 60% at 0% 0%, rgba(20,184,196,0.20), transparent 60%), linear-gradient(180deg,#16357f 0%,#102a63 45%,#0a1a40 100%)" }}>
             <NavContent onNavigate={() => setOpen(false)} />
           </aside>
         </div>
