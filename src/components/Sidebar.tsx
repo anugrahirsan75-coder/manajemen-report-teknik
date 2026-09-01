@@ -28,8 +28,8 @@ function ThemeToggle() {
     try { localStorage.setItem("theme", next ? "dark" : "light"); } catch {}
   };
   return (
-    <button onClick={toggle} className="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-white/70 hover:bg-white/[0.07] hover:text-white transition">
-      <Ikon nama={dark ? "matahari" : "bulan"} className="h-4 w-4" />
+    <button onClick={toggle} className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-[13.5px] font-medium text-white/70 hover:bg-white/[0.07] hover:text-white transition">
+      <Ikon nama={dark ? "matahari" : "bulan"} className="h-[18px] w-[18px]" />
       {dark ? "Mode Terang" : "Mode Gelap"}
     </button>
   );
@@ -180,15 +180,15 @@ function JudulKelompok({ judul, jumlah, buka, onKlik }: {
   return (
     <button type="button" onClick={onKlik} aria-expanded={buka}
       className="group mt-5 mb-1 flex w-full items-center gap-2 px-1 py-1 text-left first:mt-0">
-      <Ikon nama="chevron" className={`h-3 w-3 shrink-0 transition-transform duration-200 ${
+      <Ikon nama="chevron" className={`h-3.5 w-3.5 shrink-0 transition-transform duration-200 ${
         buka ? "rotate-90 text-[#7cc242]" : "text-white/45 group-hover:text-white/80"}`} />
-      <span className={`shrink-0 text-[10.5px] font-bold uppercase tracking-[0.14em] transition-colors ${
+      <span className={`shrink-0 text-[11.5px] font-bold uppercase tracking-[0.13em] transition-colors ${
         buka ? "text-white" : "text-white/65 group-hover:text-white"}`}>{judul}</span>
       {/* garis rambut menutup sisa lebar: kelompok terbaca sebagai bab, bukan
           sebagai satu tombol lagi di antara tombol-tombol menu */}
       <span className={`h-px flex-1 transition-colors ${
         buka ? "bg-gradient-to-r from-[#7cc242]/70 to-transparent" : "bg-white/15 group-hover:bg-white/30"}`} />
-      <span className={`shrink-0 text-[10px] font-bold tabular-nums transition-colors ${
+      <span className={`shrink-0 text-[11px] font-bold tabular-nums transition-colors ${
         buka ? "text-white/45" : "text-white/60 group-hover:text-white"}`}>{jumlah}</span>
     </button>
   );
@@ -199,18 +199,18 @@ function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: ()
   return (
     <div className={`rounded-lg transition ${aktif && m.sub ? "bg-white/[0.05]" : ""}`}>
       <Link href={m.href} onClick={onNavigate}
-        className={`relative flex items-center gap-2.5 rounded-lg py-1.5 pl-3 pr-2.5 transition-all duration-150 ${
+        className={`relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2.5 transition-all duration-150 ${
           aktif
             ? "text-white bg-[linear-gradient(90deg,rgba(124,194,66,0.22),rgba(20,184,196,0.14)_45%,transparent)]"
             : "text-white/80 hover:bg-white/[0.07] hover:pl-3.5 hover:text-white"}`}>
         {/* rel kiri hanya pada menu aktif — satu tanda yang sama di seluruh
             aplikasi, memakai gradasi merek ASDP */}
         {aktif && <span className="absolute left-0 top-1 bottom-1 w-[3px] rounded-full bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
-        <Ikon nama={m.icon} className={`h-[18px] w-[18px] shrink-0 transition-colors ${
+        <Ikon nama={m.icon} className={`h-5 w-5 shrink-0 transition-colors ${
           aktif ? "text-[#9fe06a]" : "text-white/55"}`} />
         <span className="min-w-0 leading-tight">
-          <span className={`block truncate text-[13px] ${aktif ? "font-bold" : "font-medium"}`}>{m.label}</span>
-          <span className="block truncate text-[10px] text-white/45">{m.desc}</span>
+          <span className={`block truncate text-[14px] ${aktif ? "font-bold" : "font-medium"}`}>{m.label}</span>
+          <span className="block truncate text-[11px] text-white/45">{m.desc}</span>
         </span>
       </Link>
 
@@ -222,10 +222,10 @@ function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: ()
             const a = s.tepat ? path === s.href : path.startsWith(s.href);
             return (
               <Link key={s.href} href={s.href} onClick={onNavigate}
-                className={`flex items-center gap-2 rounded-r-md border-l-2 py-1 pl-3 pr-3 text-[12px] transition ${
+                className={`flex items-center gap-2 rounded-r-md border-l-2 py-1.5 pl-3 pr-3 text-[13px] transition ${
                   a ? "border-[#14b8c4] bg-white/[0.06] font-semibold text-white"
                     : "border-white/15 text-white/60 hover:border-white/40 hover:text-white"}`}>
-                <Ikon nama={s.icon} className="h-3.5 w-3.5 shrink-0 opacity-80" /> {s.label}
+                <Ikon nama={s.icon} className="h-4 w-4 shrink-0 opacity-80" /> {s.label}
               </Link>
             );
           })}
@@ -286,11 +286,11 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="relative px-4 pb-4 pt-5">
         <div className="flex items-center gap-3">
           <div className="shrink-0 rounded-lg bg-white p-1.5 shadow-lg shadow-black/30">
-            <Image src="/logo-asdp.png" alt="ASDP" width={38} height={26} className="object-contain" />
+            <Image src="/logo-asdp.png" alt="ASDP" width={42} height={29} className="object-contain" />
           </div>
           <div className="leading-tight">
-            <p className="text-[13px] font-extrabold tracking-tight text-white">Manajemen Report</p>
-            <p className="text-[10px] uppercase tracking-[0.12em] text-white/45">Teknik · Ternate</p>
+            <p className="text-[14px] font-extrabold tracking-tight text-white">Manajemen Report</p>
+            <p className="text-[10.5px] uppercase tracking-[0.12em] text-white/45">Teknik · Ternate</p>
           </div>
         </div>
         {/* garis merek: tiga warna ASDP, memisah kepala dari daftar menu */}
@@ -301,7 +301,7 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
         <label className="relative block">
           <Ikon nama="kaca" className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-white/40" />
           <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari menu…"
-            className="w-full rounded-lg bg-black/25 py-2 pl-9 pr-8 text-[13px] text-white placeholder:text-white/35 outline-none ring-1 ring-white/10 transition focus:bg-black/35 focus:ring-[#14b8c4]/60" />
+            className="w-full rounded-lg bg-black/25 py-2.5 pl-9 pr-8 text-[13.5px] text-white placeholder:text-white/35 outline-none ring-1 ring-white/10 transition focus:bg-black/35 focus:ring-[#14b8c4]/60" />
           {cari && (
             <button onClick={() => setCari("")} aria-label="Bersihkan pencarian"
               className="absolute right-2 top-1/2 -translate-y-1/2 text-white/45 hover:text-white">
@@ -341,8 +341,8 @@ function NavContent({ onNavigate }: { onNavigate?: () => void }) {
       <div className="space-y-0.5 border-t border-white/10 px-3 pt-2">
         <ThemeToggle />
         <button onClick={async () => { await fetch("/api/auth/logout", { method: "POST" }); window.location.href = "/login"; }}
-          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-[13px] font-medium text-white/70 transition hover:bg-red-500/15 hover:text-white">
-          <Ikon nama="keluar" className="h-4 w-4" /> Keluar
+          className="flex w-full items-center gap-2.5 rounded-lg px-3 py-2.5 text-[13.5px] font-medium text-white/70 transition hover:bg-red-500/15 hover:text-white">
+          <Ikon nama="keluar" className="h-[18px] w-[18px]" /> Keluar
         </button>
       </div>
       <div className="px-4 py-3 text-[9.5px] leading-relaxed text-white/30">
@@ -367,7 +367,7 @@ export default function Sidebar() {
       </div>
 
       {/* Sidebar desktop */}
-      <aside className="no-print sticky top-0 hidden h-screen w-[248px] shrink-0 flex-col border-r border-white/10 md:flex"
+      <aside className="no-print sticky top-0 hidden h-screen w-[272px] shrink-0 flex-col border-r border-white/10 md:flex"
         style={{ background: "radial-gradient(120% 60% at 0% 0%, rgba(20,184,196,0.20), transparent 60%), linear-gradient(180deg,#16357f 0%,#102a63 45%,#0a1a40 100%)" }}>
         <NavContent />
       </aside>
@@ -376,7 +376,7 @@ export default function Sidebar() {
       {open && (
         <div className="no-print md:hidden fixed inset-0 z-50">
           <div className="absolute inset-0 bg-black/40" onClick={() => setOpen(false)} />
-          <aside className="absolute left-0 top-0 flex h-full w-[248px] flex-col shadow-2xl"
+          <aside className="absolute left-0 top-0 flex h-full w-[272px] flex-col shadow-2xl"
             style={{ background: "radial-gradient(120% 60% at 0% 0%, rgba(20,184,196,0.20), transparent 60%), linear-gradient(180deg,#16357f 0%,#102a63 45%,#0a1a40 100%)" }}>
             <NavContent onNavigate={() => setOpen(false)} />
           </aside>
