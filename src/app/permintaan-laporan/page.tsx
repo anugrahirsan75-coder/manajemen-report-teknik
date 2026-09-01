@@ -11,7 +11,7 @@
 import Link from "next/link";
 import BacaPermintaan from "@/components/lapor/BacaPermintaan";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useState } from "react";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import {
   BerkasLapor, JENIS_LAPOR, KirimanLapor, STATUS_LAPOR, bulanIndo, labelJenis, singkatJenis,
@@ -114,17 +114,32 @@ function IsiPermintaanLaporanKapal() {
   });
   const periodeMatriks = periodeRekap;
 
+  /**
+   * Rekap disusun menurut apa: PERIODE laporan atau BULAN KIRIM?
+   *
+   * Keduanya sah dan sering berbeda — laporan Agustus lazim naik pada hari
+   * pertama September. Yang menagih kelengkapan bulanan memakai periode; yang
+   * memantau kesibukan penerimaan memakai bulan kirim. Sebelumnya rekap hanya
+   * mengenal periode, sehingga Agustus tampak lengkap walau berkasnya baru
+   * masuk bulan berikutnya.
+   */
+  const [dasarRekap, setDasarRekap] = useState<"periode" | "kirim">("periode");
+  const bulanKirim = (b: KirimanLapor) => (b.dikirimPada || "").slice(0, 7);
+  const cocokBulan = useCallback(
+    (b: KirimanLapor) => (dasarRekap === "kirim" ? bulanKirim(b) : b.periode) === periodeMatriks,
+    [dasarRekap, periodeMatriks]);
+
   // Kelengkapan diukur dari BERKAS yang sampai, bukan dari adanya catatan
   // kiriman. Kiriman yang berkasnya gagal naik tidak boleh tampil hijau —
   // itu justru membuat kantor mengira dokumen sudah ada padahal Drive kosong.
   const matriks = useMemo(() => {
     const peta = new Map<string, KirimanLapor[]>();
-    baris.filter((b) => b.periode === periodeMatriks && b.berkas.length > 0).forEach((b) => {
+    baris.filter((b) => cocokBulan(b) && b.berkas.length > 0).forEach((b) => {
       const k = `${b.kapal}|${b.jenis}`;
       peta.set(k, [...(peta.get(k) || []), b]);
     });
     return peta;
-  }, [baris, periodeMatriks]);
+  }, [baris, cocokBulan]);
 
   /**
    * Kiriman yang catatannya ada tapi berkasnya tidak pernah sampai.
@@ -134,8 +149,8 @@ function IsiPermintaanLaporanKapal() {
    * dilebih-lebihkan membuat peringatan ini cepat diabaikan.
    */
   const gagalKirim = useMemo(
-    () => baris.filter((b) => b.periode === periodeMatriks && b.berkas.length === 0 && !b.digantikan),
-    [baris, periodeMatriks]);
+    () => baris.filter((b) => cocokBulan(b) && b.berkas.length === 0 && !b.digantikan),
+    [baris, cocokBulan]);
 
   /**
    * Simpan perubahan, lalu KATAKAN apa yang terjadi.
@@ -345,7 +360,7 @@ function IsiPermintaanLaporanKapal() {
 
   const ringkas = useMemo(() => {
     // percobaan ulang yang kosong bukan kiriman tersendiri — lihat gagalKirim
-    const kiriman = baris.filter((b) => b.periode === periodeMatriks && !b.digantikan);
+    const kiriman = baris.filter((b) => cocokBulan(b) && !b.digantikan);
     let kapalMengirim = 0;
     let kapalLengkap = 0;
     let slotTerisi = 0;
@@ -365,7 +380,7 @@ function IsiPermintaanLaporanKapal() {
       persen: totalSlot ? Math.round((slotTerisi / totalSlot) * 100) : 0,
       berkas: kiriman.reduce((s, b) => s + b.berkas.length, 0),
     };
-  }, [baris, matriks, periodeMatriks]);
+  }, [baris, matriks, cocokBulan]);
   const jumlahBaru = baris.filter((b) => b.status === "baru").length;
 
   const saringanAktif = !!(cari || kapal || jenis || status || periode);
@@ -428,6 +443,24 @@ function IsiPermintaanLaporanKapal() {
                 </div>
               </div>
             </div>
+            <div className="flex flex-wrap items-center gap-2">
+              {/*
+                Dua bulan yang sering berbeda: laporan Agustus biasanya naik
+                pada awal September. Yang menagih kelengkapan memakai periode
+                laporan; yang memantau kesibukan penerimaan memakai bulan kirim.
+              */}
+              <div className="flex overflow-hidden rounded-xl ring-1 ring-slate-200 shadow-sm dark:ring-slate-700">
+                {([["periode", "Periode laporan"], ["kirim", "Bulan kirim"]] as const).map(([id, label]) => (
+                  <button key={id} type="button" onClick={() => setDasarRekap(id)}
+                    title={id === "periode"
+                      ? "Kiriman dihitung pada bulan yang DILAPORKAN, apa pun tanggal kirimnya"
+                      : "Kiriman dihitung pada bulan berkasnya MASUK, apa pun periodenya"}
+                    className={`px-3 py-2 text-[11px] font-bold transition ${
+                      dasarRekap === id ? "bg-[#16357f] text-white" : "bg-white text-slate-500 hover:bg-slate-50 dark:bg-slate-800"}`}>
+                    {label}
+                  </button>
+                ))}
+              </div>
             <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 shadow-sm dark:bg-slate-800 dark:ring-slate-700">
               <span className="text-slate-400">Periode</span>
               <select value={periodeMatriks} onChange={(e) => setPeriodeRekap(e.target.value)} className="bg-transparent font-bold text-[#16357f] outline-none dark:text-sky-300">
@@ -435,7 +468,13 @@ function IsiPermintaanLaporanKapal() {
                   .map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>)}
               </select>
             </label>
+            </div>
           </div>
+          <p className="mt-2 text-[11px] text-slate-500">
+            {dasarRekap === "periode"
+              ? "Dihitung menurut bulan yang dilaporkan ABK. Laporan Agustus yang baru naik 1 September tetap masuk Agustus."
+              : "Dihitung menurut bulan berkasnya masuk. Laporan Agustus yang naik 1 September dihitung di September."}
+          </p>
 
           <div className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-4">
             <KpiRekap ikon="🚢" label="Kapal Mengirim" nilai={`${ringkas.kapalMengirim}/${KAPAL_ANGGARAN.length}`} ket={`${ringkas.kapalLengkap} kapal lengkap`} warna="sky" />
@@ -605,6 +644,14 @@ function IsiPermintaanLaporanKapal() {
                       {b.statusPada && <span className="text-[10px] text-slate-400">diubah {waktuSingkat(b.statusPada)}</span>}
                       {simpanId === b.id && <span className="text-[10px] font-bold text-sky-600">menyimpan…</span>}
                       {b.digantikan && <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">percobaan lama</span>}
+                      {/* bulan kirim di luar periodenya — lazim, tapi harus terbaca supaya
+                          rekap bulanan tidak dikira salah hitung */}
+                      {b.periode && (b.dikirimPada || "").slice(0, 7) !== b.periode && (
+                        <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 ring-1 ring-indigo-200"
+                          title={`Periode laporan ${bulanIndo(b.periode)}, berkas masuk ${bulanIndo((b.dikirimPada || "").slice(0, 7))}`}>
+                          dikirim {bulanIndo((b.dikirimPada || "").slice(0, 7))}
+                        </span>
+                      )}
                     </div>
                     <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
                       <span className="font-semibold text-slate-700">📅 {bulanIndo(b.periode)}</span>
@@ -644,7 +691,15 @@ function IsiPermintaanLaporanKapal() {
             <div className="p-5 space-y-4">
               <div className="grid sm:grid-cols-2 gap-3 text-sm">
                 <div><span className="text-slate-500">Pengirim</span><div className="font-semibold">{buka.pengirim || "—"}{buka.jabatan ? ` · ${buka.jabatan}` : ""}</div></div>
-                <div><span className="text-slate-500">Dikirim</span><div className="font-semibold">{waktuSingkat(buka.dikirimPada)}</div></div>
+                <div>
+                  <span className="text-slate-500">Dikirim</span>
+                  <div className="font-semibold">{waktuSingkat(buka.dikirimPada)}</div>
+                  {buka.periode && (buka.dikirimPada || "").slice(0, 7) !== buka.periode && (
+                    <div className="mt-0.5 text-[11px] text-indigo-700">
+                      Periode laporan {bulanIndo(buka.periode)} — berkas baru masuk {bulanIndo((buka.dikirimPada || "").slice(0, 7))}
+                    </div>
+                  )}
+                </div>
                 <div>
                   <span className="text-slate-500">Kontak</span>
                   <div className="font-semibold">

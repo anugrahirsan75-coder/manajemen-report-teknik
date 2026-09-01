@@ -64,6 +64,24 @@ const bulanIni = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
 };
 
+const bulanLalu = () => {
+  const d = new Date();
+  d.setDate(1);
+  d.setMonth(d.getMonth() - 1);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+};
+
+/**
+ * Periode yang ditawarkan lebih dulu.
+ *
+ * Laporan bulanan baru bisa dibuat sesudah bulannya habis: yang dikirim pada
+ * 1 September adalah laporan Agustus. Selama sepuluh hari pertama tiap bulan,
+ * yang ditawarkan adalah BULAN LALU — bukan menebak-nebak, melainkan mengikuti
+ * kebiasaan yang memang terjadi. ABK tetap bisa mengubahnya, dan tombol pilihan
+ * cepat di sebelahnya menyebut kedua bulan dengan namanya.
+ */
+const periodeBawaan = () => (new Date().getDate() <= 10 ? bulanLalu() : bulanIni());
+
 interface Siap { nama: string; mime: string; blob: Blob; ukuran: number }
 
 /**
@@ -168,7 +186,7 @@ interface HasilKiriman {
 export default function KirimLaporKapal() {
   const [kapal, setKapal] = useState("");
   const [jenis, setJenis] = useState<JenisLapor | "">("");
-  const [periode, setPeriode] = useState(bulanIni);
+  const [periode, setPeriode] = useState(periodeBawaan);
   const [pengirim, setPengirim] = useState("");
   const [jabatan, setJabatan] = useState("");
   /** nomor WA pengirim — kantor perlu jalan menagih berkas yang tak kunjung sampai */
@@ -756,6 +774,20 @@ export default function KirimLaporKapal() {
             <input type="month" value={periode} onChange={(e) => setPeriode(e.target.value)} disabled={kirim}
               className="w-full rounded-xl ring-1 ring-slate-300 px-3 py-2.5 disabled:bg-slate-100" />
             <p className="text-xs text-slate-500 mt-1">Bulan yang dilaporkan, bukan tanggal kirim.</p>
+            {/*
+              Dua tombol ini menyebut bulannya dengan nama, bukan angka. Kekeliruan
+              periode paling sering terjadi pada hari-hari pertama bulan baru,
+              justru ketika laporan bulan lalu sedang ramai dikirim.
+            */}
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              {[bulanLalu(), bulanIni()].map((p) => (
+                <button key={p} type="button" onClick={() => setPeriode(p)} disabled={kirim}
+                  className={`rounded-lg px-2.5 py-1 text-xs font-bold ring-1 transition disabled:opacity-60 ${
+                    periode === p ? "bg-blue-600 text-white ring-blue-600" : "bg-white text-slate-600 ring-slate-300 hover:bg-slate-50"}`}>
+                  {bulanIndo(p)}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
