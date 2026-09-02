@@ -253,6 +253,14 @@ export default function MonitorSertifikat() {
     setTimeout(() => setSalin(""), 4000);
   };
 
+  /** warna angka besar KPI — angka nol yang merah tetap terbaca sebagai kabar baik */
+  const warnaAngka: Record<string, string> = {
+    lewat: "text-rose-600 dark:text-rose-400",
+    kritis: "text-orange-600 dark:text-orange-400",
+    waspada: "text-amber-600 dark:text-amber-400",
+    aman: "text-emerald-600 dark:text-emerald-400",
+  };
+
   const kartuAngka: { st: StatusSertifikat; nilai: number; judul: string; ket: string }[] = [
     { st: "lewat", nilai: hitung.lewat, judul: "Kedaluwarsa", ket: "harus segera diurus" },
     { st: "kritis", nilai: hitung.kritis, judul: "Habis ≤ 30 hari", ket: "siapkan perpanjangan" },
@@ -260,18 +268,27 @@ export default function MonitorSertifikat() {
     { st: "aman", nilai: hitung.aman, judul: "Masih aman", ket: "di atas 90 hari" },
   ];
 
-  /** warna status untuk sel papan — dipisah dari lencana supaya tetap tenang */
+  /**
+   * Warna sel papan.
+   *
+   * Lembar MUSTER memakai blok warna penuh: merah untuk yang lewat, kuning
+   * untuk yang mepet, hijau untuk yang aman. Versi pastel memang lebih adem,
+   * tetapi papan ini dibaca dari jarak satu meter di ruang rapat — yang lewat
+   * harus menonjok mata sebelum angkanya sempat dibaca. Jadi warnanya dibuat
+   * sepekat lembar aslinya, sementara bagian layar selain sel tetap netral
+   * supaya yang berwarna hanya statusnya.
+   */
   const nadaSel: Record<StatusSertifikat, string> = {
-    lewat: "border-rose-200 bg-rose-50 text-rose-900 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-200",
-    kritis: "border-orange-200 bg-orange-50 text-orange-900 dark:border-orange-900 dark:bg-orange-950/40 dark:text-orange-200",
-    waspada: "border-amber-200 bg-amber-50 text-amber-900 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-200",
-    aman: "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
-    permanen: "border-slate-200 bg-slate-50 text-slate-500 dark:border-slate-700 dark:bg-slate-800/50 dark:text-slate-400",
-    kosong: "border-dashed border-slate-200 bg-white text-slate-300 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-600",
+    lewat: "border-rose-700 bg-rose-600 text-white dark:border-rose-500 dark:bg-rose-700",
+    kritis: "border-amber-500 bg-amber-300 text-amber-950 dark:border-amber-400 dark:bg-amber-400 dark:text-amber-950",
+    waspada: "border-amber-300 bg-amber-100 text-amber-900 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-100",
+    aman: "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-200",
+    permanen: "border-slate-300 bg-slate-100 text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300",
+    kosong: "border-dashed border-slate-300 bg-white text-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-500",
   };
 
   const Panel = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-    <section className={`mb-4 overflow-hidden rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900 ${className}`}>
+    <section className={`mb-4 overflow-hidden rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900 ${className}`}>
       {children}
     </section>
   );
@@ -279,8 +296,8 @@ export default function MonitorSertifikat() {
   const KepalaPanel = ({ judul, ket, kanan }: { judul: string; ket?: string; kanan?: React.ReactNode }) => (
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
       <div>
-        <h2 className="text-[11px] font-bold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-400">{judul}</h2>
-        {ket && <p className="mt-0.5 text-[11px] text-slate-400">{ket}</p>}
+        <h2 className="text-[11px] font-bold uppercase tracking-[0.13em] text-slate-500 dark:text-slate-500">{judul}</h2>
+        {ket && <p className="mt-0.5 text-[11px] text-slate-600">{ket}</p>}
       </div>
       {kanan}
     </div>
@@ -305,7 +322,7 @@ export default function MonitorSertifikat() {
     <div className="min-h-screen bg-[#f4f5f7] dark:bg-slate-950">
       <main className="mx-auto max-w-[92rem] px-4 py-5">
       {/* ── kepala ──────────────────────────────────────────────────────── */}
-      <header className="mb-4 rounded-xl border border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-900">
+      <header className="mb-4 rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
         <div className="flex flex-wrap items-center gap-4 px-4 py-4">
           <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#16357f] text-white">
             <Ikon nama="sertifikat" className="h-5 w-5" />
@@ -336,13 +353,13 @@ export default function MonitorSertifikat() {
             </button>
           </div>
         </div>
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-200 bg-slate-50 px-4 py-2 text-[11px] text-slate-500 dark:border-slate-700 dark:bg-slate-800/50">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-slate-200 bg-slate-50 px-4 py-2 text-[11px] text-slate-600 dark:border-slate-700 dark:bg-slate-800/50">
           <span className="flex items-center gap-1.5">
             <span className={`h-1.5 w-1.5 rounded-full ${muat ? "animate-pulse bg-amber-500" : "bg-emerald-500"}`} />
             {muat ? "Menyegarkan…" : diambil ? `Terbarui ${diambil.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}` : "Menunggu data"}
           </span>
           <span>{totalBerwaktu} dokumen bermasa berlaku · {hitung.permanen} permanen</span>
-          <span className="text-slate-400">Layar ini hanya membaca; perubahan dilakukan di lembar sumber.</span>
+          <span className="text-slate-500">Layar ini hanya membaca; perubahan dilakukan di lembar sumber.</span>
         </div>
       </header>
 
@@ -367,10 +384,10 @@ export default function MonitorSertifikat() {
                 className={`group px-4 py-3.5 text-left transition sm:border-r sm:border-slate-200 dark:sm:border-slate-700 ${
                   aktif ? "bg-slate-50 dark:bg-slate-800/60" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"}`}>
                 <span className="flex items-center gap-1.5">
-                  <span className={`h-1.5 w-1.5 rounded-full ${STATUS_SERT[st].titik}`} />
-                  <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{judul}</span>
+                  <span className={`h-2.5 w-2.5 rounded-sm ${STATUS_SERT[st].titik}`} />
+                  <span className="text-[10.5px] font-bold uppercase tracking-[0.12em] text-slate-600 dark:text-slate-300">{judul}</span>
                 </span>
-                <span className="mt-1.5 block text-[28px] font-bold leading-none tabular-nums text-slate-900 dark:text-white">{nilai}</span>
+                <span className={`mt-1.5 block text-[30px] font-extrabold leading-none tabular-nums ${warnaAngka[st] || "text-slate-900 dark:text-white"}`}>{nilai}</span>
                 <span className={`mt-1 block text-[11px] ${aktif ? "font-semibold text-slate-700 dark:text-slate-200" : "text-slate-400"}`}>
                   {aktif ? "sedang disaring — klik lagi untuk lepas" : ket}
                 </span>
@@ -381,15 +398,15 @@ export default function MonitorSertifikat() {
             <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">Kesehatan armada</span>
             <span className="mt-1.5 flex items-baseline gap-1.5">
               <span className="text-[28px] font-bold leading-none tabular-nums text-slate-900 dark:text-white">{persenAman}</span>
-              <span className="text-sm font-semibold text-slate-400">%</span>
+              <span className="text-sm font-semibold text-slate-500">%</span>
             </span>
-            <span className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+            <span className="mt-2 flex h-2 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
               {([["lewat", hitung.lewat], ["kritis", hitung.kritis], ["waspada", hitung.waspada], ["aman", hitung.aman]] as [StatusSertifikat, number][])
                 .map(([st, n]) => n > 0 && (
                   <span key={st} className={STATUS_SERT[st].titik} style={{ width: `${(n / Math.max(1, totalBerwaktu)) * 100}%` }} />
                 ))}
             </span>
-            <span className="mt-1.5 block text-[11px] text-slate-400">dokumen di atas 90 hari</span>
+            <span className="mt-1.5 block text-[11px] text-slate-600">dokumen di atas 90 hari</span>
           </div>
         </div>
       </Panel>
@@ -420,7 +437,7 @@ export default function MonitorSertifikat() {
                 </span>
                 {/* satu batang, dua bagian: seluruh jatuh tempo bulan itu dan
                     bagian yang sudah masuk kategori mendesak */}
-                <span className="mt-2 flex h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
+                <span className="mt-2 flex h-1.5 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                   <span className="flex" style={{ width: `${(j.jumlah / puncakJadwal) * 100}%` }}>
                     <span className="bg-amber-500" style={{ width: `${j.jumlah ? (j.kritis / j.jumlah) * 100 : 0}%` }} />
                     <span className="flex-1 bg-slate-800 dark:bg-slate-300" />
@@ -444,7 +461,7 @@ export default function MonitorSertifikat() {
               <TombolSaklar hidup={ikutPermanen} onClick={() => setIkutPermanen(!ikutPermanen)}>
                 {ikutPermanen ? "Permanen tampil" : "Permanen disembunyikan"}
               </TombolSaklar>
-              <span className="text-[11px] tabular-nums text-slate-400">
+              <span className="text-[11px] tabular-nums text-slate-500">
                 {barisMatriksTampil.length}/{matriks.barisMatriks.length} baris
               </span>
             </div>
@@ -455,7 +472,7 @@ export default function MonitorSertifikat() {
             <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">
               {baris.length ? "Tidak ada baris bermasalah" : "Data belum terbaca"}
             </p>
-            <p className="mt-1 text-[11px] text-slate-400">
+            <p className="mt-1 text-[11px] text-slate-600">
               {baris.length ? "Tekan “Semua baris” untuk melihat dokumen yang aman juga." : "Tekan Muat ulang untuk mencoba lagi."}
             </p>
           </div>
@@ -477,7 +494,8 @@ export default function MonitorSertifikat() {
                           <span className="block truncate text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">
                             {k.replace(/^KMP\.?\s*/i, "")}
                           </span>
-                          <span className={`mt-0.5 block text-[10px] font-semibold tabular-nums ${n ? "text-rose-600 dark:text-rose-400" : "text-slate-400"}`}>
+                          <span className={`mt-0.5 inline-block rounded px-1 text-[10px] font-bold tabular-nums ${
+                            n ? "bg-rose-600 text-white" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200"}`}>
                             {n ? `${n} perlu` : "aman"}
                           </span>
                         </button>
@@ -510,8 +528,8 @@ export default function MonitorSertifikat() {
                                 {b.h.lewat > 0 && <span className="text-rose-600 dark:text-rose-400">{b.h.lewat} lewat</span>}
                                 {b.h.kritis > 0 && <span className="text-orange-600 dark:text-orange-400">{b.h.kritis} ≤30h</span>}
                                 {b.h.waspada > 0 && <span className="text-amber-600 dark:text-amber-400">{b.h.waspada} ≤90h</span>}
-                                {b.h.kosong > 0 && <span className="text-slate-400">{b.h.kosong} kosong</span>}
-                                {b.perlu === 0 && b.h.kosong === 0 && <span className="text-slate-400">semua aman</span>}
+                                {b.h.kosong > 0 && <span className="text-slate-500">{b.h.kosong} kosong</span>}
+                                {b.perlu === 0 && b.h.kosong === 0 && <span className="text-slate-500">semua aman</span>}
                               </span>
                             </span>
                           </button>
@@ -522,8 +540,8 @@ export default function MonitorSertifikat() {
                               <button onClick={() => setSel(n)}
                                 title={`${n.s.kapal} · ${n.s.jenis}\n${n.s.permanen ? "Permanen" : `berlaku s.d. ${tanggalSert(n.s.berlaku)}`} · ${teksSisa(n.s)}`}
                                 className={`flex h-full w-full flex-col items-center justify-center px-1.5 py-2 transition hover:brightness-95 ${nadaSel[n.st]}`}>
-                                <span className="block text-[13px] font-bold leading-none tabular-nums">{sisaRingkas(n.s)}</span>
-                                <span className="mt-1 flex items-center gap-1 text-[10px] leading-none opacity-70">
+                                <span className="block text-[14px] font-extrabold leading-none tabular-nums">{sisaRingkas(n.s)}</span>
+                                <span className="mt-1 flex items-center gap-1 text-[10px] font-medium leading-none opacity-85">
                                   {n.s.permanen ? "tanpa tempo" : tanggalRingkas(n.s.berlaku) || "tanpa tanggal"}
                                   {n.s.berkasUrl && <Ikon nama="klip" className="h-2.5 w-2.5" />}
                                 </span>
@@ -548,7 +566,7 @@ export default function MonitorSertifikat() {
               <span className={`h-2 w-2 rounded-full ${STATUS_SERT[st].titik}`} />{STATUS_SERT[st].label}
             </span>
           ))}
-          <span className="flex items-center gap-1.5 text-slate-400">
+          <span className="flex items-center gap-1.5 text-slate-500">
             <Ikon nama="klip" className="h-3 w-3" /> berkas tersimpan · klik nama kapal untuk rincian kapal · klik nama dokumen untuk menyaring daftar
           </span>
         </div>
@@ -569,7 +587,7 @@ export default function MonitorSertifikat() {
                     <span className={`h-2 w-2 shrink-0 rounded-full ${gawat ? "bg-rose-500" : dekat ? "bg-orange-500" : "bg-emerald-500"}`} />
                     <span className="truncate text-[13px] font-bold text-slate-900 dark:text-white">{k.kapal}</span>
                   </span>
-                  <span className="shrink-0 text-[11px] tabular-nums text-slate-400">{k.total} dok</span>
+                  <span className="shrink-0 text-[11px] tabular-nums text-slate-500">{k.total} dok</span>
                 </span>
 
                 <span className="mt-2 flex h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-700">
@@ -586,7 +604,7 @@ export default function MonitorSertifikat() {
                   {!k.lewat && !k.kritis && !k.waspada && <span className="text-emerald-600 dark:text-emerald-400">semua aman</span>}
                 </span>
 
-                <span className="mt-1.5 block space-y-0.5 text-[11px] text-slate-500">
+                <span className="mt-1.5 block space-y-0.5 text-[11px] text-slate-600">
                   {k.tertunggak && (
                     <span className="block truncate"><span className="font-semibold text-rose-600 dark:text-rose-400">Tertunggak</span> {k.tertunggak.s.jenis} · {teksSisa(k.tertunggak.s)}</span>
                   )}
@@ -645,7 +663,7 @@ export default function MonitorSertifikat() {
             <p className="text-[13px] font-semibold text-slate-700 dark:text-slate-200">
               {baris.length ? "Tidak ada yang cocok" : "Belum ada data terbaca"}
             </p>
-            <p className="mt-1 text-[11px] text-slate-400">
+            <p className="mt-1 text-[11px] text-slate-600">
               {baris.length ? "Tidak ada sertifikat yang mendesak pada saringan ini." : "Tekan Muat ulang untuk mencoba lagi."}
             </p>
           </div>
@@ -677,7 +695,7 @@ export default function MonitorSertifikat() {
                       </td>
                       <td className="px-3 py-2">
                         <p className="text-slate-800 dark:text-slate-100">{s.jenis}</p>
-                        {s.kelompok && <p className="text-[10px] uppercase tracking-wide text-slate-400">{s.kelompok}</p>}
+                        {s.kelompok && <p className="text-[10px] uppercase tracking-wide text-slate-500">{s.kelompok}</p>}
                       </td>
                       <td className="whitespace-nowrap px-3 py-2 tabular-nums text-slate-600 dark:text-slate-300">
                         {s.permanen ? "Permanen" : tanggalSert(s.berlaku)}
@@ -710,7 +728,7 @@ export default function MonitorSertifikat() {
                     <span className={`shrink-0 rounded border px-1.5 py-0.5 text-[10px] font-semibold ${nadaSel[st]}`}>{teksSisa(s)}</span>
                   </div>
                   <p className="mt-0.5 text-[12.5px] text-slate-700 dark:text-slate-200">{s.jenis}</p>
-                  <p className="mt-0.5 text-[11px] text-slate-500">
+                  <p className="mt-0.5 text-[11px] text-slate-600">
                     {s.kelompok} · {s.permanen ? "Permanen" : tanggalSert(s.berlaku)}
                   </p>
                   {s.berkasUrl && (
@@ -732,7 +750,7 @@ export default function MonitorSertifikat() {
           <div className="w-full rounded-t-xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 sm:max-w-md sm:rounded-xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-start justify-between gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
               <div className="min-w-0">
-                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-400">{sel.s.kelompok || "Dokumen"}</p>
+                <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500">{sel.s.kelompok || "Dokumen"}</p>
                 <h3 className="truncate text-[15px] font-bold text-slate-900 dark:text-white">{sel.s.jenis}</h3>
                 <p className="text-[12px] text-slate-500">{sel.s.kapal}</p>
               </div>
