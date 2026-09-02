@@ -21,6 +21,7 @@
  */
 import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import { Ikon } from "@/components/ikon";
+import { BORANG, kunciNomor } from "@/lib/sertifikat/fleetBorang";
 import {
   STATUS_SERT, Sertifikat, StatusSertifikat, URL_LEMBAR,
   bobotStatus, statusSert, tanggalSert, teksSisa,
@@ -76,6 +77,9 @@ export default function MonitorSertifikat() {
   const [matriksPadat, setMatriksPadat] = useState(true);   // sembunyikan baris yang semua kapalnya aman
   const [ikutPermanen, setIkutPermanen] = useState(false);  // dokumen tanpa masa berlaku
   const [salin, setSalin] = useState("");
+  /** nomor sertifikat yang sudah diketik kantor: kapal -> kunci dokumen -> nomor */
+  const [nomorSert, setNomorSert] = useState<Record<string, Record<string, string>>>({});
+  const [nomorSimpan, setNomorSimpan] = useState("");
 
   const ambil = useCallback(async (segar = false) => {
     setMuat(true); setGalat("");
@@ -89,6 +93,44 @@ export default function MonitorSertifikat() {
   }, []);
 
   useEffect(() => { ambil(); }, [ambil]);
+
+  // Nomor sertifikat disimpan terpisah dari lembar MUSTER: lembar itu tidak
+  // punya kolomnya, dan yang mengetik nomornya adalah kantor sendiri.
+  useEffect(() => {
+    fetch("/api/sertifikat/nomor", { cache: "no-store" })
+      .then((r) => r.json())
+      .then((d) => { if (d?.ok) setNomorSert(d.nomor || {}); })
+      .catch(() => { /* borang tetap bisa terbit dengan kolom nomor kosong */ });
+  }, []);
+
+  /**
+   * Kode borang Direksi yang memakai satu baris MUSTER.
+   *
+   * Sebagian baris dipakai dua kode sekaligus — polis asuransi mengisi Wreck
+   * Removal dan Blue Card, izin stasiun radio mengisi SIKR dan MMSI — jadi
+   * kotak isiannya pun dua, bukan satu.
+   */
+  const kodeBorang = (jenis: string) => BORANG.filter((b) => b.padanan === jenis);
+
+  const simpanNomor = async (kapal: string, kode: string, jenis: string, nilai: string) => {
+    const kunci = kunciNomor(kode, jenis);
+    setNomorSert((l) => ({ ...l, [kapal]: { ...(l[kapal] || {}), [kunci]: nilai } }));
+    setNomorSimpan(kunci);
+    try {
+      const r = await fetch("/api/sertifikat/nomor", {
+        method: "PATCH", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ kapal, kunci, nomor: nilai }),
+      });
+      const d = await r.json();
+      if (!d?.ok) throw new Error(d?.error || "Gagal menyimpan");
+      setSalin("Nomor sertifikat tersimpan — ikut tercetak di borang Direksi");
+      setTimeout(() => setSalin(""), 3500);
+    } catch (e: any) {
+      setGalat(e?.message || "Nomor gagal disimpan");
+    } finally {
+      setNomorSimpan("");
+    }
+  };
   // layar pantau sering dibiarkan terbuka — segarkan sendiri secara berkala
   useEffect(() => {
     const t = setInterval(() => ambil(true), SELANG_MUAT);
@@ -343,6 +385,10 @@ export default function MonitorSertifikat() {
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
               <Ikon nama="salin" className="h-3.5 w-3.5" /> Salin daftar mendesak
             </button>
+            <a href="/api/sertifikat/fleet-ekspor"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+              <Ikon nama="lembar" className="h-3.5 w-3.5" /> Borang Direksi (.xlsx)
+            </a>
             <a href={URL_LEMBAR} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
               <Ikon nama="lembar" className="h-3.5 w-3.5" /> Lembar sumber
@@ -764,6 +810,32 @@ export default function MonitorSertifikat() {
                 <p className="text-lg font-bold leading-none tabular-nums">{teksSisa(sel.s)}</p>
                 <p className="mt-1 text-[11px] opacity-75">{STATUS_SERT[sel.st].label}</p>
               </div>
+
+              {/*
+                Nomor sertifikat diketik di sini, bukan di Excel: yang diketik di
+                Excel hilang tiap kali borang dibuat ulang, sedangkan yang diketik
+                di sini tersimpan dan ikut tercetak selamanya.
+              */}
+              {kodeBorang(sel.s.jenis).map((b) => {
+                const kunci = kunciNomor(b.kode, sel.s.jenis);
+                const nilai = nomorSert[sel.s.kapal]?.[kunci] || "";
+                return (
+                  <label key={b.kode} className="mt-3 block">
+                    <span className="flex items-center justify-between text-[11px] font-semibold text-slate-500">
+                      <span>Nomor sertifikat · {b.kode}</span>
+                      {nomorSimpan === kunci && <span className="text-[#16357f] dark:text-sky-400">menyimpan…</span>}
+                    </span>
+                    <input
+                      defaultValue={nilai}
+                      placeholder="ketik nomor yang tertera di berkas"
+                      onBlur={(e) => {
+                        const baru = e.target.value.trim();
+                        if (baru !== nilai) simpanNomor(sel.s.kapal, b.kode, sel.s.jenis, baru);
+                      }}
+                      className="mt-1 w-full rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[12.5px] outline-none transition focus:border-slate-500 dark:border-slate-600 dark:bg-slate-900" />
+                  </label>
+                );
+              })}
 
               <dl className="mt-3 divide-y divide-slate-100 text-[12.5px] dark:divide-slate-800">
                 <div className="flex justify-between gap-3 py-1.5">
