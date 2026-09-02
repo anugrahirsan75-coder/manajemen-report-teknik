@@ -271,6 +271,27 @@ export const daftarButir = (butir: string[]) =>
  * mana pun yang kebetulan menerima suratnya; sapaan "Bapak/Ibu" yang netral
  * justru terbaca seperti surat edaran. Mengikuti surat yang sudah terbit.
  */
+/**
+ * Satu baris dasar permohonan menjadi satu kalimat butir a/b/c.
+ *
+ * Keputusan dan peraturan memakai kata "tentang"; surat memakai "perihal".
+ * Bedanya kecil tetapi konsisten di seluruh surat cabang yang sudah terbit,
+ * dan mencampurnya membuat surat terbaca seperti hasil salin-tempel.
+ */
+export function kalimatDasar(
+  r: { instansi?: string; nomor?: string; tanggal?: string; perihal?: string },
+  tanggalTeks: string,
+): string {
+  const sumber = (r.instansi || "").trim();
+  const kata = /^(keputusan|peraturan)/i.test(sumber) ? "tentang" : "perihal";
+  return [
+    esc(sumber),
+    r.nomor ? `nomor : ${b(esc(r.nomor))}` : "",
+    tanggalTeks ? `tanggal ${esc(tanggalTeks)}` : "",
+    r.perihal ? `${kata} ${esc(r.perihal)}` : "",
+  ].filter(Boolean).join(" ") + ";";
+}
+
 export const PENUTUP_PERMOHONAN_DIRTEK =
   "Demikian permohonan ini kami sampaikan. Besar harapan kami agar permohonan dimaksud dapat "
   + "memperoleh persetujuan. Atas perhatian dan kerja sama Bapak Direktur Teknik, kami ucapkan terima kasih.";

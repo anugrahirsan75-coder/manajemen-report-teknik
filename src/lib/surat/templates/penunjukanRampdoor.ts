@@ -16,9 +16,9 @@
  * dari templates/penunjukanLangsung.ts, tidak disalin.
  */
 import { DataSurat, TemplateSurat } from "../types";
-import { GALANGAN, KAPAL_SURAT, namaKapalSurat, rupiahSurat, tanggalSurat } from "../format";
+import { DASAR_KEPUTUSAN_DIREKSI, DASAR_KOSONG, GALANGAN, KAPAL_SURAT, namaKapalSurat, rupiahSurat, tanggalSurat } from "../format";
 import { terbilangRupiah } from "../terbilang";
-import { ButirSurat, PENUTUP_PERSETUJUAN, b, bungkus, esc, i, suratBernomor } from "../htmlHelpers";
+import { ButirSurat, kalimatDasar, PENUTUP_PERSETUJUAN, b, bungkus, esc, i, suratBernomor } from "../htmlHelpers";
 import { dasarIsi, evaluasiIsi, tabelEvaluasi } from "./penunjukanLangsung";
 
 /** bagian rampdoor yang dikerjakan — ikut disebut di seluruh kalimat surat */
@@ -87,6 +87,7 @@ export const penunjukanRampdoor: TemplateSurat = {
     },
     {
       id: "dasar", label: "Dasar permohonan", jenis: "tabel", wajib: true,
+      awal: [DASAR_KEPUTUSAN_DIREKSI, DASAR_KOSONG],
       petunjuk: "Dua butir yang biasa dipakai: Keputusan Direksi tentang kebijakan pengadaan, dan surat persetujuan "
         + "investasi rampdoor dari Direktur Teknik dan Fasilitas.",
       bacaBerkas:
@@ -177,15 +178,7 @@ export const penunjukanRampdoor: TemplateSurat = {
 
     const butir: ButirSurat[] = [{
       teks: "Mendasari :",
-      sub: dasarIsi(d).map((r) => {
-        const tgl = tanggalSurat(String(r.tanggal || ""));
-        return [
-          esc(r.instansi || ""),
-          r.nomor ? `nomor : ${b(esc(r.nomor))}` : "",
-          tgl ? `tanggal ${esc(tgl)}` : "",
-          r.perihal ? `perihal ${esc(r.perihal)}` : "",
-        ].filter(Boolean).join(" ") + ";";
-      }),
+      sub: dasarIsi(d).map((r) => kalimatDasar(r, tanggalSurat(String(r.tanggal || "")))),
     }];
 
     butir.push({

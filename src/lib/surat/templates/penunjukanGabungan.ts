@@ -18,10 +18,10 @@
  * disiapkan sendiri-sendiri, dan yang tidak dipakai disembunyikan dari borang.
  */
 import { DataSurat, TemplateSurat } from "../types";
-import { GALANGAN, KAPAL_SURAT, angkaRibuan, keAngka, namaKapalSurat, rupiahSurat, tanggalSurat } from "../format";
+import { DASAR_KEPUTUSAN_DIREKSI, DASAR_KOSONG, GALANGAN, KAPAL_SURAT, angkaRibuan, keAngka, namaKapalSurat, rupiahSurat, tanggalSurat } from "../format";
 import { terbilangRupiah } from "../terbilang";
 import {
-  ButirSurat, WARNA, b, baris, bungkus, esc, i, suratBernomor, tabel, td, tdAngka, th,
+  ButirSurat, kalimatDasar, WARNA, b, baris, bungkus, esc, i, suratBernomor, tabel, td, tdAngka, th,
 } from "../htmlHelpers";
 
 interface BarisDasar { instansi: string; nomor: string; tanggal: string; perihal: string }
@@ -162,6 +162,7 @@ export const penunjukanGabungan: TemplateSurat = {
     ...isianPaket(2),
     {
       id: "dasar", label: "Dasar permohonan", jenis: "tabel", wajib: true,
+      awal: [DASAR_KEPUTUSAN_DIREKSI, DASAR_KOSONG],
       petunjuk: "Tiga butir yang biasa dipakai: Keputusan Direksi tentang kebijakan pengadaan, surat persetujuan "
         + "pelaksanaan dari Direktur Teknik, dan surat dock space dari galangan.",
       bacaBerkas:
@@ -286,15 +287,7 @@ export const penunjukanGabungan: TemplateSurat = {
 
     const butir: ButirSurat[] = [{
       teks: "Berdasarkan :",
-      sub: dasarIsi(d).map((r) => {
-        const tgl = tanggalSurat(String(r.tanggal || ""));
-        return [
-          esc(r.instansi || ""),
-          r.nomor ? `nomor : ${b(esc(r.nomor))}` : "",
-          tgl ? `tanggal ${esc(tgl)}` : "",
-          r.perihal ? `perihal ${esc(r.perihal)}` : "",
-        ].filter(Boolean).join(" ") + ";";
-      }),
+      sub: dasarIsi(d).map((r) => kalimatDasar(r, tanggalSurat(String(r.tanggal || "")))),
     }];
 
     butir.push({

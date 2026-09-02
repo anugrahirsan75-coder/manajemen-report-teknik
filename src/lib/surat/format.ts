@@ -60,6 +60,22 @@ export const KAPAL_SURAT = [
   "KMP. Lema", "KMP. Cengkih Afo",
 ];
 
+/**
+ * Keputusan Direksi yang selalu menjadi butir pertama dasar permohonan
+ * penunjukan langsung. Nomor dan tanggalnya tetap; dijadikan baris bawaan agar
+ * tidak diketik ulang — salah ketik nomor kebijakan pada surat ke Regional
+ * jauh lebih mahal daripada satu baris yang sudah terisi.
+ */
+export const DASAR_KEPUTUSAN_DIREKSI = {
+  instansi: "Keputusan Direksi PT ASDP Indonesia Ferry (Persero)",
+  nomor: "KD.345/UM.201/ASDP-2023",
+  tanggal: "2023-10-09",
+  perihal: "Kebijakan Pengadaan Barang dan Jasa di Lingkungan PT ASDP Indonesia Ferry (Persero)",
+};
+
+/** baris kosong pendamping, supaya surat dasar berikutnya tinggal diisi */
+export const DASAR_KOSONG = { instansi: "", nomor: "", tanggal: "", perihal: "" };
+
 export const GALANGAN = [
   "PT. Industri Kapal Indonesia (Persero) Kota Bitung",
   "PT. Klasaman Indah Raya Sorong",
