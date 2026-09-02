@@ -14,6 +14,7 @@ import { perpanjanganSertifikat } from "./templates/perpanjanganSertifikat";
 import { permohonanIO } from "./templates/permohonanIO";
 import { pekerjaanTambahan } from "./templates/pekerjaanTambahan";
 import { penunjukanLangsung } from "./templates/penunjukanLangsung";
+import { penunjukanPengadaan } from "./templates/penunjukanPengadaan";
 import { exemptionStability } from "./templates/exemptionStability";
 import { suratKustom } from "./templates/suratKustom";
 
@@ -21,6 +22,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   dockingInvestasi,
   pekerjaanTambahan,
   penunjukanLangsung,
+  penunjukanPengadaan,
   realisasiRutin,
   classMatter,
   surveyStatutori,
