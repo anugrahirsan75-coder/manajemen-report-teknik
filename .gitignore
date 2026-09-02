@@ -17,3 +17,7 @@ output/
 # Arsip dokumen pengadaan (data operasional, bukan kode)
 /SPBJ/
 public/backup/
+
+# model bahasa tesseract.js (diunduh sendiri saat skrip OCR jalan)
+ind.traineddata
+*.traineddata
