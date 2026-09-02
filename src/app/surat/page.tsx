@@ -94,9 +94,16 @@ export default function BuatSuratEOffice() {
   }, [idTemplate]);
 
   // ── pemeriksaan isian ────────────────────────────────────────────────────
-  const kurang = useMemo(
-    () => templat.isian.filter((f) => f.wajib && kosongkah(data[f.id])).map((f) => f.label),
+  /*
+   * Isian yang disembunyikan (mis. daftar pertimbangan untuk paket pekerjaan
+   * yang tidak dipilih) tidak ikut digambar dan tidak ikut dituntut terisi.
+   */
+  const isianTampil = useMemo(
+    () => templat.isian.filter((f) => !f.tampilBila || f.tampilBila(data)),
     [templat, data]);
+  const kurang = useMemo(
+    () => isianTampil.filter((f) => f.wajib && kosongkah(data[f.id])).map((f) => f.label),
+    [isianTampil, data]);
   const peringatan = useMemo(() => (templat.periksa ? templat.periksa(data) : []), [templat, data]);
   const lengkap = kurang.length === 0;
 
@@ -227,7 +234,7 @@ export default function BuatSuratEOffice() {
             <EditorSurat nilai={String(data.isi || "")} ubah={(html) => ubah("isi", html)} />
           ) : (
           <div className="grid gap-3 sm:grid-cols-2">
-            {templat.isian.map((f) => (
+            {isianTampil.map((f) => (
               <div key={f.id} className={f.kolomBorang === 2 ? "sm:col-span-1" : "sm:col-span-2"}>
                 <MedanIsian medan={f} nilai={data[f.id]} ubah={(v) => ubah(f.id, v)} />
               </div>

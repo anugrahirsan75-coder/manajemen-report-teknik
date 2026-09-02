@@ -19,6 +19,8 @@ export type JenisIsian =
   | "kustom"          // badan surat ditulis bebas lewat penyunting
   | "tabel";
 
+export type DataSurat = Record<string, any>;
+
 export interface KolomTabel {
   id: string;
   label: string;
@@ -50,9 +52,16 @@ export interface Isian {
   bacaBerkas?: string | false;
   /** lebar isian pada tata letak borang (1 = penuh, 2 = setengah) */
   kolomBorang?: 1 | 2;
+  /**
+   * Tampilkan isian ini hanya bila keadaan borangnya memenuhi syarat.
+   *
+   * Dipakai surat yang isinya bercabang — mis. surat gabungan yang paket
+   * pekerjaannya bisa docking, rampdoor, atau pengadaan barang: daftar
+   * pertimbangan yang tidak dipilih tidak perlu ikut memenuhi layar, dan yang
+   * tersembunyi juga tidak ikut diperiksa sebagai isian wajib.
+   */
+  tampilBila?: (d: DataSurat) => boolean;
 }
-
-export type DataSurat = Record<string, any>;
 
 export interface Peringatan {
   pesan: string;
