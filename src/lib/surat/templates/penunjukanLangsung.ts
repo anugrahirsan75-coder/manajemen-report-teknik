@@ -31,6 +31,8 @@ const PERTIMBANGAN = [
   "Memiliki tenaga kerja (man power) yang profesional dalam pekerjaan docking",
   "Waktu kerja man power galangan lebih fleksibel (lembur pada malam hari dan hari libur) dibandingkan galangan lain",
   "Jarak dari lintasan ke galangan cukup dekat dibandingkan galangan lain",
+  "Memiliki pengalaman dalam pekerjaan sejenis (mis. pembuatan rampdoor kapal)",
+  "Tersedianya material galangan supply untuk pekerjaan yang dimohonkan",
 ];
 
 const dasarIsi = (d: DataSurat): BarisDasar[] =>
@@ -75,13 +77,20 @@ function tabelEvaluasi(d: DataSurat): string {
 export const penunjukanLangsung: TemplateSurat = {
   id: "penunjukan-langsung",
   nama: "Permohonan Penunjukan Langsung Vendor Docking",
-  perihal: "Permohonan Persetujuan Penunjukkan Langsung Vendor Pekerjaan Docking {kapal} Tahun {tahun}",
-  tujuan: "Executive Director Regional IV — Makassar",
+  // {lingkup} hanya muncul bila pekerjaan investasinya diisi
+  perihal: "Permohonan Persetujuan Penunjukkan Langsung Pekerjaan Docking dan {lingkup} {kapal} Tahun {tahun}",
+  tujuan: "Executive Director Regional IV — Jakarta",
   deskripsi: "Penunjukan galangan tanpa lelang: dasar hukum, tabel evaluasi vendor, dan daftar pertimbangan yang tinggal dicentang.",
   ikon: "🏗️",
   isian: [
     { id: "kapal", label: "Kapal", jenis: "pilih", pilihan: KAPAL_SURAT, bebas: true, wajib: true, kolomBorang: 2 },
     { id: "tahun", label: "Tahun docking", jenis: "angka", wajib: true, awal: String(new Date().getFullYear()), kolomBorang: 2 },
+    {
+      id: "lingkup", label: "Pekerjaan investasi yang menyertai", jenis: "teks", kolomBorang: 2,
+      contoh: "Investasi Rampdoor Haluan",
+      petunjuk: "Kosongkan bila permohonannya docking saja. Bila diisi, lingkup ini ikut disebut di perihal, "
+        + "kalimat hasil evaluasi, dan kalimat permohonan.",
+    },
     { id: "galangan", label: "Galangan yang ditunjuk", jenis: "pilih", pilihan: GALANGAN, bebas: true, wajib: true, kolomBorang: 2 },
     { id: "kotaGalangan", label: "Kota galangan", jenis: "teks", contoh: "Kota Sorong", kolomBorang: 2 },
     {
@@ -166,6 +175,13 @@ export const penunjukanLangsung: TemplateSurat = {
     const kota = esc(String(d.kotaGalangan || "").trim());
     const total = totalPenunjukan(d);
     const pertimbangan = ((d.pertimbangan as string[]) || []).filter(Boolean);
+    /*
+     * Sebagian docking dimohonkan bersama satu pekerjaan investasi (rampdoor,
+     * permesinan). Kalau lingkup itu diisi, seluruh kalimat surat menyebut
+     * "Docking Repair dan <lingkup>", persis seperti surat yang sudah terbit.
+     */
+    const lingkup = esc(String(d.lingkup || "").trim());
+    const pekerjaan = lingkup ? `Docking Repair dan ${lingkup}` : "Docking Repair";
 
     const butir: ButirSurat[] = [{
       teks: "Mendasari :",
@@ -182,13 +198,13 @@ export const penunjukanLangsung: TemplateSurat = {
 
     butir.push({
       teks: `Terkait butir 1 (satu) di atas, bersama ini kami sampaikan hasil evaluasi `
-        + `Pekerjaan Docking Repair ${b(esc(kapal))} tahun ${tahun} sebagai berikut :`,
+        + `Pekerjaan ${pekerjaan} ${b(esc(kapal))} tahun ${tahun} sebagai berikut :`,
       blok: tabelEvaluasi(d) || undefined,
     });
 
     butir.push({
       teks: `Terkait butir 1 (satu) di atas, bersama ini kami sampaikan `
-        + `${b(`permohonan Persetujuan Penunjukkan Langsung Vendor untuk Pekerjaan Docking Repair `
+        + `${b(`permohonan Persetujuan Penunjukkan Langsung Vendor untuk Pekerjaan ${pekerjaan} `
           + `${esc(kapal)} tahun ${tahun}`)} yang akan dilaksanakan di galangan ${galangan}`
         + `${kota ? ` ${kota}` : ""}`
         + (total ? ` dengan nilai sebesar ${b(rupiahSurat(total))} (terbilang: ${i(terbilangRupiah(total))})` : "")
