@@ -13,7 +13,7 @@
  *
  * Sumbernya lembar Google cabang; layar ini membacanya, tidak mengubahnya.
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useState } from "react";
 import {
   STATUS_SERT, Sertifikat, StatusSertifikat, URL_LEMBAR,
   bobotStatus, statusSert, tanggalSert, teksSisa,
@@ -23,6 +23,28 @@ const SELANG_MUAT = 10 * 60 * 1000;
 const BULAN_PENDEK = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
 
 type Nilai = { s: Sertifikat; st: StatusSertifikat };
+
+/**
+ * Sisa masa berlaku dalam bentuk sesingkat mungkin.
+ *
+ * Sel matriks selebar ±6rem harus memuat tiga belas kolom di satu layar; teks
+ * "Lewat 128 hari" memaksa sel melebar sampai papannya tidak lagi terbaca
+ * sekaligus — padahal terbaca sekaligus itulah gunanya papan ini.
+ */
+const sisaRingkas = (s: Sertifikat) => {
+  if (s.permanen) return "PERM";
+  if (s.sisaHari === null) return "—";
+  if (s.sisaHari < 0) return `${s.sisaHari}h`;
+  if (s.sisaHari > 999) return `${Math.round(s.sisaHari / 365)}th`;
+  return `${s.sisaHari}h`;
+};
+
+/** tanggal ringkas untuk sel: 15 Sep 26 */
+const tanggalRingkas = (iso: string) => {
+  if (!iso) return "";
+  const [y, m, d] = iso.split("-");
+  return BULAN_PENDEK[+m] ? `${+d} ${BULAN_PENDEK[+m]} ${y.slice(2)}` : iso;
+};
 
 const kunciBulan = (iso: string) => (iso || "").slice(0, 7);
 const namaBulan = (kunci: string) => {
@@ -43,6 +65,9 @@ export default function MonitorSertifikat() {
   const [cari, setCari] = useState("");
   const [semua, setSemua] = useState(false);
   const [detail, setDetail] = useState("");        // kapal yang dibuka rinciannya
+  const [sel, setSel] = useState<Nilai | null>(null);  // satu sel matriks yang dibuka
+  const [matriksPadat, setMatriksPadat] = useState(true);   // sembunyikan baris yang semua kapalnya aman
+  const [ikutPermanen, setIkutPermanen] = useState(false);  // dokumen tanpa masa berlaku
   const [salin, setSalin] = useState("");
 
   const ambil = useCallback(async (segar = false) => {
@@ -117,6 +142,63 @@ export default function MonitorSertifikat() {
       };
     }).sort((a, b) => b.skor - a.skor || a.kapal.localeCompare(b.kapal, "id"));
   }, [berstatus, kapalAda]);
+
+  /**
+   * Papan matriks: satu baris per JENIS dokumen, satu kolom per kapal.
+   *
+   * Papan armada di atas menjawab "kapal mana yang bermasalah". Yang tidak bisa
+   * dijawabnya: "dokumen mana yang jatuh tempo serentak di banyak kapal" —
+   * padahal justru itu yang menentukan antrean kerja. SKKP dan SNPP satu
+   * angkatan biasanya habis di bulan yang sama, dan itu baru kelihatan kalau
+   * seluruh armada dibaca dalam satu bidang, seperti lembar MUSTER aslinya.
+   *
+   * Urutan barisnya mengikuti urutan lembar sumber (SOLAS, MARPOL, Biro
+   * Klasifikasi, …), bukan diurut ulang menurut kegentingan: petugas yang
+   * terbiasa dengan lembarnya harus tetap menemukan barisnya di tempat yang
+   * sama.
+   */
+  const matriks = useMemo(() => {
+    const urut: { kelompok: string; jenis: string; no: string }[] = [];
+    const sudah = new Set<string>();
+    baris.forEach((s) => {
+      const k = `${s.kelompok}|${s.jenis}`;
+      if (sudah.has(k)) return;
+      sudah.add(k);
+      urut.push({ kelompok: s.kelompok, jenis: s.jenis, no: s.no });
+    });
+
+    const petaSel = new Map<string, Nilai>();
+    berstatus.forEach((n) => petaSel.set(`${n.s.kapal}|${n.s.kelompok}|${n.s.jenis}`, n));
+
+    const kapalKolom = kapalAda.length ? kapalAda : Array.from(new Set(baris.map((s) => s.kapal)));
+
+    const barisMatriks = urut.map((u) => {
+      const isi = kapalKolom.map((k) => petaSel.get(`${k}|${u.kelompok}|${u.jenis}`) || null);
+      const h = { lewat: 0, kritis: 0, waspada: 0, aman: 0, permanen: 0, kosong: 0 };
+      isi.forEach((n) => { if (n) h[n.st]++; });
+      // baris permanen: seluruh isinya dokumen tanpa masa berlaku
+      const semuaPermanen = h.permanen > 0 && h.lewat + h.kritis + h.waspada + h.aman === 0;
+      return { ...u, isi, h, semuaPermanen, perlu: h.lewat + h.kritis + h.waspada };
+    });
+
+    return { kapalKolom, barisMatriks };
+  }, [baris, berstatus, kapalAda]);
+
+  /** baris yang benar-benar digambar, setelah dua saklar di kepala papan */
+  const barisMatriksTampil = useMemo(() => matriks.barisMatriks.filter((b) => {
+    if (!ikutPermanen && b.semuaPermanen) return false;
+    if (matriksPadat && b.perlu === 0) return false;
+    return true;
+  }), [matriks, ikutPermanen, matriksPadat]);
+
+  /** jumlah masalah per kapal — dipakai di kepala kolom */
+  const masalahKapal = useMemo(() => {
+    const peta = new Map<string, number>();
+    berstatus.forEach(({ s, st }) => {
+      if (st === "lewat" || st === "kritis") peta.set(s.kapal, (peta.get(s.kapal) || 0) + 1);
+    });
+    return peta;
+  }, [berstatus]);
 
   // ── daftar rinci ─────────────────────────────────────────────────────────
   const saringanAktif = !!(kapal || status || bulan || cari);
@@ -295,6 +377,140 @@ export default function MonitorSertifikat() {
               </button>
             );
           })}
+        </div>
+      </section>
+
+      {/* ── papan matriks kapal x dokumen ───────────────────────────────── */}
+      <section className="anim-in mb-5 rounded-3xl bg-white/90 p-4 shadow-sm ring-1 ring-slate-200 backdrop-blur dark:bg-slate-900/80 dark:ring-slate-700 sm:p-5">
+        <div className="mb-3 flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-slate-500">Papan dokumen armada</h2>
+            <p className="text-xs text-slate-400">
+              Seluruh kapal dan seluruh jenis dokumen dalam satu bidang, seperti lembar MUSTER — tapi berwarna menurut
+              sisa hari. Klik sel untuk rincian dan berkasnya.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button onClick={() => setMatriksPadat(!matriksPadat)}
+              className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ring-1 transition ${
+                matriksPadat
+                  ? "bg-slate-900 text-white ring-slate-900 dark:bg-slate-700 dark:ring-slate-600"
+                  : "bg-white text-slate-600 ring-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600"}`}>
+              {matriksPadat ? "Hanya baris bermasalah" : "Semua baris"}
+            </button>
+            <button onClick={() => setIkutPermanen(!ikutPermanen)}
+              className={`rounded-lg px-2.5 py-1.5 text-[11px] font-bold ring-1 transition ${
+                ikutPermanen
+                  ? "bg-slate-900 text-white ring-slate-900 dark:bg-slate-700 dark:ring-slate-600"
+                  : "bg-white text-slate-600 ring-slate-300 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-600"}`}>
+              {ikutPermanen ? "Permanen ikut" : "Permanen disembunyikan"}
+            </button>
+          </div>
+        </div>
+
+        {!barisMatriksTampil.length ? (
+          <div className="rounded-2xl border border-dashed border-slate-300 p-8 text-center dark:border-slate-700">
+            <p className="text-2xl">{baris.length ? "🎉" : "⏳"}</p>
+            <p className="mt-1.5 text-sm font-bold text-slate-700 dark:text-slate-200">
+              {baris.length ? "Tidak ada baris bermasalah" : "Data belum terbaca"}
+            </p>
+            <p className="text-xs text-slate-400">
+              {baris.length ? "Tekan “Semua baris” untuk melihat dokumen yang aman juga." : "Tekan Muat ulang untuk mencoba lagi."}
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-auto rounded-2xl ring-1 ring-slate-200 dark:ring-slate-700" style={{ maxHeight: "34rem" }}>
+            <table className="border-separate border-spacing-0 text-sm">
+              <thead>
+                <tr>
+                  {/* pojok kiri-atas ikut membeku dua arah: tanpa itu nama dokumen
+                      hilang begitu papan digulir ke kanan */}
+                  <th className="sticky left-0 top-0 z-30 min-w-[15rem] border-b border-r border-slate-200 bg-slate-100 px-3 py-2 text-left text-[10px] font-extrabold uppercase tracking-[0.1em] text-slate-500 dark:border-slate-700 dark:bg-slate-800">
+                    Jenis dokumen
+                  </th>
+                  {matriks.kapalKolom.map((k) => {
+                    const n = masalahKapal.get(k) || 0;
+                    return (
+                      <th key={k} className="sticky top-0 z-20 min-w-[6.5rem] border-b border-slate-200 bg-slate-100 px-1.5 py-2 dark:border-slate-700 dark:bg-slate-800">
+                        <button onClick={() => setDetail(k)} className="w-full text-center">
+                          <span className="block truncate text-[10px] font-extrabold uppercase tracking-wide text-slate-600 hover:text-sky-700 dark:text-slate-300">
+                            {k.replace(/^KMP\.?\s*/i, "")}
+                          </span>
+                          <span className={`mt-0.5 inline-block rounded-full px-1.5 text-[9px] font-bold tabular-nums ${
+                            n ? "bg-rose-100 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300"}`}>
+                            {n ? `${n} perlu` : "aman"}
+                          </span>
+                        </button>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {barisMatriksTampil.map((b, i) => {
+                  const kelompokBaru = i === 0 || barisMatriksTampil[i - 1].kelompok !== b.kelompok;
+                  return (
+                    <Fragment key={`${b.kelompok}|${b.jenis}`}>
+                      {kelompokBaru && (
+                        <tr>
+                          <td colSpan={matriks.kapalKolom.length + 1}
+                            className="sticky left-0 border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-[0.14em] text-slate-500 dark:border-slate-700 dark:bg-slate-800/60">
+                            {b.kelompok || "Lainnya"}
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="group">
+                        <th scope="row"
+                          className="sticky left-0 z-10 border-b border-r border-slate-100 bg-white px-3 py-1.5 text-left align-middle group-hover:bg-sky-50/70 dark:border-slate-800 dark:bg-slate-900 dark:group-hover:bg-slate-800/70">
+                          <button onClick={() => { setCari(b.jenis); setStatus(""); setBulan(""); }}
+                            className="block w-full text-left">
+                            <span className="flex items-start gap-1.5">
+                              <span className="mt-0.5 w-4 shrink-0 text-[10px] font-bold tabular-nums text-slate-400">{b.no}</span>
+                              <span className="min-w-0 flex-1">
+                                <span className="block truncate text-[12px] font-semibold text-slate-800 dark:text-slate-100" title={b.jenis}>{b.jenis}</span>
+                                <span className="mt-0.5 flex flex-wrap gap-1">
+                                  {b.h.lewat > 0 && <span className="rounded bg-rose-100 px-1 text-[9px] font-bold text-rose-700 dark:bg-rose-950/50 dark:text-rose-300">{b.h.lewat} lewat</span>}
+                                  {b.h.kritis > 0 && <span className="rounded bg-orange-100 px-1 text-[9px] font-bold text-orange-800 dark:bg-orange-950/50 dark:text-orange-300">{b.h.kritis} ≤30h</span>}
+                                  {b.h.waspada > 0 && <span className="rounded bg-amber-100 px-1 text-[9px] font-bold text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">{b.h.waspada} ≤90h</span>}
+                                  {b.h.kosong > 0 && <span className="rounded bg-slate-100 px-1 text-[9px] font-bold text-slate-500 dark:bg-slate-800 dark:text-slate-400">{b.h.kosong} kosong</span>}
+                                </span>
+                              </span>
+                            </span>
+                          </button>
+                        </th>
+                        {b.isi.map((n, j) => (
+                          <td key={j} className="border-b border-slate-100 px-1 py-1 align-middle dark:border-slate-800">
+                            {n ? (
+                              <button onClick={() => setSel(n)}
+                                title={`${n.s.kapal} · ${n.s.jenis}\n${n.s.permanen ? "Permanen" : `berlaku s.d. ${tanggalSert(n.s.berlaku)}`} · ${teksSisa(n.s)}`}
+                                className={`w-full rounded-lg px-1.5 py-1.5 text-center ring-1 transition hover:-translate-y-0.5 hover:shadow-sm ${STATUS_SERT[n.st].kelas}`}>
+                                <span className="block text-[12px] font-extrabold leading-none tabular-nums">{sisaRingkas(n.s)}</span>
+                                <span className="mt-0.5 block truncate text-[9px] opacity-75">
+                                  {n.s.permanen ? "tanpa tempo" : tanggalRingkas(n.s.berlaku) || "tanpa tanggal"}
+                                </span>
+                                {n.s.berkasUrl && <span className="mt-0.5 block text-[8px] opacity-60">📎</span>}
+                              </button>
+                            ) : (
+                              <span className="block rounded-lg bg-slate-50 px-1.5 py-2.5 text-center text-[10px] text-slate-300 ring-1 ring-slate-100 dark:bg-slate-800/40 dark:text-slate-600 dark:ring-slate-800">—</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[10px] text-slate-500">
+          {(["lewat", "kritis", "waspada", "aman", "permanen", "kosong"] as StatusSertifikat[]).map((st) => (
+            <span key={st} className="flex items-center gap-1.5">
+              <span className={`h-2.5 w-2.5 rounded-full ${STATUS_SERT[st].titik}`} />{STATUS_SERT[st].label}
+            </span>
+          ))}
+          <span className="text-slate-400">📎 sel dengan berkas tersimpan · klik nama kapal untuk rincian kapal · klik nama dokumen untuk menyaring daftar</span>
         </div>
       </section>
 
@@ -489,6 +705,51 @@ export default function MonitorSertifikat() {
           Layar ini hanya membaca. Perubahan tanggal atau berkas dilakukan di lembar sumber, lalu tekan Muat ulang.
         </p>
       </section>
+
+      {/* ── rincian satu sel matriks ───────────────────────────────────── */}
+      {sel && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/50 backdrop-blur-sm sm:items-center sm:p-4" onClick={() => setSel(null)}>
+          <div className="w-full rounded-t-3xl bg-white p-5 shadow-2xl dark:bg-slate-900 sm:max-w-md sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="text-[10px] font-extrabold uppercase tracking-[0.12em] text-slate-400">{sel.s.kelompok || "Dokumen"}</p>
+                <h3 className="truncate text-lg font-extrabold text-slate-900 dark:text-white">{sel.s.jenis}</h3>
+                <p className="text-sm font-semibold text-slate-500">{sel.s.kapal}</p>
+              </div>
+              <button onClick={() => setSel(null)} className="text-xl leading-none text-slate-400 hover:text-slate-700 dark:hover:text-white">✕</button>
+            </div>
+
+            <div className={`mt-3 rounded-xl px-3 py-2.5 text-center ring-1 ${STATUS_SERT[sel.st].kelas}`}>
+              <p className="text-xl font-extrabold leading-none">{teksSisa(sel.s)}</p>
+              <p className="mt-1 text-[11px] opacity-80">{STATUS_SERT[sel.st].label}</p>
+            </div>
+
+            <dl className="mt-3 space-y-1.5 text-sm">
+              <div className="flex justify-between gap-3">
+                <dt className="text-slate-500">Terbit</dt>
+                <dd className="font-semibold text-slate-800 dark:text-slate-100">{tanggalSert(sel.s.terbit)}</dd>
+              </div>
+              <div className="flex justify-between gap-3">
+                <dt className="text-slate-500">Berlaku sampai</dt>
+                <dd className="font-semibold text-slate-800 dark:text-slate-100">{sel.s.permanen ? "Permanen" : tanggalSert(sel.s.berlaku)}</dd>
+              </div>
+              {sel.s.berkasNama && (
+                <div className="flex justify-between gap-3">
+                  <dt className="shrink-0 text-slate-500">Berkas</dt>
+                  <dd className="truncate text-right text-[12px] text-slate-600 dark:text-slate-300" title={sel.s.berkasNama}>{sel.s.berkasNama}</dd>
+                </div>
+              )}
+            </dl>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {sel.s.berkasUrl
+                ? <a href={sel.s.berkasUrl} target="_blank" rel="noopener noreferrer" className="btn btn-primary flex-1 justify-center text-xs">📄 Buka berkas ↗</a>
+                : <span className="flex-1 rounded-xl bg-slate-50 px-3 py-2 text-center text-[11px] text-slate-400 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">Berkas belum ditautkan di lembar sumber</span>}
+              <button onClick={() => { setDetail(sel.s.kapal); setSel(null); }} className="btn btn-ghost text-xs">Semua dokumen kapal ini</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── rincian satu kapal ──────────────────────────────────────────── */}
       {detail && (
