@@ -15,6 +15,7 @@ import { permohonanIO } from "./templates/permohonanIO";
 import { pekerjaanTambahan } from "./templates/pekerjaanTambahan";
 import { penunjukanLangsung } from "./templates/penunjukanLangsung";
 import { penunjukanPengadaan } from "./templates/penunjukanPengadaan";
+import { penunjukanRampdoor } from "./templates/penunjukanRampdoor";
 import { exemptionStability } from "./templates/exemptionStability";
 import { suratKustom } from "./templates/suratKustom";
 
@@ -23,6 +24,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   pekerjaanTambahan,
   penunjukanLangsung,
   penunjukanPengadaan,
+  penunjukanRampdoor,
   realisasiRutin,
   classMatter,
   surveyStatutori,

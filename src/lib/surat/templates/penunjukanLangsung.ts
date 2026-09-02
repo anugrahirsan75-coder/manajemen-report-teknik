@@ -19,11 +19,11 @@ import {
   ButirSurat, PENUTUP_PERSETUJUAN, WARNA, b, baris, bungkus, esc, i, suratBernomor, tabel, td, tdAngka, th,
 } from "../htmlHelpers";
 
-interface BarisDasar { instansi: string; nomor: string; tanggal: string; perihal: string }
-interface BarisEvaluasi { uraian: string; nilai: string; vendor: string; keterangan: string }
+export interface BarisDasar { instansi: string; nomor: string; tanggal: string; perihal: string }
+export interface BarisEvaluasi { uraian: string; nilai: string; vendor: string; keterangan: string }
 
 /** alasan yang benar-benar dipakai pada surat-surat cabang sebelumnya */
-const PERTIMBANGAN = [
+export const PERTIMBANGAN_GALANGAN = [
   "Tersedianya dock space sesuai jadwal docking",
   "Galangan merupakan rekanan resmi PT. ASDP Indonesia Ferry (Persero) dan sudah terdaftar di E-Procurement",
   "Harga satuan pekerjaan docking competitive dibandingkan galangan lain",
@@ -35,16 +35,16 @@ const PERTIMBANGAN = [
   "Tersedianya material galangan supply untuk pekerjaan yang dimohonkan",
 ];
 
-const dasarIsi = (d: DataSurat): BarisDasar[] =>
+export const dasarIsi = (d: DataSurat): BarisDasar[] =>
   ((d.dasar as BarisDasar[]) || []).filter((r) => (r?.instansi || r?.nomor || r?.perihal || "").trim());
 
-const evaluasiIsi = (d: DataSurat): BarisEvaluasi[] =>
+export const evaluasiIsi = (d: DataSurat): BarisEvaluasi[] =>
   ((d.evaluasi as BarisEvaluasi[]) || []).filter((r) => (r?.uraian || r?.vendor || "").trim());
 
 export const totalPenunjukan = (d: DataSurat) =>
   evaluasiIsi(d).reduce((s, r) => s + keAngka(r.nilai), 0);
 
-function tabelEvaluasi(d: DataSurat): string {
+export function tabelEvaluasi(d: DataSurat): string {
   const isi = evaluasiIsi(d);
   if (!isi.length) return "";
 
@@ -135,8 +135,8 @@ export const penunjukanLangsung: TemplateSurat = {
     },
     {
       id: "pertimbangan", label: "Pertimbangan penunjukan", jenis: "daftar-centang", wajib: true,
-      pilihan: PERTIMBANGAN,
-      awal: PERTIMBANGAN,
+      pilihan: PERTIMBANGAN_GALANGAN,
+      awal: PERTIMBANGAN_GALANGAN,
       petunjuk: "Boleh menambah pertimbangan lain. Urutan centang menentukan urutan butir a, b, c di surat.",
     },
   ],
