@@ -92,5 +92,5 @@ export const config = {
    * AKAR ([^/]+): kalau ditulis .* maka /api/db/apa-saja.png akan ikut lolos,
    * dan gerbangnya bisa dilewati hanya dengan menambahkan akhiran nama.
    */
-  matcher: ["/((?!login|monitoring|lapor(?:$|/)|uji-permintaan(?:$|/)|kinerja-anggaran(?:$|/)|layar-sertifikat(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|api/uji-permintaan/(?:cari|kirim)(?:$|/)|_next/static|_next/image|favicon.ico|[^/]+\.(?:png|jpe?g|svg|webp|gif|ico|mjs|css|woff2?)$).*)"],
+  matcher: ["/((?!login|monitoring|lapor(?:$|/)|uji-permintaan(?:$|/)|kinerja-anggaran(?:$|/)|layar-sertifikat(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|api/uji-permintaan/(?:cari|kirim)(?:$|/)|_next/static|_next/image|favicon.ico|[^/]+\.(?:png|jpe?g|svg|webp|gif|ico|mp4|webm|mjs|css|woff2?)$).*)"],
 };

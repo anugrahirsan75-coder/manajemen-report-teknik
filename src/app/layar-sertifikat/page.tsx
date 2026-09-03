@@ -28,6 +28,7 @@
  * disalin dari kolom lembar yang ikut basi begitu lembarnya tidak dibuka.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { JagaNyala } from "@/components/JagaNyala";
 
 interface Dokumen {
   kapal: string;
@@ -335,6 +336,8 @@ export default function LayarSertifikat() {
 
   return (
     <div className="min-h-screen bg-[#0a1020] text-white xl:h-screen xl:overflow-hidden">
+      {/* televisi kantor menggelapkan layar yang dianggap tak dipakai */}
+      <JagaNyala />
       <div className="mx-auto flex min-h-screen max-w-[130rem] flex-col gap-4 p-5 xl:h-full xl:min-h-0">
         {/* ── kepala ───────────────────────────────────────────────────── */}
         <header className={`flex flex-wrap items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 ${rapat ? "py-2" : "py-3"}`}>
