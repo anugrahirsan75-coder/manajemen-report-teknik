@@ -39,6 +39,21 @@ type Saring = "semua" | "terbaca" | "belum" | "gagal";
 
 const kunci = (fileId: string, i: number) => `${fileId}|${i}`;
 
+/** perkiraan harga satu baris permintaan, hasil pencocokan ke Database RAB */
+interface Estimasi { harga: number; yakin: boolean; uraian: string; satuan: string }
+
+const rupiahSingkat = (n: number) =>
+  n >= 1_000_000 ? `${(n / 1_000_000).toFixed(n >= 10_000_000 ? 0 : 1)} jt`
+    : n >= 1_000 ? `${Math.round(n / 1_000)} rb`
+      : String(Math.round(n));
+
+const rupiahPenuh = (n: number) => `Rp${new Intl.NumberFormat("id-ID").format(Math.round(n))}`;
+
+const keAngkaJumlah = (v: string) => {
+  const n = parseFloat(String(v || "").replace(/[^\d.,]/g, "").replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
 const waktuSingkat = (iso: string) =>
   iso ? new Date(iso).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" }) : "—";
 
@@ -78,6 +93,8 @@ export default function IsiPermintaanKapal() {
   const [berkasAktif, setBerkasAktif] = useState("");
   /** foto scan ditampilkan berdampingan dengan tabelnya */
   const [lihatFoto, setLihatFoto] = useState(true);
+  /** perkiraan harga per baris, dari Database RAB */
+  const [estimasi, setEstimasi] = useState<Record<string, Estimasi>>({});
   const [denyut, setDenyut] = useState<StatusJuruBaca | null>(null);
   const jadwalSimpan = useRef<Map<string, number>>(new Map());
 
@@ -228,6 +245,64 @@ export default function IsiPermintaanKapal() {
       return n;
     });
   };
+
+  /*
+   * Harga dicocokkan untuk SELURUH baris yang sudah terbaca, bukan hanya berkas
+   * yang sedang dibuka: bilah pilihan menjumlahkan barang lintas berkas, dan
+   * angka yang muncul-hilang tiap ganti berkas lebih membingungkan daripada
+   * menunggu sebentar di awal. Indeksnya lokal, jadi tidak menyentuh Drive.
+   */
+  useEffect(() => {
+    const perlu: { id: string; teks: string }[] = [];
+    entri.forEach((e) => (e.bacaan?.baris || []).forEach((r, i) => {
+      const k = kunci(e.berkas.fileId, i);
+      if (estimasi[k] === undefined) {
+        perlu.push({ id: k, teks: `${r.nama || ""} ${r.spesifikasi || ""}`.trim() });
+      }
+    }));
+    if (!perlu.length) return;
+
+    let batal = false;
+    (async () => {
+      for (let n = 0; n < perlu.length && !batal; n += 150) {
+        const potong = perlu.slice(n, n + 150);
+        try {
+          const r = await fetch("/api/harga/cocok", {
+            method: "POST", headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ items: potong }),
+          });
+          const d = await r.json();
+          if (batal || !d?.ok) return;
+          setEstimasi((lama) => {
+            const baru = { ...lama };
+            potong.forEach((x) => {
+              const h = d.hasil?.[x.id];
+              // baris tanpa pasangan tetap dicatat (harga 0) supaya tidak dicari berulang
+              baru[x.id] = h
+                ? { harga: h.harga || 0, yakin: !!h.yakin, uraian: h.uraian || "", satuan: h.satuan || "" }
+                : { harga: 0, yakin: false, uraian: "", satuan: "" };
+            });
+            return baru;
+          });
+        } catch { return; }
+      }
+    })();
+    return () => { batal = true; };
+  }, [entri, estimasi]);
+
+  /** perkiraan nilai barang yang sedang dipilih — dipakai di bilah bawah */
+  const nilaiTerpilih = useMemo(() => {
+    let jumlah = 0;
+    let tanpaHarga = 0;
+    entri.forEach((e) => (e.bacaan?.baris || []).forEach((b, i) => {
+      const k = kunci(e.berkas.fileId, i);
+      if (!pilih.has(k)) return;
+      const est = estimasi[k];
+      const nilai = (est?.harga || 0) * keAngkaJumlah(b.jumlah);
+      if (nilai > 0) jumlah += nilai; else tanpaHarga++;
+    }));
+    return { jumlah, tanpaHarga };
+  }, [entri, pilih, estimasi]);
 
   const terpilih = useMemo(() => {
     const keluar: { kapal: string; baris: BarisPermintaan }[] = [];
@@ -494,6 +569,7 @@ export default function IsiPermintaanKapal() {
               <IsiBerkas
                 e={entriAktif}
                 pilih={pilih}
+                estimasi={estimasi}
                 lihatFoto={lihatFoto}
                 setLihatFoto={setLihatFoto}
                 alih={alih}
@@ -517,7 +593,17 @@ export default function IsiPermintaanKapal() {
                 {terpilih.length}
               </span>
               <div className="min-w-[12rem] flex-1">
-                <p className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100">{terpilih.length} barang terpilih</p>
+                <p className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100">
+                  {terpilih.length} barang terpilih{" "}
+                  {nilaiTerpilih.jumlah > 0 && (
+                    <span className="ml-2 font-semibold text-[#16357f] dark:text-sky-400">
+                      · estimasi {rupiahPenuh(nilaiTerpilih.jumlah)}
+                      {nilaiTerpilih.tanpaHarga > 0 && (
+                        <span className="font-normal text-slate-500"> ({nilaiTerpilih.tanpaHarga} barang tanpa pembanding)</span>
+                      )}
+                    </span>
+                  )}
+                </p>
                 <p className="text-[11px] text-slate-500">
                   {kapalTerpilih.length === 1
                     ? kapalTerpilih[0]
@@ -545,6 +631,39 @@ export default function IsiPermintaanKapal() {
 }
 
 /* ── isi satu berkas: keterangan, foto scan, dan tabel barangnya ────────── */
+/**
+ * Dua sel perkiraan harga satu baris.
+ *
+ * Harga yang tidak yakin — kata kunci barangnya hanya sebagian yang kena —
+ * ditandai kuning dan tetap disebut angkanya, karena bagi kantor "kira-kira
+ * segini" masih jauh lebih berguna daripada kosong. Yang tidak boleh terjadi
+ * adalah angka ragu yang tampil sama meyakinkannya dengan angka pasti.
+ */
+function SelHarga({ baris, est }: { baris: BarisPermintaan; est?: Estimasi }) {
+  const jml = keAngkaJumlah(baris.jumlah);
+  const satuan = est?.harga || 0;
+  const total = satuan * jml;
+  const judul = est?.uraian
+    ? `Pembanding RAB: ${est.uraian}${est.satuan ? ` (${est.satuan})` : ""}${est.yakin ? "" : " — kecocokan lemah, periksa lagi"}`
+    : "Belum ada barang pembanding di Database RAB";
+
+  const nada = !satuan ? "text-slate-300"
+    : est?.yakin ? "text-slate-700 dark:text-slate-200"
+      : "text-amber-700 dark:text-amber-400";
+
+  return (
+    <>
+      <td className={`px-2 py-0.5 text-right tabular-nums ${nada}`} title={judul}>
+        {satuan ? rupiahSingkat(satuan) : "—"}
+        {satuan > 0 && !est?.yakin && <span className="ml-0.5 text-[10px]">?</span>}
+      </td>
+      <td className={`px-2 py-0.5 text-right font-semibold tabular-nums ${nada}`} title={judul}>
+        {total ? rupiahSingkat(total) : "—"}
+      </td>
+    </>
+  );
+}
+
 /**
  * Warna per jenis permintaan.
  *
@@ -580,9 +699,10 @@ function nadaJenis(jenis: string) {
   };
 }
 
-function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBaris, hapusBaris, tambahBaris, bacaUlang, bisaBaca, sibuk }: {
+function IsiBerkas({ e, pilih, estimasi, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBaris, hapusBaris, tambahBaris, bacaUlang, bisaBaca, sibuk }: {
   e: Entri;
   pilih: Set<string>;
+  estimasi: Record<string, Estimasi>;
   lihatFoto: boolean;
   setLihatFoto: (v: boolean) => void;
   alih: (fileId: string, i: number) => void;
@@ -718,7 +838,7 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
         </p>
       )}
 
-      <div className={`flex-1 ${lihatFoto ? "grid gap-0 xl:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}>
+      <div className={`flex-1 ${lihatFoto ? "grid gap-0 xl:grid-cols-[minmax(0,1fr)_17rem] 2xl:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}>
         {/* tabel barang */}
         <div className="min-w-0 overflow-x-auto">
           {!b?.baris.length ? (
@@ -728,7 +848,7 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
                 : status === "proses" ? "Sedang dibaca…" : "Belum dibaca. Isinya muncul di sini begitu selesai."}
             </p>
           ) : (
-            <table className="w-full min-w-[34rem] text-[12.5px]">
+            <table className="w-full min-w-[40rem] text-[12.5px]">
               <thead className="sticky top-0 z-10 bg-gradient-to-r from-[#16357f]/[0.07] to-[#14b8c4]/[0.05] dark:bg-slate-800/80">
                 <tr className="border-b border-slate-200 text-[10.5px] uppercase tracking-[0.08em] text-slate-500 dark:border-slate-700">
                   <th className="w-9 px-2 py-2">
@@ -737,10 +857,12 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
                       onChange={() => alihBanyak([e])} />
                   </th>
                   <th className="px-2 py-2 text-left font-bold">Nama barang</th>
-                  <th className="w-40 px-2 py-2 text-left font-bold">Spesifikasi</th>
+                  <th className="w-32 px-2 py-2 text-left font-bold">Spesifikasi</th>
                   <th className="w-14 px-2 py-2 text-center font-bold">Jml</th>
                   <th className="w-20 px-2 py-2 text-left font-bold">Satuan</th>
-                  <th className="w-36 px-2 py-2 text-left font-bold">Keterangan</th>
+                  <th className="w-28 px-2 py-2 text-left font-bold">Keterangan</th>
+                  <th className="w-20 px-2 py-2 text-right font-bold">Est. Satuan</th>
+                  <th className="w-20 px-2 py-2 text-right font-bold">Est. Total</th>
                   <th className="w-8 px-2 py-2" />
                 </tr>
               </thead>
@@ -763,6 +885,7 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
                               k === "jumlah" ? "text-center tabular-nums" : ""}`} />
                         </td>
                       ))}
+                      <SelHarga baris={r} est={estimasi[kunci(e.berkas.fileId, i)]} />
                       <td className="px-1 py-0.5 text-center">
                         <button onClick={() => hapusBaris(e, i)} title="Hapus baris"
                           className="rounded px-1 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600">✕</button>
@@ -771,6 +894,29 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
                   );
                 })}
               </tbody>
+              <tfoot>
+                {(() => {
+                  let nilai = 0;
+                  let kosong = 0;
+                  b.baris.forEach((r, i) => {
+                    const est = estimasi[kunci(e.berkas.fileId, i)];
+                    const n = (est?.harga || 0) * keAngkaJumlah(r.jumlah);
+                    if (n > 0) nilai += n; else kosong++;
+                  });
+                  return (
+                    <tr className="border-t-2 border-slate-300 bg-slate-50 dark:border-slate-600 dark:bg-slate-800/60">
+                      <td colSpan={6} className="px-2 py-2 text-right text-[11.5px] font-semibold text-slate-600 dark:text-slate-300">
+                        Perkiraan nilai berkas ini
+                        {kosong > 0 && <span className="font-normal text-slate-500"> · {kosong} barang belum ada pembandingnya</span>}
+                      </td>
+                      <td colSpan={2} className="px-2 py-2 text-right text-[12.5px] font-bold tabular-nums text-[#16357f] dark:text-sky-400">
+                        {nilai > 0 ? rupiahPenuh(nilai) : "—"}
+                      </td>
+                      <td />
+                    </tr>
+                  );
+                })()}
+              </tfoot>
             </table>
           )}
           <button onClick={() => tambahBaris(e)}
