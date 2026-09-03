@@ -12,6 +12,7 @@ import Link from "next/link";
 import BacaPermintaan from "@/components/lapor/BacaPermintaan";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { PratinjauBerkas } from "@/components/PratinjauBerkas";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import {
   BerkasLapor, JENIS_LAPOR, KirimanLapor, STATUS_LAPOR, bulanIndo, labelJenis, singkatJenis,
@@ -129,6 +130,8 @@ function IsiPermintaanLaporanKapal() {
 
   /** saringan daftar: hanya kiriman yang naik di ujung bulan */
   const [hanyaUjung, setHanyaUjung] = useState(false);
+  /** berkas yang sedang dibuka di jendela pratinjau */
+  const [lihatBerkas, setLihatBerkas] = useState<{ fileId: string; nama: string; url: string; kapal: string } | null>(null);
 
   const tampil = useMemo(() => baris.filter((b) => {
     if (hanyaUjung && !kirimUjungBulan(b)) return false;
@@ -993,8 +996,14 @@ function IsiPermintaanLaporanKapal() {
                       <li key={f.fileId} className="flex items-center gap-2 bg-slate-50 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm">
                         <span className="truncate flex-1">{f.nama}</span>
                         <span className="text-xs text-slate-500 shrink-0">{ukuranSingkat(f.ukuran)}</span>
+                        {/* dibuka di dalam aplikasi; "Buka" tetap ada untuk yang ingin berkas aslinya di Drive */}
+                        <button type="button"
+                          onClick={() => setLihatBerkas({ fileId: f.fileId, nama: f.nama, url: f.url, kapal: buka.kapal })}
+                          className="shrink-0 rounded-lg bg-[#16357f] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-[#12296a]">
+                          Lihat
+                        </button>
                         <a href={f.url} target="_blank" rel="noopener noreferrer"
-                           className="shrink-0 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 py-1.5">Buka</a>
+                           className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-slate-300 transition hover:bg-slate-50">Buka</a>
                         <button type="button" onClick={() => hapusDokumen(buka, f)}
                           disabled={Boolean(hapusBerkasId)}
                           aria-label={`Hapus dokumen ${f.nama}`}
@@ -1105,6 +1114,15 @@ function IsiPermintaanLaporanKapal() {
           jenis={labelJenis(bacaKiriman.jenis)}
           berkas={(bacaKiriman.berkas || []).map((f: any) => ({ fileId: f.fileId, nama: f.nama }))}
           kiriman={{ id: bacaKiriman.id, kapal: bacaKiriman.kapal, jenis: bacaKiriman.jenis, periode: bacaKiriman.periode }}
+        />
+      )}
+      {lihatBerkas && (
+        <PratinjauBerkas
+          fileId={lihatBerkas.fileId}
+          nama={lihatBerkas.nama}
+          keterangan={lihatBerkas.kapal}
+          tautanAsli={lihatBerkas.url}
+          tutup={() => setLihatBerkas(null)}
         />
       )}
     </main>

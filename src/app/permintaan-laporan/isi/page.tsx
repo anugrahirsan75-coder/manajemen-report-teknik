@@ -19,6 +19,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Ikon } from "@/components/ikon";
+import { PratinjauBerkas } from "@/components/PratinjauBerkas";
 import { useJuruBaca } from "@/components/lapor/PilJuruBaca";
 import { BarisPermintaan, keJumlah, titipkanKeSppbj } from "@/lib/lapor/bacaPermintaan";
 import { bacaSekarang, nyalakanJuruBaca, putaran } from "@/lib/lapor/juruBaca";
@@ -832,169 +833,15 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
       </div>
 
       {penuh && (
-        <PratinjauPenuh
-          url={foto?.url || ""}
-          mime={foto?.mime || ""}
-          muat={fotoMuat}
-          galat={fotoGalat}
+        <PratinjauBerkas
+          fileId={e.berkas.fileId}
           nama={namaPendek(e.berkas.nama)}
           keterangan={`${e.kiriman.kapal} · ${singkatJenis(e.kiriman.jenis)} · ${bulanIndo(e.kiriman.periode)}`}
           tautanAsli={e.berkas.url}
+          berkasSiap={foto}
           tutup={() => setPenuh(false)}
         />
       )}
-    </div>
-  );
-}
-
-/* ── jendela pratinjau berkas: besar, bisa diperbesar dan digeser ───────── */
-function PratinjauPenuh({ url, mime, muat, galat, nama, keterangan, tautanAsli, tutup }: {
-  url: string;
-  mime: string;
-  muat: boolean;
-  galat: string;
-  nama: string;
-  keterangan: string;
-  tautanAsli: string;
-  tutup: () => void;
-}) {
-  const [zum, setZum] = useState(1);
-  const [putar, setPutar] = useState(0);
-  const [geser, setGeser] = useState({ x: 0, y: 0 });
-  const seret = useRef<{ x: number; y: number; gx: number; gy: number } | null>(null);
-  const panggung = useRef<HTMLDivElement | null>(null);
-  const gambar = mime.startsWith("image/");
-
-  const batas = (n: number) => Math.min(6, Math.max(0.4, Number(n.toFixed(2))));
-  const pasKan = () => { setZum(1); setGeser({ x: 0, y: 0 }); setPutar(0); };
-
-  /*
-   * Papan tik ikut dipakai: orang yang sedang membandingkan berkas dengan tabel
-   * memegang mouse di satu tangan, dan menekan Esc jauh lebih cepat daripada
-   * mencari tombol tutup.
-   */
-  useEffect(() => {
-    const tekan = (ev: KeyboardEvent) => {
-      if (ev.key === "Escape") tutup();
-      else if (ev.key === "+" || ev.key === "=") setZum((z) => batas(z + 0.25));
-      else if (ev.key === "-" || ev.key === "_") setZum((z) => batas(z - 0.25));
-      else if (ev.key === "0") pasKan();
-    };
-    window.addEventListener("keydown", tekan);
-    // halaman di belakang jangan ikut bergulir saat jendela ini terbuka
-    const gulirLama = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => {
-      window.removeEventListener("keydown", tekan);
-      document.body.style.overflow = gulirLama;
-    };
-  }, [tutup]);
-
-  /*
-   * Roda mouse dipasang sendiri, bukan lewat onWheel React: React memasang
-   * pendengar roda secara pasif, sehingga preventDefault-nya diabaikan dan
-   * halaman di belakang ikut bergulir ketika berkasnya diperbesar.
-   */
-  useEffect(() => {
-    const el = panggung.current;
-    if (!el) return;
-    const roda = (ev: WheelEvent) => {
-      ev.preventDefault();
-      setZum((z) => batas(z + (ev.deltaY < 0 ? 0.18 : -0.18)));
-    };
-    el.addEventListener("wheel", roda, { passive: false });
-    return () => el.removeEventListener("wheel", roda);
-  }, []);
-
-  const mulaiSeret = (ev: React.MouseEvent) => {
-    seret.current = { x: ev.clientX, y: ev.clientY, gx: geser.x, gy: geser.y };
-  };
-  const jalanSeret = (ev: React.MouseEvent) => {
-    if (!seret.current) return;
-    setGeser({
-      x: seret.current.gx + (ev.clientX - seret.current.x),
-      y: seret.current.gy + (ev.clientY - seret.current.y),
-    });
-  };
-  const lepasSeret = () => { seret.current = null; };
-
-  const TombolAlat = ({ onClick, judul, children }: { onClick: () => void; judul: string; children: React.ReactNode }) => (
-    <button onClick={onClick} title={judul}
-      className="grid h-8 w-8 place-items-center rounded-md border border-white/25 bg-white/10 text-[15px] font-bold text-white transition hover:bg-white/20">
-      {children}
-    </button>
-  );
-
-  return (
-    <div className="fixed inset-0 z-[60] flex flex-col bg-slate-900/92 backdrop-blur-sm">
-      {/* bilah alat */}
-      <div className="flex flex-wrap items-center gap-3 border-b border-white/15 px-4 py-2.5">
-        <div className="min-w-[14rem] flex-1">
-          <p className="truncate text-[13px] font-bold text-white">{nama}</p>
-          <p className="truncate text-[11px] text-white/60">{keterangan}</p>
-        </div>
-        <div className="flex items-center gap-1.5">
-          <TombolAlat onClick={() => setZum((z) => batas(z - 0.25))} judul="Perkecil (−)">−</TombolAlat>
-          <span className="w-14 text-center text-[12px] font-bold tabular-nums text-white">{Math.round(zum * 100)}%</span>
-          <TombolAlat onClick={() => setZum((z) => batas(z + 0.25))} judul="Perbesar (+)">+</TombolAlat>
-          <button onClick={pasKan} title="Kembalikan ke ukuran semula (0)"
-            className="rounded-md border border-white/25 bg-white/10 px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition hover:bg-white/20">
-            Pas layar
-          </button>
-          {gambar && <TombolAlat onClick={() => setPutar((r) => (r + 90) % 360)} judul="Putar 90°">⟳</TombolAlat>}
-          <a href={tautanAsli} target="_blank" rel="noreferrer" title="Buka berkas aslinya di Drive"
-            className="rounded-md border border-white/25 bg-white/10 px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition hover:bg-white/20">
-            Drive
-          </a>
-          <button onClick={tutup} title="Tutup (Esc)"
-            className="rounded-md bg-white px-3 py-1.5 text-[11.5px] font-bold text-slate-900 transition hover:bg-slate-200">
-            Tutup
-          </button>
-        </div>
-      </div>
-
-      {/* panggung berkas */}
-      <div ref={panggung}
-        onMouseDown={mulaiSeret} onMouseMove={jalanSeret} onMouseUp={lepasSeret} onMouseLeave={lepasSeret}
-        className={`flex flex-1 items-center justify-center overflow-hidden p-4 ${
-          gambar && zum > 1 ? (seret.current ? "cursor-grabbing" : "cursor-grab") : "cursor-default"}`}>
-        {/*
-          Gambar diperbesar dengan transform — mulus dan bisa digeser. PDF tidak:
-          menyekalakan bingkainya ikut menyeret alat baca PDF bawaan peramban
-          sampai keluar layar. Untuk PDF, angka zoom diteruskan ke pembacanya
-          sendiri lewat penanda #zoom, sehingga yang membesar hanya halamannya.
-        */}
-        {!url ? (
-          <div className="text-center">
-            <p className="text-[13px] font-semibold text-white">
-              {galat ? "Berkas tidak bisa ditampilkan" : "Mengambil berkas dari Drive…"}
-            </p>
-            {galat && <p className="mx-auto mt-2 max-w-lg text-[12px] leading-relaxed text-white/70">{galat}</p>}
-            {!galat && !muat && <p className="mt-2 text-[12px] text-white/60">Tekan Tutup lalu coba lagi.</p>}
-            {galat && (
-              <a href={tautanAsli} target="_blank" rel="noreferrer"
-                className="mt-3 inline-flex items-center gap-1.5 rounded-md bg-white px-3 py-1.5 text-[11.5px] font-bold text-slate-900">
-                Buka di Drive
-              </a>
-            )}
-          </div>
-        ) : gambar ? (
-          <div style={{ transform: `translate(${geser.x}px, ${geser.y}px) scale(${zum}) rotate(${putar}deg)` }}
-            className="origin-center transition-transform duration-75">
-            <img src={url} alt={nama} draggable={false}
-              className="max-h-[calc(100vh-9rem)] max-w-[92vw] select-none rounded bg-white shadow-2xl" />
-          </div>
-        ) : (
-          <iframe src={`${url}#zoom=${Math.round(zum * 100)}&toolbar=0`} title={nama}
-            className="h-[calc(100vh-9rem)] w-[92vw] rounded bg-white shadow-2xl" />
-        )}
-      </div>
-
-      <p className="border-t border-white/15 px-4 py-2 text-center text-[11px] text-white/60">
-        Gulir atau tekan <b className="text-white/80">+</b> / <b className="text-white/80">−</b> untuk memperbesar
-        {gambar ? " · seret untuk menggeser" : ""} · <b className="text-white/80">Esc</b> menutup ·
-        <b className="text-white/80"> 0</b> mengembalikan ke ukuran semula
-      </p>
     </div>
   );
 }
