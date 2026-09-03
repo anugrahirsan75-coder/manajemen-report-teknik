@@ -26,7 +26,7 @@ import { useEffect, useRef, useState } from "react";
 export function JagaNyala() {
   const video = useRef<HTMLVideoElement | null>(null);
   /** dilaporkan di pojok layar supaya bisa diperiksa dari depan televisi */
-  const [keadaan, setKeadaan] = useState({ video: false, kunci: false });
+  const [keadaan, setKeadaan] = useState({ video: false, kunci: false, suara: false });
 
   useEffect(() => {
     let kunci: { release?: () => Promise<void> } | null = null;
@@ -72,6 +72,27 @@ export function JagaNyala() {
     if (!v) return;
     const jalan = () => { void v.play().catch(() => {}); };
     jalan();
+
+    /*
+     * Berkasnya mulai dalam keadaan BISU, karena hanya media bisu yang boleh
+     * diputar sendiri tanpa ada yang menekan tombol lebih dulu. Tetapi banyak
+     * televisi tidak menghitung media bisu sebagai "sedang ditonton" — layarnya
+     * tetap digelapkan meski videonya berjalan. Jadi begitu ada tekanan tombol
+     * pertama dari remote, bisunya dilepas.
+     *
+     * Tidak ada bunyi yang keluar: jalur suaranya memang sunyi sungguhan, bukan
+     * suara yang dikecilkan. Volumenya pun ditahan sangat rendah supaya kalau
+     * suatu saat berkasnya tertukar, tidak ada yang mengagetkan seisi ruangan.
+     */
+    const nyaringkan = () => {
+      if (!v.muted) return;
+      v.muted = false;
+      v.volume = 0.02;
+      void v.play().then(() => setKeadaan((k) => ({ ...k, suara: !v.muted })))
+        .catch(() => { v.muted = true; });   // ditolak — kembali bisu, video tetap jalan
+    };
+    window.addEventListener("keydown", nyaringkan);
+    window.addEventListener("click", nyaringkan);
     /*
      * Diperiksa tiap lima detik, bukan setengah menit. Televisi menghitung diam
      * dalam hitungan menit; pemutaran yang berhenti setengah menit sudah cukup
@@ -94,6 +115,8 @@ export function JagaNyala() {
       document.removeEventListener("visibilitychange", jalan);
       window.removeEventListener("keydown", jalan);
       window.removeEventListener("click", jalan);
+      window.removeEventListener("keydown", nyaringkan);
+      window.removeEventListener("click", nyaringkan);
     };
   }, []);
 
@@ -122,7 +145,7 @@ export function JagaNyala() {
         "penjaganya gagal" dan "setelan televisinya yang mematikan".
       */}
       <span className="pointer-events-none fixed bottom-1 left-2 z-50 select-none text-[10px] tabular-nums text-white/25">
-        jaga layar: {keadaan.video ? "video ✓" : "video ✕"} · {keadaan.kunci ? "wake lock ✓" : "wake lock ✕"}
+        jaga layar: {keadaan.video ? "video ✓" : "video ✕"} · {keadaan.suara ? "suara ✓" : "suara ✕ (pencet 1 tombol remote)"} · {keadaan.kunci ? "wake lock ✓" : "wake lock ✕"}
       </span>
     </>
   );
