@@ -426,8 +426,8 @@ export default function IsiPermintaanKapal() {
                 const semuaTerpilih = !!kunciSemua.length && kunciSemua.every((k) => pilih.has(k));
                 return (
                   <div key={namaKapal}>
-                    <div className="sticky top-0 z-10 flex items-center gap-2 border-y border-slate-200 bg-slate-100 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-800">
-                      <span className="flex-1 truncate text-[11px] font-bold uppercase tracking-[0.1em] text-slate-600 dark:text-slate-300">
+                    <div className="sticky top-0 z-10 flex items-center gap-2 border-y border-slate-200 bg-gradient-to-r from-[#16357f]/[0.10] via-[#14b8c4]/[0.07] to-transparent px-3 py-1.5 dark:border-slate-700 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800">
+                      <span className="flex-1 truncate text-[11px] font-bold uppercase tracking-[0.1em] text-[#16357f] dark:text-slate-200">
                         {namaKapal}
                       </span>
                       <span className="text-[10.5px] tabular-nums text-slate-500">{daftar.length} berkas · {barang} barang</span>
@@ -444,19 +444,26 @@ export default function IsiPermintaanKapal() {
                       const jumlah = e.bacaan?.baris.length || 0;
                       const terpilihDiBerkas = (e.bacaan?.baris || [])
                         .filter((_, i) => pilih.has(kunci(e.berkas.fileId, i))).length;
+                      const nada = nadaJenis(e.kiriman.jenis);
                       return (
                         <button key={e.berkas.fileId} onClick={() => setBerkasAktif(e.berkas.fileId)}
-                          className={`flex w-full items-start gap-2 border-b border-slate-100 px-3 py-2 text-left transition dark:border-slate-800 ${
-                            aktif ? "bg-[#16357f]/[0.07] dark:bg-sky-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+                          className={`relative flex w-full items-start gap-2 border-b border-slate-100 px-3 py-2 text-left transition dark:border-slate-800 ${
+                            aktif
+                              ? "bg-gradient-to-r from-[#16357f]/[0.10] to-transparent"
+                              : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+                          {aktif && <span className="absolute inset-y-0 left-0 w-[3px] bg-gradient-to-b from-[#7cc242] via-[#14b8c4] to-[#1ca3dd]" />}
                           <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
-                            st === "selesai" ? "bg-emerald-500" : st === "proses" ? "animate-pulse bg-sky-500"
+                            st === "selesai" ? nada.titik : st === "proses" ? "animate-pulse bg-sky-500"
                               : st === "gagal" ? "bg-rose-500" : "bg-slate-300"}`} />
                           <span className="min-w-0 flex-1">
                             <span className={`block truncate text-[12px] ${aktif ? "font-bold text-slate-900 dark:text-white" : "font-medium text-slate-700 dark:text-slate-200"}`}>
                               {namaPendek(e.berkas.nama)}
                             </span>
-                            <span className="block truncate text-[10.5px] text-slate-500">
-                              {singkatJenis(e.kiriman.jenis)} · {bulanIndo(e.kiriman.periode)} · {waktuSingkat(e.kiriman.dikirimPada)}
+                            <span className="mt-0.5 flex items-center gap-1.5 text-[10.5px] text-slate-500">
+                              <span className={`shrink-0 rounded border px-1 py-px text-[9.5px] font-bold tracking-wide ${nada.pil}`}>
+                                {nada.singkat}
+                              </span>
+                              <span className="truncate">{bulanIndo(e.kiriman.periode)} · {waktuSingkat(e.kiriman.dikirimPada)}</span>
                             </span>
                           </span>
                           <span className="shrink-0 text-right">
@@ -537,6 +544,41 @@ export default function IsiPermintaanKapal() {
 }
 
 /* ── isi satu berkas: keterangan, foto scan, dan tabel barangnya ────────── */
+/**
+ * Warna per jenis permintaan.
+ *
+ * Deck dan mesin diproses dua orang berbeda dan berujung ke dua SPPBJ yang
+ * berbeda pula; memberi keduanya warna sendiri membuat salah ambil berkas
+ * ketahuan sebelum barangnya terpilih.
+ */
+function nadaJenis(jenis: string) {
+  const j = (jenis || "").toLowerCase();
+  if (j.includes("mesin")) {
+    return {
+      // satu kata saja: di daftar berkas, "PERMINTAAN MESIN" memakan satu baris
+      // sendiri dan mengurangi jumlah berkas yang terlihat sekaligus
+      singkat: "MESIN", titik: "bg-[#F2784B]",
+      pil: "border-orange-300 bg-orange-50 text-orange-800 dark:border-orange-900 dark:bg-orange-950/40 dark:text-orange-300",
+    };
+  }
+  if (j.includes("deck")) {
+    return {
+      singkat: "DECK", titik: "bg-[#1A7B7E]",
+      pil: "border-teal-300 bg-teal-50 text-teal-800 dark:border-teal-900 dark:bg-teal-950/40 dark:text-teal-300",
+    };
+  }
+  if (j.includes("laporan")) {
+    return {
+      singkat: "LAPORAN", titik: "bg-[#8B6DB5]",
+      pil: "border-violet-300 bg-violet-50 text-violet-800 dark:border-violet-900 dark:bg-violet-950/40 dark:text-violet-300",
+    };
+  }
+  return {
+    singkat: "LAIN", titik: "bg-slate-400",
+    pil: "border-slate-300 bg-slate-50 text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300",
+  };
+}
+
 function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBaris, hapusBaris, tambahBaris, bacaUlang, bisaBaca, sibuk }: {
   e: Entri;
   pilih: Set<string>;
@@ -571,11 +613,73 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
    */
   const alamatSemat = `/api/lapor/isi?fileId=${encodeURIComponent(e.berkas.fileId)}`;
 
+  /*
+   * Berkasnya diambil lebih dulu, bukan langsung dipasang sebagai src.
+   *
+   * Route /api/lapor/isi menjawab JSON ketika gagal — Apps Script versi lama,
+   * berkas terhapus, jaringan putus. Kalau alamat itu dipasang langsung ke
+   * bingkai, JSON galat itulah yang tergambar sebagai teks mentah di tempat
+   * fotonya. Dengan mengambilnya sendiri, kegagalan bisa dijelaskan dengan
+   * kalimat dan diberi jalan keluar.
+   */
+  const [foto, setFoto] = useState<{ url: string; mime: string } | null>(null);
+  const [fotoGalat, setFotoGalat] = useState("");
+  const [fotoMuat, setFotoMuat] = useState(false);
+  /** dinaikkan untuk memaksa pengambilan ulang tanpa berpindah berkas */
+  const [ulang, setUlang] = useState(0);
+
+  useEffect(() => {
+    if (!lihatFoto) return;
+    let batal = false;
+    let objek = "";
+    setFoto(null); setFotoGalat(""); setFotoMuat(true);
+
+    /*
+     * Apps Script sesekali menjawab halaman HTML alih-alih JSON ketika sedang
+     * sibuk melayani unggahan ABK. Kegagalan seperti itu hilang sendiri pada
+     * percobaan berikutnya, jadi sekali diulang dulu sebelum menyerah —
+     * memunculkan pesan galat untuk gangguan sesaat hanya membuat orang
+     * mengira berkasnya rusak.
+     */
+    const ambilBerkas = async (percobaan = 0): Promise<void> => {
+      try {
+        const r = await fetch(alamatSemat, { cache: "no-store" });
+        const jenisIsi = r.headers.get("content-type") || "";
+        if (!r.ok || jenisIsi.includes("application/json")) {
+          const d = await r.json().catch(() => ({}));
+          throw new Error(d?.error || `Berkas tidak bisa diambil (kode ${r.status}).`);
+        }
+        const blob = await r.blob();
+        if (batal) return;
+        objek = URL.createObjectURL(blob);
+        setFoto({ url: objek, mime: blob.type || jenisIsi });
+      } catch (err: any) {
+        if (batal) return;
+        if (percobaan < 1) {
+          await new Promise((s) => setTimeout(s, 1500));
+          if (!batal) return ambilBerkas(percobaan + 1);
+          return;
+        }
+        setFotoGalat(err?.message || "Berkas gagal diambil.");
+      }
+    };
+
+    ambilBerkas().finally(() => { if (!batal) setFotoMuat(false); });
+
+    return () => {
+      batal = true;
+      if (objek) URL.revokeObjectURL(objek);
+    };
+  }, [alamatSemat, lihatFoto, ulang]);
+
   return (
     <div className="flex h-full flex-col">
       {/* kepala berkas */}
       <div className="flex flex-wrap items-center gap-2.5 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
         <span className={`shrink-0 rounded border px-2 py-0.5 text-[11px] font-semibold ${lencana.k}`}>{lencana.t}</span>
+        <span className={`shrink-0 rounded border px-2 py-0.5 text-[11px] font-bold uppercase tracking-wide ${nadaJenis(e.kiriman.jenis).pil}`}>
+          {singkatJenis(e.kiriman.jenis)}
+        </span>
         <div className="min-w-[14rem] flex-1">
           <p className="truncate text-[13px] font-bold text-slate-900 dark:text-white">{e.kiriman.kapal}</p>
           <p className="truncate text-[11px] text-slate-500">
@@ -618,7 +722,7 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
             </p>
           ) : (
             <table className="w-full min-w-[34rem] text-[12.5px]">
-              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80">
+              <thead className="sticky top-0 z-10 bg-gradient-to-r from-[#16357f]/[0.07] to-[#14b8c4]/[0.05] dark:bg-slate-800/80">
                 <tr className="border-b border-slate-200 text-[10.5px] uppercase tracking-[0.08em] text-slate-500 dark:border-slate-700">
                   <th className="w-9 px-2 py-2">
                     <input type="checkbox" className="accent-[#16357f]"
@@ -673,8 +777,35 @@ function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBa
           <div className="border-t border-slate-200 p-3 dark:border-slate-700 xl:border-l xl:border-t-0">
             <p className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.1em] text-slate-500">Foto / scan asli</p>
             <div className="overflow-hidden rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
-              <iframe src={alamatSemat} title={`Scan ${namaPendek(e.berkas.nama)}`}
-                className="h-[26rem] w-full xl:h-[calc(100vh-24rem)]" />
+              {fotoMuat ? (
+                <div className="grid h-[26rem] place-items-center text-[12px] text-slate-500 xl:h-[calc(100vh-24rem)]">
+                  Mengambil berkas dari Drive…
+                </div>
+              ) : fotoGalat ? (
+                <div className="flex h-[26rem] flex-col justify-center gap-3 px-4 text-center xl:h-[calc(100vh-24rem)]">
+                  <p className="text-[12.5px] font-bold text-rose-700 dark:text-rose-400">Berkas tidak bisa ditampilkan</p>
+                  <p className="text-[11.5px] leading-relaxed text-slate-600 dark:text-slate-300">{fotoGalat}</p>
+                  <span className="mx-auto flex flex-wrap items-center justify-center gap-2">
+                    <button onClick={() => setUlang((n) => n + 1)}
+                      className="inline-flex items-center gap-1.5 rounded-md bg-[#16357f] px-3 py-1.5 text-[11.5px] font-semibold text-white transition hover:bg-[#12296a]">
+                      <Ikon nama="segarkan" className="h-3.5 w-3.5" /> Coba lagi
+                    </button>
+                    <a href={e.berkas.url} target="_blank" rel="noreferrer"
+                      className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-3 py-1.5 text-[11.5px] font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
+                      Buka di Drive <Ikon nama="keluarTaut" className="h-3 w-3" />
+                    </a>
+                  </span>
+                  <p className="text-[11px] text-slate-500">
+                    Hasil bacaan di sebelah tetap bisa dikoreksi walau fotonya gagal tampil.
+                  </p>
+                </div>
+              ) : foto?.mime.startsWith("image/") ? (
+                <img src={foto.url} alt={`Scan ${namaPendek(e.berkas.nama)}`}
+                  className="max-h-[26rem] w-full object-contain xl:max-h-[calc(100vh-24rem)]" />
+              ) : foto ? (
+                <iframe src={foto.url} title={`Scan ${namaPendek(e.berkas.nama)}`}
+                  className="h-[26rem] w-full xl:h-[calc(100vh-24rem)]" />
+              ) : null}
             </div>
             <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
               Bandingkan langsung dengan tabel di sebelah. Kolom yang keliru bisa diperbaiki di tempat —
