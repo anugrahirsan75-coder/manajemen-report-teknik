@@ -224,8 +224,8 @@ export default function LayarSertifikat() {
   const tanggalTeks = jam ? jam.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
 
   return (
-    <div className="h-screen overflow-hidden bg-[#0a1020] text-white">
-      <div className="mx-auto flex h-full max-w-[130rem] flex-col gap-4 p-5">
+    <div className="min-h-screen bg-[#0a1020] text-white xl:h-screen xl:overflow-hidden">
+      <div className="mx-auto flex min-h-screen max-w-[130rem] flex-col gap-4 p-5 xl:h-full xl:min-h-0">
         {/* ── kepala ───────────────────────────────────────────────────── */}
         <header className="flex flex-wrap items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3">
           <div className="min-w-[22rem] flex-1">
@@ -372,7 +372,7 @@ export default function LayarSertifikat() {
               {perKapal.map((k) => {
                 const jumlah = k.lewat + k.kritis + k.waspada + k.aman;
                 return (
-                  <div key={k.kapal} className="flex min-h-0 flex-1 items-center gap-2.5 px-5">
+                  <div key={k.kapal} className="flex min-h-[2.1rem] flex-1 items-center gap-2.5 overflow-hidden px-5">
                     <span className="flex-1 truncate text-[16px] font-bold tracking-tight">
                       {k.kapal.replace(/^KMP\.?\s*/i, "")}
                     </span>
