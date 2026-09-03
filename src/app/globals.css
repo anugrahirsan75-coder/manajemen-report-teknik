@@ -17,8 +17,21 @@
 html { scroll-behavior: smooth; }
 
 body {
-  /* halaman kerja: latar rata, tanpa foto yang menembus di belakang data */
-  background: #f4f5f7;
+  /*
+   * Latar halaman kerja: gradasi merek yang sangat tipis, bukan foto.
+   *
+   * Foto pelabuhan di belakang tabel memaksa tiap panel jadi tembus pandang
+   * dan mata menyaring dua lapis sebelum sampai ke angkanya. Tetapi latar
+   * rata sepenuhnya membuat aplikasi terasa bukan milik siapa-siapa. Yang
+   * dipakai di tengah: sapuan hijau-teal-biru ASDP pada dua sudut, cukup
+   * terasa sebagai warna rumah, terlalu tipis untuk mengganggu bacaan.
+   */
+  background:
+    radial-gradient(1100px 620px at 100% -10%, rgba(28, 163, 221, 0.10), transparent 58%),
+    radial-gradient(900px 560px at -8% 0%, rgba(124, 194, 66, 0.09), transparent 58%),
+    radial-gradient(700px 500px at 50% 108%, rgba(20, 184, 196, 0.07), transparent 60%),
+    #f3f5f8;
+  background-attachment: fixed;
   color: #0f172a;
   font-family: var(--font-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -112,7 +125,11 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 
 /* ====== DARK MODE (chrome app saja; preview dokumen .print-page tetap putih) ====== */
 .dark body {
-  background: #0b1220;
+  background:
+    radial-gradient(1100px 620px at 100% -10%, rgba(28, 163, 221, 0.14), transparent 58%),
+    radial-gradient(900px 560px at -8% 0%, rgba(124, 194, 66, 0.10), transparent 58%),
+    #0b1220;
+  background-attachment: fixed;
   color: #e5e7eb;
 }
 .dark .glass { background: rgba(17, 24, 39, 0.8); }
@@ -260,3 +277,8 @@ body:has(.laman-sambutan) {
    membuat teks kehilangan kontras tanpa memperlihatkan apa pun. */
 .glass { background: rgba(255, 255, 255, 0.96); }
 .dark .glass { background: rgba(17, 24, 39, 0.96); }
+
+
+/* Halaman yang memasang latar sendiri (mis. Sertifikat, Isi Permintaan)
+   dibiarkan menembus ke gradasi <body>; latar putih kepingannya tetap. */
+.latar-kerja { background: transparent; }

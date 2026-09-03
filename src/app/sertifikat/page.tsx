@@ -357,11 +357,11 @@ export default function MonitorSertifikat() {
 
   return (
     /*
-     * Latar halaman dibuat pekat, menutup foto pelabuhan yang dipasang di
-     * <body>. Foto itu bekerja untuk halaman sambutan; di belakang papan berisi
-     * ratusan angka tenggat, ia hanya membuat mata bekerja dua kali.
+     * Latar diserahkan ke <body> (gradasi merek yang sangat tipis). Yang
+     * penting bagi layar ini bukan warnanya, melainkan bahwa panel-panelnya
+     * PEKAT: angka tenggat tidak boleh dibaca lewat lapisan tembus pandang.
      */
-    <div className="min-h-screen bg-[#f4f5f7] dark:bg-slate-950">
+    <div className="min-h-screen">
       <main className="mx-auto max-w-[92rem] px-4 py-5">
       {/* ── kepala ──────────────────────────────────────────────────────── */}
       <header className="mb-4 rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">

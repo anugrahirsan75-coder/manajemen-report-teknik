@@ -352,10 +352,10 @@ export default function IsiPermintaanKapal() {
 
   return (
     /*
-     * Latar rata: halaman ini penuh angka dan nama barang, dan foto pelabuhan
-     * yang menembus di belakang kartu membuat mata bekerja dua kali.
+     * Latar diserahkan ke <body>; yang dijaga di sini panelnya tetap pekat,
+     * karena halaman ini penuh angka dan nama barang.
      */
-    <div className="min-h-screen bg-[#f4f5f7] dark:bg-slate-950">
+    <div className="min-h-screen">
       <main className="mx-auto max-w-[104rem] px-4 py-5">
         {/* ── kepala ────────────────────────────────────────────────────── */}
         <header className="mb-4 rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
