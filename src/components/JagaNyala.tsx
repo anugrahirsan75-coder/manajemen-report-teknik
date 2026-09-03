@@ -21,10 +21,12 @@
  * (Auto Power Off 4 jam, Sleep Timer, Energy Saving). Itu setelan di
  * televisinya dan harus dimatikan lewat remote.
  */
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export function JagaNyala() {
   const video = useRef<HTMLVideoElement | null>(null);
+  /** dilaporkan di pojok layar supaya bisa diperiksa dari depan televisi */
+  const [keadaan, setKeadaan] = useState({ video: false, kunci: false });
 
   useEffect(() => {
     let kunci: { release?: () => Promise<void> } | null = null;
@@ -37,7 +39,8 @@ export function JagaNyala() {
         };
         if (!nav.wakeLock?.request) return;
         const baru = await nav.wakeLock.request("screen");
-        if (hidup) kunci = baru; else void baru.release?.();
+        if (hidup) { kunci = baru; setKeadaan((k) => ({ ...k, kunci: true })); }
+        else void baru.release?.();
       } catch {
         // televisi lama tidak mengenal Wake Lock — video di bawah yang bekerja
       }
@@ -46,10 +49,15 @@ export function JagaNyala() {
     void minta();
     const kembali = () => { if (document.visibilityState === "visible") void minta(); };
     document.addEventListener("visibilitychange", kembali);
+    // sebagian peramban hanya memberi kunci sesudah ada tekanan tombol
+    window.addEventListener("keydown", kembali);
+    window.addEventListener("click", kembali);
 
     return () => {
       hidup = false;
       document.removeEventListener("visibilitychange", kembali);
+      window.removeEventListener("keydown", kembali);
+      window.removeEventListener("click", kembali);
       void kunci?.release?.().catch(() => {});
     };
   }, []);
@@ -64,16 +72,58 @@ export function JagaNyala() {
     if (!v) return;
     const jalan = () => { void v.play().catch(() => {}); };
     jalan();
-    const t = setInterval(() => { if (v.paused || v.ended) jalan(); }, 30_000);
+    /*
+     * Diperiksa tiap lima detik, bukan setengah menit. Televisi menghitung diam
+     * dalam hitungan menit; pemutaran yang berhenti setengah menit sudah cukup
+     * membuatnya menyimpulkan tidak ada yang menonton.
+     */
+    const t = setInterval(() => {
+      if (v.paused || v.ended) jalan();
+      setKeadaan((k) => (k.video === !v.paused ? k : { ...k, video: !v.paused }));
+    }, 5_000);
     document.addEventListener("visibilitychange", jalan);
-    return () => { clearInterval(t); document.removeEventListener("visibilitychange", jalan); };
+    /*
+     * Sebagian peramban televisi menolak memutar apa pun sebelum ada sentuhan
+     * tombol pertama. Karena itu tiap tekanan remote — tombol apa saja, termasuk
+     * yang dipakai membangunkan layar — dipakai sekalian untuk menjalankannya.
+     */
+    window.addEventListener("keydown", jalan);
+    window.addEventListener("click", jalan);
+    return () => {
+      clearInterval(t);
+      document.removeEventListener("visibilitychange", jalan);
+      window.removeEventListener("keydown", jalan);
+      window.removeEventListener("click", jalan);
+    };
   }, []);
 
   return (
-    <video ref={video} muted loop playsInline autoPlay preload="auto" aria-hidden tabIndex={-1}
-      className="pointer-events-none fixed bottom-0 right-0 h-px w-px opacity-[0.02]">
-      <source src="/layar-nyala.webm" type="video/webm" />
-      <source src="/layar-nyala.mp4" type="video/mp4" />
-    </video>
+    <>
+      {/*
+        Videonya SELEBAR LAYAR, bukan satu piksel di sudut.
+        Piksel tunggal cukup untuk telepon genggam, tetapi televisi memutuskan
+        "sedang ditonton atau tidak" dari gambar yang benar-benar memenuhi
+        layar. Isinya hitam pekat di atas latar yang juga hitam, jadi tidak ada
+        yang terlihat berubah; ia duduk di belakang seluruh isi halaman.
+
+        MP4 didahulukan: peramban webOS lebih sering menolak VP8/WebM, dan
+        sumber pertama yang gagal diputar tidak selalu dilanjutkan ke berikutnya.
+      */}
+      <video ref={video} muted loop playsInline autoPlay preload="auto" aria-hidden tabIndex={-1}
+        className="pointer-events-none fixed inset-0 -z-10 h-full w-full object-cover opacity-[0.03]">
+        <source src="/layar-nyala.mp4" type="video/mp4" />
+        <source src="/layar-nyala.webm" type="video/webm" />
+      </video>
+
+      {/*
+        Penanda kecil di pojok. Papan ini dipasang di ruangan lain, jadi satu-
+        satunya cara mengetahui penjaganya bekerja adalah membacanya dari depan
+        televisi — tanpa ini, layar yang mati tidak bisa dibedakan antara
+        "penjaganya gagal" dan "setelan televisinya yang mematikan".
+      */}
+      <span className="pointer-events-none fixed bottom-1 left-2 z-50 select-none text-[10px] tabular-nums text-white/25">
+        jaga layar: {keadaan.video ? "video ✓" : "video ✕"} · {keadaan.kunci ? "wake lock ✓" : "wake lock ✕"}
+      </span>
+    </>
   );
 }
