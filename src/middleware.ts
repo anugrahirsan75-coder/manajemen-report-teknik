@@ -70,6 +70,10 @@ export const config = {
   //    percobaan tidak mengganggu jalur yang sedang dipakai. Route "cari"
   //    menjawab TANPA HARGA: halamannya terbuka, dan harga pengadaan tidak ada
   //    urusannya dengan borang permintaan kapal.
+  //  · /layar-sertifikat + api/publik/sertifikat — papan monitor untuk layar
+  //    di ruang kantor. Layar itu tidak bisa login, jadi halamannya harus
+  //    terbuka; sebagai gantinya route-nya melayani GET saja dan isinya sudah
+  //    dipangkas di server: tanpa tautan Drive dan tanpa nama berkas arsip.
   //  · /kinerja-anggaran + api/publik/anggaran — tautan LIHAT SAJA untuk Direksi.
   //    Route-nya hanya melayani GET dan isinya sudah dipangkas di server (tanpa
   //    vendor, nomor kontrak, foto, catatan), jadi tak ada yang bisa diubah
@@ -88,5 +92,5 @@ export const config = {
    * AKAR ([^/]+): kalau ditulis .* maka /api/db/apa-saja.png akan ikut lolos,
    * dan gerbangnya bisa dilewati hanya dengan menambahkan akhiran nama.
    */
-  matcher: ["/((?!login|monitoring|lapor(?:$|/)|uji-permintaan(?:$|/)|kinerja-anggaran(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|api/uji-permintaan/(?:cari|kirim)(?:$|/)|_next/static|_next/image|favicon.ico|[^/]+\.(?:png|jpe?g|svg|webp|gif|ico|mjs|css|woff2?)$).*)"],
+  matcher: ["/((?!login|monitoring|lapor(?:$|/)|uji-permintaan(?:$|/)|kinerja-anggaran(?:$|/)|layar-sertifikat(?:$|/)|api/auth|api/monitoring|api/publik/|api/lapor/(?:kirim|berkas|gagal)(?:$|/)|api/uji-permintaan/(?:cari|kirim)(?:$|/)|_next/static|_next/image|favicon.ico|[^/]+\.(?:png|jpe?g|svg|webp|gif|ico|mjs|css|woff2?)$).*)"],
 };

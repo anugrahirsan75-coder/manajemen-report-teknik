@@ -389,6 +389,11 @@ export default function MonitorSertifikat() {
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
               <Ikon nama="lembar" className="h-3.5 w-3.5" /> Borang Direksi (.xlsx)
             </a>
+            {/* tautan yang ditempel di layar ruang kantor — terbuka, tanpa login */}
+            <a href="/layar-sertifikat" target="_blank" rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+              <Ikon nama="keluarTaut" className="h-3.5 w-3.5" /> Layar kantor
+            </a>
             <a href={URL_LEMBAR} target="_blank" rel="noopener noreferrer"
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
               <Ikon nama="lembar" className="h-3.5 w-3.5" /> Lembar sumber
