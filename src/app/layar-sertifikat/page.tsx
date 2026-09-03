@@ -119,9 +119,19 @@ export default function LayarSertifikat() {
   const [muatBaris, setMuatBaris] = useState(10);
   /** putaran otomatis; mati sementara begitu halaman digeser dengan tangan */
   const [otomatis, setOtomatis] = useState(true);
+  /**
+   * Layar pendek (laptop 768, jendela yang tidak penuh) memakai tata letak
+   * rapat. Ukuran huruf papan dinding dibuat untuk dibaca dari lima meter; di
+   * layar 768 piksel ukuran itu menyisakan dua baris daftar dan memotong
+   * panel kapal — papan yang benar untuk televisi menjadi papan yang rusak di
+   * meja. Angkanya tinggi jendela, bukan lebarnya, karena yang habis memang
+   * ruang tegak.
+   */
+  const [rapat, setRapat] = useState(false);
   const wadahDaftar = useRef<HTMLDivElement | null>(null);
   const badanTabel = useRef<HTMLTableSectionElement | null>(null);
-  const tinggiBaris = useRef(TINGGI_BARIS_AWAL);
+  /** langit-langit jumlah baris yang sudah terbukti kebanyakan */
+  const batasBaris = useRef(Infinity);
 
   const ambil = useCallback(async () => {
     try {
@@ -142,6 +152,13 @@ export default function LayarSertifikat() {
     const t = setInterval(() => { void ambil(); }, SELANG_MUAT);
     return () => clearInterval(t);
   }, [ambil]);
+  useEffect(() => {
+    const cekTinggi = () => setRapat(window.innerHeight < 900);
+    cekTinggi();
+    window.addEventListener("resize", cekTinggi);
+    return () => window.removeEventListener("resize", cekTinggi);
+  }, []);
+
   useEffect(() => {
     setJam(new Date());
     const t = setInterval(() => setJam(new Date()), 1000);
@@ -176,15 +193,73 @@ export default function LayarSertifikat() {
   const total = berjatuhTempo.length;
   const persenAman = total ? Math.round((hitung.aman / total) * 100) : 0;
 
+  /** ringkasan per kapal — kapal paling bermasalah di atas */
+  const perKapal = useMemo(() => {
+    const peta = new Map<string, { lewat: number; kritis: number; waspada: number; aman: number; dekat: number | null }>();
+    (kapalAda.length ? kapalAda : Array.from(new Set(berjatuhTempo.map((s) => s.kapal)))).forEach((k) =>
+      peta.set(k, { lewat: 0, kritis: 0, waspada: 0, aman: 0, dekat: null }));
+    berjatuhTempo.forEach((s) => {
+      const p = peta.get(s.kapal) || { lewat: 0, kritis: 0, waspada: 0, aman: 0, dekat: null };
+      p[tingkatDari(s.sisa)]++;
+      if (s.sisa >= 0 && (p.dekat === null || s.sisa < p.dekat)) p.dekat = s.sisa;
+      peta.set(s.kapal, p);
+    });
+    return Array.from(peta.entries())
+      .map(([kapal, p]) => ({ kapal, ...p, skor: p.lewat * 1000 + p.kritis * 10 + p.waspada }))
+      .sort((a, b) => b.skor - a.skor || a.kapal.localeCompare(b.kapal, "id"));
+  }, [berjatuhTempo, kapalAda]);
+
+  /** urutan kapal di layar: yang paling bermasalah lebih dulu */
+  const urutanKapal = useMemo(() => perKapal.map((k) => k.kapal), [perKapal]);
+
   /** yang tampil di daftar berjalan: semua yang belum aman, paling mendesak dulu */
   const antre = useMemo(() => berjatuhTempo.filter((s) => s.sisa <= 90), [berjatuhTempo]);
-  const jumlahHalaman = Math.max(1, Math.ceil(antre.length / muatBaris));
+  /*
+   * Halaman disusun PER KAPAL, bukan satu antrean panjang lintas armada.
+   *
+   * Urutan "paling mendesak dulu" tanpa pengelompokan memang benar secara
+   * angka, tetapi di layar ia terbaca acak: satu baris Tuna, satu Baronang,
+   * satu Ngafi, lalu Tuna lagi. Orang yang membaca papan ini selalu berpikir
+   * per kapal — "yang mana lagi punya Tuna" — dan menyusun ulang potongan itu
+   * di kepala setiap sepuluh detik adalah pekerjaan yang tidak perlu ada.
+   *
+   * Jadi satu halaman = satu kapal (kapal dengan dokumen lebih banyak daripada
+   * satu layar memakai halaman lanjutan), kapal paling bermasalah lebih dulu,
+   * dan di dalamnya tetap diurut dari yang paling cepat mati.
+   */
+  const halamanKapal = useMemo(() => {
+    const hal: { kapal: string; baris: typeof antre; ke: number; dari: number }[] = [];
+    urutanKapal.forEach((k) => {
+      const punya = antre.filter((s) => s.kapal === k);
+      if (!punya.length) return;
+      const potong = Math.max(1, Math.ceil(punya.length / muatBaris));
+      for (let i = 0; i < potong; i++) {
+        hal.push({ kapal: k, baris: punya.slice(i * muatBaris, (i + 1) * muatBaris), ke: i + 1, dari: potong });
+      }
+    });
+    return hal;
+  }, [antre, muatBaris, urutanKapal]);
 
-  /* daftar mengisi ruang yang tersisa, berapa pun tinggi layarnya */
+  const jumlahHalaman = Math.max(1, halamanKapal.length);
+
+  /*
+   * Berapa baris yang muat DIPUTUSKAN DARI HASIL, bukan dari hitungan.
+   *
+   * Menghitungnya dari tinggi baris selalu meleset: nama dokumen panjang patah
+   * dua baris di layar yang tidak selebar televisi, tinggi baris berbeda tiap
+   * halaman, dan tebakan yang meleset satu baris membuat baris terakhir
+   * terpotong separuh — persis cacat yang paling kelihatan di papan dinding.
+   *
+   * Jadi layar ini melihat sendiri: kalau isinya melimpah keluar wadah, satu
+   * baris dikurangi; kalau masih tersisa ruang selebar satu baris penuh, satu
+   * baris ditambah. Batas atas diingat supaya ia tidak menambah lalu mengurangi
+   * baris yang sama terus-menerus, dan dilupakan begitu ukuran jendela berubah.
+   */
   const ukur = useCallback(() => {
     const el = wadahDaftar.current;
     if (!el) return;
-    setMuatBaris(Math.max(4, Math.floor((el.clientHeight - TINGGI_KEPALA_TABEL) / tinggiBaris.current)));
+    batasBaris.current = Infinity;
+    setMuatBaris(Math.max(3, Math.floor((el.clientHeight - TINGGI_KEPALA_TABEL) / TINGGI_BARIS_AWAL)));
   }, []);
 
   useEffect(() => {
@@ -196,19 +271,25 @@ export default function LayarSertifikat() {
     return () => pengamat.disconnect();
   }, [ukur]);
 
-  /*
-   * Tinggi satu baris tidak ditebak dua kali. Angka awal hanya dipakai untuk
-   * render pertama; sesudah barisnya benar-benar ada di layar, tingginya dibaca
-   * dari DOM — sehingga ukuran huruf peramban, penyekalaan televisi, atau nama
-   * dokumen yang memakan dua baris tidak lagi membuat baris terakhir terpotong.
-   */
   useEffect(() => {
-    const baris = badanTabel.current?.rows?.[0];
-    if (!baris) return;
-    const tinggi = baris.getBoundingClientRect().height;
-    if (tinggi > 20 && Math.abs(tinggi - tinggiBaris.current) > 2) {
-      tinggiBaris.current = tinggi;
-      ukur();
+    const el = wadahDaftar.current;
+    const rows = badanTabel.current?.rows;
+    if (!el || !rows?.length) return;
+
+    let tertinggi = 0;
+    for (let i = 0; i < rows.length; i++) {
+      tertinggi = Math.max(tertinggi, rows[i].getBoundingClientRect().height);
+    }
+
+    if (el.scrollHeight > el.clientHeight + 2) {
+      setMuatBaris((n) => {
+        batasBaris.current = Math.max(3, n - 1);
+        return batasBaris.current;
+      });
+      return;
+    }
+    if (muatBaris < batasBaris.current && el.clientHeight - el.scrollHeight > tertinggi + 4) {
+      setMuatBaris((n) => n + 1);
     }
   });
 
@@ -245,23 +326,9 @@ export default function LayarSertifikat() {
   /* jendela mengecil di tengah putaran bisa meninggalkan nomor halaman di luar jangkauan */
   useEffect(() => { if (halaman >= jumlahHalaman) setHalaman(0); }, [halaman, jumlahHalaman]);
 
-  const tampil = antre.slice(halaman * muatBaris, halaman * muatBaris + muatBaris);
+  const halamanIni = halamanKapal[halaman];
+  const tampil = halamanIni?.baris || [];
 
-  /** ringkasan per kapal — kapal paling bermasalah di atas */
-  const perKapal = useMemo(() => {
-    const peta = new Map<string, { lewat: number; kritis: number; waspada: number; aman: number; dekat: number | null }>();
-    (kapalAda.length ? kapalAda : Array.from(new Set(berjatuhTempo.map((s) => s.kapal)))).forEach((k) =>
-      peta.set(k, { lewat: 0, kritis: 0, waspada: 0, aman: 0, dekat: null }));
-    berjatuhTempo.forEach((s) => {
-      const p = peta.get(s.kapal) || { lewat: 0, kritis: 0, waspada: 0, aman: 0, dekat: null };
-      p[tingkatDari(s.sisa)]++;
-      if (s.sisa >= 0 && (p.dekat === null || s.sisa < p.dekat)) p.dekat = s.sisa;
-      peta.set(s.kapal, p);
-    });
-    return Array.from(peta.entries())
-      .map(([kapal, p]) => ({ kapal, ...p, skor: p.lewat * 1000 + p.kritis * 10 + p.waspada }))
-      .sort((a, b) => b.skor - a.skor || a.kapal.localeCompare(b.kapal, "id"));
-  }, [berjatuhTempo, kapalAda]);
 
   const jamTeks = jam ? jam.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "--.--.--";
   const tanggalTeks = jam ? jam.toLocaleDateString("id-ID", { weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "";
@@ -270,20 +337,22 @@ export default function LayarSertifikat() {
     <div className="min-h-screen bg-[#0a1020] text-white xl:h-screen xl:overflow-hidden">
       <div className="mx-auto flex min-h-screen max-w-[130rem] flex-col gap-4 p-5 xl:h-full xl:min-h-0">
         {/* ── kepala ───────────────────────────────────────────────────── */}
-        <header className="flex flex-wrap items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-3">
+        <header className={`flex flex-wrap items-center gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-6 ${rapat ? "py-2" : "py-3"}`}>
           <div className="min-w-[22rem] flex-1">
             <p className="text-[13px] font-bold uppercase tracking-[0.22em] text-sky-200">
               PT ASDP Indonesia Ferry (Persero) · Cabang Ternate
             </p>
-            <h1 className="mt-1 text-4xl font-black leading-none tracking-tight">Monitor Sertifikat Armada</h1>
-            <p className="mt-1.5 text-[15px] text-white/85">
-              {kapalAda.length || 13} kapal · {total} dokumen bermasa berlaku · dihitung ulang terhadap hari ini
-            </p>
+            <h1 className={`mt-1 font-black leading-none tracking-tight ${rapat ? "text-2xl" : "text-4xl"}`}>Monitor Sertifikat Armada</h1>
+            {!rapat && (
+              <p className="mt-1.5 text-[15px] text-white/85">
+                {kapalAda.length || 13} kapal · {total} dokumen bermasa berlaku · dihitung ulang terhadap hari ini
+              </p>
+            )}
           </div>
 
           <div className="text-right">
-            <p className="text-4xl font-black tabular-nums tracking-tight">{jamTeks}</p>
-            <p className="mt-1 text-[15px] capitalize text-white/85">{tanggalTeks}</p>
+            <p className={`font-black tabular-nums tracking-tight ${rapat ? "text-2xl" : "text-4xl"}`}>{jamTeks}</p>
+            <p className={`mt-1 capitalize text-white/85 ${rapat ? "text-[13px]" : "text-[15px]"}`}>{tanggalTeks}</p>
             <p className="mt-1 flex items-center justify-end gap-2 text-[13px] text-white/75">
               <span className={`h-2 w-2 rounded-full ${galat ? "bg-rose-500" : "animate-pulse bg-emerald-400"}`} />
               {galat
@@ -303,28 +372,28 @@ export default function LayarSertifikat() {
             ["waspada", hitung.waspada, "Habis ≤ 90 hari", "masuk antrean"],
             ["aman", hitung.aman, "Masih aman", "di atas 90 hari"],
           ] as [Tingkat, number, string, string][]).map(([t, n, judul, ket]) => (
-            <div key={t} className={`relative overflow-hidden rounded-2xl border border-white/10 ${NADA[t].latar} px-6 py-4`}>
+            <div key={t} className={`relative overflow-hidden rounded-2xl border border-white/10 ${NADA[t].latar} px-6 ${rapat ? "py-2" : "py-4"}`}>
               <span className={`absolute inset-y-0 left-0 w-1.5 ${NADA[t].pita}`} />
               <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-white/85">{judul}</p>
-              <p className={`mt-1 text-5xl font-black leading-none tabular-nums ${NADA[t].teks}`}>{n}</p>
-              <p className="mt-1.5 text-[14px] text-white/75">{ket}</p>
+              <p className={`mt-1 font-black leading-none tabular-nums ${rapat ? "text-3xl" : "text-5xl"} ${NADA[t].teks}`}>{n}</p>
+              {!rapat && <p className="mt-1.5 text-[14px] text-white/75">{ket}</p>}
             </div>
           ))}
 
-          <div className="rounded-2xl border border-white/10 bg-white/[0.04] px-6 py-4">
+          <div className={`rounded-2xl border border-white/10 bg-white/[0.04] px-6 ${rapat ? "py-2" : "py-4"}`}>
             <p className="text-[13px] font-bold uppercase tracking-[0.16em] text-white/85">Kesehatan armada</p>
             <p className="mt-1 flex items-baseline gap-2">
-              <span className="text-5xl font-black leading-none tabular-nums">{persenAman}</span>
+              <span className={`font-black leading-none tabular-nums ${rapat ? "text-3xl" : "text-5xl"}`}>{persenAman}</span>
               <span className="text-2xl font-bold text-white/80">%</span>
             </p>
-            <div className="mt-3 flex h-2.5 overflow-hidden rounded-full bg-white/10">
+            <div className={`flex h-2.5 overflow-hidden rounded-full bg-white/10 ${rapat ? "mt-1.5" : "mt-3"}`}>
               {(["lewat", "kritis", "waspada", "aman"] as Tingkat[]).map((t) => (
                 hitung[t] > 0 && (
                   <span key={t} className={NADA[t].pita} style={{ width: `${(hitung[t] / Math.max(1, total)) * 100}%` }} />
                 )
               ))}
             </div>
-            <p className="mt-2 text-[14px] text-white/75">
+            <p className={`mt-2 text-white/75 ${rapat ? "text-[12px]" : "text-[14px]"}`}>
               {perluTindakan > 0
                 ? <><b className="text-rose-200">{perluTindakan} dokumen</b> perlu tindakan sekarang</>
                 : "Tidak ada yang mendesak"}
@@ -336,11 +405,23 @@ export default function LayarSertifikat() {
         <section className="grid min-h-0 flex-1 gap-4 xl:grid-cols-[minmax(0,1fr)_26rem]">
           {/* daftar yang akan mati */}
           <div className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-            <div className="flex flex-wrap items-center gap-3 border-b border-white/10 px-6 py-3.5">
-              <h2 className="flex-1 text-xl font-black tracking-tight">
-                Sertifikat yang akan mati
-                <span className="ml-3 text-[15px] font-semibold text-white/75">
-                  {antre.length} dokumen habis dalam 90 hari ke depan atau sudah lewat
+            <div className={`flex flex-wrap items-center gap-3 border-b border-white/10 px-6 ${rapat ? "py-2" : "py-3.5"}`}>
+              <h2 className="flex-1">
+                <span className="text-[13px] font-bold uppercase tracking-[0.16em] text-sky-200">
+                  Sertifikat yang akan mati · {antre.length} dokumen ≤ 90 hari atau sudah lewat
+                </span>
+                <span className={`mt-0.5 block font-black leading-none tracking-tight ${rapat ? "text-lg" : "text-2xl"}`}>
+                  {halamanIni ? halamanIni.kapal : "—"}
+                  {halamanIni && halamanIni.dari > 1 && (
+                    <span className="ml-2 text-[15px] font-bold text-white/75">
+                      bagian {halamanIni.ke} dari {halamanIni.dari}
+                    </span>
+                  )}
+                  {halamanIni && (
+                    <span className="ml-3 text-[15px] font-semibold text-white/75">
+                      {antre.filter((s) => s.kapal === halamanIni.kapal).length} dokumen jatuh tempo
+                    </span>
+                  )}
                 </span>
               </h2>
               {jumlahHalaman > 1 && (
@@ -370,8 +451,9 @@ export default function LayarSertifikat() {
 
             {jumlahHalaman > 1 && (
               <span className="flex flex-wrap gap-1 border-b border-white/10 px-6 py-2">
-                {Array.from({ length: jumlahHalaman }).map((_, i) => (
-                  <button key={i} type="button" onClick={() => keHalaman(i)} title={`Halaman ${i + 1}`}
+                {halamanKapal.map((h, i) => (
+                  <button key={`${h.kapal}-${h.ke}`} type="button" onClick={() => keHalaman(i)}
+                    title={`${h.kapal}${h.dari > 1 ? ` — bagian ${h.ke}` : ""}`}
                     className={`h-2 w-6 rounded-full transition ${i === halaman ? "bg-sky-400" : "bg-white/25 hover:bg-white/50"}`} />
                 ))}
               </span>
@@ -385,11 +467,11 @@ export default function LayarSertifikat() {
               ) : (
                 <table className="w-full text-left">
                   <thead>
-                    <tr className="text-[12px] font-bold uppercase tracking-[0.14em] text-white/70">
-                      <th className="w-52 px-6 py-2.5">Kapal</th>
-                      <th className="px-3 py-2.5">Dokumen</th>
-                      <th className="w-40 px-3 py-2.5">Berlaku s.d.</th>
-                      <th className="w-52 px-3 py-2.5 text-right">Sisa waktu</th>
+                    <tr className={`font-bold uppercase tracking-[0.14em] text-white/70 ${rapat ? "text-[11px]" : "text-[12px]"}`}>
+                      <th className={`w-44 px-6 ${rapat ? "py-1.5" : "py-2.5"}`}>Keadaan</th>
+                      <th className={`px-3 ${rapat ? "py-1.5" : "py-2.5"}`}>Dokumen</th>
+                      <th className={`w-40 px-3 ${rapat ? "py-1.5" : "py-2.5"}`}>Berlaku s.d.</th>
+                      <th className={`w-52 px-3 text-right ${rapat ? "py-1.5" : "py-2.5"}`}>Sisa waktu</th>
                     </tr>
                   </thead>
                   <tbody ref={badanTabel}>
@@ -397,23 +479,27 @@ export default function LayarSertifikat() {
                       const t = tingkatDari(s.sisa);
                       return (
                         <tr key={`${s.kapal}-${s.jenis}-${i}`} className="border-t border-white/[0.10]">
-                          <td className="px-6 py-2">
+                          {/* nama kapal sudah menjadi judul halaman — kolom ini dipakai
+                              menyebut tingkat keadaannya, yang dulu hanya berupa warna */}
+                          <td className={`px-6 ${rapat ? "py-1" : "py-2"}`}>
                             <span className="flex items-center gap-3">
-                              <span className={`h-7 w-1.5 rounded-full ${NADA[t].pita}`} />
-                              <span className="whitespace-nowrap text-[19px] font-bold tracking-tight">{s.kapal.replace(/^KMP\.?\s*/i, "")}</span>
+                              <span className={`w-1.5 rounded-full ${rapat ? "h-5" : "h-7"} ${NADA[t].pita}`} />
+                              <span className={`whitespace-nowrap font-bold tracking-tight ${rapat ? "text-[13px]" : "text-[16px]"} ${NADA[t].teks}`}>
+                                {NADA[t].label}
+                              </span>
                             </span>
                           </td>
                           {/* kelompok aturan menyusul di baris yang sama — memberinya baris
                               sendiri memangkas jumlah dokumen yang muat di layar hampir separuh */}
-                          <td className="px-3 py-2">
-                            <span className="text-[18px] font-medium leading-tight">{s.jenis}</span>
-                            <span className="ml-2 text-[12px] uppercase tracking-wide text-white/60">{s.kelompok}</span>
+                          <td className={`px-3 ${rapat ? "py-1" : "py-2"}`}>
+                            <span className={`font-medium leading-tight ${rapat ? "text-[15px]" : "text-[18px]"}`}>{s.jenis}</span>
+                            <span className={`ml-2 uppercase tracking-wide text-white/60 ${rapat ? "text-[11px]" : "text-[12px]"}`}>{s.kelompok}</span>
                           </td>
-                          <td className="px-3 py-2 text-[18px] font-semibold tabular-nums text-white/95">
+                          <td className={`px-3 font-semibold tabular-nums text-white/95 ${rapat ? "py-1 text-[15px]" : "py-2 text-[18px]"}`}>
                             {tanggalPendek(s.berlaku)}
                           </td>
-                          <td className="px-3 py-2 text-right">
-                            <span className={`inline-block rounded-lg px-3 py-1 text-[18px] font-black tabular-nums ${NADA[t].latar} ${NADA[t].teks}`}>
+                          <td className={`px-3 text-right ${rapat ? "py-1" : "py-2"}`}>
+                            <span className={`inline-block rounded-lg px-3 py-1 font-black tabular-nums ${rapat ? "text-[15px]" : "text-[18px]"} ${NADA[t].latar} ${NADA[t].teks}`}>
                               {teksSisa(s.sisa)}
                             </span>
                           </td>
@@ -428,17 +514,19 @@ export default function LayarSertifikat() {
 
           {/* ringkasan per kapal */}
           <div className="flex flex-col overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03]">
-            <div className="border-b border-white/10 px-5 py-3.5">
+            <div className={`border-b border-white/10 px-5 ${rapat ? "py-2" : "py-3.5"}`}>
               <h2 className="text-xl font-black tracking-tight">Per kapal</h2>
-              <p className="text-[13px] text-white/75">Diurut dari yang paling perlu perhatian</p>
+              {!rapat && <p className="text-[13px] text-white/75">Diurut dari yang paling perlu perhatian</p>}
             </div>
             {/* tiga belas kapal harus muat seluruhnya — barisnya membagi rata sisa ruang */}
             <div className="flex min-h-0 flex-1 flex-col divide-y divide-white/[0.10] overflow-y-auto">
               {perKapal.map((k) => {
                 const jumlah = k.lewat + k.kritis + k.waspada + k.aman;
                 return (
-                  <div key={k.kapal} className="flex min-h-[2.1rem] flex-1 items-center gap-2.5 overflow-hidden px-5">
-                    <span className="flex-1 truncate text-[16px] font-bold tracking-tight">
+                  <div key={k.kapal}
+                    className={`flex flex-1 items-center gap-2.5 overflow-hidden px-5 transition ${rapat ? "min-h-[1.4rem]" : "min-h-[1.75rem]"} ${
+                      halamanIni?.kapal === k.kapal ? "bg-sky-400/15" : ""}`}>
+                    <span className={`flex-1 truncate font-bold tracking-tight ${rapat ? "text-[13px]" : "text-[16px]"}`}>
                       {k.kapal.replace(/^KMP\.?\s*/i, "")}
                     </span>
                     <span className="flex w-[4.5rem] justify-end gap-1.5 text-[15px] font-black tabular-nums">
