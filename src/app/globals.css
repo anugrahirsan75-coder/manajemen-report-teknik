@@ -17,16 +17,8 @@
 html { scroll-behavior: smooth; }
 
 body {
-  background:
-    radial-gradient(1000px 560px at 100% -8%, rgba(28, 163, 221, 0.12), transparent 56%),
-    radial-gradient(900px 540px at -6% 2%, rgba(124, 194, 66, 0.11), transparent 56%),
-    linear-gradient(180deg, rgba(238, 242, 247, 0.30), rgba(238, 242, 247, 0.42)),
-    url('/bg-port.jpg?v=2'),
-    #eef2f7;
-  background-attachment: fixed, fixed, fixed, fixed, fixed;
-  background-size: auto, auto, cover, cover, auto;
-  background-position: center, center, center, center, center;
-  background-repeat: no-repeat;
+  /* halaman kerja: latar rata, tanpa foto yang menembus di belakang data */
+  background: #f4f5f7;
   color: #0f172a;
   font-family: var(--font-sans), ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -120,16 +112,7 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
 
 /* ====== DARK MODE (chrome app saja; preview dokumen .print-page tetap putih) ====== */
 .dark body {
-  background:
-    radial-gradient(900px 500px at 100% -5%, rgba(28, 163, 221, 0.10), transparent 55%),
-    radial-gradient(800px 500px at -5% 0%, rgba(124, 194, 66, 0.08), transparent 55%),
-    linear-gradient(180deg, rgba(8, 15, 30, 0.55), rgba(8, 15, 30, 0.66)),
-    url('/bg-port.jpg?v=2'),
-    #0b1220;
-  background-attachment: fixed, fixed, fixed, fixed, fixed;
-  background-size: auto, auto, cover, cover, auto;
-  background-position: center, center, center, center, center;
-  background-repeat: no-repeat;
+  background: #0b1220;
   color: #e5e7eb;
 }
 .dark .glass { background: rgba(17, 24, 39, 0.8); }
@@ -246,3 +229,34 @@ input:focus-visible, select:focus-visible, textarea:focus-visible { outline: non
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
+
+/* ====== HALAMAN SAMBUTAN (masuk) ======
+   Foto pelabuhan dipertahankan di sini: pada halaman masuk ia memberi tahu
+   aplikasi ini milik siapa, dan tidak ada data yang harus dibaca di atasnya. */
+body:has(.laman-sambutan) {
+  background:
+    linear-gradient(180deg, rgba(238, 242, 247, 0.28), rgba(238, 242, 247, 0.40)),
+    url('/bg-port.jpg?v=2'),
+    #eef2f7;
+  background-attachment: fixed, fixed, fixed;
+  background-size: cover, cover, auto;
+  background-position: center, center, center;
+  background-repeat: no-repeat;
+}
+
+.dark body:has(.laman-sambutan) {
+  background:
+    linear-gradient(180deg, rgba(8, 15, 30, 0.58), rgba(8, 15, 30, 0.70)),
+    url('/bg-port.jpg?v=2'),
+    #0b1220;
+  background-attachment: fixed, fixed, fixed;
+  background-size: cover, cover, auto;
+  background-position: center, center, center;
+  background-repeat: no-repeat;
+}
+
+/* Panel kaca dibuat pekat: tanpa foto di belakangnya, transparansi hanya
+   membuat teks kehilangan kontras tanpa memperlihatkan apa pun. */
+.glass { background: rgba(255, 255, 255, 0.96); }
+.dark .glass { background: rgba(17, 24, 39, 0.96); }

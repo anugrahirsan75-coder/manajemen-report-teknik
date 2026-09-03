@@ -29,7 +29,7 @@ function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen grid place-items-center px-5 relative overflow-hidden">
+    <div className="laman-sambutan min-h-screen grid place-items-center px-5 relative overflow-hidden">
       {/* scene kapal berlayar */}
       <div className="absolute inset-0 pointer-events-none" aria-hidden="true">
         <div className="mf-cloud absolute top-[10%] h-7 w-28 rounded-full bg-white/35 blur-md" />

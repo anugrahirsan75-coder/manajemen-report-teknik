@@ -18,6 +18,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Ikon } from "@/components/ikon";
 import { useJuruBaca } from "@/components/lapor/PilJuruBaca";
 import { BarisPermintaan, keJumlah, titipkanKeSppbj } from "@/lib/lapor/bacaPermintaan";
 import { bacaSekarang, nyalakanJuruBaca, putaran } from "@/lib/lapor/juruBaca";
@@ -72,6 +73,10 @@ export default function IsiPermintaanKapal() {
   const [tutupKapal, setTutupKapal] = useState<Set<string>>(new Set());
   const [sibukBerkas, setSibukBerkas] = useState("");
   const [buktiGalat, setBuktiGalat] = useState(false);
+  /** berkas yang sedang dibuka di panel kanan */
+  const [berkasAktif, setBerkasAktif] = useState("");
+  /** foto scan ditampilkan berdampingan dengan tabelnya */
+  const [lihatFoto, setLihatFoto] = useState(true);
   const [denyut, setDenyut] = useState<StatusJuruBaca | null>(null);
   const jadwalSimpan = useRef<Map<string, number>>(new Map());
 
@@ -257,280 +262,286 @@ export default function IsiPermintaanKapal() {
   /** laptop kantor berdenyut = ada yang membaca, walau layar ini tak bisa */
   const hidup = denyutSegar(denyut);
 
-  return (
-    <main className="mx-auto max-w-7xl px-4 py-6">
-      {/* ── kepala halaman ──────────────────────────────────────────────── */}
-      <header className="asdp-gradient mb-5 rounded-[1.75rem] p-[1.5px] elev-lg anim-in">
-        <div className="glass hero-glow flex flex-wrap items-center gap-4 rounded-[calc(1.75rem-1.5px)] px-5 py-5 sm:px-6">
-          <div className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-gradient-to-br from-emerald-400 via-teal-500 to-sky-800 text-2xl text-white shadow-lg shadow-teal-900/20">🧾</div>
-          <div className="min-w-[16rem] flex-1">
-            <div className="mb-1 flex flex-wrap items-center gap-2">
-              <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[9px] font-extrabold uppercase tracking-[0.16em] text-emerald-800 ring-1 ring-emerald-200">Hasil Bacaan Tersimpan</span>
-              {jb.siap
-                ? <span className="chip bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200">● AI lokal siap</span>
-                : hidup
-                  ? <span className="chip bg-sky-50 text-sky-700 ring-1 ring-sky-200">● laptop kantor membaca</span>
-                  : <span className="chip bg-slate-100 text-slate-500 ring-1 ring-slate-200">○ tak ada yang membaca</span>}
-              {(jb.jalan || denyut?.jalan) && <span className="text-[10px] font-medium text-sky-600">
-                {(jb.antre || denyut?.antre || 0)} berkas di antrean…
-              </span>}
-            </div>
-            <h1 className="asdp-text-gradient text-2xl font-extrabold leading-tight">Isi Permintaan Kapal</h1>
-            <p className="mt-0.5 text-sm text-slate-500">
-              Barang yang diminta ABK, sudah dibaca dan tersimpan — pilih, lalu berangkatkan ke SPPBJ.
-            </p>
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
-            <Link href="/permintaan-laporan" className="btn btn-ghost text-xs">← Kiriman &amp; berkas</Link>
-            {jb.siap && (
-              <button onClick={() => { void putaran(); }} disabled={jb.jalan} className="btn btn-ghost text-xs disabled:opacity-50">
-                {jb.jalan ? "Juru Baca bekerja…" : "🤖 Periksa berkas baru"}
-              </button>
-            )}
-            <button onClick={() => { void ambil(); }} disabled={muat} className="btn btn-primary text-xs disabled:opacity-50">
-              {muat ? "Memuat…" : "⟳ Muat ulang"}
-            </button>
-          </div>
-        </div>
-      </header>
+  /*
+   * Berkas yang dibuka mengikuti daftar yang sedang tampil. Kalau saringan
+   * berubah dan berkas yang dibuka ikut tersaring keluar, panel kanan pindah
+   * ke berkas pertama — bukan menjadi kosong tanpa sebab yang terlihat.
+   */
+  const entriAktif = useMemo(
+    () => tampil.find((e) => e.berkas.fileId === berkasAktif) || tampil[0] || null,
+    [tampil, berkasAktif]);
+  useEffect(() => {
+    if (entriAktif && entriAktif.berkas.fileId !== berkasAktif) setBerkasAktif(entriAktif.berkas.fileId);
+  }, [entriAktif, berkasAktif]);
 
-      {/* ── keadaan mesin baca ──────────────────────────────────────────── */}
-      {jb.siap ? (
-        <section className="anim-in mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50/90 px-4 py-3 dark:border-emerald-800 dark:bg-emerald-950/30">
-          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-emerald-500 text-lg text-white ${jb.jalan ? "animate-pulse" : ""}`}>🤖</span>
-          <div className="min-w-[14rem] flex-1">
-            <p className="text-xs font-extrabold text-emerald-900 dark:text-emerald-200">
-              Juru Baca menyala — {jb.mesin} (lewat {jb.jalur})
-            </p>
-            <p className="truncate text-[11px] text-emerald-700 dark:text-emerald-400">
-              {jb.jalan && jb.sedang
-                ? `${namaPendek(jb.sedang)} · ${jb.tahap || "membaca…"}`
-                : "Berkas baru dari ABK dibaca sendiri di latar belakang, satu per satu."}
-            </p>
-          </div>
-          <button onClick={() => nyalakanJuruBaca(!jb.aktif)}
-            className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-emerald-800 ring-1 ring-emerald-300 hover:bg-emerald-50 dark:bg-slate-900 dark:text-emerald-300">
-            {jb.aktif ? "Jeda" : "Lanjutkan"}
-          </button>
-        </section>
-      ) : hidup ? (
-        /**
-         * Perangkat ini tak punya AI, tapi laptop kantor sedang bekerja. Yang
-         * perlu diketahui orang di sini bukan "kenapa saya tak bisa membaca",
-         * melainkan "apakah berkas saya sedang diproses" — jadi itu yang
-         * ditampilkan: berkas yang sedang dibaca dan sisanya.
-         */
-        <section className="anim-in mb-4 flex flex-wrap items-center gap-3 rounded-2xl border border-sky-200 bg-sky-50/90 px-4 py-3 dark:border-sky-800 dark:bg-sky-950/25">
-          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-500 text-lg text-white ${denyut?.jalan ? "animate-pulse" : ""}`}>💻</span>
-          <div className="min-w-[14rem] flex-1">
-            <p className="text-xs font-extrabold text-sky-900 dark:text-sky-200">
-              Laptop kantor sedang membaca sendiri{denyut?.mesin ? ` — ${denyut.mesin}` : ""}
-            </p>
-            <p className="truncate text-[11px] text-sky-800/80 dark:text-sky-300/80">
-              {denyut?.jalan && denyut.sedang
-                ? `${namaPendek(denyut.sedang)} · ${denyut.tahap || "membaca…"}`
-                : `Menunggu putaran berikutnya. ${denyut?.antre ? `${denyut.antre} berkas di antrean.` : "Antrean kosong."}`}
-              {" "}Denyut {umurDenyut(denyut)}.
-            </p>
-          </div>
-          <span className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-sky-800 ring-1 ring-sky-300 dark:bg-slate-900 dark:text-sky-300">
-            Layar ini menyegar sendiri
-          </span>
-        </section>
-      ) : (
-        <section className="anim-in mb-4 rounded-2xl border border-amber-200 bg-amber-50/90 px-4 py-3 dark:border-amber-800 dark:bg-amber-950/25">
-          <div className="flex flex-wrap items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-400 text-lg text-white">💤</span>
-            <div className="min-w-[14rem] flex-1">
-              <p className="text-xs font-extrabold text-amber-900 dark:text-amber-200">
-                Laptop kantor sedang mati — tidak ada yang membaca berkas saat ini
-              </p>
-              <p className="text-[11px] text-amber-800/80 dark:text-amber-300/80">
-                Hasil yang sudah dibaca tetap tampil lengkap di bawah. Sisanya lanjut sendiri begitu laptop menyala.
-                {denyut && <> Denyut terakhir {umurDenyut(denyut)}.</>}
+  return (
+    /*
+     * Latar rata: halaman ini penuh angka dan nama barang, dan foto pelabuhan
+     * yang menembus di belakang kartu membuat mata bekerja dua kali.
+     */
+    <div className="min-h-screen bg-[#f4f5f7] dark:bg-slate-950">
+      <main className="mx-auto max-w-[104rem] px-4 py-5">
+        {/* ── kepala ────────────────────────────────────────────────────── */}
+        <header className="mb-4 rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
+          <div className="flex flex-wrap items-center gap-4 px-4 py-3.5">
+            <div className="grid h-11 w-11 shrink-0 place-items-center rounded-lg bg-[#16357f] text-white">
+              <Ikon nama="kotakMasuk" className="h-5 w-5" />
+            </div>
+            <div className="min-w-[18rem] flex-1">
+              <h1 className="text-lg font-bold tracking-tight text-slate-900 dark:text-white">Isi Permintaan Kapal</h1>
+              <p className="mt-0.5 text-[12px] text-slate-500">
+                Barang yang diminta ABK, sudah dibaca dan tersimpan — cocokkan dengan fotonya, pilih, lalu berangkatkan ke SPPBJ.
               </p>
             </div>
-            <button onClick={() => setBuktiGalat((v) => !v)}
-              className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-amber-800 ring-1 ring-amber-300 hover:bg-amber-50 dark:bg-slate-900 dark:text-amber-300">
-              {buktiGalat ? "Tutup" : "Kenapa?"}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <Link href="/permintaan-laporan"
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+                ← Kiriman &amp; berkas
+              </Link>
+              {jb.siap && (
+                <button onClick={() => { void putaran(); }} disabled={jb.jalan}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 disabled:opacity-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+                  {jb.jalan ? "Juru Baca bekerja…" : "Periksa berkas baru"}
+                </button>
+              )}
+              <button onClick={() => { void ambil(); }} disabled={muat}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#16357f] px-2.5 py-1.5 text-[11px] font-semibold text-white transition hover:bg-[#12296a] disabled:opacity-50">
+                <Ikon nama="segarkan" className={`h-3.5 w-3.5 ${muat ? "animate-spin" : ""}`} /> {muat ? "Memuat" : "Muat ulang"}
+              </button>
+            </div>
           </div>
-          {buktiGalat && (
-            <div className="mt-3 rounded-xl bg-white/70 px-3 py-2.5 text-[11px] leading-relaxed text-amber-900 ring-1 ring-amber-200 dark:bg-slate-900/60 dark:text-amber-200">
+
+          {/* satu baris keadaan: siapa yang membaca + empat angka pokok */}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-slate-200 bg-slate-50 px-4 py-2 text-[11.5px] dark:border-slate-700 dark:bg-slate-800/50">
+            <span className="flex items-center gap-1.5 font-medium text-slate-600 dark:text-slate-300">
+              <span className={`h-1.5 w-1.5 rounded-full ${
+                jb.siap ? "bg-emerald-500" : hidup ? "animate-pulse bg-sky-500" : "bg-slate-400"}`} />
+              {jb.siap
+                ? `Juru Baca menyala — ${jb.mesin}`
+                : hidup
+                  ? `Laptop kantor sedang membaca${denyut?.mesin ? ` — ${denyut.mesin}` : ""}`
+                  : "Tidak ada yang membaca saat ini"}
+            </span>
+            <span className="text-slate-500">
+              {(jb.jalan && jb.sedang) || (denyut?.jalan && denyut.sedang)
+                ? `${namaPendek(jb.sedang || denyut?.sedang || "")} · ${jb.tahap || denyut?.tahap || "membaca…"}`
+                : (jb.antre || denyut?.antre)
+                  ? `${jb.antre || denyut?.antre} berkas di antrean`
+                  : "Antrean kosong"}
+            </span>
+            <span className="flex flex-wrap items-center gap-x-4 gap-y-1 tabular-nums">
+              <span><b className="text-slate-900 dark:text-white">{jml.terbaca}</b>/{entri.length} berkas terbaca</span>
+              <span><b className="text-slate-900 dark:text-white">{jml.barang}</b> barang siap</span>
+              {jml.belum > 0 && <span className="text-amber-700 dark:text-amber-400">{jml.belum} belum terbaca</span>}
+              {jml.gagal > 0 && <span className="font-semibold text-rose-700 dark:text-rose-400">{jml.gagal} gagal dibaca</span>}
+            </span>
+            {jb.siap ? (
+              <button onClick={() => nyalakanJuruBaca(!jb.aktif)}
+                className="ml-auto rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+                {jb.aktif ? "Jeda" : "Lanjutkan"}
+              </button>
+            ) : !hidup ? (
+              <button onClick={() => setBuktiGalat((v) => !v)}
+                className="ml-auto rounded border border-slate-300 bg-white px-2 py-0.5 text-[11px] font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
+                {buktiGalat ? "Tutup" : "Kenapa?"}
+              </button>
+            ) : null}
+          </div>
+
+          {buktiGalat && !hidup && !jb.siap && (
+            <div className="border-t border-slate-200 px-4 py-3 text-[11.5px] leading-relaxed text-slate-600 dark:border-slate-700 dark:text-slate-300">
               <p>
                 AI lokal (Ollama) hidup di laptop kantor dan melayani alamat <b>http</b>. Peramban melarang halaman
                 <b> https</b> seperti Vercel memanggil alamat http, jadi pembacaan tidak mungkin terjadi dari layar ini —
                 siapa pun yang membukanya.
               </p>
               <p className="mt-1.5">
-                Yang membaca adalah <b>server aplikasi di laptop itu sendiri</b> (port 3001, dijaga watchdog). Selama
-                laptop menyala, seluruh permintaan terbaca sendiri tanpa siapa pun membuka aplikasi. Kalau laptopnya
-                mati, nyalakan lalu jalankan <code>buka-aplikasi.vbs</code> sekali.
+                Yang membaca adalah <b>server aplikasi di laptop itu sendiri</b> (port 3001, dijaga watchdog). Kalau
+                laptopnya mati, nyalakan lalu jalankan <code>buka-aplikasi.vbs</code> sekali.
+                {denyut && <> Denyut terakhir {umurDenyut(denyut)}.</>}
               </p>
-              {jb.galat && <p className="mt-1.5 text-amber-700/80">Pesan mesin di perangkat ini: {jb.galat}</p>}
+              {jb.galat && <p className="mt-1.5 text-slate-500">Pesan mesin di perangkat ini: {jb.galat}</p>}
             </div>
           )}
-        </section>
-      )}
+        </header>
 
-      {galat && <p className="anim-in mb-4 rounded-xl bg-rose-50 px-3 py-2 text-sm text-rose-800 ring-1 ring-rose-200">{galat}</p>}
-
-      {/* ── angka ringkas ───────────────────────────────────────────────── */}
-      <section className="stagger mb-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <Kpi ikon="📄" label="Berkas terbaca" nilai={jml.terbaca} ket={`dari ${entri.length} berkas`} warna="emerald" />
-        <Kpi ikon="📦" label="Barang terbaca" nilai={jml.barang} ket="siap jadi SPPBJ" warna="sky" />
-        <Kpi ikon="⏳" label="Belum terbaca" nilai={jml.belum} ket={jb.siap ? "sedang diantre" : "menunggu laptop ber-AI"} warna="amber" />
-        <Kpi ikon="⚠" label="Gagal dibaca" nilai={jml.gagal} ket="perlu dibaca ulang / diketik" warna="rose" />
-      </section>
-
-      {/* ── saringan ────────────────────────────────────────────────────── */}
-      <section className="mb-4 rounded-2xl bg-white px-3 py-3 elev-sm ring-line dark:bg-slate-900">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="flex rounded-xl bg-slate-100 p-0.5 dark:bg-slate-800">
-            {([["semua", "Semua"], ["terbaca", "Terbaca"], ["belum", "Belum"], ["gagal", "Gagal"]] as const).map(([id, l]) => (
-              <button key={id} onClick={() => setSaring(id)}
-                className={`rounded-lg px-3 py-1.5 text-[11px] font-extrabold transition ${
-                  saring === id ? "bg-white text-slate-900 shadow-sm dark:bg-slate-700 dark:text-white" : "text-slate-500 hover:text-slate-700"}`}>
-                {l}
-              </button>
-            ))}
-          </div>
-          <select value={kapal} onChange={(e) => setKapal(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900">
-            <option value="">Semua kapal</option>
-            {daftarKapal.map((k) => <option key={k} value={k}>{k}</option>)}
-          </select>
-          <select value={periode} onChange={(e) => setPeriode(e.target.value)}
-            className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900">
-            <option value="">Semua periode</option>
-            {daftarPeriode.map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>)}
-          </select>
-          <div className="relative ml-auto min-w-[15rem] flex-1 sm:flex-none">
-            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400">🔍</span>
-            <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari barang, kapal, atau berkas…"
-              className="w-full rounded-xl border border-slate-200 bg-white py-2 pl-8 pr-3 text-xs outline-none focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900" />
-          </div>
-          {saringanAktif && (
-            <button onClick={() => { setKapal(""); setPeriode(""); setCari(""); setSaring("semua"); }}
-              className="text-[11px] font-bold text-slate-500 hover:underline">Reset</button>
-          )}
-        </div>
-      </section>
-
-      {/* ── daftar per kapal ────────────────────────────────────────────── */}
-      <section className="space-y-4 pb-28">
-        {muat && [0, 1].map((i) => (
-          <div key={i} className="h-28 animate-pulse rounded-3xl bg-white/70 ring-line dark:bg-slate-900/70" />
-        ))}
-        {!muat && !grup.length && (
-          <div className="rounded-3xl border border-dashed border-slate-300 bg-white/70 px-4 py-14 text-center dark:bg-slate-900/60">
-            <p className="text-3xl">🗂️</p>
-            <p className="mt-2 text-sm font-bold text-slate-600 dark:text-slate-300">Tidak ada yang cocok</p>
-            <p className="text-xs text-slate-400">
-              {saringanAktif ? "Longgarkan saringannya." : "Kiriman permintaan dari ABK akan muncul di sini setelah terbaca."}
-            </p>
-          </div>
+        {galat && (
+          <p className="mb-4 rounded-lg border border-rose-200 bg-rose-50 px-3 py-2 text-[12px] text-rose-800 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300">
+            {galat}
+          </p>
         )}
 
-        {grup.map(([namaKapal, daftar]) => {
-          const barang = daftar.reduce((n, e) => n + (e.bacaan?.baris.length || 0), 0);
-          const belum = daftar.filter((e) => (e.bacaan?.status || "belum") === "belum").length;
-          const tertutup = tutupKapal.has(namaKapal);
-          const kunciSemua = daftar.flatMap((e) => (e.bacaan?.baris || []).map((_, i) => kunci(e.berkas.fileId, i)));
-          const semuaTerpilih = !!kunciSemua.length && kunciSemua.every((k) => pilih.has(k));
-
-          return (
-            <article key={namaKapal} className="anim-in overflow-hidden rounded-3xl bg-white elev-md ring-line dark:bg-slate-900">
-              <header className="flex flex-wrap items-center gap-3 border-b border-slate-100 bg-gradient-to-r from-slate-50 via-white to-sky-50/60 px-4 py-3 dark:border-slate-800 dark:from-slate-900 dark:via-slate-900 dark:to-sky-950/25">
-                <button onClick={() => setTutupKapal((s) => {
-                  const n = new Set(s); if (n.has(namaKapal)) n.delete(namaKapal); else n.add(namaKapal); return n;
-                })}
-                  className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-[#16357f] text-sm text-white shadow-sm">
-                  {tertutup ? "▸" : "▾"}
-                </button>
-                <div className="min-w-[12rem] flex-1">
-                  <h2 className="text-sm font-extrabold text-slate-900 dark:text-slate-100">{namaKapal}</h2>
-                  <p className="text-[11px] text-slate-500">
-                    {daftar.length} berkas · <b className="text-slate-700 dark:text-slate-300">{barang} barang</b> terbaca
-                    {belum > 0 && <span className="text-amber-600"> · {belum} belum terbaca</span>}
-                  </p>
-                </div>
-                {!!kunciSemua.length && (
-                  <button onClick={() => alihBanyak(daftar)}
-                    className="rounded-lg bg-white px-3 py-1.5 text-[11px] font-extrabold text-slate-600 ring-1 ring-slate-200 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300 dark:ring-slate-700">
-                    {semuaTerpilih ? "Batal pilih semua" : `Pilih ${barang} barang`}
+        {/* ── dua panel: daftar berkas | isi berkas ─────────────────────── */}
+        <div className="grid gap-4 pb-24 lg:grid-cols-[21rem_1fr]">
+          {/* ── kiri: daftar berkas ───────────────────────────────────── */}
+          <aside className="rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
+            <div className="border-b border-slate-200 p-3 dark:border-slate-700">
+              <div className="relative">
+                <Ikon nama="kaca" className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari barang, kapal, atau berkas…"
+                  className="w-full rounded-md border border-slate-300 bg-white py-1.5 pl-8 pr-2.5 text-[12.5px] outline-none transition focus:border-slate-500 dark:border-slate-600 dark:bg-slate-900" />
+              </div>
+              <div className="mt-2 flex rounded-md border border-slate-200 p-0.5 dark:border-slate-700">
+                {([["semua", "Semua"], ["terbaca", "Terbaca"], ["belum", "Belum"], ["gagal", "Gagal"]] as const).map(([id, l]) => (
+                  <button key={id} onClick={() => setSaring(id)}
+                    className={`flex-1 rounded px-2 py-1 text-[11px] font-semibold transition ${
+                      saring === id ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900" : "text-slate-500 hover:text-slate-800"}`}>
+                    {l}
                   </button>
+                ))}
+              </div>
+              <div className="mt-2 grid grid-cols-2 gap-2">
+                <select value={kapal} onChange={(e) => setKapal(e.target.value)}
+                  className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11.5px] dark:border-slate-600 dark:bg-slate-900">
+                  <option value="">Semua kapal</option>
+                  {daftarKapal.map((k) => <option key={k} value={k}>{k}</option>)}
+                </select>
+                <select value={periode} onChange={(e) => setPeriode(e.target.value)}
+                  className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11.5px] dark:border-slate-600 dark:bg-slate-900">
+                  <option value="">Semua periode</option>
+                  {daftarPeriode.map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>)}
+                </select>
+              </div>
+              <div className="mt-2 flex items-center justify-between text-[11px] text-slate-500">
+                <span>{tampil.length} berkas ditampilkan</span>
+                {saringanAktif && (
+                  <button onClick={() => { setKapal(""); setPeriode(""); setCari(""); setSaring("semua"); }}
+                    className="font-semibold text-slate-600 underline-offset-2 hover:underline">Reset saringan</button>
                 )}
-              </header>
-
-              {!tertutup && (
-                <div className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {daftar.map((e) => (
-                    <BlokBerkas key={e.berkas.fileId} e={e} pilih={pilih} alih={alih} alihBanyak={alihBanyak}
-                      ubahBaris={ubahBaris} hapusBaris={hapusBaris} tambahBaris={tambahBaris}
-                      bacaUlang={bacaUlang} bisaBaca={jb.siap} sibuk={sibukBerkas === e.berkas.fileId} />
-                  ))}
-                </div>
-              )}
-            </article>
-          );
-        })}
-      </section>
-
-      {/* ── bilah pilihan ───────────────────────────────────────────────── */}
-      {terpilih.length > 0 && (
-        <div className="anim-in fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/95 px-4 py-3 shadow-[0_-8px_28px_rgba(15,23,42,0.10)] backdrop-blur dark:border-slate-700 dark:bg-slate-900/95">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
-            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-teal-400 to-sky-700 text-sm font-extrabold text-white">
-              {terpilih.length}
-            </span>
-            <div className="min-w-[12rem] flex-1">
-              <p className="text-xs font-extrabold text-slate-800 dark:text-slate-100">
-                {terpilih.length} barang terpilih
-              </p>
-              <p className="text-[11px] text-slate-500">
-                {kapalTerpilih.length === 1
-                  ? kapalTerpilih[0]
-                  : <span className="text-rose-600">Terpilih dari {kapalTerpilih.length} kapal — satu SPPBJ hanya untuk satu kapal.</span>}
-              </p>
+              </div>
             </div>
-            <button onClick={() => setPilih(new Set())} className="btn btn-ghost text-xs">Bersihkan</button>
-            <button onClick={salin} className="btn btn-ghost text-xs">⧉ Salin daftar</button>
-            <button onClick={keSppbj} disabled={kapalTerpilih.length !== 1} className="btn btn-primary text-xs disabled:opacity-40">
-              ➜ Buat SPPBJ
-            </button>
-          </div>
+
+            <div className="max-h-[calc(100vh-19rem)] overflow-y-auto">
+              {muat && [0, 1, 2].map((i) => (
+                <div key={i} className="m-3 h-12 animate-pulse rounded bg-slate-100 dark:bg-slate-800" />
+              ))}
+              {!muat && !grup.length && (
+                <p className="px-4 py-10 text-center text-[12px] text-slate-500">
+                  {saringanAktif ? "Tidak ada berkas yang cocok — longgarkan saringannya." : "Belum ada kiriman permintaan dari ABK."}
+                </p>
+              )}
+              {grup.map(([namaKapal, daftar]) => {
+                const barang = daftar.reduce((n, e) => n + (e.bacaan?.baris.length || 0), 0);
+                const kunciSemua = daftar.flatMap((e) => (e.bacaan?.baris || []).map((_, i) => kunci(e.berkas.fileId, i)));
+                const semuaTerpilih = !!kunciSemua.length && kunciSemua.every((k) => pilih.has(k));
+                return (
+                  <div key={namaKapal}>
+                    <div className="sticky top-0 z-10 flex items-center gap-2 border-y border-slate-200 bg-slate-100 px-3 py-1.5 dark:border-slate-700 dark:bg-slate-800">
+                      <span className="flex-1 truncate text-[11px] font-bold uppercase tracking-[0.1em] text-slate-600 dark:text-slate-300">
+                        {namaKapal}
+                      </span>
+                      <span className="text-[10.5px] tabular-nums text-slate-500">{daftar.length} berkas · {barang} barang</span>
+                      {!!kunciSemua.length && (
+                        <button onClick={() => alihBanyak(daftar)}
+                          className="rounded border border-slate-300 bg-white px-1.5 text-[10.5px] font-semibold text-slate-600 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                          {semuaTerpilih ? "Batal" : "Pilih"}
+                        </button>
+                      )}
+                    </div>
+                    {daftar.map((e) => {
+                      const st = statusEntri(e, sibukBerkas === e.berkas.fileId);
+                      const aktif = entriAktif?.berkas.fileId === e.berkas.fileId;
+                      const jumlah = e.bacaan?.baris.length || 0;
+                      const terpilihDiBerkas = (e.bacaan?.baris || [])
+                        .filter((_, i) => pilih.has(kunci(e.berkas.fileId, i))).length;
+                      return (
+                        <button key={e.berkas.fileId} onClick={() => setBerkasAktif(e.berkas.fileId)}
+                          className={`flex w-full items-start gap-2 border-b border-slate-100 px-3 py-2 text-left transition dark:border-slate-800 ${
+                            aktif ? "bg-[#16357f]/[0.07] dark:bg-sky-950/40" : "hover:bg-slate-50 dark:hover:bg-slate-800/50"}`}>
+                          <span className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                            st === "selesai" ? "bg-emerald-500" : st === "proses" ? "animate-pulse bg-sky-500"
+                              : st === "gagal" ? "bg-rose-500" : "bg-slate-300"}`} />
+                          <span className="min-w-0 flex-1">
+                            <span className={`block truncate text-[12px] ${aktif ? "font-bold text-slate-900 dark:text-white" : "font-medium text-slate-700 dark:text-slate-200"}`}>
+                              {namaPendek(e.berkas.nama)}
+                            </span>
+                            <span className="block truncate text-[10.5px] text-slate-500">
+                              {singkatJenis(e.kiriman.jenis)} · {bulanIndo(e.kiriman.periode)} · {waktuSingkat(e.kiriman.dikirimPada)}
+                            </span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <span className={`block text-[11px] font-semibold tabular-nums ${jumlah ? "text-slate-700 dark:text-slate-200" : "text-slate-400"}`}>
+                              {jumlah || "—"}
+                            </span>
+                            {terpilihDiBerkas > 0 && (
+                              <span className="block text-[10px] font-bold text-[#16357f] dark:text-sky-400">{terpilihDiBerkas} dipilih</span>
+                            )}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
+            </div>
+          </aside>
+
+          {/* ── kanan: isi berkas terpilih ────────────────────────────── */}
+          <section className="rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
+            {!entriAktif ? (
+              <p className="px-4 py-20 text-center text-[12.5px] text-slate-500">
+                Pilih satu berkas di panel kiri untuk melihat isinya.
+              </p>
+            ) : (
+              <IsiBerkas
+                e={entriAktif}
+                pilih={pilih}
+                lihatFoto={lihatFoto}
+                setLihatFoto={setLihatFoto}
+                alih={alih}
+                alihBanyak={alihBanyak}
+                ubahBaris={ubahBaris}
+                hapusBaris={hapusBaris}
+                tambahBaris={tambahBaris}
+                bacaUlang={bacaUlang}
+                bisaBaca={jb.siap}
+                sibuk={sibukBerkas === entriAktif.berkas.fileId}
+              />
+            )}
+          </section>
         </div>
-      )}
-    </main>
-  );
-}
 
-/* ── kartu angka ────────────────────────────────────────────────────────── */
-const WARNA_KPI: Record<string, string> = {
-  emerald: "from-emerald-400 to-emerald-600",
-  sky: "from-sky-400 to-blue-700",
-  amber: "from-amber-400 to-orange-500",
-  rose: "from-rose-400 to-rose-600",
-};
-
-function Kpi({ ikon, label, nilai, ket, warna }: { ikon: string; label: string; nilai: number; ket: string; warna: string }) {
-  return (
-    <div className="flex items-center gap-3 rounded-2xl bg-white px-4 py-3 elev-sm ring-line dark:bg-slate-900">
-      <span className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-gradient-to-br ${WARNA_KPI[warna]} text-base text-white shadow-sm`}>{ikon}</span>
-      <div className="min-w-0">
-        <p className="text-[10px] font-extrabold uppercase tracking-wide text-slate-400">{label}</p>
-        <p className="text-xl font-extrabold leading-tight tabular-nums text-slate-800 dark:text-slate-100">{nilai}</p>
-        <p className="truncate text-[10px] text-slate-400">{ket}</p>
-      </div>
+        {/* ── bilah pilihan ─────────────────────────────────────────────── */}
+        {terpilih.length > 0 && (
+          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-300 bg-white/97 px-4 py-2.5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/97">
+            <div className="mx-auto flex max-w-[104rem] flex-wrap items-center gap-3">
+              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[#16357f] text-[13px] font-bold text-white tabular-nums">
+                {terpilih.length}
+              </span>
+              <div className="min-w-[12rem] flex-1">
+                <p className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100">{terpilih.length} barang terpilih</p>
+                <p className="text-[11px] text-slate-500">
+                  {kapalTerpilih.length === 1
+                    ? kapalTerpilih[0]
+                    : <span className="font-semibold text-rose-600">Terpilih dari {kapalTerpilih.length} kapal — satu SPPBJ hanya untuk satu kapal.</span>}
+                </p>
+              </div>
+              <button onClick={() => setPilih(new Set())}
+                className="rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
+                Bersihkan
+              </button>
+              <button onClick={salin}
+                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
+                <Ikon nama="salin" className="h-3.5 w-3.5" /> Salin daftar
+              </button>
+              <button onClick={keSppbj} disabled={kapalTerpilih.length !== 1}
+                className="rounded-md bg-[#16357f] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#12296a] disabled:opacity-40">
+                Buat SPPBJ →
+              </button>
+            </div>
+          </div>
+        )}
+      </main>
     </div>
   );
 }
 
-/* ── satu berkas + isinya ───────────────────────────────────────────────── */
-function BlokBerkas({ e, pilih, alih, alihBanyak, ubahBaris, hapusBaris, tambahBaris, bacaUlang, bisaBaca, sibuk }: {
+/* ── isi satu berkas: keterangan, foto scan, dan tabel barangnya ────────── */
+function IsiBerkas({ e, pilih, lihatFoto, setLihatFoto, alih, alihBanyak, ubahBaris, hapusBaris, tambahBaris, bacaUlang, bisaBaca, sibuk }: {
   e: Entri;
   pilih: Set<string>;
+  lihatFoto: boolean;
+  setLihatFoto: (v: boolean) => void;
   alih: (fileId: string, i: number) => void;
   alihBanyak: (daftar: Entri[]) => void;
   ubahBaris: (e: Entri, i: number, k: keyof BarisPermintaan, v: string) => void;
@@ -543,89 +554,135 @@ function BlokBerkas({ e, pilih, alih, alihBanyak, ubahBaris, hapusBaris, tambahB
   const b = e.bacaan;
   const status = statusEntri(e, sibuk);
   const lencana =
-    status === "selesai" ? { t: `${b!.baris.length} barang`, k: "bg-emerald-100 text-emerald-800 ring-emerald-200" }
-      : status === "proses" ? { t: "sedang dibaca…", k: "bg-sky-100 text-sky-800 ring-sky-200" }
-        : status === "gagal" ? { t: "gagal dibaca", k: "bg-rose-100 text-rose-700 ring-rose-200" }
-          : { t: "belum dibaca", k: "bg-slate-100 text-slate-600 ring-slate-200" };
-  const kosong = status !== "selesai";
+    status === "selesai" ? { t: `${b!.baris.length} barang terbaca`, k: "border-emerald-300 bg-emerald-50 text-emerald-800 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300" }
+      : status === "proses" ? { t: "sedang dibaca…", k: "border-sky-300 bg-sky-50 text-sky-800 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300" }
+        : status === "gagal" ? { t: "gagal dibaca", k: "border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900 dark:bg-rose-950/40 dark:text-rose-300" }
+          : { t: "belum dibaca", k: "border-slate-300 bg-slate-50 text-slate-600 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-300" };
+
+  /*
+   * Fotonya diambil lewat server aplikasi, bukan disematkan dari Drive.
+   *
+   * Berkas kiriman ABK tinggal di Drive yang tidak dibagikan: menyematkan
+   * tautan Drive hanya berhasil bila yang membuka kebetulan sedang login ke
+   * akun pemiliknya — di layar kantor hasilnya kotak kosong. Route
+   * /api/lapor/isi mengambilkan berkasnya lewat Apps Script dan menyajikannya
+   * dari alamat kita sendiri, jadi selalu tampil bagi siapa pun yang sudah
+   * masuk ke aplikasi.
+   */
+  const alamatSemat = `/api/lapor/isi?fileId=${encodeURIComponent(e.berkas.fileId)}`;
 
   return (
-    <div className={kosong ? "bg-slate-50/60 dark:bg-slate-900/40" : ""}>
-      <div className="flex flex-wrap items-center gap-2 px-4 py-2.5">
-        <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-extrabold ring-1 ${lencana.k}`}>{lencana.t}</span>
-        <div className="min-w-[12rem] flex-1">
-          <p className="truncate text-[11px] font-bold text-slate-700 dark:text-slate-200">{namaPendek(e.berkas.nama)}</p>
-          <p className="truncate text-[10px] text-slate-400">
-            {singkatJenis(e.kiriman.jenis)} · {bulanIndo(e.kiriman.periode)} · dikirim {waktuSingkat(e.kiriman.dikirimPada)}
-            {b?.mesin && <> · {b.mesin}</>}
-            {b?.disunting && <> · <span className="font-bold text-amber-600">dikoreksi manual</span></>}
+    <div className="flex h-full flex-col">
+      {/* kepala berkas */}
+      <div className="flex flex-wrap items-center gap-2.5 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+        <span className={`shrink-0 rounded border px-2 py-0.5 text-[11px] font-semibold ${lencana.k}`}>{lencana.t}</span>
+        <div className="min-w-[14rem] flex-1">
+          <p className="truncate text-[13px] font-bold text-slate-900 dark:text-white">{e.kiriman.kapal}</p>
+          <p className="truncate text-[11px] text-slate-500">
+            {namaPendek(e.berkas.nama)} · {singkatJenis(e.kiriman.jenis)} · {bulanIndo(e.kiriman.periode)}
+            {" "}· dikirim {waktuSingkat(e.kiriman.dikirimPada)}
+            {b?.mesin && <> · dibaca {b.mesin}</>}
+            {b?.disunting && <> · <span className="font-semibold text-amber-600">dikoreksi manual</span></>}
           </p>
         </div>
-        <a href={e.berkas.url} target="_blank" rel="noreferrer"
-          className="rounded-lg px-2 py-1 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200 hover:bg-slate-50 dark:ring-slate-700">
-          Lihat foto
+        <button onClick={() => setLihatFoto(!lihatFoto)}
+          className="rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:text-slate-200">
+          {lihatFoto ? "Sembunyikan foto" : "Tampilkan foto"}
+        </button>
+        <a href={alamatSemat} target="_blank" rel="noreferrer"
+          className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:text-slate-200">
+          Buka berkas <Ikon nama="keluarTaut" className="h-3 w-3" />
         </a>
         {bisaBaca && (
           <button onClick={() => bacaUlang(e)} disabled={sibuk}
-            className="rounded-lg px-2 py-1 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200 hover:bg-sky-50 disabled:opacity-40 dark:text-sky-300 dark:ring-sky-800">
+            className="rounded-md bg-[#16357f] px-2.5 py-1.5 text-[11.5px] font-semibold text-white transition hover:bg-[#12296a] disabled:opacity-40">
             {sibuk ? "Membaca…" : b ? "Baca ulang" : "Baca sekarang"}
           </button>
         )}
       </div>
 
-      {b?.galat && <p className="px-4 pb-2 text-[10px] text-amber-700 dark:text-amber-400">⚠ {b.galat}</p>}
+      {b?.galat && (
+        <p className="border-b border-amber-200 bg-amber-50 px-4 py-2 text-[11.5px] text-amber-800 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-300">
+          {b.galat}
+        </p>
+      )}
 
-      {!!b?.baris.length && (
-        <div className="overflow-x-auto px-2 pb-3">
-          <table className="w-full min-w-[42rem] text-xs">
-            <thead>
-              <tr className="text-[10px] uppercase tracking-wide text-slate-400">
-                <th className="w-9 px-2 py-1.5">
-                  <input type="checkbox" className="accent-sky-600"
-                    checked={b.baris.every((_, i) => pilih.has(kunci(e.berkas.fileId, i)))}
-                    onChange={() => alihBanyak([e])} />
-                </th>
-                <th className="px-2 py-1.5 text-left font-extrabold">Nama barang</th>
-                <th className="w-40 px-2 py-1.5 text-left font-extrabold">Spesifikasi</th>
-                <th className="w-16 px-2 py-1.5 text-center font-extrabold">Jml</th>
-                <th className="w-20 px-2 py-1.5 text-left font-extrabold">Satuan</th>
-                <th className="w-40 px-2 py-1.5 text-left font-extrabold">Keterangan</th>
-                <th className="w-8 px-2 py-1.5" />
-              </tr>
-            </thead>
-            <tbody>
-              {b.baris.map((r, i) => {
-                const dipilih = pilih.has(kunci(e.berkas.fileId, i));
-                return (
-                  <tr key={i} className={`row-hover rounded-lg ${dipilih ? "bg-sky-50/70 dark:bg-sky-950/30" : i % 2 ? "bg-slate-50/50 dark:bg-slate-800/30" : ""}`}>
-                    <td className="px-2 py-1 text-center">
-                      <input type="checkbox" className="accent-sky-600" checked={dipilih}
-                        onChange={() => alih(e.berkas.fileId, i)} />
-                    </td>
-                    {(["nama", "spesifikasi", "jumlah", "satuan", "keterangan"] as const).map((k) => (
-                      <td key={k} className="px-1 py-1">
-                        <input value={r[k] || ""} placeholder="—"
-                          onChange={(ev) => ubahBaris(e, i, k, ev.target.value)}
-                          className={`w-full rounded-md border border-transparent bg-transparent px-1.5 py-1 outline-none placeholder:text-slate-300 hover:border-slate-200 focus:border-sky-400 focus:bg-white dark:hover:border-slate-700 dark:focus:bg-slate-950 ${
-                            k === "nama" ? "font-semibold text-slate-800 dark:text-slate-100" : "text-slate-600 dark:text-slate-300"} ${
-                            k === "jumlah" ? "text-center tabular-nums" : ""}`} />
+      <div className={`flex-1 ${lihatFoto ? "grid gap-0 xl:grid-cols-[minmax(0,1fr)_20rem]" : ""}`}>
+        {/* tabel barang */}
+        <div className="min-w-0 overflow-x-auto">
+          {!b?.baris.length ? (
+            <p className="px-4 py-16 text-center text-[12.5px] text-slate-500">
+              {status === "gagal"
+                ? "Berkas ini gagal dibaca — buka fotonya, lalu ketik barangnya lewat “Tambah baris”."
+                : status === "proses" ? "Sedang dibaca…" : "Belum dibaca. Isinya muncul di sini begitu selesai."}
+            </p>
+          ) : (
+            <table className="w-full min-w-[34rem] text-[12.5px]">
+              <thead className="sticky top-0 z-10 bg-slate-50 dark:bg-slate-800/80">
+                <tr className="border-b border-slate-200 text-[10.5px] uppercase tracking-[0.08em] text-slate-500 dark:border-slate-700">
+                  <th className="w-9 px-2 py-2">
+                    <input type="checkbox" className="accent-[#16357f]"
+                      checked={b.baris.every((_, i) => pilih.has(kunci(e.berkas.fileId, i)))}
+                      onChange={() => alihBanyak([e])} />
+                  </th>
+                  <th className="px-2 py-2 text-left font-bold">Nama barang</th>
+                  <th className="w-40 px-2 py-2 text-left font-bold">Spesifikasi</th>
+                  <th className="w-14 px-2 py-2 text-center font-bold">Jml</th>
+                  <th className="w-20 px-2 py-2 text-left font-bold">Satuan</th>
+                  <th className="w-36 px-2 py-2 text-left font-bold">Keterangan</th>
+                  <th className="w-8 px-2 py-2" />
+                </tr>
+              </thead>
+              <tbody>
+                {b.baris.map((r, i) => {
+                  const dipilih = pilih.has(kunci(e.berkas.fileId, i));
+                  return (
+                    <tr key={i} className={`border-b border-slate-100 transition dark:border-slate-800 ${
+                      dipilih ? "bg-[#16357f]/[0.06] dark:bg-sky-950/30" : "hover:bg-slate-50 dark:hover:bg-slate-800/40"}`}>
+                      <td className="px-2 py-1 text-center">
+                        <input type="checkbox" className="accent-[#16357f]" checked={dipilih}
+                          onChange={() => alih(e.berkas.fileId, i)} />
                       </td>
-                    ))}
-                    <td className="px-1 py-1 text-center">
-                      <button onClick={() => hapusBaris(e, i)} title="Hapus baris"
-                        className="rounded px-1 text-slate-300 hover:bg-rose-50 hover:text-rose-600">✕</button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+                      {(["nama", "spesifikasi", "jumlah", "satuan", "keterangan"] as const).map((k) => (
+                        <td key={k} className="px-1 py-0.5">
+                          <input value={r[k] || ""} placeholder="—"
+                            onChange={(ev) => ubahBaris(e, i, k, ev.target.value)}
+                            className={`w-full rounded border border-transparent bg-transparent px-1.5 py-1 outline-none placeholder:text-slate-300 hover:border-slate-300 focus:border-slate-500 focus:bg-white dark:hover:border-slate-600 dark:focus:bg-slate-950 ${
+                              k === "nama" ? "font-semibold text-slate-800 dark:text-slate-100" : "text-slate-600 dark:text-slate-300"} ${
+                              k === "jumlah" ? "text-center tabular-nums" : ""}`} />
+                        </td>
+                      ))}
+                      <td className="px-1 py-0.5 text-center">
+                        <button onClick={() => hapusBaris(e, i)} title="Hapus baris"
+                          className="rounded px-1 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600">✕</button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
           <button onClick={() => tambahBaris(e)}
-            className="mt-1 px-2 text-[10px] font-bold text-slate-400 hover:text-sky-600">
+            className="m-3 rounded-md border border-dashed border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-500 transition hover:border-slate-400 hover:text-slate-700 dark:border-slate-600">
             + Tambah baris yang terlewat
           </button>
         </div>
-      )}
+
+        {/* foto scan, berdampingan dengan tabelnya */}
+        {lihatFoto && (
+          <div className="border-t border-slate-200 p-3 dark:border-slate-700 xl:border-l xl:border-t-0">
+            <p className="mb-2 text-[10.5px] font-bold uppercase tracking-[0.1em] text-slate-500">Foto / scan asli</p>
+            <div className="overflow-hidden rounded-md border border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800">
+              <iframe src={alamatSemat} title={`Scan ${namaPendek(e.berkas.nama)}`}
+                className="h-[26rem] w-full xl:h-[calc(100vh-24rem)]" />
+            </div>
+            <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+              Bandingkan langsung dengan tabel di sebelah. Kolom yang keliru bisa diperbaiki di tempat —
+              perubahannya tersimpan sendiri.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
