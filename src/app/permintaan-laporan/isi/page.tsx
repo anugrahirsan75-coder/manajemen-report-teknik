@@ -502,7 +502,13 @@ export default function IsiPermintaanKapal() {
                 const semuaTerpilih = !!kunciSemua.length && kunciSemua.every((k) => pilih.has(k));
                 return (
                   <div key={namaKapal}>
-                    <div className="sticky top-0 z-10 flex items-center gap-2 border-y border-slate-200 bg-gradient-to-r from-[#16357f]/[0.10] via-[#14b8c4]/[0.07] to-transparent px-3 py-1.5 dark:border-slate-700 dark:from-slate-800 dark:via-slate-800 dark:to-slate-800">
+                    {/*
+                      Judul kapal menempel saat daftar digulir, jadi latarnya
+                      WAJIB pekat: dengan gradasi tembus pandang, baris berkas
+                      yang lewat di bawahnya terbaca menembus tulisan judul.
+                      Warna mereknya dipindah ke garis tepi kiri.
+                    */}
+                    <div className="sticky top-0 z-10 flex items-center gap-2 border-y border-slate-200 border-l-[3px] border-l-[#16357f] bg-[#eef2f8] px-3 py-1.5 dark:border-slate-700 dark:border-l-sky-500 dark:bg-slate-800">
                       <span className="flex-1 truncate text-[11px] font-bold uppercase tracking-[0.1em] text-[#16357f] dark:text-slate-200">
                         {namaKapal}
                       </span>
@@ -849,7 +855,8 @@ function IsiBerkas({ e, pilih, estimasi, lihatFoto, setLihatFoto, alih, alihBany
             </p>
           ) : (
             <table className="w-full min-w-[40rem] text-[12.5px]">
-              <thead className="sticky top-0 z-10 bg-gradient-to-r from-[#16357f]/[0.07] to-[#14b8c4]/[0.05] dark:bg-slate-800/80">
+              {/* kepala tabel juga menempel — latarnya pekat karena alasan yang sama */}
+              <thead className="sticky top-0 z-10 bg-[#eef2f8] dark:bg-slate-800">
                 <tr className="border-b border-slate-200 text-[10.5px] uppercase tracking-[0.08em] text-slate-500 dark:border-slate-700">
                   <th className="w-9 px-2 py-2">
                     <input type="checkbox" className="accent-[#16357f]"
