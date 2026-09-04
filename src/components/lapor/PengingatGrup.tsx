@@ -22,6 +22,7 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Ikon } from "@/components/ikon";
+import { DataKartu, gambarKartuRekap, tinggiKartu } from "./kartuRekap";
 
 export interface BarisKapalPengingat {
   kapal: string;
@@ -48,13 +49,19 @@ const jamPendek = (d: Date) =>
 /** nama kapal tanpa "KMP." — di grup kapal semua orang sudah tahu itu kapal */
 const namaPendek = (k: string) => k.replace(/^KMP\.?\s*/i, "").trim();
 
-export function PengingatGrup({ periodeLabel, daftar, totalDokumen, tautanLapor, tutup }: {
+export function PengingatGrup({ periodeLabel, daftar, kolom, totalDokumen, tautanLapor, catatanDasar, tutup }: {
   periodeLabel: string;
   daftar: BarisKapalPengingat[];
+  /** nama keempat dokumen wajib, urut seperti di matriks */
+  kolom: string[];
   totalDokumen: number;
   tautanLapor: string;
+  /** dasar hitungan rekap (periode laporan / bulan kirim), ditulis di gambar */
+  catatanDasar: string;
   tutup: () => void;
 }) {
+  const [rupa, setRupa] = useState<"teks" | "gambar">("teks");
+  const kanvas = useRef<HTMLCanvasElement | null>(null);
   const [gaya, setGaya] = useState<Gaya>("rinci");
   const [pakaiTautan, setPakaiTautan] = useState(true);
   const [pakaiPujian, setPakaiPujian] = useState(true);
@@ -154,6 +161,51 @@ export function PengingatGrup({ periodeLabel, daftar, totalDokumen, tautanLapor,
 
   useEffect(() => { if (!disunting) setNaskah(susun); }, [susun, disunting]);
 
+  /*
+   * Gambar digambar ulang tiap tab dibuka, bukan sekali di awal: rekapnya bisa
+   * berubah selagi jendela ini terbuka (kiriman baru masuk), dan gambar lama
+   * yang menagih kapal yang sudah kirim lebih buruk daripada tidak ada gambar.
+   */
+  useEffect(() => {
+    if (rupa !== "gambar" || !kanvas.current) return;
+    const data: DataKartu = {
+      periodeLabel,
+      kolom,
+      baris: daftar.map((d) => ({ kapal: d.kapal, isi: kolom.map((k) => d.ada.includes(k)) })),
+      tautan: tautanLapor,
+      catatan: catatanDasar,
+    };
+    gambarKartuRekap(kanvas.current, data);
+  }, [rupa, daftar, kolom, periodeLabel, tautanLapor, catatanDasar]);
+
+  const namaBerkas = `Rekap Laporan Kapal - ${periodeLabel}`;
+
+  const unduhGambar = () => {
+    kanvas.current?.toBlob((b) => {
+      if (!b) return;
+      const url = URL.createObjectURL(b);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${namaBerkas}.png`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      beritahu("Gambar diunduh — tinggal lampirkan di grup");
+    }, "image/png");
+  };
+
+  const salinGambar = () => {
+    kanvas.current?.toBlob(async (b) => {
+      if (!b) return;
+      try {
+        // papan klip gambar belum ada di semua peramban; kalau ditolak, diunduh
+        await navigator.clipboard.write([new ClipboardItem({ "image/png": b })]);
+        beritahu("Gambar disalin — tempel langsung di WhatsApp");
+      } catch {
+        unduhGambar();
+      }
+    }, "image/png");
+  };
+
   useEffect(() => {
     const tekan = (ev: KeyboardEvent) => { if (ev.key === "Escape") tutup(); };
     window.addEventListener("keydown", tekan);
@@ -201,12 +253,52 @@ export function PengingatGrup({ periodeLabel, daftar, totalDokumen, tautanLapor,
               Disusun dari rekap {periodeLabel} — {golongan.lengkap.length} lengkap · {golongan.sebagian.length} sebagian · {golongan.kosong.length} belum kirim
             </p>
           </div>
+          <div className="flex overflow-hidden rounded-xl ring-1 ring-slate-300 dark:ring-slate-700">
+            {([["teks", "Pesan teks"], ["gambar", "Gambar"]] as const).map(([id, label]) => (
+              <button key={id} type="button" onClick={() => setRupa(id)}
+                className={`px-3 py-1.5 text-[11px] font-bold transition ${
+                  rupa === id ? "bg-[#16357f] text-white" : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300"}`}>
+                {label}
+              </button>
+            ))}
+          </div>
           <button onClick={tutup} title="Tutup (Esc)"
             className="rounded-xl px-3 py-1.5 text-xs font-bold text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800">
             Tutup
           </button>
         </div>
 
+        {rupa === "gambar" ? (
+          <div className="space-y-3 px-5 py-4">
+            <p className="text-[11.5px] leading-relaxed text-slate-500">
+              Papan sekali-lihat untuk dilampirkan di grup. Pesan teks tergulung hilang di grup yang ramai;
+              gambar bisa dibuka ulang, diperbesar, dan diteruskan tanpa berubah bentuk.
+            </p>
+            <div className="max-h-[60vh] overflow-y-auto rounded-2xl bg-slate-100 p-3 dark:bg-slate-800">
+              <canvas ref={kanvas} className="w-full rounded-xl shadow-md"
+                style={{ aspectRatio: `1080 / ${tinggiKartu(daftar.length)}` }} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <button onClick={unduhGambar}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-[#16357f] px-4 py-2 text-xs font-bold text-white transition hover:bg-[#12296a]">
+                <Ikon nama="lembar" className="h-3.5 w-3.5" /> Unduh gambar (.png)
+              </button>
+              <button onClick={salinGambar}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700">
+                <Ikon nama="salin" className="h-3.5 w-3.5" /> Salin gambar
+              </button>
+              <button onClick={() => setRupa("teks")}
+                className="rounded-xl px-3 py-2 text-[11px] font-semibold text-slate-500 underline-offset-2 hover:underline">
+                Kembali ke pesan teks
+              </button>
+              {kabar && <span className="text-[11px] font-bold text-emerald-700 dark:text-emerald-300">{kabar}</span>}
+            </div>
+            <p className="text-[10.5px] leading-relaxed text-slate-500">
+              WhatsApp tidak bisa dikirimi gambar lewat tautan, jadi urutannya: salin atau unduh gambarnya,
+              buka grup, lampirkan. Pesan teksnya boleh ikut sebagai keterangan gambar.
+            </p>
+          </div>
+        ) : (
         <div className="space-y-3 px-5 py-4">
           <div className="flex flex-wrap gap-1.5">
             {GAYA.map((g) => (
@@ -277,6 +369,7 @@ export function PengingatGrup({ periodeLabel, daftar, totalDokumen, tautanLapor,
             Tanda <b>*bintang*</b> pada teks akan tampil tebal begitu terkirim.
           </p>
         </div>
+        )}
       </div>
     </div>
   );

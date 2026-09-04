@@ -1152,8 +1152,12 @@ function IsiPermintaanLaporanKapal() {
         <PengingatGrup
           periodeLabel={bulanIndo(periodeMatriks)}
           daftar={kelengkapanKapal}
+          kolom={JENIS_LAPOR.map((j) => j.singkat)}
           totalDokumen={ringkas.totalSlot}
           tautanLapor={tautanLapor}
+          catatanDasar={dasarRekap === "periode"
+            ? "Dihitung menurut bulan yang dilaporkan ABK."
+            : "Dihitung menurut bulan berkasnya masuk."}
           tutup={() => setPengingat(false)}
         />
       )}
