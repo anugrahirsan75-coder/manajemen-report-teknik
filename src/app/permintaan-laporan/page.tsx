@@ -12,7 +12,9 @@ import Link from "next/link";
 import BacaPermintaan from "@/components/lapor/BacaPermintaan";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Ikon } from "@/components/ikon";
 import { PratinjauBerkas } from "@/components/PratinjauBerkas";
+import { PengingatGrup } from "@/components/lapor/PengingatGrup";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import {
   BerkasLapor, JENIS_LAPOR, KirimanLapor, STATUS_LAPOR, bulanIndo, labelJenis, singkatJenis,
@@ -131,6 +133,8 @@ function IsiPermintaanLaporanKapal() {
   /** saringan daftar: hanya kiriman yang naik di ujung bulan */
   const [hanyaUjung, setHanyaUjung] = useState(false);
   /** berkas yang sedang dibuka di jendela pratinjau */
+  /** penyusun pesan tagihan untuk grup WhatsApp kapal */
+  const [pengingat, setPengingat] = useState(false);
   const [lihatBerkas, setLihatBerkas] = useState<{ fileId: string; nama: string; url: string; kapal: string } | null>(null);
 
   const tampil = useMemo(() => baris.filter((b) => {
@@ -457,6 +461,22 @@ function IsiPermintaanLaporanKapal() {
       berkas: kiriman.reduce((s, b) => s + b.berkas.length, 0),
     };
   }, [baris, matriks, cocokBulan]);
+  /*
+   * Kelengkapan tiap kapal dalam bentuk nama dokumen, bukan angka.
+   *
+   * Matriks di layar cukup memakai jumlah karena kolomnya sudah kelihatan.
+   * Pesan ke grup tidak punya kolom: "2/4" tidak memberi tahu ABK dokumen mana
+   * yang harus mereka kirim, jadi yang dibawa ke sana nama dokumennya.
+   */
+  const kelengkapanKapal = useMemo(() => KAPAL_ANGGARAN.map((k) => {
+    const ada: string[] = [];
+    const kurang: string[] = [];
+    JENIS_LAPOR.forEach((j) => {
+      (matriks.get(`${k}|${j.id}`)?.length ? ada : kurang).push(j.singkat);
+    });
+    return { kapal: k, ada, kurang };
+  }), [matriks]);
+
   const jumlahBaru = baris.filter((b) => b.status === "baru").length;
 
   const saringanAktif = !!(cari || kapal || jenis || status || periode || hanyaUjung);
@@ -537,6 +557,18 @@ function IsiPermintaanLaporanKapal() {
                   </button>
                 ))}
               </div>
+              {/*
+                Menagih laporan ke grup kapal adalah pekerjaan yang berangkat
+                dari layar ini juga — tombolnya ditaruh di sebelah rekapnya,
+                bukan di halaman lain, supaya yang dibaca dan yang dikirim
+                berasal dari angka yang sama.
+              */}
+              <button type="button" onClick={() => setPengingat(true)}
+                title="Susun pesan tagihan untuk grup WhatsApp kapal, dari rekap periode ini"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-[11px] font-bold text-white shadow-sm transition hover:bg-emerald-700">
+                <Ikon nama="kotakMasuk" className="h-3.5 w-3.5" /> Pengingat grup
+              </button>
+
             <label className="flex items-center gap-2 rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-600 ring-1 ring-slate-200 shadow-sm dark:bg-slate-800 dark:ring-slate-700">
               <span className="text-slate-400">Periode</span>
               <select value={periodeMatriks} onChange={(e) => setPeriodeRekap(e.target.value)} className="bg-transparent font-bold text-[#16357f] outline-none dark:text-sky-300">
@@ -1116,6 +1148,16 @@ function IsiPermintaanLaporanKapal() {
           kiriman={{ id: bacaKiriman.id, kapal: bacaKiriman.kapal, jenis: bacaKiriman.jenis, periode: bacaKiriman.periode }}
         />
       )}
+      {pengingat && (
+        <PengingatGrup
+          periodeLabel={bulanIndo(periodeMatriks)}
+          daftar={kelengkapanKapal}
+          totalDokumen={ringkas.totalSlot}
+          tautanLapor={tautanLapor}
+          tutup={() => setPengingat(false)}
+        />
+      )}
+
       {lihatBerkas && (
         <PratinjauBerkas
           fileId={lihatBerkas.fileId}
