@@ -46,9 +46,19 @@ const TEKS_REDUP = "#64748b";
 
 const namaPendek = (k: string) => k.replace(/^KMP\.?\s*/i, "").trim();
 
-/** kependekan dua huruf untuk kepala kolom: "Permintaan Deck" → "PD" */
-const inisial = (s: string) =>
-  s.split(/\s+/).map((w) => w[0]).join("").slice(0, 2).toUpperCase();
+/**
+ * Kepala kolom ditulis UTUH, dipatah dua baris.
+ *
+ * Singkatan "PD / PM / LD / LM" memang muat di kolom sempit, tetapi gambar ini
+ * dibaca ABK di grup, bukan oleh yang menyusunnya — dan singkatan menuntut
+ * pembacanya menoleh ke keterangan di kaki gambar dulu. Nama penuh menghapus
+ * langkah itu sepenuhnya: "Permintaan / Deck" tidak perlu diterjemahkan.
+ */
+const patahDua = (s: string): string[] => {
+  const kata = s.split(/\s+/);
+  if (kata.length < 2) return [s];
+  return [kata.slice(0, -1).join(" "), kata[kata.length - 1]];
+};
 
 function kotakBulat(c: CanvasRenderingContext2D, x: number, y: number, l: number, t: number, r: number) {
   c.beginPath();
@@ -61,7 +71,7 @@ function kotakBulat(c: CanvasRenderingContext2D, x: number, y: number, l: number
 }
 
 /** tinggi gambar dihitung dulu supaya kanvas dibuat pas, tanpa sisa kosong */
-export const tinggiKartu = (jumlahKapal: number) => 336 + jumlahKapal * TINGGI_BARIS + 210;
+export const tinggiKartu = (jumlahKapal: number) => 350 + jumlahKapal * TINGGI_BARIS + 180;
 
 export function gambarKartuRekap(kanvas: HTMLCanvasElement, d: DataKartu) {
   const tinggi = tinggiKartu(d.baris.length);
@@ -144,18 +154,22 @@ export function gambarKartuRekap(kanvas: HTMLCanvasElement, d: DataKartu) {
   c.textAlign = "left";
 
   // ── kepala kolom ───────────────────────────────────────────────────────
-  const kolomL = 118;
+  // kolomnya dilebarkan supaya nama dokumen muat utuh, bukan disingkat
+  const kolomL = 152;
   const kolomX = LEBAR - TEPI - d.kolom.length * kolomL;
-  let y = 250 + 40;   // kepala kolom
+  let y = 250 + 48;   // kepala kolom
 
   c.fillStyle = TEKS_REDUP;
   c.font = "bold 20px system-ui, sans-serif";
   c.fillText("KAPAL", TEPI, y);
   c.textAlign = "center";
   d.kolom.forEach((k, i) => {
-    c.fillStyle = TEKS_REDUP;
-    c.font = "bold 22px system-ui, sans-serif";
-    c.fillText(inisial(k), kolomX + i * kolomL + kolomL / 2, y);
+    const x = kolomX + i * kolomL + kolomL / 2;
+    const baris = patahDua(k);
+    c.fillStyle = BIRU;
+    c.font = "bold 19px system-ui, sans-serif";
+    if (baris.length === 1) c.fillText(baris[0], x, y);
+    else { c.fillText(baris[0], x, y - 12); c.fillText(baris[1], x, y + 12); }
   });
   c.textAlign = "left";
 
@@ -164,12 +178,12 @@ export function gambarKartuRekap(kanvas: HTMLCanvasElement, d: DataKartu) {
   c.strokeStyle = "#e2e8f0";
   c.lineWidth = 2;
   c.beginPath();
-  c.moveTo(TEPI - 14, 250 + 62);
-  c.lineTo(LEBAR - TEPI + 14, 250 + 62);
+  c.moveTo(TEPI - 14, 250 + 76);
+  c.lineTo(LEBAR - TEPI + 14, 250 + 76);
   c.stroke();
 
   // ── baris kapal ────────────────────────────────────────────────────────
-  y = 250 + 102;
+  y = 250 + 116;
   d.baris.forEach((b, i) => {
     const penuh = b.isi.every(Boolean);
     const kosong = !b.isi.some(Boolean);
@@ -228,21 +242,8 @@ export function gambarKartuRekap(kanvas: HTMLCanvasElement, d: DataKartu) {
   c.lineTo(LEBAR - TEPI, y);
   c.stroke();
 
-  y += 34;
-  c.font = "bold 20px system-ui, sans-serif";
+  y += 36;
   let lx = TEPI;
-  d.kolom.forEach((k) => {
-    c.fillStyle = BIRU;
-    c.fillText(inisial(k), lx, y);
-    const w = c.measureText(inisial(k)).width;
-    c.fillStyle = TEKS_REDUP;
-    c.font = "20px system-ui, sans-serif";
-    c.fillText(` = ${k}`, lx + w, y);
-    lx += w + c.measureText(` = ${k}`).width + 34;
-    c.font = "bold 20px system-ui, sans-serif";
-  });
-
-  y += 40;
   const petunjuk: [string, string][] = [[HIJAU, "lengkap 4/4"], [KUNING, "baru sebagian"], [MERAH, "belum kirim"]];
   lx = TEPI;
   petunjuk.forEach(([warna, label]) => {
