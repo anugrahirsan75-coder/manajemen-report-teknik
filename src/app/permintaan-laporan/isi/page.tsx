@@ -95,6 +95,17 @@ export default function IsiPermintaanKapal() {
   const [lihatFoto, setLihatFoto] = useState(true);
   /** perkiraan harga per baris, dari Database RAB */
   const [estimasi, setEstimasi] = useState<Record<string, Estimasi>>({});
+  /**
+   * Dua cara memandang isi yang sama.
+   *
+   * "Berkas" untuk mencocokkan hasil bacaan dengan fotonya — pekerjaan teliti,
+   * satu lembar demi satu lembar. "Rekap bulan" untuk melihat seluruh kebutuhan
+   * armada dalam satu tabel dan mengunduhnya sekaligus; tanpa itu, menyusun
+   * daftar kerja bulanan berarti membuka dua puluh enam berkas satu per satu
+   * dan menyalin isinya dengan tangan.
+   */
+  const [rupa, setRupa] = useState<"berkas" | "rekap">("berkas");
+  const [unduh, setUnduh] = useState(false);
   const [denyut, setDenyut] = useState<StatusJuruBaca | null>(null);
   const jadwalSimpan = useRef<Map<string, number>>(new Map());
 
@@ -323,6 +334,63 @@ export default function IsiPermintaanKapal() {
   const salin = () => navigator.clipboard?.writeText(
     terpilih.map((x, i) => `${i + 1}. ${x.baris.nama}${x.baris.spesifikasi ? ` (${x.baris.spesifikasi})` : ""} — ${keJumlah(x.baris.jumlah)} ${x.baris.satuan || "pcs"}`).join("\n"));
 
+  /*
+   * Semua baris yang sedang tampil, diratakan menjadi satu daftar panjang.
+   * Saringan kapal/periode/cari tetap berlaku — yang diunduh selalu sama persis
+   * dengan yang sedang dilihat, supaya tidak ada kejutan di dalam berkas Excel.
+   */
+  const rekapBaris = useMemo(() => {
+    const keluar: {
+      kapal: string; jenis: string; nama: string; spesifikasi: string; jumlah: string; satuan: string;
+      keterangan: string; harga: number; yakin: boolean; pembanding: string; berkas: string; dikirim: string;
+      fileId: string; indeks: number;
+    }[] = [];
+    tampil.forEach((e) => (e.bacaan?.baris || []).forEach((b, i) => {
+      if (!(b.nama || "").trim()) return;
+      const est = estimasi[kunci(e.berkas.fileId, i)];
+      keluar.push({
+        kapal: e.kiriman.kapal,
+        jenis: singkatJenis(e.kiriman.jenis),
+        nama: b.nama || "", spesifikasi: b.spesifikasi || "", jumlah: b.jumlah || "",
+        satuan: b.satuan || "", keterangan: b.keterangan || "",
+        harga: est?.harga || 0, yakin: !!est?.yakin,
+        pembanding: est?.uraian ? `${est.uraian}${est.satuan ? ` (${est.satuan})` : ""}` : "",
+        berkas: e.berkas.nama, dikirim: waktuSingkat(e.kiriman.dikirimPada),
+        fileId: e.berkas.fileId, indeks: i,
+      });
+    }));
+    return keluar.sort((a, b) => a.kapal.localeCompare(b.kapal, "id") || a.jenis.localeCompare(b.jenis, "id"));
+  }, [tampil, estimasi]);
+
+  const nilaiRekap = useMemo(
+    () => rekapBaris.reduce((s, b) => s + b.harga * (keAngkaJumlah(b.jumlah) || 1), 0), [rekapBaris]);
+
+  const unduhRekap = async () => {
+    if (!rekapBaris.length || unduh) return;
+    setUnduh(true); setGalat("");
+    try {
+      const r = await fetch("/api/lapor/rekap-excel", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          periodeLabel: periode ? bulanIndo(periode) : "semua periode",
+          baris: rekapBaris,
+        }),
+      });
+      if (!r.ok) {
+        const d = await r.json().catch(() => ({}));
+        throw new Error(d?.error || `Excel gagal disusun (kode ${r.status})`);
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `Rekap Permintaan Kapal - ${periode ? bulanIndo(periode) : "semua periode"}.xlsx`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (e: any) { setGalat(e?.message || String(e)); }
+    finally { setUnduh(false); }
+  };
+
   const bacaUlang = async (e: Entri) => {
     setSibukBerkas(e.berkas.fileId); setGalat("");
     try {
@@ -333,6 +401,15 @@ export default function IsiPermintaanKapal() {
     } catch (err: any) { setGalat(err?.message || String(err)); }
     finally { setSibukBerkas(""); }
   };
+
+  /*
+   * Masuk ke rekap tanpa memilih bulan akan menumpuk permintaan beberapa bulan
+   * menjadi satu daftar — bentuk yang tidak dipakai siapa pun. Bulan terbaru
+   * dipilihkan, dan tetap boleh diganti.
+   */
+  useEffect(() => {
+    if (rupa === "rekap" && !periode && daftarPeriode.length) setPeriode(daftarPeriode[0]);
+  }, [rupa, periode, daftarPeriode]);
 
   const saringanAktif = !!(kapal || periode || cari || saring !== "semua");
   /** laptop kantor berdenyut = ada yang membaca, walau layar ini tak bisa */
@@ -370,6 +447,19 @@ export default function IsiPermintaanKapal() {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
+              {/*
+                Dua cara memandang isi yang sama: satu untuk memeriksa lembar
+                demi lembar, satu untuk melihat kebutuhan sebulan sekaligus.
+              */}
+              <div className="flex overflow-hidden rounded-md border border-slate-300 dark:border-slate-600">
+                {([["berkas", "Per berkas"], ["rekap", "Rekap bulan"]] as const).map(([id, l]) => (
+                  <button key={id} type="button" onClick={() => setRupa(id)}
+                    className={`px-2.5 py-1.5 text-[11px] font-semibold transition ${
+                      rupa === id ? "bg-[#16357f] text-white" : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-900 dark:text-slate-300"}`}>
+                    {l}
+                  </button>
+                ))}
+              </div>
               <Link href="/permintaan-laporan"
                 className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200">
                 ← Kiriman &amp; berkas
@@ -447,7 +537,17 @@ export default function IsiPermintaanKapal() {
           </p>
         )}
 
-        {/* ── dua panel: daftar berkas | isi berkas ─────────────────────── */}
+        {rupa === "rekap" ? (
+          <RekapBulan
+            baris={rekapBaris} nilai={nilaiRekap}
+            periode={periode} setPeriode={setPeriode} daftarPeriode={daftarPeriode}
+            kapal={kapal} setKapal={setKapal} daftarKapal={daftarKapal}
+            cari={cari} setCari={setCari}
+            unduh={unduh} keExcel={unduhRekap}
+            keBerkas={(fileId) => { setBerkasAktif(fileId); setRupa("berkas"); }}
+          />
+        ) : (
+        /* ── dua panel: daftar berkas | isi berkas ─────────────────────── */
         <div className="grid gap-4 pb-24 lg:grid-cols-[21rem_1fr]">
           {/* ── kiri: daftar berkas ───────────────────────────────────── */}
           <aside className="rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
@@ -590,6 +690,7 @@ export default function IsiPermintaanKapal() {
             )}
           </section>
         </div>
+        )}
 
         {/* ── bilah pilihan ─────────────────────────────────────────────── */}
         {terpilih.length > 0 && (
@@ -637,6 +738,148 @@ export default function IsiPermintaanKapal() {
 }
 
 /* ── isi satu berkas: keterangan, foto scan, dan tabel barangnya ────────── */
+interface BarisRekapLayar {
+  kapal: string; jenis: string; nama: string; spesifikasi: string; jumlah: string; satuan: string;
+  keterangan: string; harga: number; yakin: boolean; pembanding: string; berkas: string; dikirim: string;
+  fileId: string; indeks: number;
+}
+
+/**
+ * Seluruh permintaan armada satu bulan dalam satu tabel.
+ *
+ * Bentuk "per berkas" benar untuk memeriksa hasil bacaan, tetapi salah untuk
+ * menyusun kerja bulanan: yang dibutuhkan kantor adalah satu daftar utuh — apa
+ * saja yang diminta armada bulan ini, berapa nilainya, dan datang dari kapal
+ * mana. Selama daftar itu tidak ada, ia disusun dengan tangan dari dua puluh
+ * enam berkas, dan tiap penyalinan adalah kesempatan baru untuk keliru.
+ *
+ * Nama kapal ditulis sekali di awal kelompoknya, tidak diulang tiap baris: mata
+ * menemukan batas kelompok lebih cepat dari ruang kosong daripada dari kata
+ * yang sama berjajar ke bawah.
+ */
+function RekapBulan({ baris, nilai, periode, setPeriode, daftarPeriode, kapal, setKapal, daftarKapal, cari, setCari, unduh, keExcel, keBerkas }: {
+  baris: BarisRekapLayar[];
+  nilai: number;
+  periode: string; setPeriode: (v: string) => void; daftarPeriode: string[];
+  kapal: string; setKapal: (v: string) => void; daftarKapal: string[];
+  cari: string; setCari: (v: string) => void;
+  unduh: boolean; keExcel: () => void;
+  keBerkas: (fileId: string) => void;
+}) {
+  const perKapal = new Map<string, number>();
+  baris.forEach((b) => perKapal.set(b.kapal, (perKapal.get(b.kapal) || 0) + b.harga * (keAngkaJumlah(b.jumlah) || 1)));
+  const tanpaHarga = baris.filter((b) => !b.harga).length;
+
+  return (
+    <div className="pb-24">
+      <div className="rounded-xl border border-slate-300 bg-white dark:border-slate-700 dark:bg-slate-900">
+        <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-3 dark:border-slate-700">
+          <div className="min-w-[15rem] flex-1">
+            <h2 className="text-[15px] font-bold tracking-tight text-slate-900 dark:text-white">
+              Rekap permintaan {periode ? bulanIndo(periode) : "semua periode"}
+            </h2>
+            <p className="mt-0.5 text-[11.5px] text-slate-500">
+              {baris.length} baris dari {perKapal.size} kapal
+              {nilai > 0 && <> · perkiraan nilai <b className="text-[#16357f] dark:text-sky-400">{rupiahPenuh(nilai)}</b></>}
+              {tanpaHarga > 0 && <> · {tanpaHarga} barang belum ada pembandingnya</>}
+            </p>
+          </div>
+
+          <select value={periode} onChange={(e) => setPeriode(e.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11.5px] dark:border-slate-600 dark:bg-slate-900">
+            <option value="">Semua periode</option>
+            {daftarPeriode.map((p) => <option key={p} value={p}>{bulanIndo(p)}</option>)}
+          </select>
+          <select value={kapal} onChange={(e) => setKapal(e.target.value)}
+            className="rounded-md border border-slate-300 bg-white px-2 py-1.5 text-[11.5px] dark:border-slate-600 dark:bg-slate-900">
+            <option value="">Semua kapal</option>
+            {daftarKapal.map((k) => <option key={k} value={k}>{k}</option>)}
+          </select>
+          <div className="relative">
+            <Ikon nama="kaca" className="pointer-events-none absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-slate-400" />
+            <input value={cari} onChange={(e) => setCari(e.target.value)} placeholder="Cari barang…"
+              className="w-44 rounded-md border border-slate-300 bg-white py-1.5 pl-8 pr-2.5 text-[11.5px] outline-none dark:border-slate-600 dark:bg-slate-900" />
+          </div>
+          <button onClick={keExcel} disabled={unduh || !baris.length}
+            className="inline-flex items-center gap-1.5 rounded-md bg-emerald-600 px-3 py-1.5 text-[11.5px] font-bold text-white transition hover:bg-emerald-700 disabled:opacity-50">
+            <Ikon nama="lembar" className="h-3.5 w-3.5" /> {unduh ? "Menyusun…" : "Unduh Excel"}
+          </button>
+        </div>
+
+        {!baris.length ? (
+          <p className="px-4 py-16 text-center text-[13px] text-slate-500">
+            Belum ada baris permintaan yang terbaca pada saringan ini.
+          </p>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full min-w-[62rem] text-[12.5px]">
+              <thead className="sticky top-0 z-10 bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                <tr>
+                  <th className="w-10 px-2 py-2 text-right font-bold">No</th>
+                  <th className="w-40 px-2 py-2 text-left font-bold">Kapal</th>
+                  <th className="w-28 px-2 py-2 text-left font-bold">Borang</th>
+                  <th className="px-2 py-2 text-left font-bold">Nama barang / pekerjaan</th>
+                  <th className="w-44 px-2 py-2 text-left font-bold">Spesifikasi</th>
+                  <th className="w-14 px-2 py-2 text-right font-bold">Jml</th>
+                  <th className="w-16 px-2 py-2 text-left font-bold">Satuan</th>
+                  <th className="w-24 px-2 py-2 text-right font-bold">Est. satuan</th>
+                  <th className="w-24 px-2 py-2 text-right font-bold">Est. total</th>
+                  <th className="w-16 px-2 py-2 text-center font-bold">Asal</th>
+                </tr>
+              </thead>
+              <tbody>
+                {baris.map((b, i) => {
+                  const awalKapal = i === 0 || baris[i - 1].kapal !== b.kapal;
+                  const total = b.harga * (keAngkaJumlah(b.jumlah) || 1);
+                  const nada = !b.harga ? "text-slate-300"
+                    : b.yakin ? "text-slate-700 dark:text-slate-200" : "text-amber-700 dark:text-amber-400";
+                  return (
+                    <tr key={`${b.fileId}-${b.indeks}`}
+                      className={`border-t ${awalKapal ? "border-slate-300 dark:border-slate-600" : "border-slate-100 dark:border-slate-800"}`}>
+                      <td className="px-2 py-1.5 text-right tabular-nums text-slate-400">{i + 1}</td>
+                      <td className="px-2 py-1.5">
+                        {awalKapal && <span className="font-bold text-slate-800 dark:text-slate-100">{b.kapal}</span>}
+                      </td>
+                      <td className="px-2 py-1.5 text-slate-500">{b.jenis}</td>
+                      <td className="px-2 py-1.5 text-slate-800 dark:text-slate-100">
+                        {b.nama}
+                        {b.keterangan && <span className="ml-1.5 text-[11px] text-slate-400">· {b.keterangan}</span>}
+                      </td>
+                      <td className="px-2 py-1.5 text-slate-500">{b.spesifikasi}</td>
+                      <td className="px-2 py-1.5 text-right tabular-nums">{b.jumlah}</td>
+                      <td className="px-2 py-1.5 text-slate-500">{b.satuan}</td>
+                      <td className={`px-2 py-1.5 text-right tabular-nums ${nada}`}
+                        title={b.pembanding ? `Pembanding RAB: ${b.pembanding}${b.yakin ? "" : " — kecocokan lemah"}` : "Belum ada pembanding di Database RAB"}>
+                        {b.harga ? rupiahSingkat(b.harga) : "—"}{b.harga && !b.yakin ? <span className="ml-0.5 text-[10px]">?</span> : null}
+                      </td>
+                      <td className={`px-2 py-1.5 text-right font-semibold tabular-nums ${nada}`}>
+                        {total ? rupiahSingkat(total) : "—"}
+                      </td>
+                      <td className="px-2 py-1.5 text-center">
+                        {/* kembali ke lembar asalnya — angka yang meragukan selalu perlu dicek ke fotonya */}
+                        <button onClick={() => keBerkas(b.fileId)} title={`Buka berkas asal: ${b.berkas}`}
+                          className="rounded border border-slate-300 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300">
+                          Lihat
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <p className="mt-3 px-1 text-[11px] leading-relaxed text-slate-500">
+        Excel berisi satu lembar REKAP seluruh armada ditambah satu lembar per kapal — SPPBJ disusun per kapal,
+        jadi bentuk siap-pakainya memang terpisah. Estimasi harga berasal dari Database RAB dan bersifat perkiraan;
+        baris yang kecocokannya lemah ditandai kuning di dalam berkas.
+      </p>
+    </div>
+  );
+}
+
 /**
  * Dua sel perkiraan harga satu baris.
  *

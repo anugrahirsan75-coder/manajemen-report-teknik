@@ -87,6 +87,15 @@ export interface KirimanLapor {
   digantikan?: string;
   /** jejak pemindahan periode oleh kantor — rekap bulanan dipakai menagih */
   riwayatPeriode?: { dari: string; ke: string; pada: string }[];
+  /**
+   * Jejak perpindahan JENIS borang.
+   *
+   * ABK kerap menempelkan permintaan barang di slot Laporan Deck/Mesin —
+   * empat kotak unggah itu berjajar mirip di layar telepon. Kantor boleh
+   * memindahkannya ke golongan yang benar, dan perpindahan itu dicatat karena
+   * rekap kelengkapan bulanan inilah yang dipakai menagih kapal.
+   */
+  riwayatJenis?: { dari: string; ke: string; pada: string }[];
 }
 
 /** kiriman yang catatannya ada tapi berkasnya tidak pernah sampai */

@@ -331,6 +331,34 @@ function IsiPermintaanLaporanKapal() {
     await ubah(b.id, { periode: ke } as Partial<KirimanLapor>);
   };
 
+  /**
+   * Pindahkan kiriman ke golongan borang lain.
+   *
+   * Empat kotak unggah di halaman ABK berjajar mirip di layar telepon, dan
+   * permintaan barang paling sering tersangkut di slot Laporan Deck atau
+   * Laporan Mesin. Selama tidak ada jalan memindahkannya, kantor cuma punya dua
+   * pilihan yang sama-sama buruk: menagih ulang kapal untuk berkas yang
+   * sebenarnya sudah ada, atau membiarkan rekap kelengkapan salah di dua kotak
+   * sekaligus — satu tampak kosong, satu tampak terisi oleh dokumen yang keliru.
+   *
+   * Berkasnya sendiri tetap di folder Drive semula; yang berpindah hanya
+   * penggolongannya di rekap kantor.
+   */
+  const pindahJenis = async (b: KirimanLapor, ke: string) => {
+    if (ke === b.jenis || !JENIS_LAPOR.some((j) => j.id === ke)) return;
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "🔀", judul: "Pindahkan ke golongan borang lain?",
+      pesan: `${b.kapal} · ${bulanIndo(b.periode)}`,
+      rincian: [
+        `Dari ${singkatJenis(b.jenis)} menjadi ${singkatJenis(ke)}.`,
+        "Rekap kelengkapan kedua kotak itu ikut berubah.",
+        "Berkas di Google Drive tetap di folder lamanya.",
+      ],
+      tombolYa: `Pindahkan ke ${singkatJenis(ke)}`,
+    }))) return;
+    await ubah(b.id, { jenis: ke } as Partial<KirimanLapor>);
+  };
+
   const hapus = async (b: KirimanLapor) => {
     if (!(await konfirmasi({
       nada: "bahaya", ikon: "🗂️", judul: "Hapus catatan kiriman?",
@@ -680,6 +708,7 @@ function IsiPermintaanLaporanKapal() {
                       return (
                         <td key={j.id} className="border-b border-slate-100 px-3 py-2 text-center dark:border-slate-800">
                           {isi.length ? (
+                          <span className="relative inline-flex items-center gap-1">
                             <button onClick={() => (isi.length > 1
                               ? setSlotPilih({ kapal: k, jenis: j.singkat, isi })
                               : bukaKiriman(utama))}
@@ -694,6 +723,25 @@ function IsiPermintaanLaporanKapal() {
                                 </span>
                               )}
                             </button>
+                            {/*
+                              Pindah cepat, langsung dari kotaknya.
+                              Permintaan barang yang tertempel di slot Laporan
+                              adalah kekeliruan yang paling sering terjadi, dan
+                              membetulkannya lewat panel rincian menuntut tiga
+                              klik untuk satu perubahan yang sudah pasti.
+                              Kotak berisi lebih dari satu kiriman tidak diberi
+                              tombol ini: yang mana yang dimaksud harus dilihat
+                              dulu, bukan ditebak.
+                            */}
+                            {j.id.startsWith("laporan") && isi.length === 1 && (
+                              <button type="button"
+                                onClick={(ev) => { ev.stopPropagation(); void pindahJenis(utama, j.id.replace("laporan", "permintaan")); }}
+                                title={`Sebenarnya permintaan barang? Pindahkan ke ${singkatJenis(j.id.replace("laporan", "permintaan"))}`}
+                                className="grid h-5 w-5 shrink-0 place-items-center rounded-md text-[11px] font-bold text-slate-400 ring-1 ring-slate-200 transition hover:bg-[#16357f] hover:text-white hover:ring-[#16357f] dark:ring-slate-700">
+                                ⇄
+                              </button>
+                            )}
+                          </span>
                           ) : (
                             <span className="inline-flex min-w-[6.5rem] items-center justify-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[10px] font-semibold text-slate-400 ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
                               <span className="h-1.5 w-1.5 rounded-full bg-slate-300 dark:bg-slate-600" /> Belum
@@ -709,7 +757,10 @@ function IsiPermintaanLaporanKapal() {
           </table>
         </div>
         <div className="flex flex-wrap items-center justify-between gap-2 bg-slate-50/80 px-4 py-3 text-[10px] text-slate-500 dark:bg-slate-900 dark:text-slate-400">
-          <span><b className="text-slate-700 dark:text-slate-200">Diterima</b> dapat diklik untuk membuka kirimannya; slot berisi lebih dari satu kiriman menampilkan daftarnya dulu.</span>
+          <span>
+            <b className="text-slate-700 dark:text-slate-200">Diterima</b> dapat diklik untuk membuka kirimannya; slot berisi lebih dari satu kiriman menampilkan daftarnya dulu.
+            Tombol <b className="text-slate-700 dark:text-slate-200">⇄</b> pada kotak Laporan memindahkannya ke golongan Permintaan — untuk berkas permintaan barang yang tertempel di slot laporan.
+          </span>
           <span className={`rounded-full px-2 py-0.5 font-bold ring-1 ${ringkas.kapalLengkap === KAPAL_ANGGARAN.length ? "bg-emerald-100 text-emerald-700 ring-emerald-200" : "bg-amber-50 text-amber-700 ring-amber-200"}`}>
             {KAPAL_ANGGARAN.length - ringkas.kapalLengkap} kapal belum lengkap
           </span>
@@ -897,6 +948,47 @@ function IsiPermintaanLaporanKapal() {
                     </p>
                   )}
                 </div>
+                {/*
+                  Golongan borang boleh dibetulkan kantor. Yang paling sering
+                  terjadi: permintaan barang ditempel di slot Laporan.
+                */}
+                <div className="sm:col-span-2 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-200">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <span className="text-slate-500">Golongan borang</span>
+                    <span className="text-[11px] font-bold text-slate-600">{singkatJenis(buka.jenis)}</span>
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                    {JENIS_LAPOR.filter((j) => j.id !== buka.jenis).map((j) => {
+                      // pasangan sebaris (Laporan Deck → Permintaan Deck) ditonjolkan:
+                      // itulah perpindahan yang sembilan dari sepuluh kali dimaksud
+                      const sebaris = j.bagian === (JENIS_LAPOR.find((x) => x.id === buka.jenis)?.bagian)
+                        && j.id.split("_")[0] !== buka.jenis.split("_")[0];
+                      return (
+                        <button key={j.id} type="button" onClick={() => pindahJenis(buka, j.id)}
+                          className={`rounded-lg px-2.5 py-1.5 text-xs font-bold transition ${
+                            sebaris
+                              ? "bg-[#16357f] text-white hover:bg-[#12296a]"
+                              : "bg-white text-slate-600 ring-1 ring-slate-300 hover:bg-slate-100"}`}>
+                          → {j.singkat}
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {buka.jenis.startsWith("laporan") && (
+                    <p className="mt-2 rounded-lg bg-sky-50 px-2.5 py-2 text-[11px] leading-relaxed text-sky-800 ring-1 ring-sky-200">
+                      Kalau isi berkas ini sebenarnya <b>permintaan barang</b>, pindahkan ke{" "}
+                      <b>{singkatJenis(buka.jenis.replace("laporan", "permintaan"))}</b> — sesudah dipindahkan
+                      ia ikut terbaca di halaman Isi Permintaan dan bisa diberangkatkan ke SPPBJ.
+                    </p>
+                  )}
+                  {!!buka.riwayatJenis?.length && (
+                    <p className="mt-1.5 text-[11px] text-slate-400">
+                      Dipindahkan: {buka.riwayatJenis.slice(-3).map((j) =>
+                        `${singkatJenis(j.dari)} → ${singkatJenis(j.ke)} (${waktuSingkat(j.pada)})`).join(" · ")}
+                    </p>
+                  )}
+                </div>
+
                 <div>
                   <span className="text-slate-500">Kontak</span>
                   <div className="font-semibold">

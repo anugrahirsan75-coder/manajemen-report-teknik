@@ -8,7 +8,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { dbLapor, dbSiap } from "@/lib/lapor/db";
-import { KirimanLapor, STATUS_LAPOR } from "@/lib/lapor/types";
+import { JENIS_LAPOR, KirimanLapor, STATUS_LAPOR } from "@/lib/lapor/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -34,6 +34,7 @@ function keKiriman(row: any): KirimanLapor {
     riwayatStatus: Array.isArray(p.riwayatStatus) ? p.riwayatStatus : [],
     digantikan: p.digantikan || "",
     riwayatPeriode: Array.isArray(p.riwayatPeriode) ? p.riwayatPeriode : [],
+    riwayatJenis: Array.isArray(p.riwayatJenis) ? p.riwayatJenis : [],
   };
 }
 
@@ -54,7 +55,7 @@ export async function GET() {
 export async function PATCH(req: NextRequest) {
   const c = dbLapor();
   if (!c) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
-  const { id, status, tindakLanjut, periode } = await req.json().catch(() => ({} as any));
+  const { id, status, tindakLanjut, periode, jenis } = await req.json().catch(() => ({} as any));
   if (!id) return NextResponse.json({ ok: false, error: "Kiriman tidak dikenali" }, { status: 400 });
 
   const { data: ada, error: e1 } = await c.from("projects").select("payload").eq("id", id).single();
@@ -103,6 +104,30 @@ export async function PATCH(req: NextRequest) {
       dari: pTulis.periode || "", ke: periode, pada: new Date().toISOString(),
     }].slice(-10);
     pTulis.periode = periode;
+  }
+
+  /*
+   * Memindahkan kiriman ke jenis borang lain.
+   *
+   * Empat kotak unggah di halaman ABK berjajar mirip di layar telepon, dan
+   * permintaan barang paling sering tersangkut di slot Laporan Deck atau
+   * Laporan Mesin. Tanpa jalan memindahkan, kantor harus memilih antara
+   * menagih ulang kapal untuk berkas yang sebenarnya SUDAH ada, atau membiarkan
+   * rekap kelengkapan berbohong di dua tempat sekaligus.
+   *
+   * Berkas di Google Drive tetap di folder lamanya — memindahkannya berarti
+   * mengubah tautan yang sudah tercatat, dan tautan yang putus jauh lebih mahal
+   * daripada nama folder yang tidak lagi cocok.
+   */
+  if (typeof jenis === "string" && jenis !== pTulis.jenis) {
+    if (!JENIS_LAPOR.some((j) => j.id === jenis)) {
+      return NextResponse.json({ ok: false, error: "Jenis borang tidak dikenali" }, { status: 400 });
+    }
+    const jejakJenis = Array.isArray(pTulis.riwayatJenis) ? pTulis.riwayatJenis : [];
+    pTulis.riwayatJenis = [...jejakJenis, {
+      dari: pTulis.jenis || "", ke: jenis, pada: new Date().toISOString(),
+    }].slice(-10);
+    pTulis.jenis = jenis;
   }
 
   const { error: e2 } = await c.from("projects")
