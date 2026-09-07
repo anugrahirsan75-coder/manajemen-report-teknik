@@ -36,6 +36,8 @@ interface BarisRekap {
   yakin: boolean;
   pembanding: string;
   berkas: string;
+  /** tautan berkas di Google Drive; kolom "Berkas asal" dijadikan pranala */
+  berkasUrl: string;
   dikirim: string;
 }
 
@@ -52,7 +54,7 @@ const KEPALA = [
   { t: "Est. satuan (Rp)", l: 16 },
   { t: "Est. total (Rp)", l: 16 },
   { t: "Pembanding RAB", l: 34 },
-  { t: "Berkas asal", l: 30 },
+  { t: "Berkas asal", l: 13 },
   { t: "Dikirim", l: 16 },
 ];
 
@@ -120,7 +122,9 @@ function tulisLembar(ws: ExcelJS.Worksheet, baris: BarisRekap[], judul: string, 
       b.harga || "",
       nilai || "",
       b.pembanding,
-      b.berkas,
+      // isi kolom berkas ditulis sesudahnya sebagai pranala; di sini
+      // hanya jaring pengaman bila berkasnya tidak punya tautan Drive
+      b.berkasUrl ? "" : "—",
       b.dikirim,
     ];
     const row = ws.getRow(r);
@@ -131,6 +135,29 @@ function tulisLembar(ws: ExcelJS.Worksheet, baris: BarisRekap[], judul: string, 
       sel.alignment = { vertical: "top", wrapText: k >= 3 };
       sel.border = { bottom: { style: "hair", color: { argb: "FFCBD5E1" } } };
     });
+
+    /*
+     * Kolom "Berkas asal" berupa PRANALA bertuliskan "Link Berkas", bukan nama
+     * berkasnya.
+     *
+     * Nama berkas dari Apps Script panjang dan berulang — "2026-09 - Permintaan
+     * Deck - KMP. ARIWANGAN - permintaan rutin bulanan - 20260901-113830.pdf" —
+     * dan karena satu berkas memuat belasan baris permintaan, nama itu terulang
+     * belasan kali dan menelan tiga baris tinggi sel pada tiap barisnya. Yang
+     * dibutuhkan pembaca cuma satu: jalan kembali ke lembar aslinya.
+     *
+     * Nama lengkapnya tidak hilang — ia dipasang sebagai catatan sel, muncul
+     * begitu kursor singgah, jadi masih bisa dipakai mencari berkasnya di Drive
+     * bila tautannya suatu saat tidak bisa dibuka.
+     */
+    const kolomBerkas = kolom.length - 1;
+    if (b.berkasUrl) {
+      const selBerkas = row.getCell(kolomBerkas);
+      selBerkas.value = { text: "Link Berkas", hyperlink: b.berkasUrl };
+      selBerkas.font = { size: 10, color: { argb: "FF16357F" }, underline: true };
+      selBerkas.alignment = { vertical: "top", horizontal: "center" };
+      if (b.berkas) selBerkas.note = b.berkas;
+    }
     // dua kolom rupiah diberi format angka, bukan teks — supaya bisa dijumlah
     [kolom.length - 5, kolom.length - 4].forEach((k) => {
       row.getCell(k + 1).numFmt = "#,##0";

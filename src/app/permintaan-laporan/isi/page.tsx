@@ -343,6 +343,8 @@ export default function IsiPermintaanKapal() {
     const keluar: {
       kapal: string; jenis: string; nama: string; spesifikasi: string; jumlah: string; satuan: string;
       keterangan: string; harga: number; yakin: boolean; pembanding: string; berkas: string; dikirim: string;
+      /** tautan berkas aslinya di Google Drive — dipakai sebagai pranala di Excel */
+      berkasUrl: string;
       fileId: string; indeks: number;
     }[] = [];
     tampil.forEach((e) => (e.bacaan?.baris || []).forEach((b, i) => {
@@ -355,7 +357,7 @@ export default function IsiPermintaanKapal() {
         satuan: b.satuan || "", keterangan: b.keterangan || "",
         harga: est?.harga || 0, yakin: !!est?.yakin,
         pembanding: est?.uraian ? `${est.uraian}${est.satuan ? ` (${est.satuan})` : ""}` : "",
-        berkas: e.berkas.nama, dikirim: waktuSingkat(e.kiriman.dikirimPada),
+        berkas: e.berkas.nama, berkasUrl: e.berkas.url || "", dikirim: waktuSingkat(e.kiriman.dikirimPada),
         fileId: e.berkas.fileId, indeks: i,
       });
     }));
@@ -741,6 +743,7 @@ export default function IsiPermintaanKapal() {
 interface BarisRekapLayar {
   kapal: string; jenis: string; nama: string; spesifikasi: string; jumlah: string; satuan: string;
   keterangan: string; harga: number; yakin: boolean; pembanding: string; berkas: string; dikirim: string;
+  berkasUrl: string;
   fileId: string; indeks: number;
 }
 
