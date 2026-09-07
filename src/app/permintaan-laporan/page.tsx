@@ -160,6 +160,8 @@ function IsiPermintaanLaporanKapal() {
   /** id kiriman yang baru berubah — barisnya disorot sebentar supaya mata menemukannya */
   const [sorot, setSorot] = useState("");
   const [cariDrive, setCariDrive] = useState<{ sibuk: boolean; kandidat: any[]; pesan: string } | null>(null);
+  /** pemulihan seluruh kiriman kosong satu periode sekaligus */
+  const [pulih, setPulih] = useState<{ sibuk: boolean; hasil: any[] | null; pesan: string }>({ sibuk: false, hasil: null, pesan: "" });
   /** berkas Drive yang dicentang untuk ditautkan — bawaannya semua kandidat */
   const [pilihDrive, setPilihDrive] = useState<Set<string>>(new Set());
   const sp = useSearchParams();
@@ -486,6 +488,53 @@ function IsiPermintaanLaporanKapal() {
     }
   };
 
+  /**
+   * Pulihkan SEMUA kiriman kosong periode ini dari Google Drive.
+   *
+   * Kiriman kosong datang berombongan: satu kapal yang jaringannya putus
+   * mencoba lima kali, dan kelimanya menunjuk berkas yang sudah utuh di Drive.
+   * Merapikannya satu per satu berarti dua puluh klik untuk pekerjaan yang
+   * isinya sama — dan yang paling sering terjadi bukan salah tautan, melainkan
+   * tidak dikerjakan sama sekali, lalu kapal ditagih ulang untuk berkas yang
+   * sebenarnya sudah ada.
+   *
+   * Dua langkah, tidak langsung menulis: intip dulu apa yang ketemu, baru
+   * ditautkan setelah kantor melihat daftarnya. Menautkan berkas ke kiriman
+   * yang salah menciptakan kelengkapan palsu — kesalahan yang jauh lebih sulit
+   * ditemukan daripada kiriman kosong yang jujur.
+   */
+  const pulihkanSemua = async (tautkan: boolean) => {
+    setPulih({ sibuk: true, hasil: tautkan ? pulih.hasil : null, pesan: "" });
+    try {
+      const r = await fetch("/api/lapor/daftar/cocok/massal", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ periode: periodeMatriks, ...(tautkan ? { aksi: "tautkan" } : {}) }),
+      });
+      const d = await r.json();
+      if (!d.ok) { setPulih({ sibuk: false, hasil: null, pesan: d.error || "Gagal membaca Drive" }); return; }
+      if (tautkan) {
+        await ambil();
+        setPulih({
+          sibuk: false, hasil: d.hasil || null,
+          pesan: d.ditautkan
+            ? `${d.ditautkan} berkas ditautkan ke ${(d.hasil || []).filter((h: any) => h.ketemu).length} kiriman ✓`
+            : "Tidak ada berkas yang bisa ditautkan.",
+        });
+        if (d.ditautkan) setKabar({ teks: `${d.ditautkan} berkas dipulihkan dari Drive ✓`, nada: "sukses" });
+      } else {
+        const ketemu = (d.hasil || []).filter((h: any) => h.ketemu).length;
+        setPulih({
+          sibuk: false, hasil: d.hasil || [],
+          pesan: ketemu
+            ? `${ketemu} dari ${d.diperiksa} kiriman kosong ternyata berkasnya ada di Drive.`
+            : `Tidak ada berkas yang cocok di Drive untuk ${d.diperiksa} kiriman kosong ini — unggahannya memang tak pernah sampai.`,
+        });
+      }
+    } catch (e: any) {
+      setPulih({ sibuk: false, hasil: null, pesan: e?.message || "Gagal menghubungi Drive" });
+    }
+  };
+
   const tautkanDrive = async (b: KirimanLapor, fileIds: string[]) => {
     setCariDrive((s) => (s ? { ...s, sibuk: true } : s));
     try {
@@ -743,23 +792,68 @@ function IsiPermintaanLaporanKapal() {
           </div>
 
           {gagalKirim.length > 0 && (
-        <button
-          onClick={() => { setStatus(""); setPeriode(periodeMatriks); setCari(""); setKapal(""); setJenis(""); }}
-          className="anim-in mb-4 flex w-full flex-wrap items-center gap-3 rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-3 text-left shadow-sm transition hover:border-amber-300 dark:border-amber-900 dark:bg-amber-950/30">
-          <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500 text-lg text-white">⚠</span>
-          <span className="flex-1">
-            <span className="block text-xs font-extrabold text-amber-900 dark:text-amber-200">
-              {gagalKirim.length} kiriman {bulanIndo(periodeMatriks)} tidak membawa berkas
+        <div className="anim-in mb-4 rounded-2xl border border-amber-200 bg-amber-50/95 px-4 py-3 shadow-sm dark:border-amber-900 dark:bg-amber-950/30">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-amber-500 text-lg text-white">⚠</span>
+            <span className="min-w-[16rem] flex-1">
+              <span className="block text-xs font-extrabold text-amber-900 dark:text-amber-200">
+                {gagalKirim.length} kiriman {bulanIndo(periodeMatriks)} tidak membawa berkas
+              </span>
+              <span className="block text-[10px] text-amber-800 dark:text-amber-300">
+                Unggahan ABK putus di tengah jalan. Kiriman ini TIDAK dihitung sebagai dokumen diterima.
+                Berkas yang terlanjur naik sering masih utuh di Drive walau catatannya tak pernah sampai —
+                tekan tombol di samping untuk memeriksa seluruhnya sekaligus.
+                {gagalKirim[0]?.galatUnggah ? ` Sebab terakhir: ${gagalKirim[0].galatUnggah}` : ""}
+              </span>
             </span>
-            <span className="block text-[10px] text-amber-800 dark:text-amber-300">
-              Unggahan ABK putus di tengah jalan. Kiriman ini TIDAK dihitung sebagai dokumen diterima —
-              buka kirimannya, lalu tekan &ldquo;Cari berkasnya di Drive&rdquo;: berkas yang terlanjur naik
-              sering sudah ada di sana walau catatannya tidak sampai.
-              {gagalKirim[0]?.galatUnggah ? ` Sebab terakhir: ${gagalKirim[0].galatUnggah}` : ""}
-            </span>
-          </span>
-          <span className="text-[10px] font-extrabold text-amber-800 dark:text-amber-300">LIHAT →</span>
-        </button>
+            {/*
+              Memeriksa dulu, bukan langsung menautkan. Berkas yang menempel ke
+              kiriman yang salah menciptakan kelengkapan palsu — kekeliruan yang
+              jauh lebih sulit ditemukan daripada kiriman kosong yang jujur.
+            */}
+            <button type="button" onClick={() => void pulihkanSemua(false)} disabled={pulih.sibuk}
+              className="shrink-0 rounded-xl bg-amber-600 px-3 py-2 text-[11px] font-bold text-white transition hover:bg-amber-700 disabled:opacity-50">
+              {pulih.sibuk ? "Memeriksa Drive…" : "🔎 Periksa semua di Drive"}
+            </button>
+            <button type="button"
+              onClick={() => { setStatus(""); setPeriode(periodeMatriks); setCari(""); setKapal(""); setJenis(""); window.setTimeout(() => document.getElementById("daftar-kiriman")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
+              className="shrink-0 rounded-xl bg-white px-3 py-2 text-[11px] font-bold text-amber-800 ring-1 ring-amber-300 transition hover:bg-amber-100">
+              Lihat daftarnya →
+            </button>
+          </div>
+
+          {(pulih.pesan || pulih.hasil) && (
+            <div className="mt-3 rounded-xl bg-white/80 p-3 ring-1 ring-amber-200 dark:bg-slate-900/60">
+              {pulih.pesan && <p className="text-[11px] font-semibold text-amber-900 dark:text-amber-200">{pulih.pesan}</p>}
+              {!!pulih.hasil?.length && (
+                <ul className="mt-2 space-y-1">
+                  {pulih.hasil.map((h: any) => (
+                    <li key={h.id} className="flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px]">
+                      <span className="font-bold text-slate-700 dark:text-slate-200">{h.kapal}</span>
+                      <span className="text-slate-500">{singkatJenis(h.jenis)}</span>
+                      {h.galat ? (
+                        <span className="font-semibold text-rose-700">gagal: {h.galat}</span>
+                      ) : h.ketemu ? (
+                        <span className="font-semibold text-emerald-700">
+                          {h.ketemu} berkas ketemu{(h.berkas || []).length ? ` — ${h.berkas.map((f: any) => f.nama).join(", ")}` : ""}
+                          {h.kembar ? <span className="ml-1 font-normal text-slate-500">({h.kembar} salinan kembar diabaikan)</span> : null}
+                        </span>
+                      ) : (
+                        <span className="text-slate-500">tidak ada di Drive — perlu ditagih ulang</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              {!!pulih.hasil?.some((h: any) => h.ketemu) && (
+                <button type="button" onClick={() => void pulihkanSemua(true)} disabled={pulih.sibuk}
+                  className="mt-2 rounded-xl bg-[#16357f] px-3 py-2 text-[11px] font-bold text-white transition hover:bg-[#12296a] disabled:opacity-50">
+                  {pulih.sibuk ? "Menautkan…" : `Tautkan ${pulih.hasil.reduce((s: number, h: any) => s + (h.ketemu || 0), 0)} berkas ke kirimannya`}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       {/*
