@@ -76,6 +76,38 @@ const tanggalKirim = (b: KirimanLapor) => Number((b.dikirimPada || "").slice(8, 
  * memilih dengan benar, dan peringatan yang muncul pada hal yang sudah beres
  * cepat diabaikan.
  */
+/** batas hari "masih wajar" untuk laporan bulan lalu yang naik bulan ini */
+const HARI_SUSULAN_WAJAR = 10;
+
+/** jarak bulan antara dua "YYYY-MM"; positif berarti periode lebih tua */
+const jarakBulan = (periode: string, bulanKirim: string) => {
+  if (!/^\d{4}-\d{2}$/.test(periode) || !/^\d{4}-\d{2}$/.test(bulanKirim)) return 0;
+  const [ya, ma] = periode.split("-").map(Number);
+  const [yb, mb] = bulanKirim.split("-").map(Number);
+  return (yb - ya) * 12 + (mb - ma);
+};
+
+/**
+ * Bulan kirim berbeda dari periode yang diisi ABK.
+ *
+ * Periodenya tidak pernah diubah sendiri oleh aplikasi — hanya ABK yang tahu
+ * bulan mana yang ia laporkan, dan menebak-nebak untuknya berarti rekap kantor
+ * berdiri di atas karangan. Yang dilakukan di sini cuma menandai, dan menandai
+ * dengan dua tingkat: selisih yang lazim tidak boleh tampil sama mendesaknya
+ * dengan selisih yang mencurigakan, kalau tidak penandanya akan diabaikan
+ * seluruhnya dalam sebulan.
+ */
+type RupaBeda = { tingkat: "wajar" | "periksa"; selisih: number; bulanKirim: string };
+
+const bedaBulan = (b: KirimanLapor): RupaBeda | null => {
+  const bulanKirim = (b.dikirimPada || "").slice(0, 7);
+  if (!b.periode || !bulanKirim || bulanKirim === b.periode) return null;
+  const selisih = jarakBulan(b.periode, bulanKirim);
+  // laporan bulan lalu yang naik di awal bulan ini = alur normal
+  const wajar = selisih === 1 && tanggalKirim(b) <= HARI_SUSULAN_WAJAR;
+  return { tingkat: wajar ? "wajar" : "periksa", selisih, bulanKirim };
+};
+
 const kirimUjungBulan = (b: KirimanLapor) =>
   tanggalKirim(b) >= TANGGAL_UJUNG_BULAN && (b.dikirimPada || "").slice(0, 7) === b.periode;
 
@@ -161,6 +193,8 @@ function IsiPermintaanLaporanKapal() {
 
   /** saringan daftar: hanya kiriman yang naik di ujung bulan */
   const [hanyaUjung, setHanyaUjung] = useState(false);
+  /** hanya kiriman yang bulan kirimnya berbeda dari periode borangnya */
+  const [hanyaBeda, setHanyaBeda] = useState(false);
   /** fileId yang sedang digeser ke golongan lain — mengunci tombolnya */
   const [geserBerkasId, setGeserBerkasId] = useState("");
   /** berkas yang sedang dibuka di jendela pratinjau */
@@ -170,6 +204,7 @@ function IsiPermintaanLaporanKapal() {
 
   const tampil = useMemo(() => baris.filter((b) => {
     if (hanyaUjung && !kirimUjungBulan(b)) return false;
+    if (hanyaBeda && !bedaBulan(b)) return false;
     if (kapal && b.kapal !== kapal) return false;
     if (jenis && b.jenis !== jenis) return false;
     if (status && b.status !== status) return false;
@@ -177,7 +212,7 @@ function IsiPermintaanLaporanKapal() {
     if (!cari) return true;
     const t = [b.kapal, b.pengirim, b.jabatan, b.catatan, labelJenis(b.jenis), ...b.berkas.map((x) => x.nama)].join(" ").toLowerCase();
     return cari.toLowerCase().split(/\s+/).filter(Boolean).every((k) => t.includes(k));
-  }), [baris, hanyaUjung, kapal, jenis, status, periode, cari]);
+  }), [baris, hanyaBeda, hanyaUjung, kapal, jenis, status, periode, cari]);
 
   /**
    * Periode rekap punya state sendiri dan bawaannya BULAN BERJALAN. Sebelumnya
@@ -236,6 +271,18 @@ function IsiPermintaanLaporanKapal() {
    * memindahkannya, supaya keputusan itu diambil sadar dan bukan karena rekap
    * bulan depan mendadak kosong.
    */
+  /**
+   * Kiriman pada periode ini yang bulan kirimnya lain.
+   *
+   * Dihitung dari periode yang sedang direkap, bukan dari seluruh basis data:
+   * yang ditanyakan kantor selalu "bulan ini ada yang perlu dicek tidak",
+   * bukan berapa banyak yang pernah berbeda sepanjang tahun.
+   */
+  const bedaPeriode = useMemo(
+    () => baris.filter((b) => cocokBulan(b) && !b.digantikan && bedaBulan(b)),
+    [baris, cocokBulan]);
+  const bedaPerluCek = bedaPeriode.filter((b) => bedaBulan(b)?.tingkat === "periksa");
+
   const ujungBulan = useMemo(
     () => baris.filter((b) => cocokBulan(b) && kirimUjungBulan(b) && !b.digantikan),
     [baris, cocokBulan]);
@@ -583,8 +630,8 @@ function IsiPermintaanLaporanKapal() {
 
   const jumlahBaru = baris.filter((b) => b.status === "baru").length;
 
-  const saringanAktif = !!(cari || kapal || jenis || status || periode || hanyaUjung);
-  const bersihkanSaringan = () => { setCari(""); setKapal(""); setJenis(""); setStatus(""); setPeriode(""); setHanyaUjung(false); };
+  const saringanAktif = !!(cari || kapal || jenis || status || periode || hanyaUjung || hanyaBeda);
+  const bersihkanSaringan = () => { setCari(""); setKapal(""); setJenis(""); setStatus(""); setPeriode(""); setHanyaUjung(false); setHanyaBeda(false); };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-6">
@@ -739,6 +786,37 @@ function IsiPermintaanLaporanKapal() {
         </button>
       )}
 
+      {/*
+        Spanduk terpisah dari "ujung bulan": yang itu soal kiriman yang MUNGKIN
+        untuk bulan depan, yang ini soal borang yang bulannya mungkin salah
+        pilih. Dua pertanyaan berbeda, dan menggabungkannya membuat keduanya
+        tidak terjawab.
+      */}
+      {!!bedaPeriode.length && (
+        <button
+          onClick={() => { setHanyaBeda(true); window.setTimeout(() => document.getElementById("daftar-kiriman")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
+          className={`anim-in mb-4 flex w-full flex-wrap items-center gap-3 rounded-2xl border px-4 py-3 text-left shadow-sm transition ${
+            bedaPerluCek.length
+              ? "border-amber-300 bg-amber-50/95 hover:border-amber-400 dark:border-amber-900 dark:bg-amber-950/30"
+              : "border-indigo-200 bg-indigo-50/95 hover:border-indigo-300 dark:border-indigo-900 dark:bg-indigo-950/30"}`}>
+          <span className={`grid h-9 w-9 shrink-0 place-items-center rounded-xl text-lg text-white ${
+            bedaPerluCek.length ? "bg-amber-500" : "bg-indigo-500"}`}>📅</span>
+          <span className="flex-1">
+            <span className={`block text-xs font-extrabold ${bedaPerluCek.length ? "text-amber-900 dark:text-amber-200" : "text-indigo-900 dark:text-indigo-200"}`}>
+              {bedaPeriode.length} kiriman {bulanIndo(periodeMatriks)} yang bulan kirimnya berbeda
+              {bedaPerluCek.length > 0 && ` — ${bedaPerluCek.length} perlu dicek`}
+            </span>
+            <span className={`block text-[10px] ${bedaPerluCek.length ? "text-amber-800 dark:text-amber-300" : "text-indigo-800 dark:text-indigo-300"}`}>
+              Borangnya diisi {bulanIndo(periodeMatriks)}, tetapi berkasnya naik di bulan lain. Periodenya tetap
+              dipakai apa adanya — hanya ABK yang tahu bulan mana yang dilaporkan. Yang ditandai kuning selisihnya
+              di luar kebiasaan: periksa isinya, bila bulannya memang salah pilih, pindahkan periodenya dari dalam
+              kirimannya.
+            </span>
+          </span>
+          <span className={`text-[10px] font-extrabold ${bedaPerluCek.length ? "text-amber-800 dark:text-amber-300" : "text-indigo-800 dark:text-indigo-300"}`}>PERIKSA →</span>
+        </button>
+      )}
+
       <div className="mt-3 flex items-center gap-3">
             <div className="h-2 flex-1 overflow-hidden rounded-full bg-slate-200 ring-1 ring-inset ring-slate-300/60 dark:bg-slate-700 dark:ring-slate-600">
               <div className="h-full rounded-full bg-gradient-to-r from-[#14b8c4] via-[#1ca3dd] to-[#16357f] transition-all duration-500" style={{ width: `${ringkas.persen}%` }} />
@@ -780,6 +858,10 @@ function IsiPermintaanLaporanKapal() {
                       // rekap dibaca per kolom, dan kantor harus tahu slot mana
                       // yang hijaunya masih perlu ditimbang
                       const adaUjung = isi.some(kirimUjungBulan);
+                      // borang yang bulannya mungkin salah pilih: kuning bila
+                      // selisihnya di luar kebiasaan, biru bila masih lazim
+                      const beda = isi.map(bedaBulan).filter(Boolean) as ReturnType<typeof bedaBulan>[];
+                      const bedaCek = beda.some((x) => x?.tingkat === "periksa");
                       const utama = isi.find((x) => x.status === "baru") || isi[0];
                       return (
                         <td key={j.id} className="border-b border-slate-100 px-3 py-2 text-center dark:border-slate-800">
@@ -792,6 +874,14 @@ function IsiPermintaanLaporanKapal() {
                               <span className={`grid h-4 w-4 place-items-center rounded-full text-[9px] text-white ${adaBaru ? "bg-rose-500" : "bg-emerald-500"}`}>{adaBaru ? "!" : "✓"}</span>
                               {adaBaru ? "Baru" : isi.length > 1 ? `${isi.length} kiriman` : "Diterima"}
                               {adaBaru && <span className="absolute -right-1 -top-1 h-2 w-2 animate-pulse rounded-full bg-rose-500 ring-2 ring-white dark:ring-slate-900" />}
+                              {beda.length > 0 && (
+                                <span title={beda.map((x) => `Periode ${bulanIndo(periodeMatriks)}, berkas naik ${bulanIndo(x!.bulanKirim)}`).join(" · ")
+                                  + (bedaCek ? " — selisihnya di luar kebiasaan, periksa bulannya" : "")}
+                                  className={`absolute -right-1.5 -bottom-1.5 grid h-4 w-4 place-items-center rounded-full text-[9px] font-black text-white ring-2 ring-white dark:ring-slate-900 ${
+                                    bedaCek ? "bg-amber-500" : "bg-indigo-500"}`}>
+                                  ≠
+                                </span>
+                              )}
                               {adaUjung && (
                                 <span title={`Naik setelah tanggal ${TANGGAL_UJUNG_BULAN} — periksa apakah ini untuk ${bulanIndo(bulanKe(periodeMatriks, 1))}`}
                                   className="absolute -left-1.5 -top-1.5 grid h-4 w-4 place-items-center rounded-full bg-violet-500 text-[8px] text-white ring-2 ring-white dark:ring-slate-900">
@@ -852,6 +942,11 @@ function IsiPermintaanLaporanKapal() {
           </div>
           <div className="flex items-center gap-2">
             <span className="rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200 dark:bg-sky-950/30 dark:text-sky-300 dark:ring-sky-800">{tampil.length} dari {baris.length} kiriman</span>
+            {hanyaBeda && (
+              <span className="rounded-full bg-indigo-50 px-2.5 py-1 text-[10px] font-bold text-indigo-700 ring-1 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800">
+                📅 hanya beda bulan kirim
+              </span>
+            )}
             {hanyaUjung && (
               <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200 dark:bg-violet-950/40 dark:text-violet-300 dark:ring-violet-800">
                 🕘 hanya kiriman ujung bulan
@@ -920,10 +1015,14 @@ function IsiPermintaanLaporanKapal() {
                       {b.digantikan && <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">percobaan lama</span>}
                       {/* bulan kirim di luar periodenya — lazim, tapi harus terbaca supaya
                           rekap bulanan tidak dikira salah hitung */}
-                      {b.periode && (b.dikirimPada || "").slice(0, 7) !== b.periode && (
-                        <span className="rounded-md bg-indigo-50 px-1.5 py-0.5 text-[10px] font-bold text-indigo-700 ring-1 ring-indigo-200"
-                          title={`Periode laporan ${bulanIndo(b.periode)}, berkas masuk ${bulanIndo((b.dikirimPada || "").slice(0, 7))}`}>
-                          dikirim {bulanIndo((b.dikirimPada || "").slice(0, 7))}
+                      {bedaBulan(b) && (
+                        <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ring-1 ${
+                          bedaBulan(b)!.tingkat === "periksa"
+                            ? "bg-amber-50 text-amber-800 ring-amber-300 dark:bg-amber-950/40 dark:text-amber-300 dark:ring-amber-800"
+                            : "bg-indigo-50 text-indigo-700 ring-indigo-200 dark:bg-indigo-950/40 dark:text-indigo-300 dark:ring-indigo-800"}`}
+                          title={`Borang diisi periode ${bulanIndo(b.periode)}, berkasnya naik ${bulanIndo(bedaBulan(b)!.bulanKirim)}`
+                            + (bedaBulan(b)!.tingkat === "periksa" ? " — selisihnya di luar kebiasaan, periksa bulannya" : " — laporan bulan lalu yang naik di awal bulan, lazim")}>
+                          {bedaBulan(b)!.tingkat === "periksa" ? "⚠ periksa bulan" : "dikirim"} {bulanIndo(bedaBulan(b)!.bulanKirim)}
                         </span>
                       )}
                       {/* ujung bulan: lencananya menyebut bulan yang mungkin
@@ -976,9 +1075,16 @@ function IsiPermintaanLaporanKapal() {
                 <div>
                   <span className="text-slate-500">Dikirim</span>
                   <div className="font-semibold">{waktuSingkat(buka.dikirimPada)}</div>
-                  {buka.periode && (buka.dikirimPada || "").slice(0, 7) !== buka.periode && (
-                    <div className="mt-0.5 text-[11px] text-indigo-700">
-                      Periode laporan {bulanIndo(buka.periode)} — berkas baru masuk {bulanIndo((buka.dikirimPada || "").slice(0, 7))}
+                  {bedaBulan(buka) && (
+                    <div className={`mt-1 rounded-lg px-2 py-1.5 text-[11px] font-semibold ring-1 ${
+                      bedaBulan(buka)!.tingkat === "periksa"
+                        ? "bg-amber-50 text-amber-900 ring-amber-300"
+                        : "bg-indigo-50 text-indigo-800 ring-indigo-200"}`}>
+                      Borang diisi periode <b>{bulanIndo(buka.periode)}</b>, berkasnya naik{" "}
+                      <b>{bulanIndo(bedaBulan(buka)!.bulanKirim)}</b>
+                      {bedaBulan(buka)!.tingkat === "periksa"
+                        ? " — selisihnya di luar kebiasaan. Periksa isinya; bila bulannya salah pilih, pindahkan periodenya di bawah."
+                        : " — laporan bulan lalu yang naik di awal bulan, lazim."}
                     </div>
                   )}
                 </div>
