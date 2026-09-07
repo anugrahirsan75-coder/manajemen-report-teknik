@@ -1202,12 +1202,12 @@ function IsiPermintaanLaporanKapal() {
                           karena awalannya sama untuk seluruh berkas kiriman.
                         */}
                         <span className="min-w-[14rem] flex-1 leading-snug" title={f.nama}>
-                          <span className="block break-words font-semibold text-slate-800">{pecahNamaBerkas(f.nama).judul}</span>
+                          <span className="block break-words text-[14.5px] font-extrabold text-slate-900 dark:text-white">{pecahNamaBerkas(f.nama).judul}</span>
                           {pecahNamaBerkas(f.nama).awalan && (
-                            <span className="block break-words text-[11px] text-slate-400">{pecahNamaBerkas(f.nama).awalan}</span>
+                            <span className="block break-words text-[11.5px] font-medium text-slate-500">{pecahNamaBerkas(f.nama).awalan}</span>
                           )}
                         </span>
-                        <span className="shrink-0 text-xs text-slate-500">{ukuranSingkat(f.ukuran)}</span>
+                        <span className="shrink-0 text-xs font-semibold text-slate-600">{ukuranSingkat(f.ukuran)}</span>
                         {/* dibuka di dalam aplikasi; "Buka" tetap ada untuk yang ingin berkas aslinya di Drive */}
                         <button type="button"
                           onClick={() => setLihatBerkas({ fileId: f.fileId, nama: f.nama, url: f.url, kapal: buka.kapal })}
