@@ -17,7 +17,7 @@
  */
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Ikon } from "@/components/ikon";
 import { PratinjauBerkas } from "@/components/PratinjauBerkas";
 import { useJuruBaca } from "@/components/lapor/PilJuruBaca";
@@ -815,57 +815,102 @@ function RekapBulan({ baris, nilai, periode, setPeriode, daftarPeriode, kapal, s
           </p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[62rem] text-[12.5px]">
-              <thead className="sticky top-0 z-10 bg-slate-100 text-[11px] uppercase tracking-wide text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+            <table className="w-full min-w-[58rem] text-[13px]">
+              <thead className="sticky top-0 z-10 bg-slate-800 text-[11px] font-bold uppercase tracking-wide text-white">
                 <tr>
-                  <th className="w-10 px-2 py-2 text-right font-bold">No</th>
-                  <th className="w-40 px-2 py-2 text-left font-bold">Kapal</th>
-                  <th className="w-28 px-2 py-2 text-left font-bold">Borang</th>
-                  <th className="px-2 py-2 text-left font-bold">Nama barang / pekerjaan</th>
-                  <th className="w-44 px-2 py-2 text-left font-bold">Spesifikasi</th>
-                  <th className="w-14 px-2 py-2 text-right font-bold">Jml</th>
-                  <th className="w-16 px-2 py-2 text-left font-bold">Satuan</th>
-                  <th className="w-24 px-2 py-2 text-right font-bold">Est. satuan</th>
-                  <th className="w-24 px-2 py-2 text-right font-bold">Est. total</th>
-                  <th className="w-16 px-2 py-2 text-center font-bold">Asal</th>
+                  <th className="w-10 px-2 py-2.5 text-right">No</th>
+                  <th className="w-16 px-2 py-2.5 text-left">Borang</th>
+                  <th className="px-3 py-2.5 text-left">Nama barang / pekerjaan</th>
+                  <th className="w-16 px-2 py-2.5 text-right">Jml</th>
+                  <th className="w-16 px-2 py-2.5 text-left">Satuan</th>
+                  <th className="w-28 px-2 py-2.5 text-right">Est. satuan</th>
+                  <th className="w-28 px-2 py-2.5 text-right">Est. total</th>
+                  <th className="w-14 px-2 py-2.5 text-center">Asal</th>
                 </tr>
               </thead>
               <tbody>
                 {baris.map((b, i) => {
                   const awalKapal = i === 0 || baris[i - 1].kapal !== b.kapal;
                   const total = b.harga * (keAngkaJumlah(b.jumlah) || 1);
-                  const nada = !b.harga ? "text-slate-300"
-                    : b.yakin ? "text-slate-700 dark:text-slate-200" : "text-amber-700 dark:text-amber-400";
+                  const mesin = /mesin/i.test(b.jenis);
+                  /*
+                   * Nomor dihitung ULANG tiap kapal. Nomor berlanjut sampai 356
+                   * tidak menjawab pertanyaan siapa pun; yang ditanya kantor
+                   * selalu "kapal ini minta berapa barang".
+                   */
+                  const nomorKapal = i - baris.findIndex((x) => x.kapal === b.kapal) + 1;
+                  const jumlahKapal = baris.filter((x) => x.kapal === b.kapal).length;
+
                   return (
-                    <tr key={`${b.fileId}-${b.indeks}`}
-                      className={`border-t ${awalKapal ? "border-slate-300 dark:border-slate-600" : "border-slate-100 dark:border-slate-800"}`}>
-                      <td className="px-2 py-1.5 text-right tabular-nums text-slate-400">{i + 1}</td>
-                      <td className="px-2 py-1.5">
-                        {awalKapal && <span className="font-bold text-slate-800 dark:text-slate-100">{b.kapal}</span>}
-                      </td>
-                      <td className="px-2 py-1.5 text-slate-500">{b.jenis}</td>
-                      <td className="px-2 py-1.5 text-slate-800 dark:text-slate-100">
-                        {b.nama}
-                        {b.keterangan && <span className="ml-1.5 text-[11px] text-slate-400">· {b.keterangan}</span>}
-                      </td>
-                      <td className="px-2 py-1.5 text-slate-500">{b.spesifikasi}</td>
-                      <td className="px-2 py-1.5 text-right tabular-nums">{b.jumlah}</td>
-                      <td className="px-2 py-1.5 text-slate-500">{b.satuan}</td>
-                      <td className={`px-2 py-1.5 text-right tabular-nums ${nada}`}
-                        title={b.pembanding ? `Pembanding RAB: ${b.pembanding}${b.yakin ? "" : " — kecocokan lemah"}` : "Belum ada pembanding di Database RAB"}>
-                        {b.harga ? rupiahSingkat(b.harga) : "—"}{b.harga && !b.yakin ? <span className="ml-0.5 text-[10px]">?</span> : null}
-                      </td>
-                      <td className={`px-2 py-1.5 text-right font-semibold tabular-nums ${nada}`}>
-                        {total ? rupiahSingkat(total) : "—"}
-                      </td>
-                      <td className="px-2 py-1.5 text-center">
-                        {/* kembali ke lembar asalnya — angka yang meragukan selalu perlu dicek ke fotonya */}
-                        <button onClick={() => keBerkas(b.fileId)} title={`Buka berkas asal: ${b.berkas}`}
-                          className="rounded border border-slate-300 px-1.5 py-0.5 text-[10.5px] font-semibold text-slate-600 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-300">
-                          Lihat
-                        </button>
-                      </td>
-                    </tr>
+                    <Fragment key={`${b.fileId}-${b.indeks}`}>
+                      {awalKapal && (
+                        /*
+                         * Pita kelompok, bukan sekadar nama di kolom pertama.
+                         * Kolom kapal yang isinya cuma satu baris lalu kosong ke
+                         * bawah membuat mata kehilangan batas kelompok justru di
+                         * tabel yang paling panjang.
+                         */
+                        <tr>
+                          <td colSpan={8} className="border-y-2 border-slate-300 bg-slate-100 px-3 py-2 dark:border-slate-600 dark:bg-slate-800">
+                            <span className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                              <span className="text-[15px] font-black tracking-tight text-slate-900 dark:text-white">{b.kapal}</span>
+                              <span className="text-[12px] font-semibold text-slate-500">{jumlahKapal} barang</span>
+                              <span className="ml-auto text-[13px] font-bold tabular-nums text-[#16357f] dark:text-sky-300">
+                                {rupiahPenuh(perKapal.get(b.kapal) || 0)}
+                              </span>
+                            </span>
+                          </td>
+                        </tr>
+                      )}
+                      <tr className={`border-b border-slate-200 transition hover:bg-sky-50 dark:border-slate-700 dark:hover:bg-sky-950/30 ${
+                        nomorKapal % 2 === 0 ? "bg-slate-50/70 dark:bg-slate-800/40" : ""}`}>
+                        <td className="px-2 py-2 text-right text-[12px] font-semibold tabular-nums text-slate-400">{nomorKapal}</td>
+                        <td className="px-2 py-2">
+                          {/* satu lencana pendek berwarna menggantikan "Permintaan Deck"
+                              yang dulu mematah dua baris di setiap baris tabel */}
+                          <span className={`inline-block rounded px-1.5 py-0.5 text-[10.5px] font-black tracking-wide ${
+                            mesin
+                              ? "bg-orange-100 text-orange-800 dark:bg-orange-950/50 dark:text-orange-300"
+                              : "bg-teal-100 text-teal-800 dark:bg-teal-950/50 dark:text-teal-300"}`}>
+                            {mesin ? "MESIN" : "DECK"}
+                          </span>
+                        </td>
+                        <td className="px-3 py-2">
+                          <span className="block text-[14px] font-semibold leading-snug text-slate-900 dark:text-white">{b.nama}</span>
+                          {(b.spesifikasi || b.keterangan) && (
+                            <span className="block text-[12px] leading-snug text-slate-500 dark:text-slate-400">
+                              {[b.spesifikasi, b.keterangan].filter(Boolean).join(" · ")}
+                            </span>
+                          )}
+                        </td>
+                        <td className="px-2 py-2 text-right text-[14px] font-bold tabular-nums text-slate-900 dark:text-white">{b.jumlah}</td>
+                        <td className="px-2 py-2 text-[12.5px] text-slate-600 dark:text-slate-300">{b.satuan}</td>
+                        <td className="px-2 py-2 text-right"
+                          title={b.pembanding ? `Pembanding RAB: ${b.pembanding}${b.yakin ? "" : " — kecocokan lemah"}` : "Belum ada pembanding di Database RAB"}>
+                          {b.harga ? (
+                            <span className={`text-[13px] font-semibold tabular-nums ${
+                              b.yakin ? "text-slate-700 dark:text-slate-200" : "text-amber-700 dark:text-amber-400"}`}>
+                              {rupiahSingkat(b.harga)}{!b.yakin && <span className="ml-0.5 text-[10px]">?</span>}
+                            </span>
+                          ) : <span className="text-[13px] text-slate-300">—</span>}
+                        </td>
+                        <td className="px-2 py-2 text-right">
+                          {total ? (
+                            <span className={`text-[14px] font-bold tabular-nums ${
+                              b.yakin ? "text-slate-900 dark:text-white" : "text-amber-700 dark:text-amber-400"}`}>
+                              {rupiahSingkat(total)}
+                            </span>
+                          ) : <span className="text-[13px] text-slate-300">—</span>}
+                        </td>
+                        <td className="px-2 py-2 text-center">
+                          {/* kembali ke lembar asalnya — angka yang meragukan selalu perlu dicek ke fotonya */}
+                          <button onClick={() => keBerkas(b.fileId)} title={`Buka berkas asal: ${b.berkas}`}
+                            className="rounded border border-slate-300 px-1.5 py-1 text-[11px] font-bold text-slate-600 transition hover:border-[#16357f] hover:bg-[#16357f] hover:text-white dark:border-slate-600 dark:text-slate-300">
+                            Lihat
+                          </button>
+                        </td>
+                      </tr>
+                    </Fragment>
                   );
                 })}
               </tbody>

@@ -294,6 +294,27 @@ function IsiPermintaanLaporanKapal() {
     [baris, cocokBulan]);
   const bedaPerluCek = bedaPeriode.filter((b) => bedaBulan(b)?.tingkat === "periksa");
 
+  /**
+   * Kiriman yang periodenya JAUH dari bulan kirimnya — "terparkir".
+   *
+   * Sengaja TIDAK memakai cocokBulan: justru inilah kiriman yang tidak berada
+   * di bulan mana pun yang biasa dibuka kantor, jadi menyaringnya dengan bulan
+   * yang sedang dilihat sama dengan tidak pernah memberitahu siapa pun.
+   *
+   * Ambangnya dua bulan. Selisih satu bulan adalah alur normal (laporan Agustus
+   * naik awal September, permintaan September disetor akhir Agustus) dan sudah
+   * ditangani penanda beda-bulan; yang dicari di sini kesalahan putar roda bulan
+   * di layar ponsel — atau dokumen yang memang milik bulan jauh, seperti rencana
+   * docking, yang tetap perlu diketahui kantor supaya tidak dikira hilang.
+   */
+  const terparkir = useMemo(() => baris.filter((b) => {
+    if (b.digantikan || !b.berkas.length) return false;
+    const bulanKirim = (b.dikirimPada || "").slice(0, 7);
+    if (!b.periode || !bulanKirim) return false;
+    const selisih = jarakBulan(b.periode, bulanKirim);
+    return selisih <= -2 || selisih >= 3;
+  }), [baris]);
+
   const ujungBulan = useMemo(
     () => baris.filter((b) => cocokBulan(b) && kirimUjungBulan(b) && !b.digantikan),
     [baris, cocokBulan]);
@@ -892,6 +913,55 @@ function IsiPermintaanLaporanKapal() {
       )}
 
       {/*
+        Spanduk ini berdiri di luar periode yang sedang direkap — satu-satunya
+        di halaman ini yang begitu. Kiriman terparkir memang tidak berada di
+        bulan mana pun yang biasa dibuka, jadi kalau ia ikut disaring bulan, ia
+        tidak akan pernah diumumkan di layar mana pun.
+      */}
+      {!!terparkir.length && (
+        <div className="anim-in mb-4 rounded-2xl border border-sky-300 bg-sky-50/95 px-4 py-3 shadow-sm dark:border-sky-900 dark:bg-sky-950/30">
+          <div className="flex flex-wrap items-center gap-3">
+            <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-sky-600 text-lg text-white">🗓</span>
+            <span className="min-w-[16rem] flex-1">
+              <span className="block text-xs font-extrabold text-sky-900 dark:text-sky-200">
+                {terparkir.length} kiriman terparkir di periode yang jauh — tidak tampil di rekap bulan mana pun
+              </span>
+              <span className="block text-[10px] text-sky-800 dark:text-sky-300">
+                Berkasnya sampai dengan selamat, tetapi periodenya diisi dua bulan atau lebih dari bulan kirimnya,
+                jadi kotaknya hanya muncul kalau pemilih periode diputar ke sana. Bisa disengaja (rencana docking,
+                misalnya) — bisa juga salah putar roda bulan di ponsel. Periksa, lalu biarkan atau pindahkan periodenya.
+              </span>
+            </span>
+          </div>
+          <ul className="mt-2 space-y-1">
+            {terparkir.slice(0, 6).map((b) => (
+              <li key={b.id} className="flex flex-wrap items-center gap-x-2 gap-y-1 rounded-lg bg-white/80 px-2.5 py-1.5 text-[11px] dark:bg-slate-900/60">
+                <span className="font-bold text-slate-800 dark:text-slate-100">{b.kapal}</span>
+                <span className="text-slate-500">{singkatJenis(b.jenis)}</span>
+                <span className="rounded bg-sky-100 px-1.5 py-0.5 font-bold text-sky-800 dark:bg-sky-900/60 dark:text-sky-200">
+                  periode {bulanIndo(b.periode)}
+                </span>
+                <span className="text-slate-500">dikirim {bulanIndo((b.dikirimPada || "").slice(0, 7))}</span>
+                <span className="ml-auto flex items-center gap-1.5">
+                  <button type="button" onClick={() => setPeriodeRekap(b.periode)}
+                    className="rounded-lg bg-white px-2 py-1 text-[10.5px] font-bold text-sky-800 ring-1 ring-sky-300 transition hover:bg-sky-100">
+                    Buka {bulanIndo(b.periode)}
+                  </button>
+                  <button type="button" onClick={() => bukaKiriman(b)}
+                    className="rounded-lg bg-[#16357f] px-2 py-1 text-[10.5px] font-bold text-white transition hover:bg-[#12296a]">
+                    Periksa
+                  </button>
+                </span>
+              </li>
+            ))}
+            {terparkir.length > 6 && (
+              <li className="px-2.5 text-[10.5px] text-sky-800">…dan {terparkir.length - 6} lagi.</li>
+            )}
+          </ul>
+        </div>
+      )}
+
+      {/*
         Spanduk terpisah dari "ujung bulan": yang itu soal kiriman yang MUNGKIN
         untuk bulan depan, yang ini soal borang yang bulannya mungkin salah
         pilih. Dua pertanyaan berbeda, dan menggabungkannya membuat keduanya
@@ -941,12 +1011,24 @@ function IsiPermintaanLaporanKapal() {
             </thead>
             <tbody>
               {KAPAL_ANGGARAN.map((k, index) => {
+                // kiriman kapal ini yang terparkir di periode lain — supaya tidak
+                // perlu curiga lebih dulu untuk menemukannya
+                const parkirKapal = terparkir.filter((b) => b.kapal === k);
                 const jumlahIsi = JENIS_LAPOR.filter((j) => matriks.get(`${k}|${j.id}`)?.length).length;
                 const lengkap = jumlahIsi === JENIS_LAPOR.length;
                 return (
                   <tr key={k} className="group hover:bg-sky-50/60 dark:hover:bg-sky-950/25">
                     <td className={`sticky left-0 z-[5] border-b border-slate-100 px-4 py-2.5 font-bold text-slate-800 group-hover:bg-sky-50 dark:border-slate-800 dark:text-slate-100 dark:group-hover:bg-sky-950 ${index % 2 ? "bg-slate-50/95 dark:bg-slate-900" : "bg-white dark:bg-slate-900"}`}>
                       <span className="mr-2 text-[10px] font-medium tabular-nums text-slate-400">{String(index + 1).padStart(2, "0")}</span>{k}
+                      {/* kiriman kapal ini yang duduk di bulan lain — tanpa penanda ini,
+                          kotak yang kosong di layar tampak seperti kapal yang belum kirim */}
+                      {parkirKapal.length > 0 && (
+                        <button type="button" onClick={() => setPeriodeRekap(parkirKapal[0].periode)}
+                          title={parkirKapal.map((b) => `${singkatJenis(b.jenis)} · periode ${bulanIndo(b.periode)}`).join(" · ")}
+                          className="ml-2 rounded bg-sky-100 px-1.5 py-0.5 text-[10px] font-bold text-sky-800 transition hover:bg-sky-200 dark:bg-sky-900/60 dark:text-sky-200">
+                          +{parkirKapal.length} di {bulanIndo(parkirKapal[0].periode).split(" ")[0]}
+                        </button>
+                      )}
                     </td>
                     <td className="border-b border-slate-100 px-3 py-2.5 dark:border-slate-800">
                       <div className="flex items-center gap-2">
