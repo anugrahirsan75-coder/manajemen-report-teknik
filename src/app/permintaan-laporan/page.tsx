@@ -140,6 +140,15 @@ function IsiPermintaanLaporanKapal() {
    * kliknya berbohong. Sekarang slot berisi banyak kiriman membuka daftarnya.
    */
   const [slotPilih, setSlotPilih] = useState<{ kapal: string; jenis: string; isi: KirimanLapor[] } | null>(null);
+  /**
+   * Slot asal kiriman yang sedang dibuka.
+   *
+   * Satu slot kerap memuat beberapa kiriman — kapal mengirim ulang, atau
+   * melengkapi berkas menyusul. Tanpa ingatan ini, memeriksa kiriman kedua
+   * berarti menutup panel, mencari kembali kotaknya di matriks, dan membuka
+   * daftarnya lagi dari nol: tiga langkah untuk berpindah satu baris.
+   */
+  const [asalSlot, setAsalSlot] = useState<{ kapal: string; jenis: string; isi: KirimanLapor[] } | null>(null);
 
   /** kiriman yang sedang dibaca isinya (foto/PDF borang -> daftar barang) */
   const [bacaKiriman, setBacaKiriman] = useState<any | null>(null);
@@ -364,8 +373,10 @@ function IsiPermintaanLaporanKapal() {
     }
   };
 
-  const bukaKiriman = (b: KirimanLapor) => {
+  const bukaKiriman = (b: KirimanLapor, dariSlot = false) => {
     setBuka(b);
+    // dibuka dari matriks atau daftar biasa → tidak ada slot untuk kembali
+    if (!dariSlot) setAsalSlot(null);
     setCariDrive(null);          // hasil pencarian kiriman sebelumnya tak boleh ikut terbawa
     // Membuka kiriman menandainya "dibaca" — perubahan yang terjadi tanpa
     // diminta pun harus terlihat, kalau tidak angka "kiriman baru" berkurang
@@ -1155,12 +1166,57 @@ function IsiPermintaanLaporanKapal() {
       {buka && (
         <div className="fixed inset-0 z-50 bg-slate-900/50 flex items-end sm:items-center justify-center p-0 sm:p-4" onClick={() => setBuka(null)}>
           <div className="bg-white w-full sm:max-w-2xl rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
-            <div className="p-5 border-b border-slate-100 flex items-start justify-between gap-3">
-              <div>
-                <h3 className="text-lg font-extrabold text-slate-900">{labelJenis(buka.jenis)}</h3>
-                <p className="text-sm text-slate-600">{buka.kapal} · {bulanIndo(buka.periode)}</p>
+            <div className="border-b border-slate-100 p-5">
+              {/*
+                Jalan kembali. Kiriman yang dibuka dari satu slot berisi banyak
+                kiriman selalu punya saudara yang juga perlu diperiksa; tanpa
+                tombol ini, berpindah satu baris berarti menutup panel, mencari
+                kotaknya lagi di matriks, lalu membuka daftarnya dari nol.
+              */}
+              {asalSlot && asalSlot.isi.length > 1 && (() => {
+                const urut = [...asalSlot.isi].sort((a, b) => (b.dikirimPada || "").localeCompare(a.dikirimPada || ""));
+                const ke = urut.findIndex((x) => x.id === buka.id);
+                const lompat = (arah: number) => {
+                  const n = urut[(ke + arah + urut.length) % urut.length];
+                  if (n) bukaKiriman(n, true);
+                };
+                return (
+                  <div className="mb-3 flex flex-wrap items-center gap-2">
+                    <button type="button"
+                      onClick={() => { const s = asalSlot; setBuka(null); setAsalSlot(null); setSlotPilih(s); }}
+                      className="inline-flex items-center gap-1.5 rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200">
+                      ← Kembali ke {asalSlot.isi.length} kiriman slot ini
+                    </button>
+                    <span className="ml-auto flex items-center gap-1.5">
+                      <button type="button" onClick={() => lompat(-1)} title="Kiriman sebelumnya di slot ini"
+                        className="grid h-7 w-7 place-items-center rounded-lg bg-white text-sm font-bold text-slate-600 ring-1 ring-slate-300 transition hover:bg-slate-100">‹</button>
+                      <span className="text-[11px] font-bold tabular-nums text-slate-500">
+                        {ke >= 0 ? ke + 1 : "–"}/{urut.length}
+                      </span>
+                      <button type="button" onClick={() => lompat(1)} title="Kiriman berikutnya di slot ini"
+                        className="grid h-7 w-7 place-items-center rounded-lg bg-white text-sm font-bold text-slate-600 ring-1 ring-slate-300 transition hover:bg-slate-100">›</button>
+                    </span>
+                  </div>
+                );
+              })()}
+
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="text-lg font-extrabold text-slate-900">{labelJenis(buka.jenis)}</h3>
+                  <p className="text-sm text-slate-600">{buka.kapal} · {bulanIndo(buka.periode)}</p>
+                </div>
+                <div className="flex shrink-0 items-center gap-2">
+                  {/* jalan keluar yang tidak menutup layar begitu saja: kembali ke
+                      daftar kiriman di halaman, tempat berkas kapal lain berjajar */}
+                  <button type="button"
+                    onClick={() => { setBuka(null); setAsalSlot(null); window.setTimeout(() => document.getElementById("daftar-kiriman")?.scrollIntoView({ behavior: "smooth", block: "start" }), 0); }}
+                    className="rounded-lg bg-slate-100 px-2.5 py-1.5 text-[11px] font-bold text-slate-700 transition hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200">
+                    ← Daftar kiriman
+                  </button>
+                  <button onClick={() => { setBuka(null); setAsalSlot(null); }} title="Tutup"
+                    className="text-xl leading-none text-slate-400 transition hover:text-slate-700">✕</button>
+                </div>
               </div>
-              <button onClick={() => setBuka(null)} className="text-slate-400 hover:text-slate-700 text-xl leading-none">✕</button>
             </div>
 
             <div className="p-5 space-y-4">
@@ -1492,7 +1548,7 @@ function IsiPermintaanLaporanKapal() {
             <ul className="max-h-[60vh] divide-y divide-slate-100 overflow-auto dark:divide-slate-800">
               {[...slotPilih.isi].sort((a, b) => (b.dikirimPada || "").localeCompare(a.dikirimPada || "")).map((x) => (
                 <li key={x.id}>
-                  <button onClick={() => { setSlotPilih(null); bukaKiriman(x); }}
+                  <button onClick={() => { const s = slotPilih; setSlotPilih(null); setAsalSlot(s); bukaKiriman(x, true); }}
                     className="flex w-full items-center gap-3 px-5 py-3 text-left transition hover:bg-sky-50 dark:hover:bg-sky-950/30">
                     <span className={`h-2 w-2 shrink-0 rounded-full ${x.status === "baru" ? "bg-rose-500" : "bg-emerald-500"}`} />
                     <span className="min-w-0 flex-1">
