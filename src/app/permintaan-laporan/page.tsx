@@ -39,6 +39,25 @@ const labelStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.label |
 const TANGGAL_UJUNG_BULAN = 25;
 
 /**
+ * Pecah nama berkas menjadi awalan yang berulang dan judul yang membedakan.
+ *
+ * Apps Script menamai tiap berkas "2026-08 - Laporan Mesin - KMP. PORTLINK VIII
+ * - Catatan penggantian filter.jpg". Tiga bagian pertama sama persis untuk
+ * seluruh berkas dalam satu kiriman — dan justru bagian itulah yang memenuhi
+ * baris sampai judulnya, satu-satunya yang perlu dibaca, terpotong di ujung.
+ *
+ * Yang ditebalkan judulnya; awalannya tetap ditampilkan kecil dan pudar, sebab
+ * ia dipakai mencocokkan berkas dengan isi folder Drive ketika ada yang hilang.
+ */
+function pecahNamaBerkas(nama: string): { awalan: string; judul: string } {
+  const tanpaExt = nama.replace(/\.[a-z0-9]+$/i, "");
+  // pemisahnya bisa "-" biasa atau "–" panjang, tergantung versi skripnya
+  const bagian = tanpaExt.split(/\s+[-–]\s+/);
+  if (bagian.length < 2) return { awalan: "", judul: tanpaExt };
+  return { awalan: bagian.slice(0, -1).join(" – "), judul: bagian[bagian.length - 1] };
+}
+
+/**
  * Pasangan sebaris tiap golongan: Laporan Mesin ⇄ Permintaan Mesin.
  *
  * Bagiannya (Deck/Mesin) tidak pernah ikut berpindah — yang tertukar di layar
@@ -1174,9 +1193,21 @@ function IsiPermintaanLaporanKapal() {
                 ) : (
                   <ul className="space-y-1.5">
                     {buka.berkas.map((f) => (
-                      <li key={f.fileId} className="flex items-center gap-2 bg-slate-50 ring-1 ring-slate-200 rounded-lg px-3 py-2 text-sm">
-                        <span className="truncate flex-1">{f.nama}</span>
-                        <span className="text-xs text-slate-500 shrink-0">{ukuranSingkat(f.ukuran)}</span>
+                      <li key={f.fileId} className="flex flex-wrap items-center gap-x-2 gap-y-1.5 rounded-lg bg-slate-50 px-3 py-2 text-sm ring-1 ring-slate-200">
+                        {/*
+                          Nama berkas ditampilkan UTUH, dipatah ke baris
+                          berikutnya bila panjang. Sebelumnya ia dipotong di
+                          tengah, dan yang hilang justru ekornya — satu-satunya
+                          bagian yang membedakan satu lembar dari lembar lain,
+                          karena awalannya sama untuk seluruh berkas kiriman.
+                        */}
+                        <span className="min-w-[14rem] flex-1 leading-snug" title={f.nama}>
+                          <span className="block break-words font-semibold text-slate-800">{pecahNamaBerkas(f.nama).judul}</span>
+                          {pecahNamaBerkas(f.nama).awalan && (
+                            <span className="block break-words text-[11px] text-slate-400">{pecahNamaBerkas(f.nama).awalan}</span>
+                          )}
+                        </span>
+                        <span className="shrink-0 text-xs text-slate-500">{ukuranSingkat(f.ukuran)}</span>
                         {/* dibuka di dalam aplikasi; "Buka" tetap ada untuk yang ingin berkas aslinya di Drive */}
                         <button type="button"
                           onClick={() => setLihatBerkas({ fileId: f.fileId, nama: f.nama, url: f.url, kapal: buka.kapal })}
