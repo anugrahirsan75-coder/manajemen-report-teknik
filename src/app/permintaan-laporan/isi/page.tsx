@@ -49,6 +49,25 @@ const rupiahSingkat = (n: number) =>
 
 const rupiahPenuh = (n: number) => `Rp${new Intl.NumberFormat("id-ID").format(Math.round(n))}`;
 
+/** angka dari isian bebas berformat Indonesia: "1.250.000" atau "1250000" */
+const keRupiah = (v: unknown) => {
+  const teks = String(v ?? "").replace(/[^\d,.-]/g, "");
+  if (!teks) return 0;
+  // titik dipakai sebagai pemisah ribuan di sini, koma sebagai desimal
+  const n = parseFloat(teks.replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(n) && n > 0 ? n : 0;
+};
+
+/**
+ * Harga satuan yang berlaku untuk satu baris.
+ *
+ * Ketikan kantor selalu menang atas taksiran RAB — orang yang mengetiknya baru
+ * menelepon toko atau memegang penawaran, sedangkan RAB hanya menebak dari
+ * kemiripan nama barang.
+ */
+const hargaBerlaku = (baris: { hargaManual?: string }, est?: Estimasi) =>
+  keRupiah(baris.hargaManual) || est?.harga || 0;
+
 const keAngkaJumlah = (v: string) => {
   const n = parseFloat(String(v || "").replace(/[^\d.,]/g, "").replace(",", "."));
   return Number.isFinite(n) && n > 0 ? n : 0;
@@ -309,7 +328,7 @@ export default function IsiPermintaanKapal() {
       const k = kunci(e.berkas.fileId, i);
       if (!pilih.has(k)) return;
       const est = estimasi[k];
-      const nilai = (est?.harga || 0) * keAngkaJumlah(b.jumlah);
+      const nilai = hargaBerlaku(b, est) * keAngkaJumlah(b.jumlah);
       if (nilai > 0) jumlah += nilai; else tanpaHarga++;
     }));
     return { jumlah, tanpaHarga };
@@ -342,7 +361,7 @@ export default function IsiPermintaanKapal() {
   const rekapBaris = useMemo(() => {
     const keluar: {
       kapal: string; jenis: string; nama: string; spesifikasi: string; jumlah: string; satuan: string;
-      keterangan: string; harga: number; yakin: boolean; pembanding: string; berkas: string; dikirim: string;
+      keterangan: string; harga: number; yakin: boolean; manual: boolean; pembanding: string; berkas: string; dikirim: string;
       /** tautan berkas aslinya di Google Drive — dipakai sebagai pranala di Excel */
       berkasUrl: string;
       fileId: string; indeks: number;
@@ -355,8 +374,11 @@ export default function IsiPermintaanKapal() {
         jenis: singkatJenis(e.kiriman.jenis),
         nama: b.nama || "", spesifikasi: b.spesifikasi || "", jumlah: b.jumlah || "",
         satuan: b.satuan || "", keterangan: b.keterangan || "",
-        harga: est?.harga || 0, yakin: !!est?.yakin,
-        pembanding: est?.uraian ? `${est.uraian}${est.satuan ? ` (${est.satuan})` : ""}` : "",
+        harga: hargaBerlaku(b, est), yakin: keRupiah(b.hargaManual) ? true : !!est?.yakin,
+        manual: !!keRupiah(b.hargaManual),
+        pembanding: keRupiah(b.hargaManual)
+          ? "Harga diketik kantor"
+          : est?.uraian ? `${est.uraian}${est.satuan ? ` (${est.satuan})` : ""}` : "",
         berkas: e.berkas.nama, berkasUrl: e.berkas.url || "", dikirim: waktuSingkat(e.kiriman.dikirimPada),
         fileId: e.berkas.fileId, indeks: i,
       });
@@ -742,7 +764,7 @@ export default function IsiPermintaanKapal() {
 /* ── isi satu berkas: keterangan, foto scan, dan tabel barangnya ────────── */
 interface BarisRekapLayar {
   kapal: string; jenis: string; nama: string; spesifikasi: string; jumlah: string; satuan: string;
-  keterangan: string; harga: number; yakin: boolean; pembanding: string; berkas: string; dikirim: string;
+  keterangan: string; harga: number; yakin: boolean; manual: boolean; pembanding: string; berkas: string; dikirim: string;
   berkasUrl: string;
   fileId: string; indeks: number;
 }
@@ -889,15 +911,20 @@ function RekapBulan({ baris, nilai, periode, setPeriode, daftarPeriode, kapal, s
                           title={b.pembanding ? `Pembanding RAB: ${b.pembanding}${b.yakin ? "" : " — kecocokan lemah"}` : "Belum ada pembanding di Database RAB"}>
                           {b.harga ? (
                             <span className={`text-[13px] font-semibold tabular-nums ${
-                              b.yakin ? "text-slate-700 dark:text-slate-200" : "text-amber-700 dark:text-amber-400"}`}>
-                              {rupiahSingkat(b.harga)}{!b.yakin && <span className="ml-0.5 text-[10px]">?</span>}
+                              b.manual ? "font-bold text-[#16357f] dark:text-sky-300"
+                                : b.yakin ? "text-slate-700 dark:text-slate-200" : "text-amber-700 dark:text-amber-400"}`}>
+                              {rupiahSingkat(b.harga)}
+                              {b.manual
+                                ? <span className="ml-0.5 text-[9px] font-bold uppercase">m</span>
+                                : !b.yakin && <span className="ml-0.5 text-[10px]">?</span>}
                             </span>
                           ) : <span className="text-[13px] text-slate-300">—</span>}
                         </td>
                         <td className="px-2 py-2 text-right">
                           {total ? (
                             <span className={`text-[14px] font-bold tabular-nums ${
-                              b.yakin ? "text-slate-900 dark:text-white" : "text-amber-700 dark:text-amber-400"}`}>
+                              b.manual ? "text-[#16357f] dark:text-sky-300"
+                                : b.yakin ? "text-slate-900 dark:text-white" : "text-amber-700 dark:text-amber-400"}`}>
                               {rupiahSingkat(total)}
                             </span>
                           ) : <span className="text-[13px] text-slate-300">—</span>}
@@ -922,7 +949,8 @@ function RekapBulan({ baris, nilai, periode, setPeriode, daftarPeriode, kapal, s
       <p className="mt-3 px-1 text-[11px] leading-relaxed text-slate-500">
         Excel berisi satu lembar REKAP seluruh armada ditambah satu lembar per kapal — SPPBJ disusun per kapal,
         jadi bentuk siap-pakainya memang terpisah. Estimasi harga berasal dari Database RAB dan bersifat perkiraan;
-        baris yang kecocokannya lemah ditandai kuning di dalam berkas.
+        baris yang kecocokannya lemah ditandai kuning di dalam berkas. Harga yang diketik sendiri di halaman
+        &ldquo;Per berkas&rdquo; menang atas taksiran RAB, ditandai <b className="text-[#16357f]">m</b> dan warna biru.
       </p>
     </div>
   );
@@ -936,26 +964,58 @@ function RekapBulan({ baris, nilai, periode, setPeriode, daftarPeriode, kapal, s
  * segini" masih jauh lebih berguna daripada kosong. Yang tidak boleh terjadi
  * adalah angka ragu yang tampil sama meyakinkannya dengan angka pasti.
  */
-function SelHarga({ baris, est }: { baris: BarisPermintaan; est?: Estimasi }) {
+function SelHarga({ baris, est, ubah }: {
+  baris: BarisPermintaan;
+  est?: Estimasi;
+  /** menyimpan harga ketikan; kosong berarti kembali memakai taksiran RAB */
+  ubah: (nilai: string) => void;
+}) {
   const jml = keAngkaJumlah(baris.jumlah);
-  const satuan = est?.harga || 0;
+  const manual = keRupiah(baris.hargaManual);
+  const satuan = manual || est?.harga || 0;
   const total = satuan * jml;
-  const judul = est?.uraian
-    ? `Pembanding RAB: ${est.uraian}${est.satuan ? ` (${est.satuan})` : ""}${est.yakin ? "" : " — kecocokan lemah, periksa lagi"}`
-    : "Belum ada barang pembanding di Database RAB";
 
-  const nada = !satuan ? "text-slate-300"
-    : est?.yakin ? "text-slate-700 dark:text-slate-200"
-      : "text-amber-700 dark:text-amber-400";
+  const judul = manual
+    ? "Harga diketik kantor — kosongkan kotaknya untuk kembali ke taksiran Database RAB"
+    : est?.uraian
+      ? `Pembanding RAB: ${est.uraian}${est.satuan ? ` (${est.satuan})` : ""}${est.yakin ? "" : " — kecocokan lemah, periksa lagi"}`
+      : "Belum ada barang pembanding di Database RAB — ketik harganya bila tahu";
+
+  const nada = manual ? "text-[#16357f] dark:text-sky-300"
+    : !satuan ? "text-slate-300"
+      : est?.yakin ? "text-slate-700 dark:text-slate-200"
+        : "text-amber-700 dark:text-amber-400";
 
   return (
     <>
-      <td className={`px-2 py-0.5 text-right tabular-nums ${nada}`} title={judul}>
-        {satuan ? rupiahSingkat(satuan) : "—"}
-        {satuan > 0 && !est?.yakin && <span className="ml-0.5 text-[10px]">?</span>}
+      {/*
+        Harga satuan berupa KOTAK ISIAN, bukan angka mati.
+        Taksiran RAB menebak dari kemiripan nama barang; yang tahu harga
+        sebenarnya orang kantor yang baru menelepon toko. Selama angkanya tak
+        bisa dikoreksi di sini, koreksinya dikerjakan di Excel — dan sejak saat
+        itu aplikasi berhenti tahu apa yang sedang dikerjakan kantor.
+
+        Taksiran RAB tetap tampil sebagai bayangan di kotak yang masih kosong,
+        jadi mengosongkan isian = kembali ke taksiran, tanpa tombol tersendiri.
+      */}
+      <td className="px-1 py-0.5 text-right" title={judul}>
+        <span className="relative inline-flex items-center">
+          <input
+            value={baris.hargaManual || ""}
+            onChange={(e) => ubah(e.target.value)}
+            inputMode="numeric"
+            placeholder={est?.harga ? rupiahSingkat(est.harga) : "—"}
+            className={`w-full max-w-[5.5rem] rounded border border-transparent bg-transparent px-1 py-0.5 text-right text-[12px] tabular-nums outline-none transition placeholder:text-slate-300 hover:border-slate-300 focus:border-[#16357f] focus:bg-white dark:hover:border-slate-600 dark:focus:bg-slate-900 ${
+              manual ? "font-bold text-[#16357f] dark:text-sky-300" : "text-slate-600 dark:text-slate-300"}`}
+          />
+          {!manual && satuan > 0 && !est?.yakin && (
+            <span className="pointer-events-none ml-0.5 text-[10px] text-amber-600">?</span>
+          )}
+        </span>
       </td>
       <td className={`px-2 py-0.5 text-right font-semibold tabular-nums ${nada}`} title={judul}>
         {total ? rupiahSingkat(total) : "—"}
+        {manual > 0 && <span className="ml-0.5 text-[9px] font-bold uppercase text-[#16357f] dark:text-sky-300">m</span>}
       </td>
     </>
   );
@@ -1183,7 +1243,8 @@ function IsiBerkas({ e, pilih, estimasi, lihatFoto, setLihatFoto, alih, alihBany
                               k === "jumlah" ? "text-center tabular-nums" : ""}`} />
                         </td>
                       ))}
-                      <SelHarga baris={r} est={estimasi[kunci(e.berkas.fileId, i)]} />
+                      <SelHarga baris={r} est={estimasi[kunci(e.berkas.fileId, i)]}
+                        ubah={(v) => ubahBaris(e, i, "hargaManual", v)} />
                       <td className="px-1 py-0.5 text-center">
                         <button onClick={() => hapusBaris(e, i)} title="Hapus baris"
                           className="rounded px-1 text-slate-300 transition hover:bg-rose-50 hover:text-rose-600">✕</button>
@@ -1198,7 +1259,7 @@ function IsiBerkas({ e, pilih, estimasi, lihatFoto, setLihatFoto, alih, alihBany
                   let kosong = 0;
                   b.baris.forEach((r, i) => {
                     const est = estimasi[kunci(e.berkas.fileId, i)];
-                    const n = (est?.harga || 0) * keAngkaJumlah(r.jumlah);
+                    const n = hargaBerlaku(r, est) * keAngkaJumlah(r.jumlah);
                     if (n > 0) nilai += n; else kosong++;
                   });
                   return (

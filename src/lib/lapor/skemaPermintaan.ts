@@ -30,6 +30,19 @@ export interface BarisPermintaan {
   jumlah: string;
   satuan: string;
   keterangan: string;
+  /**
+   * Harga satuan yang DIKETIK kantor, menimpa taksiran Database RAB.
+   *
+   * Bukan hasil bacaan mesin — juru baca tidak pernah mengisinya, dan borang
+   * ABK memang tidak memuat harga. Medannya hidup di sini supaya ikut tersimpan
+   * bersama hasil bacaan berkasnya, bertahan sesudah muat ulang, dan terbawa ke
+   * rekap bulanan maupun Excel tanpa jalur penyimpanan kedua.
+   *
+   * Disimpan sebagai teks apa adanya ("1.250.000", "1250000") dan baru diangkakan
+   * saat dipakai; menyimpannya sebagai angka akan membuat isian melompat-lompat
+   * saat sedang diketik.
+   */
+  hargaManual?: string;
 }
 
 /** angka jumlah dari isian bebas ("4", "4 pcs", "±2") */
