@@ -38,6 +38,16 @@ const labelStatus = (s: string) => STATUS_LAPOR.find((x) => x.id === s)?.label |
  */
 const TANGGAL_UJUNG_BULAN = 25;
 
+/**
+ * Pasangan sebaris tiap golongan: Laporan Mesin ⇄ Permintaan Mesin.
+ *
+ * Bagiannya (Deck/Mesin) tidak pernah ikut berpindah — yang tertukar di layar
+ * telepon ABK adalah baris atas dan baris bawah pada kotak unggah, bukan kolom
+ * kiri dan kanannya.
+ */
+const pasanganJenis = (j: string) =>
+  j.startsWith("laporan") ? j.replace("laporan", "permintaan") : j.replace("permintaan", "laporan");
+
 const tanggalKirim = (b: KirimanLapor) => Number((b.dikirimPada || "").slice(8, 10)) || 0;
 
 /**
@@ -132,6 +142,8 @@ function IsiPermintaanLaporanKapal() {
 
   /** saringan daftar: hanya kiriman yang naik di ujung bulan */
   const [hanyaUjung, setHanyaUjung] = useState(false);
+  /** fileId yang sedang digeser ke golongan lain — mengunci tombolnya */
+  const [geserBerkasId, setGeserBerkasId] = useState("");
   /** berkas yang sedang dibuka di jendela pratinjau */
   /** penyusun pesan tagihan untuk grup WhatsApp kapal */
   const [pengingat, setPengingat] = useState(false);
@@ -426,6 +438,51 @@ function IsiPermintaanLaporanKapal() {
     } catch (e: any) {
       setCariDrive({ sibuk: false, kandidat: [], pesan: e?.message || "Gagal menautkan" });
     }
+  };
+
+  /**
+   * Geser SATU berkas ke golongan borang lain.
+   *
+   * Satu kiriman Laporan Mesin biasanya memuat lima lembar, dan yang salah
+   * kotak cuma satu di antaranya. Memindahkan seluruh kirimannya menukar satu
+   * kesalahan dengan empat: lembar laporan yang benar ikut hilang dari kotaknya.
+   *
+   * Berkas Drive tidak ikut berpindah folder. Yang berpindah catatannya, ke
+   * kiriman bergolongan tujuan pada kapal dan periode yang sama — dibuatkan
+   * bila belum ada, disatukan bila sudah.
+   */
+  const geserBerkas = async (b: KirimanLapor, f: BerkasLapor, ke: string) => {
+    if (!JENIS_LAPOR.some((j) => j.id === ke) || ke === b.jenis) return;
+    const sendirian = b.berkas.length === 1;
+    if (!(await konfirmasi({
+      nada: "perhatian", ikon: "🔀", judul: `Geser berkas ini ke ${singkatJenis(ke)}?`,
+      pesan: f.nama,
+      rincian: [
+        `${b.kapal} · ${bulanIndo(b.periode)} · dari ${singkatJenis(b.jenis)}.`,
+        "Berkas di Google Drive tetap di folder lamanya; yang berpindah catatannya.",
+        sendirian
+          ? "Ini satu-satunya berkas di kiriman itu, jadi catatan kirimannya ikut dirapikan."
+          : `${b.berkas.length - 1} berkas lain tetap di ${singkatJenis(b.jenis)}.`,
+      ],
+      tombolYa: `Geser ke ${singkatJenis(ke)}`,
+    }))) return;
+
+    setGeserBerkasId(f.fileId);
+    setGalat("");
+    try {
+      const r = await fetch("/api/lapor/daftar/berkas/pindah", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: b.id, fileId: f.fileId, keJenis: ke }),
+      });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Berkas gagal dipindahkan");
+      // rekap kedua kotak berubah sekaligus — dimuat ulang, bukan ditebak
+      await ambil();
+      setBuka(null);
+      setKabar({ teks: `${f.nama} dipindahkan ke ${singkatJenis(ke)} ✓`, nada: "sukses" });
+    } catch (e: any) {
+      setGalat(e?.message || "Berkas gagal dipindahkan. Periksa koneksi lalu ulangi.");
+    } finally { setGeserBerkasId(""); }
   };
 
   const hapusDokumen = async (b: KirimanLapor, f: BerkasLapor) => {
@@ -1128,6 +1185,23 @@ function IsiPermintaanLaporanKapal() {
                         </button>
                         <a href={f.url} target="_blank" rel="noopener noreferrer"
                            className="shrink-0 rounded-lg bg-white px-3 py-1.5 text-xs font-bold text-slate-600 ring-1 ring-slate-300 transition hover:bg-slate-50">Buka</a>
+                        {/*
+                          Satu kiriman kerap memuat lembar yang salah kotak —
+                          paling sering permintaan barang yang ikut terunggah di
+                          slot laporan. Yang digeser lembarnya sendiri, bukan
+                          seluruh kirimannya, supaya lembar lain yang sudah benar
+                          tidak ikut hilang dari kotaknya.
+                        */}
+                        <button type="button"
+                          onClick={() => geserBerkas(buka, f, pasanganJenis(buka.jenis))}
+                          disabled={Boolean(geserBerkasId)}
+                          title={`Berkas ini sebenarnya ${singkatJenis(pasanganJenis(buka.jenis))}? Geser ke sana`}
+                          className="inline-flex shrink-0 items-center gap-1 rounded-lg bg-white px-2.5 py-1.5 text-xs font-bold text-[#16357f] ring-1 ring-[#16357f]/30 transition hover:bg-[#16357f] hover:text-white disabled:cursor-wait disabled:opacity-50">
+                          {geserBerkasId === f.fileId ? (
+                            <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-slate-200 border-t-[#16357f]" aria-hidden="true" />
+                          ) : "⇄"}
+                          {geserBerkasId === f.fileId ? "Memindahkan…" : `Ke ${singkatJenis(pasanganJenis(buka.jenis)).split(" ")[0]}`}
+                        </button>
                         <button type="button" onClick={() => hapusDokumen(buka, f)}
                           disabled={Boolean(hapusBerkasId)}
                           aria-label={`Hapus dokumen ${f.nama}`}
