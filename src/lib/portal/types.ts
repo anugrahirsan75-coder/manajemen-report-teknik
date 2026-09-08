@@ -68,6 +68,18 @@ export interface BarisFilter {
 export interface JamMesin {
   id: string;
   mesin: string;
+  /**
+   * Merek dan tipe mesinnya — Yanmar 6CH-DTE, Mitsubishi S6R, Cummins KTA19.
+   *
+   * "ME Kanan" saja tidak menolong yang menyiapkan filternya: part number filter
+   * berbeda antar-merek, dan selama merek tidak tercatat, kantor menebaknya dari
+   * ingatan atau menelepon kapal untuk menanyakan hal yang seharusnya sudah
+   * tertulis.
+   */
+  merek: string;
+  tipe: string;
+  /** nomor seri di pelat mesin — pembeda terakhir bila satu tipe dipakai banyak kapal */
+  nomorSeri: string;
   /** jam kerja terbaru sesuai penunjuk di kamar mesin */
   jam: number;
   /** jam kerja saat filter terakhir diganti; selisihnya = umur pakai berjalan */

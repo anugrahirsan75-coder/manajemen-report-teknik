@@ -45,6 +45,9 @@ const bersihkanFilter = (b: any, kini: string): BarisFilter => ({
 const bersihkanMesin = (m: any, kini: string): JamMesin => ({
   id: teks(m?.id, 60) || `m-${Math.random().toString(36).slice(2, 10)}`,
   mesin: teks(m?.mesin, 40),
+  merek: teks(m?.merek, 40),
+  tipe: teks(m?.tipe, 60),
+  nomorSeri: teks(m?.nomorSeri, 60),
   jam: angka(m?.jam),
   jamGantiTerakhir: angka(m?.jamGantiTerakhir),
   intervalJam: angka(m?.intervalJam),

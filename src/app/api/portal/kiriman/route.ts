@@ -85,6 +85,17 @@ export async function POST(req: NextRequest) {
     // kiriman kapal lain: jawabannya sama dengan kiriman yang tidak ada
     return NextResponse.json({ ok: false, error: "Kiriman tidak ditemukan" }, { status: 404 });
   }
+  /*
+   * Hanya permintaan yang bisa ditagih — dijaga di sini, bukan hanya dengan
+   * menyembunyikan tombolnya. Laporan tidak menunggu apa pun dari kantor, dan
+   * tanda tagihan pada dokumen yang tak perlu dikerjakan membuat tanda yang
+   * sungguhan ikut diabaikan.
+   */
+  if (!String(p.jenis || "").startsWith("permintaan")) {
+    return NextResponse.json({
+      ok: false, error: "Laporan tidak perlu ditagih — yang bisa diingatkan hanya permintaan barang.",
+    }, { status: 400 });
+  }
 
   const dorongan = Array.isArray(p.dorongan) ? p.dorongan : [];
   const terakhir = dorongan[dorongan.length - 1];

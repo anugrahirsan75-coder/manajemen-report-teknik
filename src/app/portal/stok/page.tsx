@@ -83,8 +83,8 @@ export default function StokFilter() {
   const tambahMesin = () => {
     setKotor(true);
     setMesin((l) => [...l, {
-      id: idBaris("m"), mesin: MESIN_UMUM[0], jam: 0, jamGantiTerakhir: 0,
-      intervalJam: 250, dicatatPada: new Date().toISOString(),
+      id: idBaris("m"), mesin: MESIN_UMUM[0], merek: "", tipe: "", nomorSeri: "",
+      jam: 0, jamGantiTerakhir: 0, intervalJam: 250, dicatatPada: new Date().toISOString(),
     }]);
   };
 
@@ -213,6 +213,28 @@ export default function StokFilter() {
                       className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[13px] dark:border-slate-600 dark:bg-slate-900">
                       {Array.from(new Set([...MESIN_UMUM, m.mesin].filter(Boolean))).map((x) => <option key={x} value={x}>{x}</option>)}
                     </select>
+                  </label>
+                  {/*
+                    Merek dan tipe ditanyakan sekali, lalu tinggal terbaca
+                    selamanya: part number filter mengikuti merek mesinnya, dan
+                    tanpa ini kantor menebak atau menelepon kapal.
+                  */}
+                  <label>
+                    <span className="block text-[10.5px] font-bold uppercase text-slate-500">Merek</span>
+                    <input value={m.merek || ""} onChange={(e) => ubahMesin(m.id, "merek", e.target.value)}
+                      placeholder="mis. Yanmar"
+                      className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[13px] dark:border-slate-600 dark:bg-slate-900" />
+                  </label>
+                  <label>
+                    <span className="block text-[10.5px] font-bold uppercase text-slate-500">Tipe / model</span>
+                    <input value={m.tipe || ""} onChange={(e) => ubahMesin(m.id, "tipe", e.target.value)}
+                      placeholder="mis. 6CH-DTE"
+                      className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[13px] dark:border-slate-600 dark:bg-slate-900" />
+                  </label>
+                  <label className="col-span-2">
+                    <span className="block text-[10.5px] font-bold uppercase text-slate-500">Nomor seri (bila terbaca di pelat mesin)</span>
+                    <input value={m.nomorSeri || ""} onChange={(e) => ubahMesin(m.id, "nomorSeri", e.target.value)}
+                      className="mt-0.5 w-full rounded-lg border border-slate-300 bg-white px-2 py-1.5 text-[13px] dark:border-slate-600 dark:bg-slate-900" />
                   </label>
                   <label>
                     <span className="block text-[10.5px] font-bold uppercase text-slate-500">Jam kerja sekarang</span>

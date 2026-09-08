@@ -193,7 +193,7 @@ export default function DataIsianKapal() {
                         <h3 className="mb-1.5 text-[12px] font-black uppercase tracking-wide text-slate-600">Jam kerja mesin</h3>
                         <table className="w-full text-[12px]">
                           <thead className="text-[10.5px] uppercase text-slate-500">
-                            <tr><th className="py-1 text-left">Mesin</th><th className="text-right">Jam kini</th><th className="text-right">Sejak ganti</th><th className="text-right">Sisa</th></tr>
+                            <tr><th className="py-1 text-left">Mesin</th><th className="text-left">Merek / tipe</th><th className="text-right">Jam kini</th><th className="text-right">Sejak ganti</th><th className="text-right">Sisa</th></tr>
                           </thead>
                           <tbody>
                             {a.stok.mesin.map((m: any) => {
@@ -203,6 +203,10 @@ export default function DataIsianKapal() {
                               return (
                                 <tr key={m.id} className={`border-t border-slate-200 dark:border-slate-700 ${dekat ? "bg-orange-50 dark:bg-orange-950/30" : ""}`}>
                                   <td className="py-1 font-semibold text-slate-700 dark:text-slate-200">{m.mesin}</td>
+                                  <td className="text-slate-600 dark:text-slate-300">
+                                    {[m.merek, m.tipe].filter(Boolean).join(" ") || <span className="text-slate-400">belum diisi</span>}
+                                    {m.nomorSeri ? <span className="block text-[10.5px] text-slate-400">SN {m.nomorSeri}</span> : null}
+                                  </td>
                                   <td className="text-right tabular-nums text-slate-700 dark:text-slate-200">{m.jam}</td>
                                   <td className="text-right tabular-nums text-slate-500">{jalan}</td>
                                   <td className={`text-right font-bold tabular-nums ${dekat ? "text-orange-800" : "text-slate-700 dark:text-slate-200"}`}>
@@ -211,7 +215,7 @@ export default function DataIsianKapal() {
                                 </tr>
                               );
                             })}
-                            {!a.stok.mesin.length && <tr><td colSpan={4} className="py-3 text-center text-slate-500">Belum ada data jam mesin.</td></tr>}
+                            {!a.stok.mesin.length && <tr><td colSpan={5} className="py-3 text-center text-slate-500">Belum ada data jam mesin.</td></tr>}
                           </tbody>
                         </table>
                       </div>
