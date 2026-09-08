@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { bolehScm, peranDariToken, tokenPeran } from "@/lib/auth/peran";
+import { COOKIE_KAPAL, bacaSesiKapal } from "@/lib/portal/sesi";
 
 // Gerbang login: semua route butuh cookie sesi valid, kecuali /login & /api/auth.
 export async function middleware(req: NextRequest) {
@@ -8,6 +9,31 @@ export async function middleware(req: NextRequest) {
   const expected = process.env.AUTH_TOKEN;
   const token = req.cookies.get("mrt_session")?.value;
   const scmCookie = req.cookies.get("mrt_scm")?.value;
+
+  /**
+   * PORTAL KAPAL punya pintunya sendiri pula.
+   *
+   * Pemakainya ABK di kapal, bukan orang kantor: mereka tidak punya — dan tidak
+   * boleh punya — akun Teknik. Sesinya ditandatangani HMAC dan MEMBAWA identitas
+   * kapal, jadi yang diperiksa di sini bukan hanya "sudah masuk atau belum",
+   * melainkan bahwa isi cookienya memang terbitan server ini.
+   *
+   * Route dalamnya tetap memeriksa sendiri kapal dan bagiannya; gerbang ini
+   * hanya menahan yang sama sekali belum masuk supaya tidak mendarat di halaman
+   * kosong tanpa penjelasan.
+   */
+  if (path.startsWith("/portal") || path.startsWith("/api/portal")) {
+    if (path === "/portal/masuk" || path.startsWith("/api/portal/masuk")) return NextResponse.next();
+    const sesi = await bacaSesiKapal(req.cookies.get(COOKIE_KAPAL)?.value, expected);
+    if (sesi) return NextResponse.next();
+    if (path.startsWith("/api/")) {
+      return NextResponse.json({ ok: false, error: "Sesi kapal habis. Masuk ulang." }, { status: 401 });
+    }
+    const ke = req.nextUrl.clone();
+    ke.pathname = "/portal/masuk";
+    ke.search = path === "/portal" ? "" : `?dari=${encodeURIComponent(path)}`;
+    return NextResponse.redirect(ke);
+  }
 
   /**
    * Halaman SCM punya PINTUNYA SENDIRI.
@@ -70,6 +96,9 @@ export const config = {
   //    percobaan tidak mengganggu jalur yang sedang dipakai. Route "cari"
   //    menjawab TANPA HARGA: halamannya terbuka, dan harga pengadaan tidak ada
   //    urusannya dengan borang permintaan kapal.
+  //  · /portal + api/portal — Portal Kapal. TIDAK dikecualikan di sini: ia
+  //    lewat gerbangnya sendiri di dalam fungsi middleware, memakai cookie
+  //    mrt_kapal yang bertanda tangan HMAC dan membawa nama kapalnya.
   //  · /layar-sertifikat + api/publik/sertifikat — papan monitor untuk layar
   //    di ruang kantor. Layar itu tidak bisa login, jadi halamannya harus
   //    terbuka; sebagai gantinya route-nya melayani GET saja dan isinya sudah

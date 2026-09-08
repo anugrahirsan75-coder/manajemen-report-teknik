@@ -1202,6 +1202,12 @@ function IsiPermintaanLaporanKapal() {
                       {b.digantikan && <span className="rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500 ring-1 ring-slate-200">percobaan lama</span>}
                       {/* bulan kirim di luar periodenya — lazim, tapi harus terbaca supaya
                           rekap bulanan tidak dikira salah hitung */}
+                      {!!b.dorongan?.length && (
+                        <span className="rounded-md bg-sky-100 px-1.5 py-0.5 text-[10px] font-black text-sky-800 ring-1 ring-sky-300 dark:bg-sky-950/50 dark:text-sky-300"
+                          title={b.dorongan.map((d) => `${waktuSingkat(d.pada)} — ${d.pesan || "(tanpa pesan)"}`).join(" · ")}>
+                          🔔 kapal menagih{b.dorongan.length > 1 ? ` ×${b.dorongan.length}` : ""}
+                        </span>
+                      )}
                       {bedaBulan(b) && (
                         <span className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold ring-1 ${
                           bedaBulan(b)!.tingkat === "periksa"
@@ -1362,6 +1368,25 @@ function IsiPermintaanLaporanKapal() {
                     </p>
                   )}
                 </div>
+                {!!buka.dorongan?.length && (
+                  <div className="sm:col-span-2 rounded-xl bg-sky-50 p-3 ring-1 ring-sky-300 dark:bg-sky-950/30">
+                    <p className="text-[11px] font-black uppercase tracking-wide text-sky-900 dark:text-sky-200">
+                      Kapal menagih kiriman ini
+                    </p>
+                    <ul className="mt-1 space-y-1">
+                      {buka.dorongan.slice(-5).map((d, i) => (
+                        <li key={i} className="text-[12px] text-sky-900 dark:text-sky-200">
+                          <b>{waktuSingkat(d.pada)}</b>{d.oleh ? ` · ${d.oleh}` : ""}
+                          {d.pesan ? ` — "${d.pesan}"` : ""}
+                        </li>
+                      ))}
+                    </ul>
+                    <p className="mt-1.5 text-[10.5px] text-sky-800 dark:text-sky-300">
+                      Dikirim dari Portal Kapal. Menandai kiriman ini <b>Selesai</b> menghentikan tagihannya.
+                    </p>
+                  </div>
+                )}
+
                 {/*
                   Golongan borang boleh dibetulkan kantor. Yang paling sering
                   terjadi: permintaan barang ditempel di slot Laporan.

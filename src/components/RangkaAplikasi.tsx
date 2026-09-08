@@ -3,7 +3,8 @@
  * Rangka aplikasi: sidebar + lonceng pengingat.
  *
  * Halaman /monitoring (rekap pengadaan), /lapor (kiriman berkas dari ABK
- * kapal), /kinerja-anggaran (tautan lihat-saja untuk Direksi),
+ * kapal), /portal (Portal Kapal, berpintu sendiri untuk ABK),
+ * /kinerja-anggaran (tautan lihat-saja untuk Direksi),
  * /layar-sertifikat (papan monitor yang menyala sendiri di layar ruang
  * kantor), dan /scm
  * (ruang kerja tim SCM, berpintu sendiri) berdiri DI LUAR kerangka aplikasi —
@@ -23,6 +24,7 @@ export default function RangkaAplikasi({ sidebar, loneng, children }: {
   const terbuka = path.startsWith("/monitoring") || path.startsWith("/lapor")
     || path.startsWith("/uji-permintaan")
     || path.startsWith("/kinerja-anggaran") || path.startsWith("/layar-sertifikat")
+    || path.startsWith("/portal")
     || path.startsWith("/scm");
 
   if (terbuka) return <div className="min-h-screen">{children}</div>;

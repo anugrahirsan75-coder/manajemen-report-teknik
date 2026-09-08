@@ -96,6 +96,15 @@ export interface KirimanLapor {
    * rekap kelengkapan bulanan inilah yang dipakai menagih kapal.
    */
   riwayatJenis?: { dari: string; ke: string; pada: string }[];
+  /**
+   * Pengingat yang dikirim KAPAL lewat Portal Kapal.
+   *
+   * Sebelum ada portal, kapal hanya bisa menagih lewat WhatsApp ke orang yang
+   * kebetulan dikenalnya — dan tagihan itu hilang begitu obrolan tergulung.
+   * Disimpan pada kirimannya sendiri supaya yang membaca di kantor melihatnya
+   * tepat di samping dokumen yang ditagih.
+   */
+  dorongan?: { pada: string; oleh: string; bagian?: string; pesan: string }[];
 }
 
 /** kiriman yang catatannya ada tapi berkasnya tidak pernah sampai */

@@ -78,6 +78,7 @@ const KELOMPOK: Kelompok[] = [
       { href: "/armada", icon: "jangkar", label: "Profil Armada", desc: "Spesifikasi & inventaris" },
       { href: "/kapal", icon: "kapal", label: "Data Kapal", desc: "Isi & ubah data kapal" },
       { href: "/sensor", icon: "sinyal", label: "Monitoring Sensor", desc: "Sensor Regional 4" },
+      { href: "/armada-data", icon: "kotak", label: "Data Isian Kapal", desc: "Stok filter & alat kesehatan" },
     ],
   },
   {
@@ -149,6 +150,7 @@ const KELOMPOK: Kelompok[] = [
     menu: [
       { href: "/admin", icon: "meter", label: "Panel Admin", desc: "Total data & kuota" },
       { href: "/backup", icon: "perisai", label: "Backup Data", desc: "Salinan ke laptop" },
+      { href: "/akun-kapal", icon: "kunci", label: "Akun Portal Kapal", desc: "26 akun deck & mesin" },
     ],
   },
 ];
