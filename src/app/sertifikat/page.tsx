@@ -74,6 +74,14 @@ export default function MonitorSertifikat() {
   const [semua, setSemua] = useState(false);
   const [detail, setDetail] = useState("");        // kapal yang dibuka rinciannya
   const [sel, setSel] = useState<Nilai | null>(null);  // satu sel matriks yang dibuka
+  /**
+   * Papan dibuka selebar layar.
+   *
+   * Yang dipindahkan lapisannya, bukan isinya: papan di dalam panel dan papan
+   * layar penuh dirakit dari daftar baris yang sama persis, sehingga tidak ada
+   * kemungkinan keduanya menampilkan angka yang berbeda.
+   */
+  const [papanLuas, setPapanLuas] = useState(false);
   const [matriksPadat, setMatriksPadat] = useState(true);   // sembunyikan baris yang semua kapalnya aman
   const [ikutPermanen, setIkutPermanen] = useState(false);  // dokumen tanpa masa berlaku
   const [salin, setSalin] = useState("");
@@ -355,6 +363,97 @@ export default function MonitorSertifikat() {
     </button>
   );
 
+  /**
+   * Perakit papan dokumen — dipanggil dua kali dengan tinggi berbeda.
+   *
+   * Satu di dalam panel (36rem), satu lagi di lapisan penuh layar. Isinya
+   * dirakit dari daftar yang sama, jadi tidak mungkin keduanya menampilkan
+   * angka yang berbeda; yang berbeda hanya ruangnya.
+   */
+  const papanTabel = (tinggi: string) => (
+          <div className="overflow-auto" style={{ maxHeight: tinggi }}>
+            <table className="border-separate border-spacing-0 text-sm">
+              <thead>
+                <tr>
+                  {/* pojok kiri-atas membeku dua arah: tanpa itu nama dokumen
+                      hilang begitu papan digulir ke kanan */}
+                  <th className="sticky left-0 top-0 z-30 min-w-[17rem] border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:border-slate-700 dark:bg-slate-800">
+                    Jenis dokumen
+                  </th>
+                  {matriks.kapalKolom.map((k) => {
+                    const n = masalahKapal.get(k) || 0;
+                    return (
+                      <th key={k} className="sticky top-0 z-20 min-w-[6.25rem] border-b border-r border-slate-200 bg-slate-50 p-0 dark:border-slate-700 dark:bg-slate-800">
+                        <button onClick={() => setDetail(k)} className="w-full px-2 py-2 text-center transition hover:bg-slate-100 dark:hover:bg-slate-700">
+                          <span className="block truncate text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">
+                            {k.replace(/^KMP\.?\s*/i, "")}
+                          </span>
+                          <span className={`mt-0.5 inline-block rounded px-1 text-[10px] font-bold tabular-nums ${
+                            n ? "bg-rose-600 text-white" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200"}`}>
+                            {n ? `${n} perlu` : "aman"}
+                          </span>
+                        </button>
+                      </th>
+                    );
+                  })}
+                </tr>
+              </thead>
+              <tbody>
+                {barisMatriksTampil.map((b, i) => {
+                  const kelompokBaru = i === 0 || barisMatriksTampil[i - 1].kelompok !== b.kelompok;
+                  return (
+                    <Fragment key={`${b.kelompok}|${b.jenis}`}>
+                      {kelompokBaru && (
+                        <tr>
+                          <td colSpan={matriks.kapalKolom.length + 1}
+                            className="sticky left-0 border-b border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700 dark:bg-slate-800">
+                            {b.kelompok || "Lainnya"}
+                          </td>
+                        </tr>
+                      )}
+                      <tr className="group">
+                        <th scope="row"
+                          className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white p-0 text-left align-middle group-hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:group-hover:bg-slate-800/60">
+                          <button onClick={() => { setCari(b.jenis); setStatus(""); setBulan(""); }} className="flex w-full items-start gap-2 px-3 py-2 text-left">
+                            <span className="mt-px w-4 shrink-0 text-[11px] font-semibold tabular-nums text-slate-300">{b.no}</span>
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate text-[12.5px] font-medium text-slate-800 dark:text-slate-100" title={b.jenis}>{b.jenis}</span>
+                              <span className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] font-semibold">
+                                {b.h.lewat > 0 && <span className="text-rose-600 dark:text-rose-400">{b.h.lewat} lewat</span>}
+                                {b.h.kritis > 0 && <span className="text-orange-600 dark:text-orange-400">{b.h.kritis} ≤30h</span>}
+                                {b.h.waspada > 0 && <span className="text-amber-600 dark:text-amber-400">{b.h.waspada} ≤90h</span>}
+                                {b.h.kosong > 0 && <span className="text-slate-500">{b.h.kosong} kosong</span>}
+                                {b.perlu === 0 && b.h.kosong === 0 && <span className="text-slate-500">semua aman</span>}
+                              </span>
+                            </span>
+                          </button>
+                        </th>
+                        {b.isi.map((n, j) => (
+                          <td key={j} className="border-b border-r border-slate-200 p-0 align-middle dark:border-slate-700">
+                            {n ? (
+                              <button onClick={() => setSel(n)}
+                                title={`${n.s.kapal} · ${n.s.jenis}\n${n.s.permanen ? "Permanen" : `berlaku s.d. ${tanggalSert(n.s.berlaku)}`} · ${teksSisa(n.s)}`}
+                                className={`flex h-full w-full flex-col items-center justify-center px-1.5 py-2 transition hover:brightness-95 ${nadaSel[n.st]}`}>
+                                <span className="block text-[14px] font-extrabold leading-none tabular-nums">{sisaRingkas(n.s)}</span>
+                                <span className="mt-1 flex items-center gap-1 text-[10px] font-medium leading-none opacity-85">
+                                  {n.s.permanen ? "tanpa tempo" : tanggalRingkas(n.s.berlaku) || "tanpa tanggal"}
+                                  {n.s.berkasUrl && <Ikon nama="klip" className="h-2.5 w-2.5" />}
+                                </span>
+                              </button>
+                            ) : (
+                              <span className="block px-1.5 py-3 text-center text-[11px] text-slate-300 dark:text-slate-600">—</span>
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    </Fragment>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+  );
+
   return (
     /*
      * Latar diserahkan ke <body> (gradasi merek yang sangat tipis). Yang
@@ -515,6 +614,12 @@ export default function MonitorSertifikat() {
               <span className="text-[11px] tabular-nums text-slate-500">
                 {barisMatriksTampil.length}/{matriks.barisMatriks.length} baris
               </span>
+              {/* papan ini paling sering dibaca untuk mencari yang kedaluwarsa;
+                  di dalam panel setinggi 36rem, yang terlihat cuma beberapa baris */}
+              <button type="button" onClick={() => setPapanLuas(true)}
+                className="inline-flex items-center gap-1.5 rounded-md bg-[#16357f] px-2.5 py-1.5 text-[11px] font-bold text-white transition hover:bg-[#12296a]">
+                <Ikon nama="kaca" className="h-3.5 w-3.5" /> Layar penuh
+              </button>
             </div>
           } />
 
@@ -528,87 +633,7 @@ export default function MonitorSertifikat() {
             </p>
           </div>
         ) : (
-          <div className="overflow-auto" style={{ maxHeight: "36rem" }}>
-            <table className="border-separate border-spacing-0 text-sm">
-              <thead>
-                <tr>
-                  {/* pojok kiri-atas membeku dua arah: tanpa itu nama dokumen
-                      hilang begitu papan digulir ke kanan */}
-                  <th className="sticky left-0 top-0 z-30 min-w-[17rem] border-b border-r border-slate-200 bg-slate-50 px-3 py-2 text-left text-[10px] font-bold uppercase tracking-[0.12em] text-slate-500 dark:border-slate-700 dark:bg-slate-800">
-                    Jenis dokumen
-                  </th>
-                  {matriks.kapalKolom.map((k) => {
-                    const n = masalahKapal.get(k) || 0;
-                    return (
-                      <th key={k} className="sticky top-0 z-20 min-w-[6.25rem] border-b border-r border-slate-200 bg-slate-50 p-0 dark:border-slate-700 dark:bg-slate-800">
-                        <button onClick={() => setDetail(k)} className="w-full px-2 py-2 text-center transition hover:bg-slate-100 dark:hover:bg-slate-700">
-                          <span className="block truncate text-[10px] font-bold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-                            {k.replace(/^KMP\.?\s*/i, "")}
-                          </span>
-                          <span className={`mt-0.5 inline-block rounded px-1 text-[10px] font-bold tabular-nums ${
-                            n ? "bg-rose-600 text-white" : "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/60 dark:text-emerald-200"}`}>
-                            {n ? `${n} perlu` : "aman"}
-                          </span>
-                        </button>
-                      </th>
-                    );
-                  })}
-                </tr>
-              </thead>
-              <tbody>
-                {barisMatriksTampil.map((b, i) => {
-                  const kelompokBaru = i === 0 || barisMatriksTampil[i - 1].kelompok !== b.kelompok;
-                  return (
-                    <Fragment key={`${b.kelompok}|${b.jenis}`}>
-                      {kelompokBaru && (
-                        <tr>
-                          <td colSpan={matriks.kapalKolom.length + 1}
-                            className="sticky left-0 border-b border-slate-200 bg-slate-100 px-3 py-1.5 text-[10px] font-bold uppercase tracking-[0.16em] text-slate-500 dark:border-slate-700 dark:bg-slate-800">
-                            {b.kelompok || "Lainnya"}
-                          </td>
-                        </tr>
-                      )}
-                      <tr className="group">
-                        <th scope="row"
-                          className="sticky left-0 z-10 border-b border-r border-slate-200 bg-white p-0 text-left align-middle group-hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:group-hover:bg-slate-800/60">
-                          <button onClick={() => { setCari(b.jenis); setStatus(""); setBulan(""); }} className="flex w-full items-start gap-2 px-3 py-2 text-left">
-                            <span className="mt-px w-4 shrink-0 text-[11px] font-semibold tabular-nums text-slate-300">{b.no}</span>
-                            <span className="min-w-0 flex-1">
-                              <span className="block truncate text-[12.5px] font-medium text-slate-800 dark:text-slate-100" title={b.jenis}>{b.jenis}</span>
-                              <span className="mt-0.5 flex flex-wrap gap-x-2 text-[10px] font-semibold">
-                                {b.h.lewat > 0 && <span className="text-rose-600 dark:text-rose-400">{b.h.lewat} lewat</span>}
-                                {b.h.kritis > 0 && <span className="text-orange-600 dark:text-orange-400">{b.h.kritis} ≤30h</span>}
-                                {b.h.waspada > 0 && <span className="text-amber-600 dark:text-amber-400">{b.h.waspada} ≤90h</span>}
-                                {b.h.kosong > 0 && <span className="text-slate-500">{b.h.kosong} kosong</span>}
-                                {b.perlu === 0 && b.h.kosong === 0 && <span className="text-slate-500">semua aman</span>}
-                              </span>
-                            </span>
-                          </button>
-                        </th>
-                        {b.isi.map((n, j) => (
-                          <td key={j} className="border-b border-r border-slate-200 p-0 align-middle dark:border-slate-700">
-                            {n ? (
-                              <button onClick={() => setSel(n)}
-                                title={`${n.s.kapal} · ${n.s.jenis}\n${n.s.permanen ? "Permanen" : `berlaku s.d. ${tanggalSert(n.s.berlaku)}`} · ${teksSisa(n.s)}`}
-                                className={`flex h-full w-full flex-col items-center justify-center px-1.5 py-2 transition hover:brightness-95 ${nadaSel[n.st]}`}>
-                                <span className="block text-[14px] font-extrabold leading-none tabular-nums">{sisaRingkas(n.s)}</span>
-                                <span className="mt-1 flex items-center gap-1 text-[10px] font-medium leading-none opacity-85">
-                                  {n.s.permanen ? "tanpa tempo" : tanggalRingkas(n.s.berlaku) || "tanpa tanggal"}
-                                  {n.s.berkasUrl && <Ikon nama="klip" className="h-2.5 w-2.5" />}
-                                </span>
-                              </button>
-                            ) : (
-                              <span className="block px-1.5 py-3 text-center text-[11px] text-slate-300 dark:text-slate-600">—</span>
-                            )}
-                          </td>
-                        ))}
-                      </tr>
-                    </Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          papanTabel("36rem")
         )}
 
         <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 border-t border-slate-200 bg-slate-50 px-4 py-2.5 text-[10.5px] text-slate-500 dark:border-slate-700 dark:bg-slate-800/50">
@@ -622,6 +647,46 @@ export default function MonitorSertifikat() {
           </span>
         </div>
       </Panel>
+
+      {/*
+        Papan yang sama, tanpa dinding.
+        Di dalam panel ia berbagi lebar dengan sidebar dan dibatasi tinggi 36rem,
+        jadi mencari yang kedaluwarsa berarti menggulir dua arah sambil mengingat
+        apa yang barusan lewat. Di sini ia mendapat seluruh layar.
+      */}
+      {papanLuas && (
+        <div className="fixed inset-0 z-[70] flex flex-col bg-white dark:bg-slate-900"
+          onKeyDown={(e) => { if (e.key === "Escape") setPapanLuas(false); }}>
+          <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 px-4 py-2.5 dark:border-slate-700">
+            <div className="min-w-[14rem] flex-1">
+              <h2 className="text-[15px] font-black tracking-tight text-slate-900 dark:text-white">Papan Dokumen Armada</h2>
+              <p className="text-[11px] text-slate-500">
+                {barisMatriksTampil.length} baris × {matriks.kapalKolom.length} kapal · klik sel untuk rincian dan berkasnya
+              </p>
+            </div>
+            <TombolSaklar hidup={matriksPadat} onClick={() => setMatriksPadat(!matriksPadat)}>
+              {matriksPadat ? "Baris bermasalah" : "Semua baris"}
+            </TombolSaklar>
+            <TombolSaklar hidup={ikutPermanen} onClick={() => setIkutPermanen(!ikutPermanen)}>
+              {ikutPermanen ? "Permanen tampil" : "Permanen disembunyikan"}
+            </TombolSaklar>
+            <span className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[10.5px] text-slate-500">
+              {(["lewat", "kritis", "waspada", "aman", "permanen", "kosong"] as StatusSertifikat[]).map((st) => (
+                <span key={st} className="flex items-center gap-1.5">
+                  <span className={`h-2 w-2 rounded-full ${STATUS_SERT[st].titik}`} />{STATUS_SERT[st].label}
+                </span>
+              ))}
+            </span>
+            <button type="button" onClick={() => setPapanLuas(false)} autoFocus
+              className="rounded-md bg-slate-900 px-3 py-1.5 text-[11.5px] font-bold text-white transition hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900">
+              Tutup (Esc)
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden p-2">
+            {papanTabel("calc(100vh - 5.5rem)")}
+          </div>
+        </div>
+      )}
 
       {/* ── papan armada ────────────────────────────────────────────────── */}
       <Panel>
