@@ -40,6 +40,8 @@ export default function DataIsianKapal() {
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
   const [rupa, setRupa] = useState<"stok" | "alkes">("stok");
+  /** kapan jawaban terakhir sampai — supaya halaman basi bisa dikenali */
+  const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
   const [buka, setBuka] = useState("");
 
   const ambil = useCallback(async () => {
@@ -49,11 +51,29 @@ export default function DataIsianKapal() {
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || "Gagal memuat data");
       setArmada(d.armada || []);
+      setDimuatPada(new Date());
     } catch (e: any) { setGalat(e?.message || String(e)); }
     finally { setMuat(false); }
   }, []);
 
   useEffect(() => { void ambil(); }, [ambil]);
+
+  /*
+   * Halaman ini menyegarkan dirinya sendiri.
+   *
+   * Kapal mengisi portalnya kapan saja — sering justru di luar jam kantor —
+   * sementara layar ini dibuka lalu ditinggal berjam-jam. Tanpa penyegaran,
+   * yang terbaca adalah keadaan saat halaman dibuka: tiga belas kapal "belum
+   * pernah diisi" padahal salah satunya baru saja mengirim. Daftar yang salah
+   * karena basi lebih berbahaya daripada daftar yang kosong, sebab ia dipercaya.
+   */
+  useEffect(() => {
+    const t = window.setInterval(() => { void ambil(); }, 60_000);
+    // kembali ke tab ini = saat paling mungkin ada yang berubah selagi ditinggal
+    const lihat = () => { if (document.visibilityState === "visible") void ambil(); };
+    document.addEventListener("visibilitychange", lihat);
+    return () => { window.clearInterval(t); document.removeEventListener("visibilitychange", lihat); };
+  }, [ambil]);
 
   const jumlah = useMemo(() => ({
     stokKosong: armada.filter((a) => !a.stok.adaIsi).length,
@@ -75,6 +95,12 @@ export default function DataIsianKapal() {
             <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Data Isian Kapal</h1>
             <p className="text-[11.5px] text-slate-500">
               Stok filter dan alat kesehatan yang diisi sendiri oleh awak lewat Portal Kapal.
+            </p>
+            <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
+              <span className={`h-1.5 w-1.5 rounded-full ${muat ? "animate-pulse bg-sky-500" : "bg-emerald-500"}`} />
+              {muat ? "Menyegarkan…" : dimuatPada
+                ? `Data per ${dimuatPada.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })} · menyegarkan sendiri tiap menit`
+                : "Menunggu data"}
             </p>
           </div>
           <div className="flex overflow-hidden rounded-xl ring-1 ring-slate-300 dark:ring-slate-700">
