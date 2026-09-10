@@ -90,8 +90,13 @@ export async function POST(req: NextRequest) {
     kapal: s.kapal,
     bagian: s.bagian,
     jenis,
-    /* label bacaan untuk nama berkas di Drive; id di atas tetap yang dipakai menyaring */
-    jenisNama: JENIS_DOKUMEN.find((j) => j.id === jenis)!.label,
+    /*
+     * Nama FOLDER, bukan label. Label boleh memuat tanda baca yang enak dibaca
+     * di layar ("Temuan / Findings"), dan garis miring itu ikut masuk ke nama
+     * berkas di Drive — menyusahkan saat berkasnya diunduh ke Windows dan
+     * membingungkan saat arsipnya ditelusuri.
+     */
+    jenisNama: JENIS_DOKUMEN.find((j) => j.id === jenis)!.folder,
     judul,
     tanggal,
     /*

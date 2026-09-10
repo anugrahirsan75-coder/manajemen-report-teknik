@@ -16,6 +16,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ikon } from "@/components/ikon";
 import { NADA_ALKES, sisaHariAlkes, tingkatAlkes } from "@/lib/portal/types";
 import { jenisDokumen } from "@/lib/portal/dokumen";
+import UnggahDokumenKantor from "@/components/kapal/UnggahDokumenKantor";
 
 interface DataKapal {
   kapal: string;
@@ -47,6 +48,13 @@ export default function DataIsianKapal() {
   /** kapan jawaban terakhir sampai — supaya halaman basi bisa dikenali */
   const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
   const [buka, setBuka] = useState("");
+  /*
+   * Borang unggah kantor. Isinya nama kapal yang sedang dituju — "" berarti
+   * tertutup, sedangkan tanda hubung berarti terbuka tanpa kapal terpilih
+   * (dibuka dari tombol di kepala halaman, kapalnya dipilih di dalam borang).
+   */
+  const [unggah, setUnggah] = useState<string | null>(null);
+  const [kabar, setKabar] = useState("");
 
   const ambil = useCallback(async () => {
     setMuat(true); setGalat("");
@@ -79,6 +87,23 @@ export default function DataIsianKapal() {
     return () => { window.clearInterval(t); document.removeEventListener("visibilitychange", lihat); };
   }, [ambil]);
 
+  /**
+   * Hapus CATATAN dokumen; berkasnya tetap di Google Drive.
+   *
+   * Dipakai membereskan salah unggah dari kantor. Berkas aslinya sengaja tidak
+   * ikut dihapus — satu salah pencet di layar kantor tidak boleh melenyapkan
+   * dokumen kapal yang mungkin tidak ada salinannya di tempat lain.
+   */
+  const hapusDokumen = useCallback(async (id: string, judul: string) => {
+    if (!window.confirm(`Hapus catatan "${judul}"?\n\nBerkasnya TETAP ada di Google Drive — yang hilang hanya catatannya di sini.`)) return;
+    try {
+      const r = await fetch(`/api/armada-data/dokumen?id=${encodeURIComponent(id)}`, { method: "DELETE" });
+      const j = await r.json();
+      if (!j.ok) throw new Error(j.error || "Gagal menghapus");
+      await ambil();
+    } catch (e: any) { setGalat(e?.message || String(e)); }
+  }, [ambil]);
+
   const jumlah = useMemo(() => ({
     stokKosong: armada.filter((a) => !a.stok.adaIsi).length,
     menipis: armada.reduce((n, a) => n + a.stok.menipis, 0),
@@ -102,7 +127,8 @@ export default function DataIsianKapal() {
           <div className="min-w-[16rem] flex-1">
             <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Data Isian Kapal</h1>
             <p className="text-[11.5px] text-slate-500">
-              Stok filter dan alat kesehatan yang diisi sendiri oleh awak lewat Portal Kapal.
+              Stok filter, alat kesehatan, dan dokumen kapal — diisi awak lewat Portal Kapal,
+              atau diunggah sendiri dari kantor.
             </p>
             <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
               <span className={`h-1.5 w-1.5 rounded-full ${muat ? "animate-pulse bg-sky-500" : "bg-emerald-500"}`} />
@@ -120,6 +146,12 @@ export default function DataIsianKapal() {
               </button>
             ))}
           </div>
+          {rupa === "dokumen" && (
+            <button onClick={() => setUnggah("")}
+              className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-[11.5px] font-bold text-white transition hover:bg-emerald-700">
+              ⬆️ Unggah dokumen
+            </button>
+          )}
           <button onClick={ambil} disabled={muat}
             className="inline-flex items-center gap-1.5 rounded-xl bg-[#16357f] px-3 py-2 text-[11.5px] font-bold text-white disabled:opacity-50">
             <Ikon nama="segarkan" className={`h-3.5 w-3.5 ${muat ? "animate-spin" : ""}`} /> Muat ulang
@@ -157,6 +189,17 @@ export default function DataIsianKapal() {
 
       {galat && (
         <p className="mb-3 rounded-xl bg-rose-50 px-3 py-2 text-[12px] font-semibold text-rose-800 ring-1 ring-rose-200">{galat}</p>
+      )}
+      {kabar && (
+        <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-[12px] font-bold text-emerald-800 ring-1 ring-emerald-200">{kabar}</p>
+      )}
+
+      {unggah !== null && (
+        <UnggahDokumenKantor
+          kapalAwal={unggah || undefined}
+          onTutup={() => setUnggah(null)}
+          onSelesai={(pesan) => { setKabar(pesan); window.setTimeout(() => setKabar(""), 6000); void ambil(); }}
+        />
       )}
 
       <ul className="space-y-2.5">
@@ -211,9 +254,17 @@ export default function DataIsianKapal() {
                 <span className="text-slate-400">{terbuka ? "▾" : "▸"}</span>
               </button>
 
-              {terbuka && d.adaIsi && (
+              {terbuka && (d.adaIsi || rupa === "dokumen") && (
                 <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
                   {rupa === "dokumen" ? (
+                    <>
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <button onClick={() => setUnggah(a.kapal)}
+                        className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11.5px] font-bold text-white transition hover:bg-emerald-700">
+                        ⬆️ Unggah dokumen untuk {pendek(a.kapal)}
+                      </button>
+                      {!dok.jumlah && <span className="text-[11.5px] text-slate-500">Belum ada dokumen tersimpan untuk kapal ini.</span>}
+                    </div>
                     <ul className="space-y-1.5">
                       {dok.daftar.map((x: any) => {
                         const j = jenisDokumen(x.jenis);
@@ -244,11 +295,18 @@ export default function DataIsianKapal() {
                                 ))}
                               </ul>
                             )}
-                            <p className="mt-1 text-[10.5px] text-slate-400">diunggah {x.olehAkun || "—"}</p>
+                            <div className="mt-1 flex items-center gap-2">
+                              <p className="text-[10.5px] text-slate-400">diunggah {x.olehAkun || "—"}</p>
+                              <button onClick={() => hapusDokumen(x.id, x.judul)}
+                                className="ml-auto text-[10.5px] font-bold text-rose-600 hover:underline">
+                                Hapus catatan
+                              </button>
+                            </div>
                           </li>
                         );
                       })}
                     </ul>
+                    </>
                   ) : rupa === "stok" ? (
                     <div className="grid gap-4 lg:grid-cols-2">
                       <div>
