@@ -1,5 +1,6 @@
 // Ship Database — data partikular kapal (vessel particulars) ASDP Ternate.
 import { KAPAL_LIST } from "@/lib/sppbj/db";
+import { BKI, DataBKI } from "./bki";
 
 export interface ShipGeneral {
   registerBKI: string; imo: string; callSign: string; bendera: string; tipe: string;
@@ -22,6 +23,13 @@ export interface Ship {
   gearbox: ShipGearbox;
   shaft: ShipShaft;       // ukuran poros propeller & kemudi (inch)
   inventaris: ShipFile[]; // file daftar inventaris (upload, klik buka)
+  /*
+   * Salinan rekap resmi BKI, apa adanya. TIDAK disunting lewat aplikasi dan
+   * tidak ikut tersimpan sebagai isian kantor: ia dipasang ulang dari bki.ts
+   * setiap kali data kapal dimuat, supaya rekap BKI yang baru langsung terpakai
+   * tanpa perlu menyentuh satu per satu tiga belas catatan yang sudah tersimpan.
+   */
+  bki?: DataBKI;
 }
 
 export const slugKapal = (nama: string) => nama.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
@@ -37,6 +45,95 @@ const emptyShaft = (): ShipShaft => ({ propKanan: "", propKiri: "", kemudiKanan:
 export const emptyShip = (nama: string): Ship => ({
   id: slugKapal(nama), nama, general: emptyGeneral(), dimension: emptyDim(), mainEngine: emptyEngine(), auxEngine: emptyEngine(), gearbox: emptyGearbox(), shaft: emptyShaft(), inventaris: [],
 });
+
+/* "JAKARTA" -> "Jakarta". Rekap BKI seluruhnya huruf besar; kartu kapal tidak. */
+const judul = (s: string) => s.toLowerCase().replace(/(^|[\s(/-])([a-z])/g, (_, a, b) => a + b.toUpperCase());
+
+/*
+ * Nomor seri mesin di rekap BKI menempel di belakang modelnya, misal
+ * "6 LA DTE 439 5502" = model "6 LA DTE 439" + seri "5502". Yang dipisah hanya
+ * kelompok angka PALING BELAKANG, dan hanya kalau model masih menyisakan teks —
+ * kalau tidak, "1103A-33YG2" akan terpotong jadi model tanpa nama.
+ */
+export function pisahSeri(model: string): { type: string; seri: string } {
+  const m = /^(.*\S)\s+(\d{3,})$/.exec(String(model || "").trim());
+  return m ? { type: m[1], seri: m[2] } : { type: String(model || "").trim(), seri: "" };
+}
+
+/* PS/PA = portside (kiri), SB/SA = starboard (kanan) */
+const kanan = (posisi: string) => /^S/i.test(posisi || "");
+
+/**
+ * Tuang rekap BKI ke dalam satu catatan kapal.
+ *
+ * Nilai BKI hanya MENGISI yang masih kosong; apa pun yang sudah diketik orang
+ * kantor dibiarkan. Kantor memegang hal-hal yang tidak diketahui BKI — lintasan,
+ * ukuran poros, nomor seri hasil penggantian mesin — dan menimpanya dengan
+ * rekap tahunan akan menghapus pengetahuan yang tidak ada di tempat lain.
+ */
+export function terapkanBKI(s: Ship): Ship {
+  const b = BKI[s.id];
+  if (!b) return s;
+  /*
+   * Dua arah gabungan, sengaja dibedakan.
+   *
+   * bki() dipakai untuk kolom yang REKAP BKI-lah pemegang catatannya — register,
+   * IMO, ukuran utama, mesin. Kalau di sana ada isinya, itu yang benar, dan
+   * angka lama hasil ketikan tahun lalu harus mengalah; itulah gunanya
+   * memasukkan rekap baru.
+   *
+   * kantor() untuk kolom yang justru lebih lengkap di sisi kantor, mis. klas
+   * lambung: BKI menyimpannya sebagai satu huruf "P", sedangkan catatan kantor
+   * memuat notasi utuh A100 P "Ferry RO-RO". Menimpanya berarti membuang
+   * keterangan.
+   */
+  const bkiKata = (lama: string, baru: string) => (String(baru || "").trim() ? baru : lama);
+  const kantor = (lama: string, baru: string) => (String(lama || "").trim() ? lama : baru);
+  /* ukuran "0" di rekap BKI berarti belum tercatat, bukan nol meter */
+  const ukur = (lama: string, baru: string) => bkiKata(lama, baru === "0" ? "" : baru);
+
+  const induk = b.mesinInduk;
+  const sbd = induk.find((m) => kanan(m.posisi)) || induk[0];
+  const prd = induk.find((m) => !kanan(m.posisi)) || induk[1];
+  const bantu = b.mesinBantu[0];
+
+  return {
+    ...s,
+    bki: b,
+    general: {
+      ...s.general,
+      registerBKI: bkiKata(s.general.registerBKI, b.register),
+      imo: bkiKata(s.general.imo, b.imo),
+      callSign: bkiKata(s.general.callSign, b.callSign),
+      bendera: kantor(s.general.bendera, judul(b.bendera)),
+      pelabuhanDaftar: kantor(s.general.pelabuhanDaftar, judul(b.pelabuhan)),
+      klasLambung: kantor(s.general.klasLambung, b.tandaKelasLambung),
+      galangan: bkiKata(s.general.galangan, b.galangan),
+      tahun: bkiKata(s.general.tahun, b.tahun),
+    },
+    dimension: {
+      gt: ukur(s.dimension.gt, b.gt), loa: ukur(s.dimension.loa, b.loa), lbp: ukur(s.dimension.lbp, b.lbp),
+      b: ukur(s.dimension.b, b.bmld), h: ukur(s.dimension.h, b.hmld), t: ukur(s.dimension.t, b.t),
+    },
+    mainEngine: sbd ? {
+      merk: bkiKata(s.mainEngine.merk, sbd.merk),
+      type: bkiKata(s.mainEngine.type, pisahSeri(sbd.model).type),
+      ehp: bkiKata(s.mainEngine.ehp, sbd.tenaga),
+      rpm: bkiKata(s.mainEngine.rpm, sbd.rpm),
+      serialStbd: bkiKata(s.mainEngine.serialStbd, pisahSeri(sbd.model).seri),
+      serialPrsd: bkiKata(s.mainEngine.serialPrsd, prd ? pisahSeri(prd.model).seri : ""),
+    } : s.mainEngine,
+    auxEngine: bantu ? {
+      merk: bkiKata(s.auxEngine.merk, bantu.merk),
+      type: bkiKata(s.auxEngine.type, bantu.model),
+      ehp: bkiKata(s.auxEngine.ehp, bantu.bhp),
+      rpm: s.auxEngine.rpm,
+      serialStbd: s.auxEngine.serialStbd,
+      serialPrsd: s.auxEngine.serialPrsd,
+    } : s.auxEngine,
+    gearbox: { ...s.gearbox, ratio: bkiKata(s.gearbox.ratio, b.gigiReduksi) },
+  };
+}
 
 // data terisi: KMP. ARIWANGAN (dari lampiran particular)
 const ARIWANGAN: Ship = {
@@ -56,7 +153,7 @@ const ARIWANGAN: Ship = {
 };
 
 export const SHIP_SEED: Ship[] = KAPAL_LIST.map((nama) =>
-  nama === ARIWANGAN.nama ? ARIWANGAN : emptyShip(nama)
+  terapkanBKI(nama === ARIWANGAN.nama ? ARIWANGAN : emptyShip(nama))
 );
 
 // label baris (urut sesuai dokumen particular)
@@ -88,6 +185,7 @@ export const SHAFT_FIELDS: { key: keyof ShipShaft; label: string; unit: string }
 
 // hitung kelengkapan data (utk badge)
 export const shipFilled = (s: Ship): number => {
+  /* hanya medan yang memang diisi manusia; blok bki bukan isian */
   const vals = [
     ...Object.values(s.general), ...Object.values(s.dimension),
     ...Object.values(s.mainEngine), ...Object.values(s.auxEngine), ...Object.values(s.gearbox), ...Object.values(s.shaft || {}),

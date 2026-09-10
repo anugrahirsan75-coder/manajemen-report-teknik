@@ -7,6 +7,7 @@ import {
   Ship, GENERAL_FIELDS, ENGINE_FIELDS, GEARBOX_FIELDS, SHAFT_FIELDS, shipFilled, ShipFile,
 } from "@/lib/kapal/types";
 import { SailingWaves } from "@/components/MaritimeFx";
+import PanelBKI from "@/components/kapal/PanelBKI";
 
 export default function ArmadaDetail() {
   const { id } = useParams<{ id: string }>();
@@ -123,6 +124,12 @@ export default function ArmadaDetail() {
           <p className="text-sm text-slate-400">Belum ada file inventaris. Tambah lewat <Link href={`/kapal?open=${ship.id}`} className="text-[#1ca3dd] underline">Edit Data</Link>.</p>
         )}
       </Card>
+
+      {ship.bki && (
+        <Card title="Rekap Resmi BKI" icon="📘">
+          <PanelBKI b={ship.bki} />
+        </Card>
+      )}
 
       <div className="no-print text-center mt-6">
         <Link href={`/kapal?open=${ship.id}`} className="btn btn-primary">✏️ Edit Data Kapal Ini</Link>

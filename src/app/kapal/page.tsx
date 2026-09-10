@@ -11,6 +11,8 @@ import {
 import { uploadInventaris, removeInventaris } from "@/lib/kapal/upload";
 import { SailingWaves, EmptyShip } from "@/components/MaritimeFx";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
+import PanelBKI from "@/components/kapal/PanelBKI";
+import TempoLencana from "@/components/kapal/TempoLencana";
 
 export default function ShipDatabasePage() {
   const { ships, loading, saving, lastSaved, supabaseReady, updateShip, saveAll } = useKapalDb();
@@ -116,6 +118,7 @@ function ShipCard({ ship, onClick, index }: { ship: Ship; onClick: () => void; i
         </div>
         <p className="text-[11px] text-slate-400 uppercase tracking-wide font-semibold">Lintasan</p>
         <p className="text-xs text-slate-600 line-clamp-2 min-h-[2rem]">{g.lintasan || <span className="text-slate-300">belum ada data lintasan</span>}</p>
+        <TempoLencana ship={ship} />
         <p className="mt-2 text-[11px] text-[#1ca3dd] font-semibold group-hover:underline">Lihat partikular →</p>
       </div>
     </button>
@@ -152,6 +155,12 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
 }) {
   const [draft, setDraft] = useState<Ship>({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" }, shaft: ship.shaft || { propKanan: "", propKiri: "", kemudiKanan: "", kemudiKiri: "" } });
   const [uploading, setUploading] = useState(false);
+  /*
+   * Dua muka, bukan satu gulungan panjang. Isian kantor dan rekap BKI punya
+   * aturan main berbeda — yang satu disunting, yang satu tidak — dan menaruhnya
+   * berurutan membuat orang mengira kolom BKI juga bisa diketik.
+   */
+  const [muka, setMuka] = useState<"isian" | "bki">("isian");
   useEffect(() => { setDraft({ ...ship, inventaris: ship.inventaris || [], gearbox: ship.gearbox || { merk: "", type: "", ratio: "", serialStbd: "", serialPrsd: "" }, shaft: ship.shaft || { propKanan: "", propKiri: "", kemudiKanan: "", kemudiKiri: "" } }); }, [ship]);
   const pct = shipFilled(draft);
 
@@ -207,8 +216,23 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
           </div>
         </div>
 
+        {/* pemilih muka */}
+        {draft.bki && (
+          <div className="flex gap-1 border-b border-slate-200 bg-white px-4 pt-2">
+            {([["isian", "✏️ Isian Kantor"], ["bki", "📘 Rekap BKI"]] as const).map(([id, l]) => (
+              <button key={id} onClick={() => setMuka(id)}
+                className={`rounded-t-xl px-4 py-2 text-[12.5px] font-bold transition ${muka === id
+                  ? "bg-slate-50 text-[#16357f] ring-1 ring-slate-200"
+                  : "text-slate-400 hover:text-slate-600"}`}>
+                {l}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* body */}
         <div className="px-6 py-5 space-y-6 max-h-[66vh] overflow-auto bg-slate-50/40">
+          {muka === "bki" && draft.bki ? <PanelBKI b={draft.bki} /> : <>
           <Section title="General Data">
             {GENERAL_FIELDS.map((f) => (
               <Field key={f.key} label={f.label} value={draft.general[f.key]} onChange={(v) => setG(f.key, v)} wide={f.key === "lintasan"} />
@@ -267,6 +291,7 @@ function ShipModal({ ship, onClose, onSave, onPersist, saving, supabaseReady }: 
               {!supabaseReady && <p className="text-[11px] text-amber-600">File inventaris butuh Supabase aktif (penyimpanan online).</p>}
             </div>
           </Section>
+          </>}
         </div>
 
         {/* footer */}

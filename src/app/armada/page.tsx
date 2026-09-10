@@ -6,6 +6,7 @@ import Image from "next/image";
 import { useKapalDb } from "@/lib/kapal/store";
 import { Ship, shipFilled } from "@/lib/kapal/types";
 import { SailingWaves, EmptyShip } from "@/components/MaritimeFx";
+import TempoLencana from "@/components/kapal/TempoLencana";
 
 export default function ArmadaPage() {
   const { ships, loading } = useKapalDb();
@@ -83,6 +84,7 @@ function ViewCard({ ship, index }: { ship: Ship; index: number }) {
         </div>
         <p className="text-[11px] text-slate-400 uppercase tracking-wide font-semibold">Lintasan</p>
         <p className="text-xs text-slate-600 line-clamp-2 min-h-[2rem]">{g.lintasan || <span className="text-slate-300">belum ada data lintasan</span>}</p>
+        <TempoLencana ship={ship} />
         <p className="mt-2 text-[11px] text-[#1ca3dd] font-semibold group-hover:underline">Lihat profil →</p>
       </div>
     </Link>
