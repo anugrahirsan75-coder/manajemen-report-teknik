@@ -15,6 +15,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ikon } from "@/components/ikon";
 import { NADA_ALKES, sisaHariAlkes, tingkatAlkes } from "@/lib/portal/types";
+import { jenisDokumen } from "@/lib/portal/dokumen";
 
 interface DataKapal {
   kapal: string;
@@ -28,6 +29,9 @@ interface DataKapal {
     butir: number; lewat: number; kritis: number; waspada: number; menipis: number;
     item: any[];
   };
+  dokumen: {
+    jumlah: number; berkas: number; tanpaBerkas: number; terbaru: string; daftar: any[];
+  };
 }
 
 const waktu = (iso: string) =>
@@ -39,7 +43,7 @@ export default function DataIsianKapal() {
   const [armada, setArmada] = useState<DataKapal[]>([]);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
-  const [rupa, setRupa] = useState<"stok" | "alkes">("stok");
+  const [rupa, setRupa] = useState<"stok" | "alkes" | "dokumen">("stok");
   /** kapan jawaban terakhir sampai — supaya halaman basi bisa dikenali */
   const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
   const [buka, setBuka] = useState("");
@@ -82,6 +86,10 @@ export default function DataIsianKapal() {
     alkesKosong: armada.filter((a) => !a.alkes.adaIsi).length,
     lewat: armada.reduce((n, a) => n + a.alkes.lewat, 0),
     kritis: armada.reduce((n, a) => n + a.alkes.kritis, 0),
+    dokKosong: armada.filter((a) => !a.dokumen?.jumlah).length,
+    dokumen: armada.reduce((n, a) => n + (a.dokumen?.jumlah || 0), 0),
+    dokBerkas: armada.reduce((n, a) => n + (a.dokumen?.berkas || 0), 0),
+    dokPutus: armada.reduce((n, a) => n + (a.dokumen?.tanpaBerkas || 0), 0),
   }), [armada]);
 
   return (
@@ -104,7 +112,7 @@ export default function DataIsianKapal() {
             </p>
           </div>
           <div className="flex overflow-hidden rounded-xl ring-1 ring-slate-300 dark:ring-slate-700">
-            {([["stok", "Stok Filter"], ["alkes", "Alat Kesehatan"]] as const).map(([id, l]) => (
+            {([["stok", "Stok Filter"], ["alkes", "Alat Kesehatan"], ["dokumen", "Dokumen Kapal"]] as const).map(([id, l]) => (
               <button key={id} onClick={() => { setRupa(id); setBuka(""); }}
                 className={`px-3 py-2 text-[11.5px] font-bold transition ${
                   rupa === id ? "bg-[#16357f] text-white" : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300"}`}>
@@ -126,11 +134,18 @@ export default function DataIsianKapal() {
               ["Ganti filter ≤ 50 jam", jumlah.gantiDekat, "text-orange-700"],
               ["Kapal sudah mengisi", armada.length - jumlah.stokKosong, "text-emerald-700"],
             ]
-            : [
+            : rupa === "alkes"
+            ? [
               ["Kapal belum mengisi", jumlah.alkesKosong, "text-rose-700"],
               ["Alkes kedaluwarsa", jumlah.lewat, "text-rose-700"],
               ["Habis ≤ 30 hari", jumlah.kritis, "text-orange-700"],
               ["Kapal sudah mengisi", armada.length - jumlah.alkesKosong, "text-emerald-700"],
+            ]
+            : [
+              ["Dokumen tersimpan", jumlah.dokumen, "text-[#16357f]"],
+              ["Berkas di Drive", jumlah.dokBerkas, "text-emerald-700"],
+              ["Unggahan terputus", jumlah.dokPutus, "text-amber-700"],
+              ["Kapal belum mengunggah", jumlah.dokKosong, "text-rose-700"],
             ]).map(([l, n, w]) => (
             <div key={String(l)} className="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200 dark:bg-slate-800/60 dark:ring-slate-700">
               <p className={`text-2xl font-black tabular-nums ${Number(n) ? String(w) : "text-slate-300"}`}>{String(n)}</p>
@@ -146,10 +161,12 @@ export default function DataIsianKapal() {
 
       <ul className="space-y-2.5">
         {armada.map((a) => {
-          const d = rupa === "stok" ? a.stok : a.alkes;
+          const dok = a.dokumen || { jumlah: 0, berkas: 0, tanpaBerkas: 0, terbaru: "", daftar: [] };
+          const d = rupa === "stok" ? a.stok : rupa === "alkes" ? a.alkes : { adaIsi: dok.jumlah > 0, diperbaruiPada: dok.terbaru, olehAkun: "" };
           const perhatian = rupa === "stok"
             ? a.stok.menipis + a.stok.gantiDekat
-            : a.alkes.lewat + a.alkes.kritis;
+            : rupa === "alkes" ? a.alkes.lewat + a.alkes.kritis
+            : dok.tanpaBerkas;
           const terbuka = buka === a.kapal;
 
           return (
@@ -163,7 +180,13 @@ export default function DataIsianKapal() {
 
                 {!d.adaIsi ? (
                   <span className="rounded-full bg-rose-100 px-2.5 py-0.5 text-[11px] font-black text-rose-800 ring-1 ring-rose-300">
-                    BELUM PERNAH DIISI
+                    {rupa === "dokumen" ? "BELUM ADA DOKUMEN" : "BELUM PERNAH DIISI"}
+                  </span>
+                ) : rupa === "dokumen" ? (
+                  <span className="flex flex-wrap items-center gap-2 text-[12px]">
+                    <span className="font-bold text-slate-700 dark:text-slate-200">{dok.jumlah} dokumen</span>
+                    <span className="text-slate-500">{dok.berkas} berkas</span>
+                    {!!dok.tanpaBerkas && <span className="rounded bg-amber-100 px-1.5 py-0.5 font-bold text-amber-800">{dok.tanpaBerkas} unggahan putus</span>}
                   </span>
                 ) : rupa === "stok" ? (
                   <span className="flex flex-wrap items-center gap-2 text-[12px]">
@@ -190,7 +213,43 @@ export default function DataIsianKapal() {
 
               {terbuka && d.adaIsi && (
                 <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
-                  {rupa === "stok" ? (
+                  {rupa === "dokumen" ? (
+                    <ul className="space-y-1.5">
+                      {dok.daftar.map((x: any) => {
+                        const j = jenisDokumen(x.jenis);
+                        return (
+                          <li key={x.id} className="rounded-xl bg-white p-2.5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                                {j?.ikon} {j?.label || x.jenis}
+                              </span>
+                              <span className="text-[13px] font-bold text-slate-900 dark:text-white">{x.judul}</span>
+                              {x.nomor && <span className="text-[11px] text-slate-500">· {x.nomor}</span>}
+                              <span className="ml-auto text-[11px] text-slate-500">{x.tanggal || "—"}</span>
+                            </div>
+                            {x.catatan && <p className="mt-0.5 text-[11.5px] text-slate-600 dark:text-slate-300">{x.catatan}</p>}
+                            {!x.berkas.length ? (
+                              <p className="mt-1 text-[11px] font-semibold text-amber-800">Unggahan terputus — berkasnya belum sampai.</p>
+                            ) : (
+                              <ul className="mt-1 flex flex-wrap gap-1.5">
+                                {x.berkas.map((f: any) => (
+                                  <li key={f.fileId}>
+                                    {/* berkasnya dibuka lewat aplikasi, bukan tautan Drive:
+                                        arsip cabang tidak dibagikan ke luar kantor */}
+                                    <a href={`/api/lapor/isi?fileId=${encodeURIComponent(f.fileId)}`} target="_blank" rel="noreferrer"
+                                      className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-[#16357f] transition hover:bg-slate-200 dark:bg-slate-800 dark:text-sky-300">
+                                      📄 {String(f.nama).replace(/\.[a-z0-9]+$/i, "").slice(0, 40)}
+                                    </a>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            <p className="mt-1 text-[10.5px] text-slate-400">diunggah {x.olehAkun || "—"}</p>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : rupa === "stok" ? (
                     <div className="grid gap-4 lg:grid-cols-2">
                       <div>
                         <h3 className="mb-1.5 text-[12px] font-black uppercase tracking-wide text-slate-600">Stok filter</h3>

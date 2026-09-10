@@ -38,10 +38,12 @@ export function RangkaPortal({ aku, children }: { aku: Aku | null; children: Rea
 
   const menu = [
     { href: "/portal", label: "Beranda", ikon: "🏠" },
-    { href: "/portal/kirim", label: "Kirim berkas", ikon: "📤" },
+    { href: "/portal/kirim", label: "Kirim", ikon: "📤" },
+    // arsip berkas tidak rutin: berita acara, temuan, bunker, serah terima
+    { href: "/portal/dokumen", label: "Dokumen", ikon: "🗂️" },
     mesin
       ? { href: "/portal/stok", label: "Stok Filter", ikon: "⚙️" }
-      : { href: "/portal/alkes", label: "Alat Kesehatan", ikon: "🩺" },
+      : { href: "/portal/alkes", label: "Alkes", ikon: "🩺" },
   ];
 
   const keluar = async () => {

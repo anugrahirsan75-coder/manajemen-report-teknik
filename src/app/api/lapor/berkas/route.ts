@@ -27,13 +27,15 @@ const MAKS_BERKAS = 12;
 /**
  * Jenis kiriman yang boleh menempelkan berkas lewat route ini.
  *
- * "permintaan_uji" adalah borang permintaan digital yang masih diuji coba, dan
- * "inspeksi_temuan" adalah bukti perbaikan temuan Marine Superintendent.
+ * "permintaan_uji" adalah borang permintaan digital yang masih diuji coba,
+ * "inspeksi_temuan" adalah bukti perbaikan temuan Marine Superintendent, dan
+ * "dokumen_kapal" adalah berkas tidak rutin yang diunggah kapal lewat Portal
+ * Kapal (berita acara, temuan, bunker, serah terima).
  * Keduanya memakai jalur unggah yang sama persis — potongan, lanjut setelah putus,
  * penjaga salinan ganda — karena menulis jalur kedua berarti menguji ulang
  * semua yang sudah terbukti di sini. Yang dipisah hanya folder Drive-nya.
  */
-const KIND_DILAYANI = ["lapor_kapal", "permintaan_uji", "inspeksi_temuan"];
+const KIND_DILAYANI = ["lapor_kapal", "permintaan_uji", "inspeksi_temuan", "dokumen_kapal"];
 /** panjang teks base64 maksimal per potongan — di bawah batas badan permintaan hosting */
 const MAKS_POTONGAN = 3_200_000;
 /**
@@ -165,7 +167,13 @@ export async function POST(req: NextRequest) {
          * hasil, sehingga pengulangan dijawab dengan berkas yang sudah ada.
          */
         aksi: "potongan", unggahId: idUnggah, indeks, total, data: dataBase64,
-        kapal: p.kapal, jenis: p.jenis, periode: p.periode,
+        /*
+         * Nama berkas di Drive dirangkai Apps Script dari jenis + periode.
+         * Dokumen Kapal menyimpan jenisnya sebagai id mesin ("berita_acara"),
+         * jadi ia menitipkan label bacaannya di jenisNama — kalau tidak, nama
+         * berkas di arsip terbaca "berita_acara" alih-alih "Berita Acara".
+         */
+        kapal: p.kapal, jenis: p.jenisNama || p.jenis, periode: p.periode,
         // borang uji coba menyebut foldernya sendiri, jadi berkas percobaan
         // tidak pernah tercampur dengan arsip laporan kapal yang asli
         ...(Array.isArray(p.jalurDrive) && p.jalurDrive.length ? { jalur: p.jalurDrive } : {}),

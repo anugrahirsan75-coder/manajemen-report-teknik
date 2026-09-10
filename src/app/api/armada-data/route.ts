@@ -15,6 +15,7 @@ import { NextResponse } from "next/server";
 import { dbServer, dbSiap } from "@/lib/dbServer";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import { KIND_ALKES, KIND_STOK_FILTER, tingkatAlkes } from "@/lib/portal/types";
+import { KIND_DOKUMEN } from "@/lib/portal/dokumen";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -23,18 +24,32 @@ export async function GET() {
   if (!dbSiap()) return NextResponse.json({ ok: false, error: "Sumber data belum siap" }, { status: 503 });
   const c = dbServer()!;
 
-  const [stok, alkes] = await Promise.all([
+  const [stok, alkes, dokumen] = await Promise.all([
     c.from("projects").select("id,payload").filter("payload->>kind", "eq", KIND_STOK_FILTER),
     c.from("projects").select("id,payload").filter("payload->>kind", "eq", KIND_ALKES),
+    c.from("projects").select("id,payload").filter("payload->>kind", "eq", KIND_DOKUMEN),
   ]);
-  if (stok.error || alkes.error) {
-    return NextResponse.json({ ok: false, error: (stok.error || alkes.error)!.message }, { status: 500 });
+  if (stok.error || alkes.error || dokumen.error) {
+    return NextResponse.json({ ok: false, error: (stok.error || alkes.error || dokumen.error)!.message }, { status: 500 });
   }
 
   const petaStok = new Map<string, any>();
   (stok.data || []).forEach((r: any) => petaStok.set((r.payload || {}).kapal, r.payload));
   const petaAlkes = new Map<string, any>();
   (alkes.data || []).forEach((r: any) => petaAlkes.set((r.payload || {}).kapal, r.payload));
+
+  /* dokumen: BANYAK baris per kapal, bukan satu lembar — dikumpulkan per kapal */
+  const petaDok = new Map<string, any[]>();
+  (dokumen.data || []).forEach((r: any) => {
+    const p = r.payload || {};
+    const k = p.kapal || "";
+    petaDok.set(k, [...(petaDok.get(k) || []), {
+      id: r.id, jenis: p.jenis || "lainnya", judul: p.judul || "", tanggal: p.tanggal || "",
+      nomor: p.nomor || "", catatan: p.catatan || "", olehAkun: p.olehAkun || "",
+      dibuatPada: p.dibuatPada || "",
+      berkas: (p.berkas || []).map((f: any) => ({ nama: f.nama, ukuran: f.ukuran, fileId: f.fileId })),
+    }]);
+  });
 
   const armada = KAPAL_ANGGARAN.map((kapal) => {
     const s = petaStok.get(kapal);
@@ -72,6 +87,18 @@ export async function GET() {
         menipis: item.filter((b) => Number(b.minimum) > 0 && Number(b.jumlah) <= Number(b.minimum)).length,
         item,
       },
+      dokumen: (() => {
+        const daftar = (petaDok.get(kapal) || [])
+          .sort((a, b) => (b.tanggal || b.dibuatPada || "").localeCompare(a.tanggal || a.dibuatPada || ""));
+        return {
+          jumlah: daftar.length,
+          berkas: daftar.reduce((n, d) => n + d.berkas.length, 0),
+          /* dokumen tercatat tanpa berkas = unggahannya putus, dan itu harus terbaca */
+          tanpaBerkas: daftar.filter((d) => !d.berkas.length).length,
+          terbaru: daftar[0]?.tanggal || daftar[0]?.dibuatPada || "",
+          daftar,
+        };
+      })(),
     };
   });
 
