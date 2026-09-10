@@ -7,9 +7,21 @@ import { Section } from "@/components/Field";
 import type { CekResult } from "@/lib/material/kodeCheck";
 import { beritahu } from "@/components/Konfirmasi";
 
-interface Row { id: string; nama: string; partNumber: string }
+interface Row {
+  id: string;
+  nama: string;
+  partNumber: string;
+  /**
+   * Kode material yang SUDAH dipegang — dipakai mencari terbalik.
+   *
+   * Kolom ini dulu hanya menampilkan hasil. Dijadikan isian karena arah
+   * sebaliknya sama seringnya dibutuhkan: kode tertulis di SPPBJ lama atau di
+   * layar SAP, dan yang ditanyakan justru barang apa dan part number berapa.
+   */
+  kode: string;
+}
 const uid = () => globalThis.crypto?.randomUUID?.() ?? String(Math.random());
-const emptyRow = (): Row => ({ id: uid(), nama: "", partNumber: "" });
+const emptyRow = (): Row => ({ id: uid(), nama: "", partNumber: "", kode: "" });
 
 export default function CekKodeMaterial() {
   const [rows, setRows] = useState<Row[]>([emptyRow(), emptyRow(), emptyRow()]);
@@ -25,7 +37,7 @@ export default function CekKodeMaterial() {
   /** Nilai 1 kolom untuk SEMUA baris terisi — dipakai tombol salin di kepala kolom. */
   const nilaiKolom = (kolom: string): string[] => {
     return rows
-      .filter((r) => r.nama.trim() || r.partNumber.trim())
+      .filter((r) => r.nama.trim() || r.partNumber.trim() || r.kode.trim())
       .map((r, i) => {
         const x = res[r.id];
         const cand = x?.candidates;
@@ -34,7 +46,7 @@ export default function CekKodeMaterial() {
           case "no": return String(i + 1);
           case "nama": return r.nama;
           case "part": return r.partNumber;
-          case "kategori": return x?.kategori || (r.partNumber.trim() ? "SC" : "UMUM");
+          case "kategori": return x?.kategori || (r.kode.trim() ? "KODE" : r.partNumber.trim() ? "SC" : "UMUM");
           case "kode": return sel ? sel.kode : x?.kode || "";
           case "desc": return sel ? sel.desc : x?.desc || "";
           case "po": return sel ? sel.po : x?.po || "";
@@ -66,14 +78,14 @@ export default function CekKodeMaterial() {
   // baris export sesuai tabel (ikut kandidat terpilih)
   const exportExcel = async () => {
     const out = rows
-      .filter((r) => r.nama.trim() || r.partNumber.trim())
+      .filter((r) => r.nama.trim() || r.partNumber.trim() || r.kode.trim())
       .map((r, i) => {
         const x = res[r.id];
         const cand = x?.candidates;
         const sel = cand?.length ? cand[Math.min(pick[r.id] ?? 0, cand.length - 1)] : undefined;
         return {
           no: i + 1, nama: r.nama, part: r.partNumber,
-          kategori: x?.kategori || (r.partNumber.trim() ? "SC" : "UMUM"),
+          kategori: x?.kategori || (r.kode.trim() ? "KODE" : r.partNumber.trim() ? "SC" : "UMUM"),
           kode: sel ? sel.kode : x?.kode || "", desc: sel ? sel.desc : x?.desc || "",
           po: sel ? sel.po : x?.po || "", status: x?.status || "-",
           lainnya: x?.kode2 ? `${x.kode2} — ${x.desc2 || ""}` : "",
@@ -94,7 +106,7 @@ export default function CekKodeMaterial() {
   const delRow = (id: string) => setRows((rs) => (rs.length > 1 ? rs.filter((r) => r.id !== id) : rs));
 
   // paste blok Excel: kolom 0=Nama, 1=Part Number
-  const PASTE: (keyof Row)[] = ["nama", "partNumber"];
+  const PASTE: (keyof Row)[] = ["nama", "partNumber", "kode"];
   const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text/plain");
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
@@ -116,7 +128,8 @@ export default function CekKodeMaterial() {
   };
 
   const cek = async () => {
-    const items = rows.filter((r) => r.nama.trim() || r.partNumber.trim());
+    const items = rows.filter((r) => r.nama.trim() || r.partNumber.trim() || r.kode.trim())
+      .map((r) => ({ id: r.id, nama: r.nama, partNumber: r.partNumber, kode: r.kode }));
     if (!items.length) return;
     setBusy(true);
     try {
@@ -163,7 +176,7 @@ export default function CekKodeMaterial() {
   // DB dianggap tak sehat bila jauh lebih sedikit dari isi spreadsheet -> hasil "tidak ada" bisa menyesatkan
   const dbBermasalah = !!meta && (meta.count < 3000 || !!meta.error);
 
-  const isi = rows.filter((r) => r.nama.trim() || r.partNumber.trim());
+  const isi = rows.filter((r) => r.nama.trim() || r.partNumber.trim() || r.kode.trim());
   const hasil = isi.map((r) => res[r.id]).filter(Boolean) as CekResult[];
   const ada = hasil.filter((x) => x.status !== "tidak ada").length;
 
@@ -184,8 +197,9 @@ export default function CekKodeMaterial() {
           <ul className="list-disc ml-5 mt-1 text-xs text-slate-600">
             <li><b>Ada Part Number</b> → dianggap <b>suku cadang</b>, dicocokkan ke <i>Old Material Number</i>.</li>
             <li><b>Tanpa Part Number</b> → dianggap <b>barang umum</b>, dicocokkan ke <i>Material description</i>.</li>
+            <li><b>Sudah punya kodenya?</b> Isi kolom <b>Kode Material</b> — dicari terbalik: keluar nama barang, part number, dan Purchase Order Text-nya. Nol di depan boleh beda; potongan kode (≥4 angka) memberi beberapa kandidat berstatus <i>cek</i>.</li>
           </ul>
-          <span className="text-xs">📋 Paste dari Excel (urutan <b>Nama · Part Number</b>) → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>.</span>
+          <span className="text-xs">📋 Paste dari Excel (urutan <b>Nama · Part Number · Kode Material</b>) → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>.</span>
         </div>
 
         <div className="flex gap-2 mb-3">
@@ -210,7 +224,7 @@ export default function CekKodeMaterial() {
                 <Th judul="Nama Barang" kolom="nama" kiri onSalin={salinKolom} aktif={tersalin === "Nama Barang"} />
                 <Th judul="Part Number" kolom="part" onSalin={salinKolom} aktif={tersalin === "Part Number"} />
                 <th className="p-2 border">Kategori</th>
-                <Th judul="Kode Material" kolom="kode" onSalin={salinKolom} aktif={tersalin === "Kode Material"} />
+                <Th judul="Kode Material" kolom="kode" onSalin={salinKolom} aktif={tersalin === "Kode Material"} catatan="(bisa diisi)" />
                 <Th judul="Material Description" kolom="desc" kiri onSalin={salinKolom} aktif={tersalin === "Material Description"} />
                 <Th judul="Purchase Order Text" kolom="po" kiri onSalin={salinKolom} aktif={tersalin === "Purchase Order Text"} />
                 <th className="p-2 border">Status</th>
@@ -221,7 +235,7 @@ export default function CekKodeMaterial() {
             <tbody>
               {rows.map((r, ri) => {
                 const x = res[r.id];
-                const kategori = x?.kategori || (r.partNumber.trim() ? "SC" : "UMUM");
+                const kategori = x?.kategori || (r.kode.trim() ? "KODE" : r.partNumber.trim() ? "SC" : "UMUM");
                 const cand = x?.candidates;
                 const selIdx = cand?.length ? Math.min(pick[r.id] ?? 0, cand.length - 1) : 0;
                 const sel = cand?.length ? cand[selIdx] : undefined;
@@ -241,7 +255,20 @@ export default function CekKodeMaterial() {
                     <td className="border p-1 text-center">
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${kategori === "SC" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{kategori}</span>
                     </td>
-                    <td className="border p-1 text-center font-mono text-xs">{showKode || "—"}</td>
+                    {/*
+                      Kolom ini dua arah. Kosong → ia menampilkan kode hasil
+                      pencocokan nama/part. Diisi → ia menjadi yang dicari, dan
+                      nama serta part number-lah yang dicarikan.
+                    */}
+                    <td className="border p-1 text-center">
+                      <input className="w-28 px-1 text-center font-mono text-xs" value={r.kode}
+                        placeholder={showKode || "kode…"} inputMode="numeric"
+                        onChange={(e) => setRow(r.id, { kode: e.target.value })}
+                        onPaste={(e) => handlePaste(ri, 2, e)} />
+                      {r.kode.trim() && showKode && showKode !== r.kode.trim() && (
+                        <span className="mt-0.5 block font-mono text-[10px] text-emerald-700">→ {showKode}</span>
+                      )}
+                    </td>
                     <td className="border p-1 text-xs text-slate-600">
                       {cand?.length ? (
                         <div className="flex items-center gap-2">
@@ -255,7 +282,18 @@ export default function CekKodeMaterial() {
                         </div>
                       ) : (showDesc || "—")}
                     </td>
-                    <td className="border p-1 text-xs text-slate-600">{showPO || <span className="text-slate-300">—</span>}</td>
+                    <td className="border p-1 text-xs text-slate-600">
+                      {showPO || <span className="text-slate-300">—</span>}
+                      {/* dicari dari kodenya: part number-nya justru jawaban yang dicari */}
+                      {x?.kategori === "KODE" && (sel as any)?.part && (
+                        <span className="mt-0.5 block font-mono text-[10px] text-slate-500">
+                          part: {(sel as any).part}
+                        </span>
+                      )}
+                      {x?.kategori === "KODE" && !sel && x.part && (
+                        <span className="mt-0.5 block font-mono text-[10px] text-slate-500">part: {x.part}</span>
+                      )}
+                    </td>
                     <td className="border p-1 text-center">
                       {x ? <span className={`text-[10px] font-bold px-2 py-0.5 rounded ${stBadge}`}>{x.status}</span> : <span className="text-slate-300 text-xs">—</span>}
                     </td>

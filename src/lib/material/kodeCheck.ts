@@ -207,17 +207,21 @@ function partKeys(raw: string): string[] {
 let partIdx: Map<string, string[]> = new Map();
 let matDesc: Map<string, string> = new Map();
 let matPO: Map<string, string> = new Map();
+/** kode material → part number (Old Material Number), untuk pencarian terbalik */
+let matPart: Map<string, string> = new Map();
 let descList: { nd: string; kode: string; desc: string; toks: string[]; po: string; npo: string; poToks: string[] }[] = [];
 
 function buildIndexes() {
   partIdx = new Map();
   matDesc = new Map();
   matPO = new Map();
+  matPart = new Map();
   descList = [];
   const seenDesc = new Set<string>();
   for (const r of rows) {
     if (r.m && !matDesc.has(r.m)) matDesc.set(r.m, r.d);
     if (r.m && r.po && !matPO.has(r.m)) matPO.set(r.m, r.po);
+    if (r.m && r.p && !matPart.has(r.m)) matPart.set(r.m, r.p);
     if (r.p) {
       for (const k of partKeys(r.p)) {
         let arr = partIdx.get(k); if (!arr) { arr = []; partIdx.set(k, arr); } if (!arr.includes(r.m)) arr.push(r.m);
@@ -263,14 +267,30 @@ function score(qNorm: string, qToks: string[], c: { nd: string; toks: string[]; 
   return s;
 }
 
-export interface CekInput { id: string; nama: string; partNumber: string }
-export interface Cand { kode: string; desc: string; po: string }
+export interface CekInput {
+  id: string;
+  nama: string;
+  partNumber: string;
+  /**
+   * Kode material yang sudah dipegang — pencarian TERBALIK.
+   *
+   * Diisi ketika yang ditanyakan bukan "barang ini kodenya berapa" melainkan
+   * "kode ini barang apa": kode dari SPPBJ lama, dari layar SAP, atau yang
+   * disebut lewat telepon. Bila terisi, ia menang atas nama dan part number —
+   * kode adalah keterangan yang paling pasti di antara ketiganya.
+   */
+  kode?: string;
+}
+export interface Cand { kode: string; desc: string; po: string; part?: string }
 export interface CekResult {
   id: string;
-  kategori: "SC" | "UMUM";
+  /** KODE = hasil pencarian terbalik dari kode materialnya */
+  kategori: "SC" | "UMUM" | "KODE";
   kode: string;
   desc: string;
   po: string;            // Purchase Order Text kode terpilih
+  /** part number (Old Material Number) milik kode terpilih — hasil pencarian terbalik */
+  part?: string;
   status: "ada" | "cek" | "tidak ada";
   kode2?: string;
   desc2?: string;
@@ -282,6 +302,65 @@ const MAX_CAND = 15;
 export async function cekKode(items: CekInput[], opts?: { refresh?: boolean }): Promise<CekResult[]> {
   await ensureDb(opts?.refresh);
   return items.map((it) => {
+    /*
+     * Kode material didahulukan.
+     *
+     * Kalau orang sudah menuliskan kodenya, itu keterangan yang paling pasti
+     * yang ia punya; mencocokkan namanya lagi secara fuzzy hanya berpeluang
+     * menimpa jawaban yang sudah benar dengan tebakan.
+     */
+    const kodeCari = (it.kode || "").replace(/[^0-9A-Za-z]/g, "").trim();
+    if (kodeCari) {
+      const rapikan = (m: string): Cand => ({
+        kode: m, desc: matDesc.get(m) || "", po: matPO.get(m) || "", part: matPart.get(m) || "",
+      });
+
+      // 1. sama persis
+      if (matDesc.has(kodeCari)) {
+        const c = rapikan(kodeCari);
+        return { id: it.id, kategori: "KODE", kode: c.kode, desc: c.desc, po: c.po, part: c.part, status: "ada", candidates: [c] };
+      }
+
+      /*
+       * 2. hanya nol di depan yang berbeda. SAP menyimpan 3000000990 sementara
+       * orang mengetik 3000990 atau menyalinnya dari sel Excel yang membuang
+       * nol depan. Angka yang sama tidak boleh dilaporkan "tidak ada" hanya
+       * karena bentuk tulisannya berbeda.
+       */
+      const telanjang = kodeCari.replace(/^0+/, "");
+      const samaAngka: string[] = [];
+      for (const m of Array.from(matDesc.keys())) {
+        if (m.replace(/^0+/, "") === telanjang) samaAngka.push(m);
+      }
+      if (samaAngka.length) {
+        const cands = samaAngka.slice(0, MAX_CAND).map(rapikan);
+        return {
+          id: it.id, kategori: "KODE", kode: cands[0].kode, desc: cands[0].desc, po: cands[0].po,
+          part: cands[0].part, status: "ada", candidates: cands,
+        };
+      }
+
+      /*
+       * 3. potongan kode. Cukup untuk menolong yang hanya ingat sebagian, tetapi
+       * statusnya "cek" — potongan angka bisa menunjuk banyak barang berbeda,
+       * dan yang memutuskan harus orang, bukan pencocok.
+       */
+      if (kodeCari.length >= 4) {
+        const mirip: string[] = [];
+        for (const m of Array.from(matDesc.keys())) {
+          if (m.includes(kodeCari)) { mirip.push(m); if (mirip.length >= MAX_CAND) break; }
+        }
+        if (mirip.length) {
+          const cands = mirip.map(rapikan);
+          return {
+            id: it.id, kategori: "KODE", kode: cands[0].kode, desc: cands[0].desc, po: cands[0].po,
+            part: cands[0].part, status: "cek", candidates: cands,
+          };
+        }
+      }
+      return { id: it.id, kategori: "KODE", kode: "", desc: "", po: "", part: "", status: "tidak ada" };
+    }
+
     const part = (it.partNumber || "").trim();
     if (part) {
       // SUKU CADANG — cocokkan exact key; input multi-nilai juga dicoba per token
