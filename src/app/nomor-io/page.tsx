@@ -162,6 +162,8 @@ export default function NomorIoPage() {
     const k = cari.trim().toLowerCase();
     return periodeAll
       .flatMap((p) => p.baris.map((b) => ({ ...b, periode: p.periode })))
+      /* hanya yang nomornya sudah terbit — inilah daftar nomor IO cabang */
+      .filter((b) => tahapIO(b) !== "menunggu")
       .filter((b) => !sarKapal || b.kapal === sarKapal)
       .filter((b) => !sarTahap || tahapIO(b) === sarTahap)
       .filter((b) => !k || `${b.deskripsi} ${b.spesifikasi} ${b.kapal} ${b.noIoSap} ${b.noAsetSap} ${b.assetClass} ${labelAsset(b.assetClass)}`.toLowerCase().includes(k))
@@ -170,8 +172,13 @@ export default function NomorIoPage() {
 
   const ringkasSemua = useMemo(() => ({
     item: semua.length,
+    /* satu nomor bisa tertulis pada dua baris kalau di borangnya salah tempel;
+       yang dihitung sebagai "nomor" tetap nomornya, bukan barisnya */
+    nomor: new Set(semua.map((b) => b.noIoSap.trim())).size,
     nilai: semua.reduce((n, b) => n + hitungBaris(b).grand, 0),
-    menunggu: semua.filter((b) => tahapIO(b) === "menunggu").length,
+    /* aset darat tercatat tanpa kapal; kalau ikut dihitung, jumlahnya bisa
+       melampaui banyaknya kapal dan kartunya jadi "14/13" */
+    kapal: new Set(semua.map((b) => b.kapal).filter(Boolean)).size,
     selesai: semua.filter((b) => tahapIO(b) === "ada-aset").length,
   }), [semua]);
 
@@ -189,7 +196,8 @@ export default function NomorIoPage() {
             <Link href="/dashboard" className="text-[11px] text-slate-400 hover:text-[#16357f]">‹ Dashboard</Link>
             <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Nomor IO Investasi</h1>
             <p className="text-[11.5px] text-slate-500">
-              Permintaan nomor IO &amp; nomor aset SAP untuk belanja investasi kapal — susunan kolomnya sama dengan borang resmi.
+              Nomor IO &amp; nomor aset SAP belanja investasi kapal. <b>Semua periode</b> memuat nomor
+              yang sudah terbit; usulan yang nomornya belum turun ada di <b>Bulan ini</b>.
             </p>
           </div>
 
@@ -234,9 +242,9 @@ export default function NomorIoPage() {
               ["Menunggu nomor IO", String(ringkas.menunggu), "text-amber-700"],
             ]
             : [
-              ["Item tersaring", String(ringkasSemua.item), "text-[#16357f]"],
+              ["Nomor IO terbit", String(ringkasSemua.nomor), "text-[#16357f]"],
               ["Nilai tersaring", rupiah(ringkasSemua.nilai), "text-emerald-700"],
-              ["Menunggu nomor IO", String(ringkasSemua.menunggu), "text-amber-700"],
+              ["Kapal terwakili", `${ringkasSemua.kapal}/${KAPAL_ANGGARAN.length}`, "text-slate-700 dark:text-slate-200"],
               ["Nomor aset terbit", String(ringkasSemua.selesai), "text-sky-700"],
             ]).map(([l, n, w]) => (
             <div key={l} className="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200 dark:bg-slate-800/60 dark:ring-slate-700">
@@ -529,7 +537,6 @@ function SemuaPeriode({ data, cari, setCari, sarKapal, setSarKapal, sarTahap, se
           <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Tahap</span>
           <select value={sarTahap} onChange={(e) => setSarTahap(e.target.value)} className={gaya}>
             <option value="">Semua tahap</option>
-            <option value="menunggu">Menunggu nomor IO</option>
             <option value="ada-io">Nomor IO turun</option>
             <option value="ada-aset">Nomor aset terbit</option>
           </select>
@@ -544,7 +551,7 @@ function SemuaPeriode({ data, cari, setCari, sarKapal, setSarKapal, sarTahap, se
 
       {!data.length ? (
         <p className="rounded-2xl bg-white px-4 py-12 text-center text-[13px] text-slate-500 ring-1 ring-slate-200 dark:bg-slate-900">
-          Tidak ada permintaan yang cocok.
+          Tidak ada nomor IO yang cocok dengan saringan.
         </p>
       ) : (
         <div className="overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-800">
