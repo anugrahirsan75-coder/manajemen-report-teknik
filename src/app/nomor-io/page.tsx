@@ -162,8 +162,10 @@ export default function NomorIoPage() {
     const k = cari.trim().toLowerCase();
     return periodeAll
       .flatMap((p) => p.baris.map((b) => ({ ...b, periode: p.periode })))
-      /* hanya yang nomornya sudah terbit — inilah daftar nomor IO cabang */
-      .filter((b) => tahapIO(b) !== "menunggu")
+      /* Syaratnya NOMOR IO-nya ada, bukan sekadar "bukan menunggu": satu usulan
+         yang nomor asetnya sudah terisi lebih dulu akan lolos oleh tahapnya
+         padahal nomor IO-nya belum turun. */
+      .filter((b) => !!String(b.noIoSap || "").trim())
       .filter((b) => !sarKapal || b.kapal === sarKapal)
       .filter((b) => !sarTahap || tahapIO(b) === sarTahap)
       .filter((b) => !k || `${b.deskripsi} ${b.spesifikasi} ${b.kapal} ${b.noIoSap} ${b.noAsetSap} ${b.assetClass} ${labelAsset(b.assetClass)}`.toLowerCase().includes(k))
