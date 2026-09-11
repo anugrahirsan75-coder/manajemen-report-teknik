@@ -17,6 +17,7 @@ import { Ikon } from "@/components/ikon";
 import { NADA_ALKES, sisaHariAlkes, tingkatAlkes } from "@/lib/portal/types";
 import { jenisDokumen } from "@/lib/portal/dokumen";
 import UnggahDokumenKantor from "@/components/kapal/UnggahDokumenKantor";
+import RekapDokumen from "@/components/kapal/RekapDokumen";
 
 interface DataKapal {
   kapal: string;
@@ -54,6 +55,9 @@ export default function DataIsianKapal() {
    * (dibuka dari tombol di kepala halaman, kapalnya dipilih di dalam borang).
    */
   const [unggah, setUnggah] = useState<string | null>(null);
+  /* daftar per kapal menjawab "kapal ini kirim apa"; rekap menjawab "armada ini
+     kurang apa" — dua pertanyaan berbeda yang tak muat di satu tabel */
+  const [rekap, setRekap] = useState(false);
   const [kabar, setKabar] = useState("");
 
   const ambil = useCallback(async () => {
@@ -147,6 +151,17 @@ export default function DataIsianKapal() {
             ))}
           </div>
           {rupa === "dokumen" && (
+            <div className="flex overflow-hidden rounded-xl ring-1 ring-slate-300 dark:ring-slate-700">
+              {([[false, "Per Kapal"], [true, "Rekap"]] as const).map(([id, l]) => (
+                <button key={l} onClick={() => setRekap(id)}
+                  className={`px-3 py-2 text-[11.5px] font-bold transition ${
+                    rekap === id ? "bg-slate-700 text-white" : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300"}`}>
+                  {l}
+                </button>
+              ))}
+            </div>
+          )}
+          {rupa === "dokumen" && (
             <button onClick={() => setUnggah("")}
               className="inline-flex items-center gap-1.5 rounded-xl bg-emerald-600 px-3 py-2 text-[11.5px] font-bold text-white transition hover:bg-emerald-700">
               ⬆️ Unggah dokumen
@@ -202,6 +217,7 @@ export default function DataIsianKapal() {
         />
       )}
 
+      {rupa === "dokumen" && rekap ? <RekapDokumen armada={armada} /> : (
       <ul className="space-y-2.5">
         {armada.map((a) => {
           const dok = a.dokumen || { jumlah: 0, berkas: 0, tanpaBerkas: 0, terbaru: "", daftar: [] };
@@ -403,6 +419,7 @@ export default function DataIsianKapal() {
           );
         })}
       </ul>
+      )}
 
       {muat && !armada.length && (
         <p className="rounded-2xl bg-white px-4 py-10 text-center text-[13px] text-slate-500 ring-1 ring-slate-200 dark:bg-slate-900">Memuat…</p>

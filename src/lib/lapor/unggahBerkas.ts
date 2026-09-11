@@ -102,11 +102,43 @@ async function siapkan(file: File) {
   return { nama: file.name, mime: jenis.mime, blob: file as Blob };
 }
 
+/*
+ * Daftar unggahan yang PERNAH dicoba dari peramban ini.
+ *
+ * Pertanyaan "sampai mana" hanya masuk akal untuk unggahan yang pernah mulai.
+ * Untuk berkas yang baru pertama kali dikirim, jawabannya sudah pasti "belum
+ * ada apa-apa" — dan menanyakannya tetap memakan satu perjalanan bolak-balik ke
+ * Apps Script, yang pada pemasangan lama bahkan berakhir sebagai tenggang waktu
+ * dua puluh detik sebelum menjawab hal yang sudah kita tahu.
+ *
+ * Disimpan di localStorage, bukan di ingatan halaman: kalau unggahan putus lalu
+ * halamannya dimuat ulang, percobaan berikutnya HARUS bertanya — kalau tidak,
+ * potongan yang sudah naik akan dikirim ulang dan berkasnya bisa kembar.
+ */
+const KUNCI_DICOBA = "unggah_dicoba";
+const BATAS_DICOBA = 200;
+
+function pernahDicoba(unggahId: string): boolean {
+  try {
+    const daftar: string[] = JSON.parse(localStorage.getItem(KUNCI_DICOBA) || "[]");
+    if (daftar.includes(unggahId)) return true;
+    daftar.push(unggahId);
+    localStorage.setItem(KUNCI_DICOBA, JSON.stringify(daftar.slice(-BATAS_DICOBA)));
+    return false;
+  } catch {
+    /* localStorage terkunci (mode penyamaran) — bertanya lebih aman daripada kembar */
+    return true;
+  }
+}
+
 /** potongan mana yang sudah sampai — supaya berkas besar tak naik dua kali */
 async function sampaiMana(kiriman: Kiriman, unggahId: string) {
   try {
+    /* Jawaban ini hanya penghematan, bukan syarat. Kalau pemasangan Apps Script
+       belum mengenal aksi "status", menunggunya lama justru merugikan. */
     const r = await fetch(`/api/lapor/berkas?id=${encodeURIComponent(kiriman.id)}`
-      + `&token=${encodeURIComponent(kiriman.token)}&unggahId=${encodeURIComponent(unggahId)}`, { cache: "no-store" });
+      + `&token=${encodeURIComponent(kiriman.token)}&unggahId=${encodeURIComponent(unggahId)}`,
+      { cache: "no-store", signal: AbortSignal.timeout(8000) });
     const d = await r.json();
     if (!d.ok) return { sudah: new Set<number>(), selesai: false };
     if (d.selesai) return { sudah: new Set<number>(), selesai: true };
@@ -124,7 +156,9 @@ export async function unggahSatuBerkas(
   const total = Math.max(1, Math.ceil(s.blob.size / BYTE_PER_POTONGAN));
   const unggahId = idUnggah(kiriman, f, s.blob.size);
 
-  const awal = await sampaiMana(kiriman, unggahId);
+  const awal = pernahDicoba(unggahId)
+    ? await sampaiMana(kiriman, unggahId)
+    : { sudah: new Set<number>(), selesai: false };
   if (awal.selesai) return;
 
   for (let k = 0; k < total; k++) {

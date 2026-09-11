@@ -246,6 +246,19 @@ export async function POST(req: NextRequest) {
  * berkas yang putus di tengah jalan alih-alih mengulang dari potongan pertama —
  * bedanya besar di jaringan kapal: berkas 20 MB tidak perlu naik dua kali.
  */
+/*
+ * Pemasangan Apps Script lama tidak mengenal aksi "status": alih-alih menjawab,
+ * ia mengembalikan halaman galat Google setelah menggantung puluhan detik. Satu
+ * penolakan sudah cukup menjadi bukti — sesudahnya jangan tanya lagi, karena
+ * setiap unggahan berikutnya akan membayar tenggang waktu yang sama untuk
+ * jawaban yang sudah diketahui.
+ *
+ * Ditandai per proses, bukan disimpan: proses baru akan mencoba sekali lagi,
+ * jadi Apps Script yang baru dipasang ulang langsung terpakai tanpa perlu
+ * menyentuh apa pun di sini.
+ */
+let statusDidukung = true;
+
 export async function GET(req: NextRequest) {
   const gasUrl = process.env.LAPOR_GAS_URL;
   if (!gasUrl || !dbSiap()) return NextResponse.json({ ok: false }, { status: 503 });
@@ -287,12 +300,20 @@ export async function GET(req: NextRequest) {
   const sudah = (p.berkas || []).find((f: any) => f.unggahId === unggahId);
   if (sudah) return NextResponse.json({ ok: true, selesai: true, hasil: sudah });
 
+  if (!statusDidukung) return NextResponse.json({ ok: true, potongan: [], statusTakDidukung: true });
+
   try {
     const res = await fetch(gasUrl, {
       method: "POST", headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ secret: process.env.LAPOR_GAS_SECRET || "", aksi: "status", unggahId }),
-      redirect: "follow", signal: AbortSignal.timeout(20_000),
+      redirect: "follow", signal: AbortSignal.timeout(8_000),
     });
+    /* 404 dari Apps Script = aksinya belum ada di pemasangan yang terpakai */
+    if (res.status === 404) {
+      statusDidukung = false;
+      console.warn("lapor/berkas: Apps Script belum mengenal aksi \"status\" — lanjutkan-unggahan dimatikan. Deploy ulang docs/lapor-apps-script.gs.");
+      return NextResponse.json({ ok: true, potongan: [], statusTakDidukung: true });
+    }
     const d = JSON.parse(await res.text());
     if (d?.ok !== true) return NextResponse.json({ ok: true, potongan: [] });
 
@@ -315,7 +336,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ ok: true, selesai: true, hasil: dicatat.berkas, jumlah: dicatat.jumlah });
     }
     return NextResponse.json({ ok: true, selesai: !!d.selesai, hasil: d.hasil || null, potongan: d.potongan || [] });
-  } catch {
+  } catch (e: any) {
+    /* tenggang waktu pun dihitung sebagai tidak didukung: Apps Script yang sehat
+       menjawab pertanyaan sekecil ini dalam hitungan detik */
+    if (e?.name === "TimeoutError" || e?.name === "AbortError") statusDidukung = false;
     // gagal bertanya bukan alasan gagal kirim — anggap belum ada yang masuk
     return NextResponse.json({ ok: true, potongan: [] });
   }

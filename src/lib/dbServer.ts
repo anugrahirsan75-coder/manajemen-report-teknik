@@ -14,7 +14,26 @@ const KEY_ANON = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "";
 
 export const dbSiap = () => Boolean(URL_SB && (KEY_SERVER || KEY_ANON));
 
+/*
+ * fetch yang TIDAK PERNAH disinggahi.
+ *
+ * Next.js menambal fetch global dengan singgahan datanya sendiri. supabase-js
+ * memakai fetch global itu, jadi satu jawaban Supabase bisa dibekukan lalu
+ * dipakai ulang berjam-jam — dan route yang membaca data kapal mulai menjawab
+ * keadaan lama dengan yakin. Ini bukan galat yang kelihatan: halamannya memuat
+ * dengan mulus, angkanya masuk akal, hanya saja itu angka kemarin. Dokumen yang
+ * baru diunggah kapal tampak tidak pernah sampai.
+ *
+ * "force-dynamic" pada route tidak menyelamatkan: yang disinggahi permintaan ke
+ * Supabase-nya, bukan penggambaran halamannya.
+ */
+const fetchSegar: typeof fetch = (masukan, awalan) =>
+  fetch(masukan, { ...awalan, cache: "no-store" });
+
 export function dbServer() {
   if (!dbSiap()) return null;
-  return createClient(URL_SB, KEY_SERVER || KEY_ANON, { auth: { persistSession: false } });
+  return createClient(URL_SB, KEY_SERVER || KEY_ANON, {
+    auth: { persistSession: false },
+    global: { fetch: fetchSegar },
+  });
 }

@@ -35,7 +35,11 @@ function buat(): SupabaseClient | null {
   }
 
   if (!kunciServer && !kunciAnon) return null;
-  return createClient(urlAsli!, kunciServer || kunciAnon!, { auth: { persistSession: false } });
+  /* sisi server: lihat catatan singgahan di lib/dbServer.ts — alasannya sama */
+  return createClient(urlAsli!, kunciServer || kunciAnon!, {
+    auth: { persistSession: false },
+    global: { fetch: (masukan, awalan) => fetch(masukan, { ...awalan, cache: "no-store" }) },
+  });
 }
 
 export const supabase: SupabaseClient | null = buat();

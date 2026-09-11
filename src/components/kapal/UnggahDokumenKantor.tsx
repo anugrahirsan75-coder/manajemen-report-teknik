@@ -35,6 +35,7 @@ export default function UnggahDokumenKantor({ kapalAwal, onTutup, onSelesai }: {
   const [berkas, setBerkas] = useState<File[]>([]);
   const [kirim, setKirim] = useState(false);
   const [maju, setMaju] = useState<Kemajuan | null>(null);
+  const [rampung, setRampung] = useState(0);
   const [galat, setGalat] = useState("");
   const pilihRef = useRef<HTMLInputElement | null>(null);
 
@@ -49,7 +50,7 @@ export default function UnggahDokumenKantor({ kapalAwal, onTutup, onSelesai }: {
   const simpan = async () => {
     if (!judul.trim()) { setGalat("Judul dokumen wajib diisi."); return; }
     if (!berkas.length) { setGalat("Pilih dulu berkasnya — dokumen tanpa lampiran tidak ada gunanya diarsipkan."); return; }
-    setKirim(true); setGalat(""); setMaju(null);
+    setKirim(true); setGalat(""); setMaju(null); setRampung(0);
     try {
       /* Dua langkah, sama seperti sisi kapal: catatannya dibuat lebih dulu
          supaya berkas punya tempat menempel, baru berkasnya menyusul. */
@@ -60,9 +61,31 @@ export default function UnggahDokumenKantor({ kapalAwal, onTutup, onSelesai }: {
       const d = await r.json();
       if (!d.ok) throw new Error(d.error || "Dokumen gagal dicatat");
 
-      for (let i = 0; i < berkas.length; i++) {
-        await unggahSatuBerkas({ id: d.id, token: d.token }, berkas[i], i + 1, berkas.length, setMaju);
-      }
+      /*
+       * Tiga berkas berjalan berbarengan.
+       *
+       * Portal kapal sengaja mengirim satu per satu — di sinyal kapal, dua
+       * unggahan yang berebut jalur justru membuat keduanya putus. Kantor tidak
+       * punya masalah itu, dan yang terasa di sini lain sama sekali: Apps
+       * Script menghabiskan belasan detik per berkas hampir seluruhnya untuk
+       * menunggu Google, bukan untuk memindahkan data. Menunggu tiga giliran
+       * secara berurutan berarti menunggu hal yang sama tiga kali.
+       */
+      const antre = berkas.map((f, i) => ({ f, urut: i + 1 }));
+      const SEKALIGUS = 3;
+      let gagal: unknown = null;
+      const pekerja = Array.from({ length: Math.min(SEKALIGUS, antre.length) }, async () => {
+        for (;;) {
+          const tugas = antre.shift();
+          if (!tugas || gagal) return;
+          try {
+            await unggahSatuBerkas({ id: d.id, token: d.token }, tugas.f, tugas.urut, berkas.length, setMaju);
+            setRampung((n) => n + 1);
+          } catch (e) { gagal = gagal || e; return; }
+        }
+      });
+      await Promise.all(pekerja);
+      if (gagal) throw gagal;
       onSelesai(`${berkas.length} berkas masuk arsip ${kapal} ✓`);
       onTutup();
     } catch (e: any) {
@@ -151,10 +174,18 @@ export default function UnggahDokumenKantor({ kapalAwal, onTutup, onSelesai }: {
           )}
 
           {maju && (
-            <p className="rounded-lg bg-sky-50 px-2.5 py-2 text-[11.5px] font-semibold text-sky-900 ring-1 ring-sky-200">
-              Mengunggah {maju.berkas} — potongan {maju.potongan}/{maju.total}
-              {maju.percobaan > 1 ? ` (percobaan ke-${maju.percobaan})` : ""}
-            </p>
+            <div className="rounded-lg bg-sky-50 px-2.5 py-2 ring-1 ring-sky-200">
+              <p className="text-[11.5px] font-semibold text-sky-900">
+                Mengunggah {maju.berkas} — potongan {maju.potongan}/{maju.total}
+                {maju.percobaan > 1 ? ` (percobaan ke-${maju.percobaan})` : ""}
+              </p>
+              {berkas.length > 1 && (
+                <p className="mt-0.5 text-[11px] text-sky-800">{rampung} dari {berkas.length} berkas selesai</p>
+              )}
+              <p className="mt-0.5 text-[10.5px] text-sky-700/80">
+                Google Drive perlu belasan detik per berkas — jangan tutup jendela ini.
+              </p>
+            </div>
           )}
           {galat && <p className="rounded-lg bg-rose-50 px-3 py-2 text-[12px] font-semibold text-rose-800 ring-1 ring-rose-200">{galat}</p>}
 
