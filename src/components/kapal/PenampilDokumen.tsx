@@ -14,7 +14,15 @@
  */
 import { useCallback, useEffect, useState } from "react";
 
-export interface BerkasLihat { nama: string; ukuran: number; fileId: string }
+export interface BerkasLihat { nama: string; ukuran: number; fileId: string; url?: string }
+
+/*
+ * Alamat pratinjau Drive. Dibentuk dari fileId, bukan dari url simpanan:
+ * url yang disimpan berakhiran /view yang memaksa buka halaman penuh Drive,
+ * sedangkan /preview bisa ditanam langsung di dalam halaman.
+ */
+const pratinjauDrive = (fileId: string) =>
+  `https://drive.google.com/file/d/${encodeURIComponent(fileId)}/preview`;
 
 const ukuranRamah = (b: number) =>
   !b ? "" : b >= 1_048_576 ? `${(b / 1_048_576).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1024))} KB`;
@@ -41,8 +49,19 @@ export default function PenampilDokumen({ judul, kapal, golongan, berkas, mulai 
 }) {
   const [ke, setKe] = useState(Math.min(Math.max(0, mulai), Math.max(0, berkas.length - 1)));
   const [muat, setMuat] = useState(true);
+  /*
+   * "drive" menggambar dari Google Drive — cepat, tetapi menuntut peramban
+   * sudah masuk akun yang punya akses. "aplikasi" menarik isinya lewat server
+   * kantor — lambat, tetapi bekerja dari mana saja. Drive didahulukan karena
+   * yang membuka layar ini hampir selalu orang kantor di komputernya sendiri.
+   */
+  const [lewat, setLewat] = useState<"drive" | "aplikasi">("drive");
+  const [lama, setLama] = useState(false);
   const f = berkas[ke];
   const alamat = f ? `/api/lapor/isi?fileId=${encodeURIComponent(f.fileId)}` : "";
+  const alamatDrive = f ? pratinjauDrive(f.fileId) : "";
+  const pakaiDrive = lewat === "drive" && !!f?.fileId;
+  const sumber = pakaiDrive ? alamatDrive : alamat;
   const rupa = f ? tatapan(f.nama) : "lain";
 
   const geser = useCallback((arah: number) => {
@@ -60,6 +79,15 @@ export default function PenampilDokumen({ judul, kapal, golongan, berkas, mulai 
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = semula; };
   }, []);
+
+  /* kalau jalur aplikasi lebih dari tujuh detik belum selesai, tawarkan Drive —
+     menunggu tanpa tahu ada jalan lain adalah bagian yang paling melelahkan */
+  useEffect(() => {
+    setLama(false);
+    if (pakaiDrive || !muat) return;
+    const t = window.setTimeout(() => setLama(true), 7000);
+    return () => window.clearTimeout(t);
+  }, [pakaiDrive, muat, ke]);
 
   useEffect(() => {
     const tekan = (e: KeyboardEvent) => {
@@ -81,13 +109,19 @@ export default function PenampilDokumen({ judul, kapal, golongan, berkas, mulai 
           <p className="truncate text-[14px] font-bold" title={judul}>{judul}</p>
           <p className="truncate text-[11.5px] text-white/60">{kapal} · {golongan} · {f.nama}{f.ukuran ? ` · ${ukuranRamah(f.ukuran)}` : ""}</p>
         </div>
+        <button onClick={() => { setLewat(pakaiDrive ? "aplikasi" : "drive"); setMuat(true); }}
+          title={pakaiDrive ? "Gambar lewat server kantor — lebih lambat, tetapi tidak perlu akun Google"
+            : "Gambar langsung dari Google Drive — jauh lebih cepat"}
+          className="rounded-lg bg-white/10 px-3 py-1.5 text-[12px] font-bold text-white transition hover:bg-white/20">
+          {pakaiDrive ? "⏳ Lewat aplikasi" : "⚡ Lewat Drive"}
+        </button>
+        <a href={f.url || alamatDrive.replace("/preview", "/view")} target="_blank" rel="noreferrer"
+          className="rounded-lg bg-white/10 px-3 py-1.5 text-[12px] font-bold text-white transition hover:bg-white/20">
+          ↗ Buka di Drive
+        </a>
         <a href={alamat} download={f.nama}
           className="rounded-lg bg-white/10 px-3 py-1.5 text-[12px] font-bold text-white transition hover:bg-white/20">
           ⬇️ Unduh
-        </a>
-        <a href={alamat} target="_blank" rel="noreferrer"
-          className="rounded-lg bg-white/10 px-3 py-1.5 text-[12px] font-bold text-white transition hover:bg-white/20">
-          ↗ Tab baru
         </a>
         <button onClick={onTutup} className="rounded-lg px-2.5 py-1 text-xl leading-none text-white/70 hover:bg-white/10 hover:text-white">✕</button>
       </div>
@@ -96,24 +130,44 @@ export default function PenampilDokumen({ judul, kapal, golongan, berkas, mulai 
       <div className="relative flex-1 overflow-hidden px-3 pb-3" onMouseDown={(e) => e.stopPropagation()}>
         <div className="relative h-full w-full overflow-hidden rounded-2xl bg-white dark:bg-slate-950">
           {muat && (
-            <div className="absolute inset-0 z-10 grid place-items-center bg-white/80 dark:bg-slate-950/80">
-              <p className="text-[13px] font-semibold text-slate-500">
-                Mengambil berkas dari Google Drive…
-                <span className="mt-1 block text-[11.5px] font-normal text-slate-400">berkas besar bisa perlu beberapa detik</span>
-              </p>
+            <div className="absolute inset-0 z-10 grid place-items-center bg-white/80 px-6 text-center dark:bg-slate-950/80">
+              <div>
+                <p className="text-[13px] font-semibold text-slate-500">
+                  {pakaiDrive ? "Membuka pratinjau Google Drive…" : "Menarik berkas lewat server kantor…"}
+                </p>
+                {lama && (
+                  <div className="mt-3 rounded-xl bg-amber-50 px-4 py-3 ring-1 ring-amber-200">
+                    <p className="text-[12px] font-bold text-amber-900">Lama sekali ya.</p>
+                    <p className="mt-0.5 text-[11.5px] text-amber-800">Buka saja langsung di Google Drive.</p>
+                    <a href={f.url || alamatDrive.replace("/preview", "/view")} target="_blank" rel="noreferrer"
+                      className="mt-2 inline-block rounded-lg bg-[#16357f] px-4 py-1.5 text-[12px] font-bold text-white hover:bg-[#12296a]">
+                      ↗ Buka di Google Drive
+                    </a>
+                  </div>
+                )}
+              </div>
             </div>
           )}
           {rupa === "pdf" && (
             /* iframe, bukan <embed>: peramban yang tak punya penampil PDF bawaan
                tetap menawarkan unduhan alih-alih menampilkan kotak kosong */
-            <iframe src={alamat} title={f.nama} className="h-full w-full" onLoad={() => setMuat(false)} />
+            <iframe src={sumber} title={f.nama} className="h-full w-full" allow="autoplay" onLoad={() => setMuat(false)} />
           )}
-          {rupa === "gambar" && (
+          {rupa === "gambar" && pakaiDrive && (
+            /* <img> tidak bisa menarik berkas Drive yang tidak dibagikan umum;
+               pratinjaunya sendiri sanggup menggambar gambar dengan baik */
+            <iframe src={sumber} title={f.nama} className="h-full w-full" onLoad={() => setMuat(false)} />
+          )}
+          {rupa === "gambar" && !pakaiDrive && (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={alamat} alt={f.nama} onLoad={() => setMuat(false)} onError={() => setMuat(false)}
               className="mx-auto h-full w-auto max-w-full object-contain" />
           )}
-          {rupa === "lain" && (
+          {rupa === "lain" && pakaiDrive && (
+            /* Drive sanggup menggambar .docx dan .xlsx; peramban sendiri tidak */
+            <iframe src={sumber} title={f.nama} className="h-full w-full" onLoad={() => setMuat(false)} />
+          )}
+          {rupa === "lain" && !pakaiDrive && (
             <div className="grid h-full place-items-center px-6 text-center">
               <div>
                 <p className="text-5xl">{ikonBerkas(f.nama)}</p>

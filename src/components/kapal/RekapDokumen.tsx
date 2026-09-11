@@ -20,7 +20,7 @@ import PenampilDokumen, { ikonBerkas } from "./PenampilDokumen";
 export interface BarisDokumen {
   id: string; jenis: string; judul: string; tanggal: string; nomor: string;
   catatan: string; olehAkun: string; dibuatPada: string;
-  berkas: { nama: string; ukuran: number; fileId: string }[];
+  berkas: { nama: string; ukuran: number; fileId: string; url?: string }[];
 }
 export interface KapalDokumen { kapal: string; dokumen: { daftar: BarisDokumen[] } }
 

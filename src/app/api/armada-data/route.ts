@@ -47,7 +47,11 @@ export async function GET() {
       id: r.id, jenis: p.jenis || "lainnya", judul: p.judul || "", tanggal: p.tanggal || "",
       nomor: p.nomor || "", catatan: p.catatan || "", olehAkun: p.olehAkun || "",
       dibuatPada: p.dibuatPada || "",
-      berkas: (p.berkas || []).map((f: any) => ({ nama: f.nama, ukuran: f.ukuran, fileId: f.fileId })),
+      /* url Drive ikut: penampil memakainya untuk menggambar berkas langsung
+         dari Drive alih-alih menariknya lewat relay Apps Script */
+      berkas: (p.berkas || []).map((f: any) => ({
+        nama: f.nama, ukuran: f.ukuran, fileId: f.fileId, url: f.url || "",
+      })),
     }]);
   });
 
