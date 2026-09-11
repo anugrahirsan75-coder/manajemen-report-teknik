@@ -120,6 +120,7 @@ const KELOMPOK: Kelompok[] = [
           { href: "/material/isi", label: "Input item", icon: "pensil" },
         ],
       },
+      { href: "/nomor-io", icon: "dokumen", label: "Nomor IO Investasi", desc: "Permintaan IO & nomor aset" },
       { href: "/database-rab", icon: "basisData", label: "Database RAB", desc: "Harga acuan 2024–2026" },
       { href: "/monitoring", icon: "dunia", label: "Monitoring Pengadaan", desc: "Halaman terbuka untuk umum" },
     ],
