@@ -1,6 +1,6 @@
 "use client";
 /**
- * Data Isian Kapal — sisi KANTOR dari Portal Kapal.
+ * Dokumen Kapal — sisi KANTOR dari Portal Kapal.
  *
  * Yang dikerjakan halaman ini satu hal: menjawab "kapal mana yang perlu
  * disiapkan barangnya" sebelum kapal itu memintanya. Stok filter yang menipis
@@ -18,6 +18,9 @@ import { NADA_ALKES, sisaHariAlkes, tingkatAlkes } from "@/lib/portal/types";
 import { jenisDokumen } from "@/lib/portal/dokumen";
 import UnggahDokumenKantor from "@/components/kapal/UnggahDokumenKantor";
 import RekapDokumen from "@/components/kapal/RekapDokumen";
+import KartuDokumen, { DokumenTampil } from "@/components/kapal/KartuDokumen";
+import PenampilDokumen from "@/components/kapal/PenampilDokumen";
+import { jenisDokumen as golonganDokumen } from "@/lib/portal/dokumen";
 
 interface DataKapal {
   kapal: string;
@@ -45,7 +48,8 @@ export default function DataIsianKapal() {
   const [armada, setArmada] = useState<DataKapal[]>([]);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
-  const [rupa, setRupa] = useState<"stok" | "alkes" | "dokumen">("stok");
+  /* dokumen jadi tampilan bawaan: itu yang paling sering dicari dari layar ini */
+  const [rupa, setRupa] = useState<"stok" | "alkes" | "dokumen">("dokumen");
   /** kapan jawaban terakhir sampai — supaya halaman basi bisa dikenali */
   const [dimuatPada, setDimuatPada] = useState<Date | null>(null);
   const [buka, setBuka] = useState("");
@@ -58,6 +62,10 @@ export default function DataIsianKapal() {
   /* daftar per kapal menjawab "kapal ini kirim apa"; rekap menjawab "armada ini
      kurang apa" — dua pertanyaan berbeda yang tak muat di satu tabel */
   const [rekap, setRekap] = useState(false);
+  /** dokumen yang sedang dibuka berkasnya, beserta berkas keberapa */
+  const [lihat, setLihat] = useState<{ d: DokumenTampil; kapal: string; ke: number } | null>(null);
+  /** pencarian di dalam satu kapal yang barisnya sedang terbuka */
+  const [cariDok, setCariDok] = useState("");
   const [kabar, setKabar] = useState("");
 
   const ambil = useCallback(async () => {
@@ -129,10 +137,10 @@ export default function DataIsianKapal() {
             <Ikon nama="kapal" className="h-5 w-5" />
           </span>
           <div className="min-w-[16rem] flex-1">
-            <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Data Isian Kapal</h1>
+            <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Dokumen Kapal</h1>
             <p className="text-[11.5px] text-slate-500">
-              Stok filter, alat kesehatan, dan dokumen kapal — diisi awak lewat Portal Kapal,
-              atau diunggah sendiri dari kantor.
+              Arsip berkas kapal di luar borang bulanan — plus stok filter dan alat kesehatan.
+              Diisi awak lewat Portal Kapal, atau diunggah sendiri dari kantor.
             </p>
             <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-slate-400">
               <span className={`h-1.5 w-1.5 rounded-full ${muat ? "animate-pulse bg-sky-500" : "bg-emerald-500"}`} />
@@ -142,7 +150,7 @@ export default function DataIsianKapal() {
             </p>
           </div>
           <div className="flex overflow-hidden rounded-xl ring-1 ring-slate-300 dark:ring-slate-700">
-            {([["stok", "Stok Filter"], ["alkes", "Alat Kesehatan"], ["dokumen", "Dokumen Kapal"]] as const).map(([id, l]) => (
+            {([["dokumen", "Dokumen"], ["stok", "Stok Filter"], ["alkes", "Alat Kesehatan"]] as const).map(([id, l]) => (
               <button key={id} onClick={() => { setRupa(id); setBuka(""); }}
                 className={`px-3 py-2 text-[11.5px] font-bold transition ${
                   rupa === id ? "bg-[#16357f] text-white" : "bg-white text-slate-600 hover:bg-slate-50 dark:bg-slate-800 dark:text-slate-300"}`}>
@@ -231,7 +239,7 @@ export default function DataIsianKapal() {
           return (
             <li key={a.kapal} className={`overflow-hidden rounded-2xl bg-white shadow-sm ring-1 dark:bg-slate-900 ${
               !d.adaIsi ? "ring-rose-300 dark:ring-rose-900" : perhatian ? "ring-amber-300 dark:ring-amber-900" : "ring-slate-200 dark:ring-slate-800"}`}>
-              <button onClick={() => setBuka(terbuka ? "" : a.kapal)}
+              <button onClick={() => { setBuka(terbuka ? "" : a.kapal); setCariDok(""); }}
                 className="flex w-full flex-wrap items-center gap-3 px-4 py-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60">
                 <span className="min-w-[10rem] text-[15px] font-black tracking-tight text-slate-900 dark:text-white">
                   {pendek(a.kapal)}
@@ -272,58 +280,45 @@ export default function DataIsianKapal() {
 
               {terbuka && (d.adaIsi || rupa === "dokumen") && (
                 <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
-                  {rupa === "dokumen" ? (
+                  {rupa === "dokumen" ? (() => {
+                    const k = cariDok.trim().toLowerCase();
+                    const tampil = dok.daftar.filter((x: any) =>
+                      !k || `${x.judul} ${x.nomor} ${x.catatan} ${golonganDokumen(x.jenis)?.label || ""}`.toLowerCase().includes(k));
+                    return (
                     <>
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                    <div className="mb-2.5 flex flex-wrap items-center gap-2">
                       <button onClick={() => setUnggah(a.kapal)}
                         className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11.5px] font-bold text-white transition hover:bg-emerald-700">
-                        ⬆️ Unggah dokumen untuk {pendek(a.kapal)}
+                        ⬆️ Unggah dokumen
                       </button>
-                      {!dok.jumlah && <span className="text-[11.5px] text-slate-500">Belum ada dokumen tersimpan untuk kapal ini.</span>}
+                      {dok.jumlah > 3 && (
+                        <input value={cariDok} onChange={(e) => setCariDok(e.target.value)}
+                          placeholder="Cari judul / nomor / golongan…"
+                          className="min-w-[12rem] flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[#16357f] dark:border-slate-600 dark:bg-slate-900 dark:text-white" />
+                      )}
+                      <span className="text-[11.5px] text-slate-500">
+                        {k ? `${tampil.length} dari ${dok.jumlah} dokumen` : `${dok.jumlah} dokumen · ${dok.berkas} berkas`}
+                      </span>
                     </div>
-                    <ul className="space-y-1.5">
-                      {dok.daftar.map((x: any) => {
-                        const j = jenisDokumen(x.jenis);
-                        return (
-                          <li key={x.id} className="rounded-xl bg-white p-2.5 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
-                            <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                              <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10.5px] font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                                {j?.ikon} {j?.label || x.jenis}
-                              </span>
-                              <span className="text-[13px] font-bold text-slate-900 dark:text-white">{x.judul}</span>
-                              {x.nomor && <span className="text-[11px] text-slate-500">· {x.nomor}</span>}
-                              <span className="ml-auto text-[11px] text-slate-500">{x.tanggal || "—"}</span>
-                            </div>
-                            {x.catatan && <p className="mt-0.5 text-[11.5px] text-slate-600 dark:text-slate-300">{x.catatan}</p>}
-                            {!x.berkas.length ? (
-                              <p className="mt-1 text-[11px] font-semibold text-amber-800">Unggahan terputus — berkasnya belum sampai.</p>
-                            ) : (
-                              <ul className="mt-1 flex flex-wrap gap-1.5">
-                                {x.berkas.map((f: any) => (
-                                  <li key={f.fileId}>
-                                    {/* berkasnya dibuka lewat aplikasi, bukan tautan Drive:
-                                        arsip cabang tidak dibagikan ke luar kantor */}
-                                    <a href={`/api/lapor/isi?fileId=${encodeURIComponent(f.fileId)}`} target="_blank" rel="noreferrer"
-                                      className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-1 text-[11px] font-semibold text-[#16357f] transition hover:bg-slate-200 dark:bg-slate-800 dark:text-sky-300">
-                                      📄 {String(f.nama).replace(/\.[a-z0-9]+$/i, "").slice(0, 40)}
-                                    </a>
-                                  </li>
-                                ))}
-                              </ul>
-                            )}
-                            <div className="mt-1 flex items-center gap-2">
-                              <p className="text-[10.5px] text-slate-400">diunggah {x.olehAkun || "—"}</p>
-                              <button onClick={() => hapusDokumen(x.id, x.judul)}
-                                className="ml-auto text-[10.5px] font-bold text-rose-600 hover:underline">
-                                Hapus catatan
-                              </button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+
+                    {!tampil.length ? (
+                      <p className="rounded-xl bg-white px-4 py-8 text-center text-[12.5px] text-slate-500 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
+                        {dok.jumlah
+                          ? "Tidak ada dokumen yang cocok dengan pencarian."
+                          : "Belum ada dokumen. Unggah berita acara, temuan, atau salinan sertifikat kapal ini."}
+                      </p>
+                    ) : (
+                      <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                        {tampil.map((x: any) => (
+                          <KartuDokumen key={x.id} d={x as DokumenTampil}
+                            onLihat={(d, ke) => setLihat({ d, kapal: a.kapal, ke })}
+                            onHapus={(d) => hapusDokumen(d.id, d.judul)} />
+                        ))}
+                      </div>
+                    )}
                     </>
-                  ) : rupa === "stok" ? (
+                    );
+                  })() : rupa === "stok" ? (
                     <div className="grid gap-4 lg:grid-cols-2">
                       <div>
                         <h3 className="mb-1.5 text-[12px] font-black uppercase tracking-wide text-slate-600">Stok filter</h3>
@@ -419,6 +414,17 @@ export default function DataIsianKapal() {
           );
         })}
       </ul>
+      )}
+
+      {lihat && (
+        <PenampilDokumen
+          judul={lihat.d.judul}
+          kapal={lihat.kapal}
+          golongan={golonganDokumen(lihat.d.jenis)?.label || lihat.d.jenis}
+          berkas={lihat.d.berkas}
+          mulai={lihat.ke}
+          onTutup={() => setLihat(null)}
+        />
       )}
 
       {muat && !armada.length && (

@@ -15,6 +15,7 @@
  */
 import { useMemo, useState } from "react";
 import { JENIS_DOKUMEN, jenisDokumen } from "@/lib/portal/dokumen";
+import PenampilDokumen, { ikonBerkas } from "./PenampilDokumen";
 
 export interface BarisDokumen {
   id: string; jenis: string; judul: string; tanggal: string; nomor: string;
@@ -41,6 +42,7 @@ export default function RekapDokumen({ armada }: { armada: KapalDokumen[] }) {
   const [sampai, setSampai] = useState("");
   const [cari, setCari] = useState("");
   const [unduh, setUnduh] = useState(false);
+  const [lihat, setLihat] = useState<{ d: any; ke: number } | null>(null);
 
   /* satu daftar datar, karena semua pertanyaan rekap dijawab dari bentuk ini */
   const semua = useMemo(
@@ -244,7 +246,7 @@ export default function RekapDokumen({ armada }: { armada: KapalDokumen[] }) {
                       <td className="whitespace-nowrap px-3 py-2 font-semibold text-slate-600 dark:text-slate-300">{tglIndo(d.tanggal)}</td>
                       <td className="whitespace-nowrap px-3 py-2 font-bold text-slate-800 dark:text-slate-100">{pendek(d.kapal)}</td>
                       <td className="whitespace-nowrap px-3 py-2">
-                        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-bold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+                        <span className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-[11px] font-bold ring-1 ${j?.warna || "bg-slate-100 text-slate-700 ring-slate-200"}`}>
                           {j?.ikon} {j?.label || d.jenis}
                         </span>
                       </td>
@@ -258,13 +260,13 @@ export default function RekapDokumen({ armada }: { armada: KapalDokumen[] }) {
                           <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[11px] font-bold text-amber-800">unggahan putus</span>
                         ) : (
                           <ul className="flex flex-wrap gap-1">
-                            {d.berkas.map((f) => (
+                            {d.berkas.map((f, n) => (
                               <li key={f.fileId}>
-                                <a href={`/api/lapor/isi?fileId=${encodeURIComponent(f.fileId)}`} target="_blank" rel="noreferrer"
-                                  title={f.nama}
-                                  className="inline-flex items-center gap-1 rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-[#16357f] transition hover:bg-slate-200 dark:bg-slate-800 dark:text-sky-300">
-                                  📄 Lihat
-                                </a>
+                                <button onClick={() => setLihat({ d, ke: n })} title={f.nama}
+                                  className="inline-flex max-w-[13rem] items-center gap-1 rounded-lg bg-slate-100 px-2 py-0.5 text-[11px] font-semibold text-[#16357f] transition hover:bg-slate-200 dark:bg-slate-800 dark:text-sky-300">
+                                  <span>{ikonBerkas(f.nama)}</span>
+                                  <span className="truncate">{f.nama.replace(/\.[a-z0-9]+$/i, "")}</span>
+                                </button>
                               </li>
                             ))}
                           </ul>
@@ -279,6 +281,17 @@ export default function RekapDokumen({ armada }: { armada: KapalDokumen[] }) {
           </div>
         )}
       </div>
+
+      {lihat && (
+        <PenampilDokumen
+          judul={lihat.d.judul}
+          kapal={lihat.d.kapal}
+          golongan={jenisDokumen(lihat.d.jenis)?.label || lihat.d.jenis}
+          berkas={lihat.d.berkas}
+          mulai={lihat.ke}
+          onTutup={() => setLihat(null)}
+        />
+      )}
     </div>
   );
 }

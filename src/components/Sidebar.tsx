@@ -78,7 +78,7 @@ const KELOMPOK: Kelompok[] = [
       { href: "/armada", icon: "jangkar", label: "Profil Armada", desc: "Spesifikasi & inventaris" },
       { href: "/kapal", icon: "kapal", label: "Data Kapal", desc: "Isi & ubah data kapal" },
       { href: "/sensor", icon: "sinyal", label: "Monitoring Sensor", desc: "Sensor Regional 4" },
-      { href: "/armada-data", icon: "kotak", label: "Data Isian Kapal", desc: "Stok filter & alat kesehatan" },
+      { href: "/armada-data", icon: "kotak", label: "Dokumen Kapal", desc: "Arsip berkas, stok & alkes" },
     ],
   },
   {
