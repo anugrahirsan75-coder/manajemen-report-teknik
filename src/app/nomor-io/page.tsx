@@ -162,18 +162,26 @@ export default function NomorIoPage() {
     const k = cari.trim().toLowerCase();
     return periodeAll
       .flatMap((p) => p.baris.map((b) => ({ ...b, periode: p.periode })))
-      /* Syaratnya NOMOR IO-nya ada, bukan sekadar "bukan menunggu": satu usulan
-         yang nomor asetnya sudah terisi lebih dulu akan lolos oleh tahapnya
-         padahal nomor IO-nya belum turun. */
-      .filter((b) => !!String(b.noIoSap || "").trim())
+      /*
+       * Bawaan: hanya yang nomornya sudah terbit. Syaratnya NOMOR IO-nya ada,
+       * bukan sekadar "bukan menunggu" — satu usulan yang nomor asetnya kebetulan
+       * sudah terisi akan lolos oleh tahapnya padahal nomor IO-nya belum turun.
+       */
+      .filter((b) => {
+        const punya = !!String(b.noIoSap || "").trim();
+        if (sarTahap === "semua") return true;
+        if (sarTahap === "menunggu") return !punya;
+        if (sarTahap === "ada-aset") return punya && !!String(b.noAsetSap || "").trim();
+        return punya;
+      })
       .filter((b) => !sarKapal || b.kapal === sarKapal)
-      .filter((b) => !sarTahap || tahapIO(b) === sarTahap)
       .filter((b) => !k || `${b.deskripsi} ${b.spesifikasi} ${b.kapal} ${b.noIoSap} ${b.noAsetSap} ${b.assetClass} ${labelAsset(b.assetClass)}`.toLowerCase().includes(k))
       .sort((a, b) => b.periode.localeCompare(a.periode) || a.kapal.localeCompare(b.kapal));
   }, [periodeAll, cari, sarKapal, sarTahap]);
 
   const ringkasSemua = useMemo(() => ({
     item: semua.length,
+    belum: semua.filter((b) => !String(b.noIoSap || "").trim()).length,
     /* satu nomor bisa tertulis pada dua baris kalau di borangnya salah tempel;
        yang dihitung sebagai "nomor" tetap nomornya, bukan barisnya */
     nomor: new Set(semua.map((b) => b.noIoSap.trim())).size,
@@ -198,8 +206,8 @@ export default function NomorIoPage() {
             <Link href="/dashboard" className="text-[11px] text-slate-400 hover:text-[#16357f]">‹ Dashboard</Link>
             <h1 className="text-lg font-black tracking-tight text-slate-900 dark:text-white">Nomor IO Investasi</h1>
             <p className="text-[11.5px] text-slate-500">
-              Nomor IO &amp; nomor aset SAP belanja investasi kapal. <b>Semua periode</b> memuat nomor
-              yang sudah terbit; usulan yang nomornya belum turun ada di <b>Bulan ini</b>.
+              Nomor IO &amp; nomor aset SAP belanja investasi kapal. <b>Semua periode</b> menampilkan nomor
+              yang sudah terbit; untuk melihat yang masih menunggu, ganti saringan <b>Tahap</b>.
             </p>
           </div>
 
@@ -244,10 +252,13 @@ export default function NomorIoPage() {
               ["Menunggu nomor IO", String(ringkas.menunggu), "text-amber-700"],
             ]
             : [
-              ["Nomor IO terbit", String(ringkasSemua.nomor), "text-[#16357f]"],
+              [ringkasSemua.belum ? "Baris tersaring" : "Nomor IO terbit",
+               String(ringkasSemua.belum ? ringkasSemua.item : ringkasSemua.nomor), "text-[#16357f]"],
               ["Nilai tersaring", rupiah(ringkasSemua.nilai), "text-emerald-700"],
               ["Kapal terwakili", `${ringkasSemua.kapal}/${KAPAL_ANGGARAN.length}`, "text-slate-700 dark:text-slate-200"],
-              ["Nomor aset terbit", String(ringkasSemua.selesai), "text-sky-700"],
+              ringkasSemua.belum
+                ? ["Belum ada nomor IO", String(ringkasSemua.belum), "text-amber-700"]
+                : ["Nomor aset terbit", String(ringkasSemua.selesai), "text-sky-700"],
             ]).map(([l, n, w]) => (
             <div key={l} className="rounded-xl bg-slate-50 px-3 py-2 ring-1 ring-slate-200 dark:bg-slate-800/60 dark:ring-slate-700">
               <p className={`truncate text-[19px] font-black tabular-nums ${w}`} title={n}>{n}</p>
@@ -538,9 +549,10 @@ function SemuaPeriode({ data, cari, setCari, sarKapal, setSarKapal, sarTahap, se
         <label className="flex flex-col gap-1">
           <span className="text-[10px] font-bold uppercase tracking-wide text-slate-500">Tahap</span>
           <select value={sarTahap} onChange={(e) => setSarTahap(e.target.value)} className={gaya}>
-            <option value="">Semua tahap</option>
-            <option value="ada-io">Nomor IO turun</option>
-            <option value="ada-aset">Nomor aset terbit</option>
+            <option value="">Nomor sudah terbit</option>
+            <option value="ada-aset">Nomor aset sudah terbit</option>
+            <option value="menunggu">Belum ada nomor IO</option>
+            <option value="semua">Tampilkan semua</option>
           </select>
         </label>
         {(cari || sarKapal || sarTahap) && (
