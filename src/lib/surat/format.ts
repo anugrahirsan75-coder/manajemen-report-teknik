@@ -95,3 +95,56 @@ export const namaKapalSurat = (v: string) => {
   if (!t) return "";
   return /^kmp\.?\s/i.test(t) ? t.replace(/^kmp\.?\s*/i, "KMP. ") : `KMP. ${t}`;
 };
+
+/**
+ * Aritmetika tanggal untuk surat yang berhitung hari — tambahan waktu docking
+ * dan denda keterlambatan.
+ *
+ * Dihitung dalam UTC, bukan waktu setempat. `new Date("2026-05-24")` dibaca
+ * sebagai tengah malam UTC, lalu penambahan hari memakai waktu setempat akan
+ * menggeser tanggalnya satu hari di zona WIT — surat yang menyebut batas
+ * kontrak meleset sehari bukan salah ketik yang murah.
+ */
+const HARI_MS = 86400000;
+
+const keUtc = (iso: string): number | null => {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((iso || "").trim());
+  return m ? Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3])) : null;
+};
+
+/** "2026-05-24" digeser 14 hari -> "2026-06-07"; isian bukan tanggal dikembalikan kosong */
+export function geserHari(iso: string, n: number): string {
+  const t = keUtc(iso);
+  if (t === null || !isFinite(n)) return "";
+  return new Date(t + Math.round(n) * HARI_MS).toISOString().slice(0, 10);
+}
+
+/** jumlah hari dari `awal` ke `akhir`; negatif bila akhir mendahului awal */
+export function selisihHari(awal: string, akhir: string): number {
+  const a = keUtc(awal);
+  const b = keUtc(akhir);
+  if (a === null || b === null) return 0;
+  return Math.round((b - a) / HARI_MS);
+}
+
+/**
+ * Rentang inklusif sepanjang `hari` yang dimulai pada `mulai`.
+ *
+ * Jangka waktu docking dihitung secara inklusif: 15 hari terhitung 24 Mei
+ * berakhir 7 Juni, bukan 8 Juni. Menambah `hari` mentah-mentah membuat setiap
+ * surat kelebihan satu hari, dan pada surat denda satu hari itu berupa uang.
+ */
+export const akhirRentang = (mulai: string, hari: number) => geserHari(mulai, hari - 1);
+
+/** "0,2" / "0.2" -> 0.2 — isian persen boleh ditulis dengan koma */
+export const keDesimal = (v: unknown): number => {
+  const t = String(v ?? "").replace(/\s/g, "").replace(",", ".").replace(/[^\d.-]/g, "");
+  const n = Number(t);
+  return isFinite(n) ? n : 0;
+};
+
+/** 1.4 -> "1,4" — persen ditulis dengan koma seperti pada surat cabang */
+export const persenSurat = (n: number): string => {
+  const bulat = Math.round(n * 1000) / 1000;
+  return String(bulat).replace(".", ",");
+};

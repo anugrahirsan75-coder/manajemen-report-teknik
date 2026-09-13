@@ -21,3 +21,6 @@ public/backup/
 # model bahasa tesseract.js (diunduh sendiri saat skrip OCR jalan)
 ind.traineddata
 *.traineddata
+
+# Berkas pendukung audit docking (438 MB PDF arsip cabang, bukan kode)
+/Persiapan Audit/

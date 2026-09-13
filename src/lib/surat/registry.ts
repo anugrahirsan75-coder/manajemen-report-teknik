@@ -17,6 +17,8 @@ import { penunjukanLangsung } from "./templates/penunjukanLangsung";
 import { penunjukanPengadaan } from "./templates/penunjukanPengadaan";
 import { penunjukanRampdoor } from "./templates/penunjukanRampdoor";
 import { penunjukanGabungan } from "./templates/penunjukanGabungan";
+import { tambahanHariDock } from "./templates/tambahanHariDock";
+import { dendaDocking } from "./templates/dendaDocking";
 import { exemptionStability } from "./templates/exemptionStability";
 import { suratKustom } from "./templates/suratKustom";
 
@@ -27,6 +29,8 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   penunjukanPengadaan,
   penunjukanRampdoor,
   penunjukanGabungan,
+  tambahanHariDock,
+  dendaDocking,
   realisasiRutin,
   classMatter,
   surveyStatutori,
