@@ -304,9 +304,19 @@ class Kanvas {
 
   atas = (y: number) => HAL.tinggi - y;
 
-  perabot() {
+  /**
+   * Perabot halaman: logo, tagline, garis, dan alamat kaki.
+   *
+   * LOGO HANYA DI HALAMAN PERTAMA. Pada halaman lanjutan isinya mulai dari
+   * atas kertas, tepat di tempat logo berdiri — keduanya saling menindih, dan
+   * kalimat penutup tercetak di atas gambar logo. Kop hanya perlu sekali;
+   * halaman lanjutan cukup membawa kaki suratnya.
+   */
+  perabot(denganLogo = true) {
     const d = this.doc;
-    d.addImage(this.aset.logo, "JPEG", LOGO.x, this.atas(LOGO.bawah + LOGO.tinggi), LOGO.lebar, LOGO.tinggi);
+    if (denganLogo) {
+      d.addImage(this.aset.logo, "JPEG", LOGO.x, this.atas(LOGO.bawah + LOGO.tinggi), LOGO.lebar, LOGO.tinggi);
+    }
     d.addImage(this.aset.tagline, "JPEG", TAGLINE.x, this.atas(TAGLINE.bawah + TAGLINE.tinggi), TAGLINE.lebar, TAGLINE.tinggi);
     d.addImage(this.aset.garis, "JPEG", GARIS.x, this.atas(GARIS.bawah + GARIS.tinggi), GARIS.lebar, GARIS.tinggi);
     KAKI.forEach(([teks, y, ukuran, warna, tebal, miring]) => {
@@ -321,7 +331,7 @@ class Kanvas {
 
   halamanBaru() {
     this.doc.addPage();
-    this.perabot();
+    this.perabot(false);
     this.y = Y_HALAMAN_LANJUT;
     /*
      * Penanda baris terakhir ikut berpindah halaman.
