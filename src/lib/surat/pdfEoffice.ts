@@ -14,12 +14,11 @@
  * itu disimpan di public/eoffice/font — sudah dipangkas ke Latin saja, 70 KB
  * bertiga — dan baru diunduh ketika tombol PDF ditekan.
  *
- * QR TANDA TANGAN TIDAK DIBUBUHKAN. QR pada surat e-office bukan gambar hiasan:
- * isinya nomor TTD, nama penyetuju, nomor surat, dan detik persetujuannya —
- * catatan pengesahan untuk SATU surat tertentu. Menyalinnya ke surat lain berarti
- * menempelkan persetujuan seseorang pada dokumen yang tidak pernah ia setujui.
- * Ruangnya dibiarkan kosong, persis seperti surat konsep yang jadi acuan —
- * QR-nya terbit sendiri saat surat disahkan di e-office.
+ * QR TANDA TANGAN TIDAK DISALIN. QR pada surat e-office yang sudah terbit adalah
+ * catatan pengesahan milik satu surat — lihat naskahQrKonsep() di bawah. Yang
+ * dibubuhkan di sini QR KONSEP: identitas berkas, tanpa baris persetujuan, dengan
+ * keterangan "belum disahkan" di bawahnya. Pengesahan sungguhan terbit dari
+ * e-office saat pejabatnya benar-benar menyetujui.
  */
 import type { jsPDF as JsPdfTipe } from "jspdf";
 
@@ -474,6 +473,60 @@ export interface KopSurat {
   penandaJabatan: string;
   penandaNama: string;
   tembusan: string[];
+  /** gambar QR konsep di ruang tanda tangan (lihat buatQrKonsep) */
+  qrKonsep: boolean;
+}
+
+/**
+ * QR untuk surat KONSEP — penanda berkas, bukan tanda tangan.
+ *
+ * QR pada surat e-office yang sudah terbit berisi catatan pengesahan:
+ *
+ *     ID: TTD10198153430681902052026080123
+ *     ApprovedBy: GENERAL MANAGER TERNATE (MUSHAR USMAN)
+ *     Nomor Surat: SE.00023/PA.111/ASDP-TTE/2026
+ *     Tanggal Surat: 2026/05/02 07:48:50
+ *
+ * Nomor TTD, nama penyetuju, nomor surat, dan detik persetujuannya menunjuk
+ * pada SATU surat. Menyalinnya ke surat lain — atau menerbitkan yang baru atas
+ * nama orang yang sama — membuat surat itu menyatakan persetujuan yang tidak
+ * pernah diberikan. Pengesahan sungguhan hanya boleh lahir dari e-office pada
+ * saat pejabatnya benar-benar menyetujui.
+ *
+ * Yang dibuat di sini karena itu tidak memuat baris ApprovedBy sama sekali.
+ * Isinya identitas berkas konsep: nomor surat yang dituju, perihal, tanggal
+ * penyusunan, dan kepada siapa surat ini akan dimintakan tanda tangan —
+ * berguna untuk menelusuri konsep yang beredar, dan tidak mengaku apa pun.
+ */
+/*
+ * Isinya sependek mungkin, dan itu bukan soal gaya.
+ *
+ * Ruang yang tersedia antara jabatan dan nama hanya 59,4 titik, jadi QR-nya
+ * paling besar 42 titik — sekitar 1,5 cm. Muatan panjang memaksa QR memakai
+ * banyak modul, dan pada ukuran itu tiap modul menyusut di bawah 0,3 mm:
+ * kameranya tidak bisa lagi membacanya. Percobaan pertama memuat perihal
+ * lengkap dan hasilnya memang gagal dipindai.
+ *
+ * Empat baris ini muat pada QR 37 modul — sekitar 0,4 mm per modul pada
+ * 42 titik, cukup untuk dipindai dari cetakan.
+ */
+function naskahQrKonsep(kop: KopSurat): string {
+  return [
+    "KONSEP BELUM DISAHKAN",
+    kop.nomor,
+    kop.tanggal,
+    `Untuk TTD: ${kop.penandaNama.toUpperCase()}`,
+  ].join("\n");
+}
+
+async function buatQrKonsep(kop: KopSurat): Promise<string> {
+  const QR = await import("qrcode");
+  return QR.toDataURL(naskahQrKonsep(kop), {
+    errorCorrectionLevel: "L",
+    margin: 0,
+    width: 512,
+    color: { dark: "#000000", light: "#FFFFFF" },
+  });
 }
 
 function gambarKepala(k: Kanvas, kop: KopSurat) {
@@ -530,7 +583,7 @@ function gambarKepala(k: Kanvas, kop: KopSurat) {
 }
 
 /* ── tanda tangan & tembusan ─────────────────────────────────────────────── */
-function gambarTandaTangan(k: Kanvas, kop: KopSurat) {
+function gambarTandaTangan(k: Kanvas, kop: KopSurat, qrKonsep: string) {
   const d = k.doc;
   const tinggi = TTD.jarakJabatan + TTD.tinggiQr + 12;
   k.muat(tinggi + kop.tembusan.length * TEMBUSAN.spasi + 24);
@@ -541,18 +594,27 @@ function gambarTandaTangan(k: Kanvas, kop: KopSurat) {
   const jabatan = kop.penandaJabatan.toUpperCase();
   d.text(jabatan, TTD.tengahX - d.getTextWidth(jabatan) / 2, k.atas(k.y));
 
-  /*
-   * Ruang antara jabatan dan nama DIBIARKAN KOSONG.
-   *
-   * Begitulah bentuk surat konsep yang jadi acuan: nomor masih titik-titik,
-   * ruang tanda tangan masih kosong. QR-nya dibubuhkan e-office sendiri pada
-   * saat surat disahkan, karena isinya memang milik peristiwa pengesahan itu —
-   * nomor TTD, nama penyetuju, nomor surat, dan detiknya.
-   *
-   * Sempat digambar kotak putus-putus sebagai penanda; hasilnya justru terlihat
-   * seperti berkas gagal cetak. Kosong lebih jujur dan lebih rapi.
-   */
+  const yJabatan = k.y;
   k.y -= TTD.tinggiQr;
+
+  if (qrKonsep) {
+    /*
+     * Ukurannya mengikuti ruang yang tersedia, bukan angka pilihan: jarak
+     * jabatan ke nama hanya 59,4 titik, dan QR sebesar itu persis akan
+     * menindih keduanya. Sisakan tempat untuk keterangan di bawahnya —
+     * keterangan itu yang membedakannya dari tanda tangan.
+     */
+    const sisi = 42;
+    const atasQr = k.atas(yJabatan - 6);
+    d.addImage(qrKonsep, "PNG", TTD.tengahX - sisi / 2, atasQr, sisi, sisi);
+
+    d.setFont(HURUF, "normal");
+    d.setFontSize(4.2);
+    d.setTextColor("#777777");
+    const ket = "KONSEP — belum disahkan e-office";
+    d.text(ket, TTD.tengahX - d.getTextWidth(ket) / 2, atasQr + sisi + 3.0);
+    d.setTextColor("#000000");
+  }
 
   d.setFont(HURUF_TEBAL, "normal");
   d.setFontSize(BADAN.ukuran);
@@ -590,11 +652,13 @@ export async function buatPdfEoffice(htmlBadan: string, kop: KopSurat): Promise<
   doc.addFont("DejaVuSansCondensed-Oblique.ttf", HURUF_MIRING, "normal");
   doc.setFont(HURUF, "normal");
 
+  const qr = kop.qrKonsep ? await buatQrKonsep(kop) : "";
+
   const k = new Kanvas(doc as unknown as JsPdfTipe, aset);
   k.perabot();
   gambarKepala(k, kop);
   gambarBadan(k, htmlBadan);
-  gambarTandaTangan(k, kop);
+  gambarTandaTangan(k, kop, qr);
 
   return doc.output("blob");
 }

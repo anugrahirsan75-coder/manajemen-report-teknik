@@ -196,6 +196,7 @@ export default function BuatSuratEOffice() {
         penandaJabatan: kop.jabatanPenanda,
         penandaNama: kop.namaPenanda,
         tembusan: kop.tembusan.split("\n").map((x) => x.trim()).filter(Boolean),
+        qrKonsep: kop.qrKonsep,
       }, `${templat.id}-${kop.tanggal || new Date().toISOString().slice(0, 10)}.pdf`);
       beritahu("PDF konsep surat terunduh.");
     } catch (e: any) {

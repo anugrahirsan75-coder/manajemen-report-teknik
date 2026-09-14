@@ -24,6 +24,7 @@ export interface DataKop {
   namaPenanda: string;
   jabatanPenanda: string;
   tembusan: string;
+  qrKonsep: boolean;
 }
 
 export const kopAwal = (): DataKop => ({
@@ -36,6 +37,7 @@ export const kopAwal = (): DataKop => ({
   namaPenanda: PENANDA_TANGAN[0].nama,
   jabatanPenanda: PENANDA_TANGAN[0].jabatan,
   tembusan: "",
+  qrKonsep: true,
 });
 
 const KELAS = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
@@ -146,6 +148,18 @@ export default function DataKopSurat({ kop, ubah, bayanganPerihal, bayanganJabat
           ))}
         </div>
       </div>
+
+      <label className="sm:col-span-2 flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
+        <input type="checkbox" checked={kop.qrKonsep} onChange={(e) => ubah({ qrKonsep: e.target.checked })} className="mt-0.5" />
+        <span className="text-slate-700 dark:text-slate-200">
+          Bubuhkan QR konsep di ruang tanda tangan
+          <span className="block text-[11px] text-slate-400">
+            Memuat nomor surat, perihal, tanggal penyusunan, dan kepada siapa surat akan dimintakan
+            tanda tangan — diberi keterangan <b>belum disahkan</b>. Ini penanda berkas konsep, bukan
+            tanda tangan elektronik: QR pengesahan terbit dari e-office saat pejabatnya menyetujui.
+          </span>
+        </span>
+      </label>
 
     </div>
   );
