@@ -150,7 +150,7 @@ export default function DataKopSurat({ kop, ubah, bayanganPerihal, bayanganJabat
       </div>
 
       <label className="sm:col-span-2 flex items-start gap-2 rounded-xl bg-slate-50 px-3 py-2 text-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700">
-        <input type="checkbox" checked={kop.qrKonsep} onChange={(e) => ubah({ qrKonsep: e.target.checked })} className="mt-0.5" />
+        <input type="checkbox" checked={kop.qrKonsep !== false} onChange={(e) => ubah({ qrKonsep: e.target.checked })} className="mt-0.5" />
         <span className="text-slate-700 dark:text-slate-200">
           Bubuhkan QR konsep di ruang tanda tangan
           <span className="block text-[11px] text-slate-400">
