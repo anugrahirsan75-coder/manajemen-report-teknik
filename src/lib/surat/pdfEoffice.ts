@@ -44,9 +44,23 @@ const KEPALA = {
   kananX: 351.3, ythX: 338.2, ukuran: 7.5, spasi: 9, spasiBlok: 12,
 };
 
+/**
+ * Tepi kanan badan surat.
+ *
+ * Semula 573,67 — batas terjauh yang pernah dicapai satu baris pada surat
+ * acuan. Hasilnya menyisakan 21 titik ke pinggir kertas, sekitar tujuh
+ * milimeter, dan baris panjang terlihat menempel ke tepi.
+ *
+ * Sekarang dicerminkan dari tepi kiri kop surat (71,62 titik): 595,276 − 71,62
+ * = 523,66. Blok teksnya jadi seimbang kiri-kanan, dan tidak ada lagi baris
+ * yang mepet. Konsekuensinya baris memenggal lebih awal daripada surat asli —
+ * itu memang pertukarannya.
+ */
+const TEPI_KERTAS = 71.62;
+
 const BADAN = {
   yMulai: 613.7, nomorX: 89, teksX: 101.6, subHurufX: 134, subTeksX: 146.6,
-  kananX: 573.67, ukuran: 8.2, spasi: 14.85, ukuranTabel: 7,
+  kananX: HAL.lebar - TEPI_KERTAS, ukuran: 8.2, spasi: 14.85, ukuranTabel: 7,
 };
 
 /**
@@ -663,10 +677,10 @@ function gambarKepala(k: Kanvas, kop: KopSurat) {
   tulis("Yth.", KEPALA.ythX, yKanan);
   // jabatan tujuan selalu huruf besar, mengikuti surat cabang yang sudah terbit
   const barisTujuan = susunBaris(d, [{ teks: kop.tujuanJabatan.toUpperCase(), tebal: false, miring: false }],
-    HAL.lebar - 45 - KEPALA.kananX, KEPALA.ukuran);
+    HAL.lebar - TEPI_KERTAS - KEPALA.kananX, KEPALA.ukuran);
   barisTujuan.forEach((b, i) => {
     const simpan = k.y; k.y = yKanan - i * KEPALA.spasi;
-    k.gambarBaris(b, KEPALA.kananX, HAL.lebar - 45 - KEPALA.kananX, KEPALA.ukuran, false);
+    k.gambarBaris(b, KEPALA.kananX, HAL.lebar - TEPI_KERTAS - KEPALA.kananX, KEPALA.ukuran, false);
     k.y = simpan;
   });
   yKanan -= (barisTujuan.length - 1) * KEPALA.spasi;
