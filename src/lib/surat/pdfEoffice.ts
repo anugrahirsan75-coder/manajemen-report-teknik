@@ -49,7 +49,35 @@ const BADAN = {
   kananX: 573.67, ukuran: 8.2, spasi: 14.85, ukuranTabel: 7,
 };
 
-const TTD = { tengahX: 421.5, jarakJabatan: 36.6, tinggiQr: 59.4, jarakTembusan: 35.7 };
+/**
+ * Blok tanda tangan.
+ *
+ * Dua angka ruang, dan keduanya diukur dari surat sungguhan:
+ *
+ * · TANPA QR — 59,4 titik, jarak jabatan ke nama pada surat konsep yang belum
+ *   ditandatangani (Laporan Pemberangkatan Kmp. Tuna dan Kmp. Lema).
+ * · DENGAN QR — QR-nya 75,01 titik persegi, duduk 2,17 titik di bawah garis
+ *   dasar jabatan, dan namanya 15,82 titik di bawah QR; seluruhnya 93 titik.
+ *   Diukur dari surat yang sudah disahkan (Surat Edaran SE.00023).
+ *
+ * Ruang 59,4 titik tidak cukup untuk QR seukuran itu — surat yang sudah
+ * bertanda tangan memang memuainya. Jadi ruangnya ikut berubah, bukan QR-nya
+ * yang dikecilkan: QR yang diperas jadi 42 titik masih terbaca mesin, tetapi
+ * kelihatan jelas lebih kecil daripada surat aslinya.
+ */
+const TTD = {
+  tengahX: 421.5,
+  jarakJabatan: 36.6,
+  tinggiRuang: 59.4,
+  sisiQr: 75.01,
+  jarakAtasQr: 2.17,
+  jarakQrKeNama: 15.82,
+  jarakTembusan: 35.7,
+};
+
+/** jarak garis dasar jabatan ke garis dasar nama */
+const ruangTandaTangan = (adaQr: boolean) =>
+  adaQr ? TTD.jarakAtasQr + TTD.sisiQr + TTD.jarakQrKeNama : TTD.tinggiRuang;
 const TEMBUSAN = { x: 71.62, ukuran: 8.2, spasi: 11.55 };
 
 /** batas bawah isi: di bawah ini sudah wilayah kaki surat */
@@ -585,8 +613,8 @@ function gambarKepala(k: Kanvas, kop: KopSurat) {
 /* ── tanda tangan & tembusan ─────────────────────────────────────────────── */
 function gambarTandaTangan(k: Kanvas, kop: KopSurat, qrKonsep: string) {
   const d = k.doc;
-  const tinggi = TTD.jarakJabatan + TTD.tinggiQr + 12;
-  k.muat(tinggi + kop.tembusan.length * TEMBUSAN.spasi + 24);
+  const ruang = ruangTandaTangan(!!qrKonsep);
+  k.muat(TTD.jarakJabatan + ruang + 12 + kop.tembusan.length * TEMBUSAN.spasi + 24);
 
   k.y = Math.min(k.y, k.baselineAkhir - TTD.jarakJabatan);
   d.setFont(HURUF, "normal");
@@ -595,28 +623,20 @@ function gambarTandaTangan(k: Kanvas, kop: KopSurat, qrKonsep: string) {
   d.text(jabatan, TTD.tengahX - d.getTextWidth(jabatan) / 2, k.atas(k.y));
 
   const yJabatan = k.y;
-  k.y -= TTD.tinggiQr;
+  k.y -= ruang;
 
   if (qrKonsep) {
     /*
-     * Ukurannya mengikuti ruang yang tersedia, bukan angka pilihan: jarak
-     * jabatan ke nama hanya 59,4 titik, dan QR sebesar itu persis akan
-     * menindih keduanya. Sisakan tempat untuk keterangan di bawahnya —
-     * keterangan itu yang membedakannya dari tanda tangan.
-     */
-    /*
-     * QR saja, tanpa keterangan di bawahnya — mengikuti bentuk surat e-office.
-     * Keterangan "KONSEP" sempat dicetak kecil di sini dan hasilnya berdesakan
-     * dengan nama penanda tangan. Penandanya tetap ada di dalam sandi QR:
-     * baris pertamanya berbunyi KONSEP BELUM DISAHKAN, dan tidak ada satu pun
-     * baris persetujuan di dalamnya.
+     * Ukuran dan letaknya disalin dari surat e-office yang sudah disahkan,
+     * bukan dikira-kira: 75,01 titik persegi, sisi atasnya 2,17 titik di bawah
+     * garis dasar jabatan, dan titik tengahnya sejajar jabatan serta nama.
      *
-     * Ditaruh di tengah ruang jabatan–nama: sisa 59,4 titik dikurangi 42 titik
-     * QR, dibagi dua, menyisakan 8,7 titik di atas dan di bawah.
+     * Tanpa keterangan apa pun di bawahnya — mengikuti bentuk surat aslinya.
+     * Penandanya ada di dalam sandi QR: baris pertamanya berbunyi KONSEP BELUM
+     * DISAHKAN, dan tidak ada satu pun baris persetujuan di dalamnya.
      */
-    const sisi = 42;
-    const atasQr = k.atas(yJabatan - (TTD.tinggiQr - sisi) / 2);
-    d.addImage(qrKonsep, "PNG", TTD.tengahX - sisi / 2, atasQr, sisi, sisi);
+    d.addImage(qrKonsep, "PNG", TTD.tengahX - TTD.sisiQr / 2,
+      k.atas(yJabatan - TTD.jarakAtasQr), TTD.sisiQr, TTD.sisiQr);
   }
 
   d.setFont(HURUF_TEBAL, "normal");
