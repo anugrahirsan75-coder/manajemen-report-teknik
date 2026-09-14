@@ -604,16 +604,19 @@ function gambarTandaTangan(k: Kanvas, kop: KopSurat, qrKonsep: string) {
      * menindih keduanya. Sisakan tempat untuk keterangan di bawahnya —
      * keterangan itu yang membedakannya dari tanda tangan.
      */
+    /*
+     * QR saja, tanpa keterangan di bawahnya — mengikuti bentuk surat e-office.
+     * Keterangan "KONSEP" sempat dicetak kecil di sini dan hasilnya berdesakan
+     * dengan nama penanda tangan. Penandanya tetap ada di dalam sandi QR:
+     * baris pertamanya berbunyi KONSEP BELUM DISAHKAN, dan tidak ada satu pun
+     * baris persetujuan di dalamnya.
+     *
+     * Ditaruh di tengah ruang jabatan–nama: sisa 59,4 titik dikurangi 42 titik
+     * QR, dibagi dua, menyisakan 8,7 titik di atas dan di bawah.
+     */
     const sisi = 42;
-    const atasQr = k.atas(yJabatan - 6);
+    const atasQr = k.atas(yJabatan - (TTD.tinggiQr - sisi) / 2);
     d.addImage(qrKonsep, "PNG", TTD.tengahX - sisi / 2, atasQr, sisi, sisi);
-
-    d.setFont(HURUF, "normal");
-    d.setFontSize(4.2);
-    d.setTextColor("#777777");
-    const ket = "KONSEP — belum disahkan e-office";
-    d.text(ket, TTD.tengahX - d.getTextWidth(ket) / 2, atasQr + sisi + 3.0);
-    d.setTextColor("#000000");
   }
 
   d.setFont(HURUF_TEBAL, "normal");
