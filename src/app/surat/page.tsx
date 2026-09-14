@@ -17,6 +17,9 @@ import { angkaRibuan, keAngka, rupiahSurat } from "@/lib/surat/format";
 import { terbilangRupiah } from "@/lib/surat/terbilang";
 import UnggahTabel from "@/components/surat/UnggahTabel";
 import EditorSurat from "@/components/surat/EditorSurat";
+import DataKopSurat, { DataKop, kopAwal } from "@/components/surat/DataKopSurat";
+import { perihalBawaan, pisahTujuan, susunNomor, tanggalKop } from "@/lib/surat/kop";
+import { unduhPdfEoffice } from "@/lib/surat/pdfEoffice";
 
 const KUNCI_DRAF = "surat_eoffice_draf";
 
@@ -49,8 +52,17 @@ export default function BuatSuratEOffice() {
   const [sudahMuat, setSudahMuat] = useState(false);
   const kodeRef = useRef<HTMLTextAreaElement>(null);
 
+  /* kepala surat disimpan per jenis surat: tembusan dan tujuan berbeda-beda */
+  const [semuaKop, setSemuaKop] = useState<Record<string, DataKop>>({});
+  const [bukaKop, setBukaKop] = useState(false);
+  const [sedangPdf, setSedangPdf] = useState(false);
+
   const templat = cariTemplate(idTemplate)!;
   const data = semuaData[idTemplate];
+  const kop = semuaKop[idTemplate] || kopAwal();
+  const ubahKop = useCallback((bagian: Partial<DataKop>) => {
+    setSemuaKop((lama) => ({ ...lama, [idTemplate]: { ...(lama[idTemplate] || kopAwal()), ...bagian } }));
+  }, [idTemplate]);
 
   // ── draf disimpan supaya isian tidak hilang saat halaman dimuat ulang ────
   useEffect(() => {
@@ -67,6 +79,11 @@ export default function BuatSuratEOffice() {
             return gabung;
           });
         }
+        if (isi?.kop) {
+          setSemuaKop(Object.fromEntries(Object.entries(isi.kop as Record<string, DataKop>)
+            .filter(([id]) => cariTemplate(id))
+            .map(([id, k]) => [id, { ...kopAwal(), ...k }])));
+        }
         if (isi?.template && cariTemplate(isi.template)) setIdTemplate(isi.template);
       }
     } catch { /* draf rusak: abaikan, pakai isian kosong */ }
@@ -75,9 +92,9 @@ export default function BuatSuratEOffice() {
 
   useEffect(() => {
     if (!sudahMuat) return;
-    try { localStorage.setItem(KUNCI_DRAF, JSON.stringify({ template: idTemplate, data: semuaData })); }
+    try { localStorage.setItem(KUNCI_DRAF, JSON.stringify({ template: idTemplate, data: semuaData, kop: semuaKop })); }
     catch { /* penyimpanan penuh: biarkan, bukan hal yang boleh menghentikan pekerjaan */ }
-  }, [semuaData, idTemplate, sudahMuat]);
+  }, [semuaData, semuaKop, idTemplate, sudahMuat]);
 
   /**
    * Nilai boleh berupa fungsi (lamaNilai) => baru. Ini bukan kemewahan: tabel
@@ -163,6 +180,31 @@ export default function BuatSuratEOffice() {
     URL.revokeObjectURL(url);
   };
 
+  /* ── konsep surat lengkap berkop, dicetak jadi PDF ────────────────────── */
+  const bawaanTujuan = useMemo(() => pisahTujuan(templat.tujuan), [templat]);
+  const bawaanPerihal = useMemo(() => perihalBawaan(templat, data), [templat, data]);
+
+  const unduhPdf = async () => {
+    setSedangPdf(true);
+    try {
+      await unduhPdfEoffice(html, {
+        nomor: susunNomor(kop.kode, kop.urut, kop.tanggal),
+        tanggal: tanggalKop(kop.tanggal),
+        perihal: kop.perihal.trim() || bawaanPerihal,
+        tujuanJabatan: kop.jabatan.trim() || bawaanTujuan.jabatan,
+        tujuanKota: kop.kota.trim() || bawaanTujuan.kota,
+        penandaJabatan: kop.jabatanPenanda,
+        penandaNama: kop.namaPenanda,
+        tembusan: kop.tembusan.split("\n").map((x) => x.trim()).filter(Boolean),
+      }, `${templat.id}-${kop.tanggal || new Date().toISOString().slice(0, 10)}.pdf`);
+      beritahu("PDF konsep surat terunduh.");
+    } catch (e: any) {
+      beritahu(`Gagal membuat PDF: ${e?.message || e}`);
+    } finally {
+      setSedangPdf(false);
+    }
+  };
+
   const reset = () => {
     if (!confirm("Kosongkan seluruh isian template ini?")) return;
     setSemuaData((lama) => ({ ...lama, [idTemplate]: dataAwal(templat) }));
@@ -188,6 +230,10 @@ export default function BuatSuratEOffice() {
           <div className="flex flex-wrap items-center gap-2">
             <button onClick={reset} className="btn btn-ghost text-xs">↺ Kosongkan</button>
             <button onClick={unduh} disabled={!lengkap} className="btn btn-ghost text-xs disabled:opacity-40">⬇ Unduh .html</button>
+            <button onClick={unduhPdf} disabled={!lengkap || sedangPdf}
+              className="btn btn-ghost text-xs disabled:opacity-40" title="Konsep surat lengkap berkop ASDP, siap dicetak">
+              {sedangPdf ? "⏳ Menyusun…" : "📄 Unduh PDF"}
+            </button>
             <button onClick={salinKaya} disabled={!lengkap} className="btn btn-success text-xs disabled:opacity-40">📋 Salin Rich Text</button>
             <button onClick={salinKode} disabled={!lengkap} className="btn btn-primary text-xs disabled:opacity-40">⧉ Salin HTML</button>
           </div>
@@ -241,6 +287,28 @@ export default function BuatSuratEOffice() {
             ))}
           </div>
           )}
+
+          {/* ── kepala surat: hanya untuk PDF, jadi terlipat ─────────────── */}
+          <div className="mt-4 rounded-2xl ring-1 ring-slate-200 dark:ring-slate-700">
+            <button onClick={() => setBukaKop((b) => !b)}
+              className="flex w-full items-center justify-between gap-2 rounded-2xl px-4 py-3 text-left transition hover:bg-slate-50 dark:hover:bg-slate-800/60">
+              <span>
+                <span className="text-sm font-extrabold text-slate-800 dark:text-slate-100">Kepala surat (untuk PDF)</span>
+                <span className="block text-[11px] text-slate-400">
+                  Nomor, tanggal, tujuan, penanda tangan, tembusan — dipakai tombol Unduh PDF saja.
+                </span>
+              </span>
+              <span className="shrink-0 text-lg text-slate-400">{bukaKop ? "▾" : "▸"}</span>
+            </button>
+            {bukaKop && (
+              <div className="border-t border-slate-200 p-4 dark:border-slate-700">
+                <DataKopSurat kop={kop} ubah={ubahKop}
+                  bayanganPerihal={bawaanPerihal}
+                  bayanganJabatan={bawaanTujuan.jabatan}
+                  bayanganKota={bawaanTujuan.kota} />
+              </div>
+            )}
+          </div>
 
           {(ringkas || peringatan.length > 0 || kurang.length > 0) && (
             <div className="mt-4 space-y-2">

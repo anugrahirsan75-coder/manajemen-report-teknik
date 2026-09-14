@@ -148,3 +148,16 @@ export const persenSurat = (n: number): string => {
   const bulat = Math.round(n * 1000) / 1000;
   return String(bulat).replace(".", ",");
 };
+
+const HARI = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jum'at", "Sabtu"];
+
+/**
+ * "2026-05-22" -> "Jum'at". Surat laporan menyebut hari dan tanggal sekaligus,
+ * dan hari yang tidak cocok dengan tanggalnya langsung terbaca sebagai surat
+ * yang disalin dari surat lain.
+ */
+export function namaHari(iso: string): string {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec((iso || "").trim());
+  if (!m) return "";
+  return HARI[new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).getUTCDay()];
+}

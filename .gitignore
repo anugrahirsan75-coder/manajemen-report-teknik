@@ -24,3 +24,6 @@ ind.traineddata
 
 # Berkas pendukung audit docking (438 MB PDF arsip cabang, bukan kode)
 /Persiapan Audit/
+
+# Surat acuan e-office (memuat QR tanda tangan asli pejabat, bukan kode)
+/Template Surat/

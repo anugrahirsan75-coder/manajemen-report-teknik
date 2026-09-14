@@ -19,6 +19,7 @@ import { penunjukanRampdoor } from "./templates/penunjukanRampdoor";
 import { penunjukanGabungan } from "./templates/penunjukanGabungan";
 import { tambahanHariDock } from "./templates/tambahanHariDock";
 import { dendaDocking } from "./templates/dendaDocking";
+import { laporanBerangkatDock } from "./templates/laporanBerangkatDock";
 import { exemptionStability } from "./templates/exemptionStability";
 import { suratKustom } from "./templates/suratKustom";
 
@@ -31,6 +32,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   penunjukanGabungan,
   tambahanHariDock,
   dendaDocking,
+  laporanBerangkatDock,
   realisasiRutin,
   classMatter,
   surveyStatutori,
