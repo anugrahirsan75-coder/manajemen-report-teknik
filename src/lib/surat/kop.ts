@@ -19,6 +19,7 @@ export interface PenandaTangan { nama: string; jabatan: string }
 export const PENANDA_TANGAN: PenandaTangan[] = [
   { nama: "Mushar Usman", jabatan: "General Manager Ternate" },
   { nama: "Muchlis Burhanuddin", jabatan: "PGS. General Manager Ternate" },
+  { nama: "Eryanto Sidabalok", jabatan: "Department Head Operasional dan Teknik Ternate" },
 ];
 
 /** kode klasifikasi yang dipakai surat teknik cabang */
@@ -62,6 +63,20 @@ export function perihalBawaan(t: TemplateSurat, d: DataSurat): string {
     .replace(/\{(\w+)\}/g, (_, kunci) => String(d?.[kunci] ?? "").trim())
     .replace(/\s{2,}/g, " ")
     .replace(/\s+([,.])/g, "$1")
+    .trim();
+}
+
+/**
+ * Tujuan bawaan, penandanya diisi dari borang.
+ *
+ * Surat dock space dialamatkan ke direktur galangan, dan galangannya berbeda
+ * tiap kapal — tujuannya karena itu tidak bisa berupa kalimat tetap. Diperlakukan
+ * sama seperti perihal: pola template diisi dari isiannya sendiri.
+ */
+export function tujuanBawaan(t: TemplateSurat, d: DataSurat): string {
+  return t.tujuan
+    .replace(/\{(\w+)\}/g, (_, kunci) => String(d?.[kunci] ?? "").trim())
+    .replace(/\s{2,}/g, " ")
     .trim();
 }
 

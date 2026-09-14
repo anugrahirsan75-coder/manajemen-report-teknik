@@ -18,7 +18,7 @@ import { terbilangRupiah } from "@/lib/surat/terbilang";
 import UnggahTabel from "@/components/surat/UnggahTabel";
 import EditorSurat from "@/components/surat/EditorSurat";
 import DataKopSurat, { DataKop, kopAwal } from "@/components/surat/DataKopSurat";
-import { perihalBawaan, pisahTujuan, susunNomor, tanggalKop } from "@/lib/surat/kop";
+import { perihalBawaan, pisahTujuan, susunNomor, tanggalKop, tujuanBawaan } from "@/lib/surat/kop";
 import { unduhPdfEoffice } from "@/lib/surat/pdfEoffice";
 
 const KUNCI_DRAF = "surat_eoffice_draf";
@@ -181,7 +181,8 @@ export default function BuatSuratEOffice() {
   };
 
   /* ── konsep surat lengkap berkop, dicetak jadi PDF ────────────────────── */
-  const bawaanTujuan = useMemo(() => pisahTujuan(templat.tujuan), [templat]);
+  // tujuan ikut isian: surat dock space dialamatkan ke direktur galangan yang dipilih
+  const bawaanTujuan = useMemo(() => pisahTujuan(tujuanBawaan(templat, data)), [templat, data]);
   const bawaanPerihal = useMemo(() => perihalBawaan(templat, data), [templat, data]);
 
   const unduhPdf = async () => {

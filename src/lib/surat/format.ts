@@ -79,6 +79,8 @@ export const DASAR_KOSONG = { instansi: "", nomor: "", tanggal: "", perihal: "" 
 export const GALANGAN = [
   "PT. Industri Kapal Indonesia (Persero) Kota Bitung",
   "PT. Klasaman Indah Raya Sorong",
+  "PT. Dok Kelapa Dua Permai Bitung",
+  "PT. Dok dan Perkapalan Bitung",
 ];
 
 export const JENIS_SURVEY = [

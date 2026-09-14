@@ -20,10 +20,12 @@ import { penunjukanGabungan } from "./templates/penunjukanGabungan";
 import { tambahanHariDock } from "./templates/tambahanHariDock";
 import { dendaDocking } from "./templates/dendaDocking";
 import { laporanBerangkatDock } from "./templates/laporanBerangkatDock";
+import { dockSpace } from "./templates/dockSpace";
 import { exemptionStability } from "./templates/exemptionStability";
 import { suratKustom } from "./templates/suratKustom";
 
 export const TEMPLATE_SURAT: TemplateSurat[] = [
+  dockSpace,
   dockingInvestasi,
   pekerjaanTambahan,
   penunjukanLangsung,
