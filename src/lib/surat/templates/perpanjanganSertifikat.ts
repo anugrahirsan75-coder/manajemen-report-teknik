@@ -21,7 +21,7 @@ export const JENIS_SERTIFIKAT = [
 export const perpanjanganSertifikat: TemplateSurat = {
   id: "perpanjangan-sertifikat",
   nama: "Permohonan Perpanjangan Sertifikat Kapal",
-  perihal: "Permohonan Perpanjangan {jenisSertifikat} KMP. {kapal}",
+  perihal: "Permohonan Perpanjangan {jenisSertifikat} {kapal}",
   tujuan: "Kepala Kantor KSOP / Direktorat terkait",
   deskripsi: "Perpanjangan sertifikat yang akan berakhir, lengkap dengan data kapal dan lintasan.",
   ikon: "📄",

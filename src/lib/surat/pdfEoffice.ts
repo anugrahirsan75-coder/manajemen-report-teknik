@@ -168,6 +168,14 @@ function potongan(node: Node, tebal = false, miring = false): Potong[] {
   const el = node as HTMLElement;
   const nama = el.tagName.toLowerCase();
   if (nama === "ol" || nama === "ul" || nama === "table") return [];
+  /*
+   * <br /> dibawa sebagai baris baru sungguhan.
+   *
+   * Sel tabel memakainya untuk menumpuk dua keterangan — nama mata anggaran di
+   * atas, kodenya di bawah; lintasan perintis di atas, komersil di bawah.
+   * Diabaikan, keduanya tersambung jadi satu kata: "SIDANGOLIKOMERSIL".
+   */
+  if (nama === "br") return [{ teks: "\n", tebal, miring }];
   const t2 = tebal || nama === "b" || nama === "strong"
     || /font-weight\s*:\s*(bold|[6-9]00)/i.test(el.getAttribute("style") || "");
   const m2 = miring || nama === "i" || nama === "em";
@@ -224,8 +232,32 @@ function ukurKata(doc: JsPdfTipe, potong: Potong[], ukuran: number): { kata: Kat
   return { kata, sela: doc.getTextWidth(" ") };
 }
 
+/** pisahkan pada baris baru yang ditulis <br /> */
+function pecahBaris(potong: Potong[]): Potong[][] {
+  const bagian: Potong[][] = [[]];
+  potong.forEach((p) => {
+    const keping = p.teks.split("\n");
+    keping.forEach((t, i) => {
+      if (i > 0) bagian.push([]);
+      if (t) bagian[bagian.length - 1].push({ ...p, teks: t });
+    });
+  });
+  return bagian;
+}
+
 /** pemenggal baris sendiri: jsPDF tidak bisa merata-kanankan teks bercampur tebal */
 function susunBaris(doc: JsPdfTipe, potong: Potong[], lebar: number, ukuran: number): Baris[] {
+  const bagian = pecahBaris(potong);
+  if (bagian.length > 1) {
+    const semua = bagian.flatMap((p) => (p.length
+      ? susunSatuBaris(doc, p, lebar, ukuran)
+      : [{ kata: [], lebarKata: 0, jumlahSela: 0, terakhir: false }]));
+    return semua.map((b, i) => ({ ...b, terakhir: i === semua.length - 1 }));
+  }
+  return susunSatuBaris(doc, potong, lebar, ukuran);
+}
+
+function susunSatuBaris(doc: JsPdfTipe, potong: Potong[], lebar: number, ukuran: number): Baris[] {
   const { kata, sela } = ukurKata(doc, potong, ukuran);
   const baris: Baris[] = [];
   let kini: Kata[] = [];
@@ -277,6 +309,16 @@ class Kanvas {
     this.doc.addPage();
     this.perabot();
     this.y = Y_HALAMAN_LANJUT;
+    /*
+     * Penanda baris terakhir ikut berpindah halaman.
+     *
+     * Tanpa ini, blok tanda tangan yang tergeser ke halaman berikutnya masih
+     * menghitung jaraknya dari baris terakhir HALAMAN SEBELUMNYA — yang
+     * letaknya di dasar halaman — sehingga tanda tangan tergambar menindih kaki
+     * surat, dan nama penanda tangannya jatuh di bawah alamat kantor. Terjadi
+     * pada tiga surat penunjukan yang badannya panjang.
+     */
+    this.baselineAkhir = this.y;
   }
 
   /** pastikan masih muat; kalau tidak, pindah halaman */
@@ -347,12 +389,30 @@ const angkaPersen = (v: string | null): number | null => {
 };
 
 /** isi satu sel dipipihkan jadi baris teks; daftar di dalam sel jadi baris sendiri */
+const BLOK_SEL = ["ul", "ol", "div", "p", "table"];
+
+/**
+ * Teks milik elemen ini sendiri, tanpa isi anak yang berupa blok.
+ *
+ * Dipakai untuk sel tabel: tanpa ini, dua baris keterangan dalam satu sel
+ * ("PERINTIS : …" dan "KOMERSIL : …") ikut terbaca sebagai teks langsung dan
+ * tersambung jadi satu kata — "SIDANGOLIKOMERSIL".
+ */
+function potonganDangkal(el: HTMLElement): Potong[] {
+  const hasil: Potong[] = [];
+  el.childNodes.forEach((anak) => {
+    if (anak.nodeType === 1 && BLOK_SEL.includes((anak as HTMLElement).tagName.toLowerCase())) return;
+    hasil.push(...potongan(anak));
+  });
+  return hasil;
+}
+
 function isiSel(sel: HTMLElement): Potong[][] {
   const blok = Array.from(sel.children).filter((c) =>
-    ["ul", "ol", "div", "p", "table"].includes(c.tagName.toLowerCase()));
+    BLOK_SEL.includes(c.tagName.toLowerCase()));
   if (!blok.length) return [rapikan(potongan(sel))];
   const hasil: Potong[][] = [];
-  const langsung = rapikan(potongan(sel));
+  const langsung = rapikan(potonganDangkal(sel));
   if (langsung.length) hasil.push(langsung);
   blok.forEach((bl) => {
     const nama = bl.tagName.toLowerCase();
@@ -431,7 +491,15 @@ function gambarTabel(k: Kanvas, tabel: HTMLTableElement, x: number, lebarTotal: 
   };
 
   semuaBaris.forEach((tr) => gambarBarisTabel(tr as HTMLTableRowElement));
-  k.y -= BADAN.spasi * 0.4;
+  /*
+   * Satu baris penuh sesudah tabel, bukan setengah.
+   *
+   * Garis dasar paragraf berikutnya berada tepat di angka `y`, sedangkan huruf
+   * tumbuh ke ATAS dari situ. Jarak 5,9 titik membuat butir sesudah tabel
+   * memanjat ke dalam baris terakhirnya — butir 3 surat docking menindih baris
+   * Grand Total.
+   */
+  k.y -= BADAN.spasi;
 }
 
 /* ── badan surat ─────────────────────────────────────────────────────────── */

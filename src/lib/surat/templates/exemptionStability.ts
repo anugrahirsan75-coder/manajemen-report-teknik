@@ -55,7 +55,7 @@ export const dermagaTerdekat = (d: DataSurat): string => {
 export const exemptionStability: TemplateSurat = {
   id: "exemption-stability",
   nama: "Permohonan Exemption Damage Stability",
-  perihal: "Permohonan Bantuan Pengurusan Pembebasan (Exemption) Persyaratan Damage Stability KMP. {kapal}",
+  perihal: "Permohonan Bantuan Pengurusan Pembebasan (Exemption) Persyaratan Damage Stability {kapal}",
   tujuan: "Group Head Optimasi dan Manajemen Armada — Jakarta",
   deskripsi: "Pembebasan damage stability pasca docking, lengkap dengan data kapal dan pertimbangan lintasan.",
   ikon: "⚖️",

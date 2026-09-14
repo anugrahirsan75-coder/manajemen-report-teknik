@@ -142,7 +142,7 @@ function tabelAnggaran(d: DataSurat): string {
 export const dockingInvestasi: TemplateSurat = {
   id: "docking-investasi",
   nama: "Permohonan Persetujuan Docking dan Investasi",
-  perihal: "Permohonan Persetujuan Pelaksanaan Docking dan Investasi KMP. {kapal} Tahun {tahun}",
+  perihal: "Permohonan Persetujuan Pelaksanaan Docking dan Investasi {kapal} Tahun {tahun}",
   tujuan: "Direktur Teknik dan Fasilitas — Jakarta",
   deskripsi: "Pengajuan ke pusat, lengkap dengan tabel mata anggaran, subtotal, dan terbilang otomatis.",
   ikon: "⚓",

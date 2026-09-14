@@ -12,7 +12,7 @@ import { ButirSurat, b, bungkus, esc, suratBernomor, tabelData } from "../htmlHe
 export const surveyStatutori: TemplateSurat = {
   id: "survey-statutori",
   nama: "Permohonan Survey Statutori (KSOP)",
-  perihal: "Permohonan Survey Statutori Dalam Rangka Docking KMP. {kapal} Tahun {tahun}",
+  perihal: "Permohonan Survey Statutori Dalam Rangka Docking {kapal} Tahun {tahun}",
   tujuan: "Kepala Kantor KSOP",
   deskripsi: "Permohonan survey statutori ke KSOP, dengan tabel spesifikasi kapal tanpa garis.",
   ikon: "🛡️",
