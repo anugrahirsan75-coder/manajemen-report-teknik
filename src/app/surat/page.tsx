@@ -646,6 +646,25 @@ function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
                             if (cocok && kolom.some((c) => c.id === "uraian") && k.id === "kode") {
                               const uraian = cocok.label.split("—")[1]?.trim() || "";
                               perbarui((lama) => lama.map((b2, k2) => (k2 === idx ? { ...b2, kode: v, uraian } : b2)));
+                            } else if (k.isiOtomatis && k.isiOtomatis.peta[v]) {
+                              /*
+                               * Memilih nama kapal mengisi tonase kotornya.
+                               *
+                               * Nilai yang DIKETIK pengguna dipertahankan; yang
+                               * sebelumnya terisi sendiri ikut diperbarui. Tanpa
+                               * pembedaan itu, salah pilih kapal lalu diperbaiki
+                               * meninggalkan GT kapal yang keliru menempel pada
+                               * kapal yang benar — dan GT keliru pada surat dock
+                               * space berarti dok yang dijanjikan bisa tak cukup.
+                               */
+                              const { kolom: tujuanKol, peta } = k.isiOtomatis;
+                              perbarui((lama) => lama.map((b2, k2) => {
+                                if (k2 !== idx) return b2;
+                                const sekarang = String(b2[tujuanKol] || "").trim();
+                                const otomatisLama = peta[String(b2[k.id] || "")] || "";
+                                const diketikSendiri = sekarang && sekarang !== otomatisLama;
+                                return { ...b2, [k.id]: v, [tujuanKol]: diketikSendiri ? sekarang : peta[v] };
+                              }));
                             } else setSel(idx, k.id, v);
                           }}
                           className="w-full rounded-lg border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900" />

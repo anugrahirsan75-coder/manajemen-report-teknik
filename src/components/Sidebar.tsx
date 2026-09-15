@@ -17,6 +17,9 @@ import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Ikon } from "./ikon";
+// jumlah jenis surat dibaca dari daftarnya sendiri: angka yang ditulis
+// tangan di sini sempat tertinggal di "9" sementara templatenya sudah 18
+import { TEMPLATE_SURAT } from "@/lib/surat/registry";
 
 function ThemeToggle() {
   const [dark, setDark] = useState(false);
@@ -128,7 +131,7 @@ const KELOMPOK: Kelompok[] = [
   {
     judul: "Dokumen & Alat",
     menu: [
-      { href: "/surat", icon: "amplop", label: "Surat E-Office", desc: "9 jenis surat siap tempel" },
+      { href: "/surat", icon: "amplop", label: "Surat E-Office", desc: `${TEMPLATE_SURAT.length} jenis surat siap tempel` },
       {
         href: "/", icon: "gerigi", label: "Generator Swakelola", desc: "Dokumen docking swakelola", tepat: true,
         sub: [

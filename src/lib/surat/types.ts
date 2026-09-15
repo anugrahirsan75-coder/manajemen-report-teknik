@@ -28,6 +28,15 @@ export interface KolomTabel {
   lebar?: string;
   /** saran isi untuk kolom teks (mis. daftar mata anggaran) */
   saran?: { nilai: string; label: string }[];
+  /**
+   * Isi kolom lain begitu kolom ini dipilih.
+   *
+   * Dipakai untuk data yang sudah diketahui dan tidak pantas diketik ulang:
+   * memilih nama kapal mengisi sendiri tonase kotornya dari register BKI.
+   * Nilai yang sudah ada tidak ditimpa — pengguna boleh memperbaikinya, dan
+   * perbaikan itu tidak boleh hilang saat nama kapalnya disentuh lagi.
+   */
+  isiOtomatis?: { kolom: string; peta: Record<string, string> };
 }
 
 export interface Isian {

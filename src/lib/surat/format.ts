@@ -163,3 +163,34 @@ export function namaHari(iso: string): string {
   if (!m) return "";
   return HARI[new Date(Date.UTC(Number(m[1]), Number(m[2]) - 1, Number(m[3]))).getUTCDay()];
 }
+
+/**
+ * Tonase kotor tiap kapal, disalin dari register BKI (Rekap 10 September 2026).
+ *
+ * Dipakai mengisi sendiri kolom GT pada surat permohonan dock space armada —
+ * galangan memerlukannya untuk menghitung muat-tidaknya dok. Disalin ke sini,
+ * bukan diimpor dari src/lib/kapal/bki.ts, karena berkas itu 89 KB dan hanya
+ * dua belas angka ini yang diperlukan halaman surat.
+ *
+ * Catatan: surat armada 2024 menulis KMP. KERAPU II sebagai 335; register BKI
+ * menyebut 315. Yang dipakai di sini angka register.
+ */
+export const GT_KAPAL: Record<string, string> = {
+  "KMP. Ariwangan": "157",
+  "KMP. Pulau Sagori": "380",
+  "KMP. Lompa": "589",
+  "KMP. Maming": "598",
+  "KMP. Portlink VIII": "2125",
+  "KMP. Tuna": "831",
+  "KMP. Baronang": "526",
+  "KMP. Gorango": "617",
+  "KMP. Kerapu II": "315",
+  "KMP. Ngafi": "380",
+  "KMP. Bobara": "475",
+  "KMP. Lema": "1031",
+};
+
+/** jenis survei yang menentukan kapal naik dok — dipakai kolom STATUS DOCKING */
+export const STATUS_DOCKING = [
+  "AS-I", "AS-II", "AS-III", "AS-III/IS", "AS-IV", "IS", "SS", "Docking Rutin",
+];
