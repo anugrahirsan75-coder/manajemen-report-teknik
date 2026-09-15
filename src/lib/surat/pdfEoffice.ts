@@ -355,9 +355,24 @@ class Kanvas {
     const d = this.doc;
     d.setFontSize(ukuran);
     const selaDasar = (() => { d.setFont(HURUF, "normal"); return d.getTextWidth(" "); })();
-    const sela = ratakan && !baris.terakhir && baris.jumlahSela > 0
-      ? (lebar - baris.lebarKata) / baris.jumlahSela
-      : selaDasar;
+    /*
+     * Perataan dibatalkan bila celahnya terlalu melar.
+     *
+     * Satu kata panjang yang tidak bisa dipenggal — alamat surel, nomor surat
+     * perjanjian — kadang tidak muat, dan barisnya berhenti jauh sebelum tepi
+     * kanan. Meratakan baris seperti itu menyebar sisa ruang yang besar ke
+     * sedikit celah: pernah terukur 17,7 titik, tujuh kali lebar spasi biasa,
+     * dan terbaca sebagai lubang di tengah kalimat.
+     *
+     * Batasnya tiga kali spasi biasa. Di atas itu barisnya dibiarkan rata kiri
+     * — satu baris yang sedikit pendek jauh lebih enak dibaca daripada satu
+     * baris berlubang.
+     */
+    const selaRata = baris.jumlahSela > 0
+      ? (lebar - baris.lebarKata) / baris.jumlahSela : selaDasar;
+    const bolehRata = ratakan && !baris.terakhir && baris.jumlahSela > 0
+      && selaRata <= selaDasar * 3;
+    const sela = bolehRata ? selaRata : selaDasar;
     let kx = x;
     baris.kata.forEach((k) => {
       k.penggal.forEach((g) => {
@@ -377,19 +392,18 @@ class Kanvas {
     const ukuran = opsi.ukuran ?? BADAN.ukuran;
     const spasi = opsi.spasi ?? BADAN.spasi;
     /*
-     * RATA KIRI, bukan rata kanan-kiri.
+     * RATA KANAN-KIRI, kecuali baris terakhir tiap paragraf.
      *
-     * Surat e-office yang jadi acuan terlihat seperti rata kanan-kiri, tetapi
-     * tepi kanan tiap barisnya diukur berbeda-beda — 519, 557, 520, lalu 567
-     * titik pada satu surat yang sama. Kalau benar diratakan, semuanya akan
-     * berhenti di titik yang persis sama. Jadi barisnya memang rata kiri, dan
-     * celah lebar yang sesekali tampak berasal dari spasi ganda pada teks yang
-     * diketik, bukan dari perataan.
+     * Sempat dimatikan karena keluarannya penuh "sungai" putih di tengah
+     * paragraf. Sebabnya ternyata bukan perataannya, melainkan huruf: ketika
+     * itu tiga wajah huruf terdaftar dengan satu nama, pembaca PDF menyerah
+     * memilih, dan lebar yang dipakai menata letak berasal dari huruf yang
+     * sama sekali lain. Celah antar kata dihitung dari selisih yang keliru.
      *
-     * Memaksakan rata kanan-kiri di sini menghasilkan "sungai" putih di tengah
-     * paragraf — persis yang membuat keluaran pertama terlihat berantakan.
+     * Huruf sudah benar, jadi perataannya dinyalakan kembali — dan tepi kanan
+     * badan surat kini benar-benar lurus.
      */
-    const ratakan = opsi.ratakan ?? false;
+    const ratakan = opsi.ratakan ?? true;
     const baris = susunBaris(this.doc, rapikan(potong), lebar, ukuran);
     baris.forEach((b, i) => {
       this.muat(spasi);
