@@ -18,7 +18,7 @@ import { terbilangRupiah } from "@/lib/surat/terbilang";
 import UnggahTabel from "@/components/surat/UnggahTabel";
 import EditorSurat from "@/components/surat/EditorSurat";
 import DataKopSurat, { DataKop, kopAwal } from "@/components/surat/DataKopSurat";
-import { perihalBawaan, pisahTujuan, susunNomor, tanggalKop, tujuanBawaan } from "@/lib/surat/kop";
+import { jabatanCetak, perihalBawaan, pisahTujuan, susunNomor, tanggalKop, tujuanBawaan } from "@/lib/surat/kop";
 import { unduhPdfEoffice } from "@/lib/surat/pdfEoffice";
 import { useKapalDb } from "@/lib/kapal/store";
 
@@ -224,7 +224,7 @@ export default function BuatSuratEOffice() {
         perihal: kop.perihal.trim() || bawaanPerihal,
         tujuanJabatan: kop.jabatan.trim() || bawaanTujuan.jabatan,
         tujuanKota: kop.kota.trim() || bawaanTujuan.kota,
-        penandaJabatan: kop.jabatanPenanda,
+        penandaJabatan: jabatanCetak(kop.namaPenanda, kop.jabatanPenanda, kop.tanggal),
         penandaNama: kop.namaPenanda,
         tembusan: kop.tembusan.split("\n").map((x) => x.trim()).filter(Boolean),
         // draf yang tersimpan sebelum saklar ini ada tidak punya medannya sama

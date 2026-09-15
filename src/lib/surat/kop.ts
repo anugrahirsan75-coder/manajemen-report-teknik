@@ -52,6 +52,19 @@ export function jabatanPada(p: PenandaTangan, tanggalIso: string): string {
   return tahunSurat(tanggalIso) < TAHUN_NOMENKLATUR ? p.jabatanLama : p.jabatan;
 }
 
+/**
+ * Jabatan yang dicetak pada surat, untuk penanda tangan yang namanya ada di
+ * daftar diambil dari tanggal suratnya — bukan dari yang tersimpan di draf.
+ *
+ * Draf yang dibuat sebelum aturan ini ada menyimpan jabatan sebagai teks mati,
+ * jadi konsep surat 2025 tetap tercetak "Department Head" walaupun waktu itu
+ * sebutannya masih Manager. Nama yang diketik sendiri tidak diutak-atik.
+ */
+export function jabatanCetak(nama: string, tersimpan: string, tanggalIso: string): string {
+  const p = PENANDA_TANGAN.find((x) => x.nama === nama);
+  return p ? jabatanPada(p, tanggalIso) : tersimpan;
+}
+
 /** kode klasifikasi yang dipakai surat teknik cabang */
 export const KODE_SURAT = [
   "TN.101", "UM.301", "KU.302", "PA.111", "HK.204", "OP.201",
