@@ -9,10 +9,10 @@
  * Bentuknya mengikuti TN.101/00470/VIII/ASDP-TTE/2024 — lima kapal dengan
  * kolom NAMA KAPAL, GT, RENCANA DOCKING, dan STATUS DOCKING.
  *
- * GT diisi sendiri dari register BKI begitu nama kapal dipilih. Galangan
- * memakainya untuk menghitung muat-tidaknya dok, jadi angka yang keliru bukan
- * sekadar salah ketik — ia bisa membuat dok yang dijanjikan ternyata tidak
- * cukup. Angkanya boleh diperbaiki tangan bila register berubah.
+ * GT diisi sendiri dari BASIS DATA KAPAL begitu nama kapal dipilih — sumber
+ * yang sama dengan layar Dokumen Kapal, jadi perbaikan di sana ikut terbawa ke
+ * surat. Galangan memakai angka itu untuk menghitung muat-tidaknya dok, jadi
+ * yang keliru bukan sekadar salah ketik: dok yang dijanjikan bisa tak cukup.
  *
  * Barisnya diurutkan menurut bulan lalu minggu, bukan menurut urutan
  * pengetikan: surat ini dibaca sebagai jadwal, dan jadwal yang meloncat-loncat
@@ -20,7 +20,7 @@
  */
 import { DataSurat, TemplateSurat } from "../types";
 import {
-  GALANGAN, GT_KAPAL, KAPAL_SURAT, NAMA_BULAN, STATUS_DOCKING, keAngka, namaKapalSurat,
+  GALANGAN, KAPAL_SURAT, NAMA_BULAN, STATUS_DOCKING, keAngka, namaKapalSurat,
 } from "../format";
 import {
   ButirSurat, b, baris, bungkus, esc, suratBernomor, tabel, td, th,
@@ -101,7 +101,7 @@ export const dockSpaceArmada: TemplateSurat = {
     },
     {
       id: "armada", label: "Daftar kapal & rencana docking", jenis: "tabel", wajib: true,
-      petunjuk: "GT terisi sendiri dari register BKI begitu nama kapal dipilih — boleh diperbaiki. "
+      petunjuk: "GT terisi sendiri dari basis data kapal begitu nama kapal dipilih — boleh diperbaiki. "
         + "Baris diurutkan menurut bulan lalu minggu saat surat disusun, jadi urutan pengetikan tidak perlu rapi.",
       bacaBerkas:
         "Tabel rencana docking kapal cabang. Tiap baris: nama kapal (mis. KMP. LOMPA), GT/tonase kotor, "
@@ -109,11 +109,12 @@ export const dockSpaceArmada: TemplateSurat = {
         + "minggu dan nama bulannya ke kolom bulan — serta status docking (AS-II, AS-III/IS, AS-IV, IS, SS).",
       kolom: [
         {
-          id: "kapal", label: "Nama kapal", jenis: "teks",
+          id: "kapal", label: "Nama kapal", jenis: "teks", lebar: "15rem",
           saran: KAPAL_SURAT.map((k) => ({ nilai: k, label: k })),
-          isiOtomatis: { kolom: "gt", peta: GT_KAPAL },
+          // GT dibaca dari basis data kapal, bukan dari daftar tetap di berkas ini
+          isiOtomatis: { kolom: "gt", sumber: "gtKapal" },
         },
-        { id: "gt", label: "GT", jenis: "teks", lebar: "6rem" },
+        { id: "gt", label: "GT", jenis: "teks", lebar: "5.5rem" },
         { id: "mingguKe", label: "Minggu ke-", jenis: "teks", lebar: "7rem",
           saran: ["1", "2", "3", "4", "5"].map((x) => ({ nilai: x, label: `Minggu ke-${x}` })) },
         { id: "bulan", label: "Bulan", jenis: "teks", lebar: "9rem",

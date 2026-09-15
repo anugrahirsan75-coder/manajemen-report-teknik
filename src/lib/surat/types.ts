@@ -36,7 +36,19 @@ export interface KolomTabel {
    * Nilai yang sudah ada tidak ditimpa — pengguna boleh memperbaikinya, dan
    * perbaikan itu tidak boleh hilang saat nama kapalnya disentuh lagi.
    */
-  isiOtomatis?: { kolom: string; peta: Record<string, string> };
+  isiOtomatis?: {
+    kolom: string;
+    /** peta tetap, ditulis di templatenya sendiri */
+    peta?: Record<string, string>;
+    /**
+     * Ambil dari data hidup, bukan dari salinan.
+     *
+     * "gtKapal" membaca tonase kotor dari basis data kapal — sumber yang sama
+     * dengan layar Dokumen Kapal. Angka yang diperbaiki di sana ikut terbawa ke
+     * surat; salinan statis akan diam-diam basi tanpa ada yang tahu.
+     */
+    sumber?: "gtKapal";
+  };
 }
 
 export interface Isian {

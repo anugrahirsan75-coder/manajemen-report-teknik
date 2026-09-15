@@ -20,8 +20,27 @@ import EditorSurat from "@/components/surat/EditorSurat";
 import DataKopSurat, { DataKop, kopAwal } from "@/components/surat/DataKopSurat";
 import { perihalBawaan, pisahTujuan, susunNomor, tanggalKop, tujuanBawaan } from "@/lib/surat/kop";
 import { unduhPdfEoffice } from "@/lib/surat/pdfEoffice";
+import { useKapalDb } from "@/lib/kapal/store";
 
 const KUNCI_DRAF = "surat_eoffice_draf";
+
+/**
+ * Cocokkan nilai ke peta tanpa mempersoalkan huruf besar-kecil.
+ *
+ * Basis data kapal menulis "KMP. PORTLINK VIII", sedangkan daftar kapal pada
+ * surat menulis "KMP. Portlink VIII". Keduanya kapal yang sama, tetapi
+ * pencocokan mentah tidak menemukan apa-apa — dan gejalanya diam: kolom GT
+ * sekadar tetap kosong, tanpa galat, seolah kapalnya memang tak punya tonase.
+ */
+const kunciSama = (v: string) => String(v || "").trim().toUpperCase().replace(/\s+/g, " ");
+
+const cariPeta = (peta: Record<string, string> | undefined, v: string): string => {
+  if (!peta) return "";
+  if (peta[v]) return peta[v];
+  const k = kunciSama(v);
+  const cocok = Object.keys(peta).find((x) => kunciSama(x) === k);
+  return cocok ? peta[cocok] : "";
+};
 
 /** nilai awal satu template, dipakai saat pertama buka & saat tombol Reset */
 function dataAwal(t: TemplateSurat): DataSurat {
@@ -56,6 +75,17 @@ export default function BuatSuratEOffice() {
   const [semuaKop, setSemuaKop] = useState<Record<string, DataKop>>({});
   const [bukaKop, setBukaKop] = useState(false);
   const [sedangPdf, setSedangPdf] = useState(false);
+
+  /*
+   * Tonase kotor diambil dari BASIS DATA KAPAL, bukan dari daftar tetap.
+   * Sumbernya sama dengan layar Dokumen Kapal, jadi angka yang diperbaiki di
+   * sana langsung ikut ke surat — dan tidak ada dua angka GT yang berbeda
+   * hidup berdampingan tanpa ada yang tahu mana yang benar.
+   */
+  const { ships } = useKapalDb();
+  const petaGt = useMemo(() => Object.fromEntries(
+    ships.filter((s) => String(s.dimension?.gt || "").trim())
+      .map((s) => [s.nama, String(s.dimension.gt).trim()])), [ships]);
 
   const templat = cariTemplate(idTemplate)!;
   const data = semuaData[idTemplate];
@@ -286,7 +316,7 @@ export default function BuatSuratEOffice() {
           <div className="grid gap-3 sm:grid-cols-2">
             {isianTampil.map((f) => (
               <div key={f.id} className={f.kolomBorang === 2 ? "sm:col-span-1" : "sm:col-span-2"}>
-                <MedanIsian medan={f} nilai={data[f.id]} ubah={(v) => ubah(f.id, v)} />
+                <MedanIsian medan={f} nilai={data[f.id]} ubah={(v) => ubah(f.id, v)} petaGt={petaGt} />
               </div>
             ))}
           </div>
@@ -384,7 +414,9 @@ export default function BuatSuratEOffice() {
 }
 
 /* ── satu medan isian ──────────────────────────────────────────────────── */
-function MedanIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v: unknown) => void }) {
+function MedanIsian({ medan, nilai, ubah, petaGt }: {
+  medan: Isian; nilai: any; ubah: (v: unknown) => void; petaGt?: Record<string, string>;
+}) {
   const label = (
     <label className="mb-1 block text-xs font-bold text-slate-700 dark:text-slate-200">
       {medan.label}{medan.wajib && <span className="text-rose-500"> *</span>}
@@ -393,7 +425,7 @@ function MedanIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
   const kelas = "w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm outline-none focus:border-sky-400 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
   const petunjuk = medan.petunjuk && <p className="mt-1 text-[11px] text-slate-400">{medan.petunjuk}</p>;
 
-  if (medan.jenis === "tabel") return <TabelIsian medan={medan} nilai={nilai} ubah={ubah} />;
+  if (medan.jenis === "tabel") return <TabelIsian medan={medan} nilai={nilai} ubah={ubah} petaGt={petaGt} />;
 
   if (medan.jenis === "daftar-centang") {
     const dipilih: string[] = nilai || [];
@@ -576,7 +608,9 @@ function IsianPoin({ medan, nilai, ubah, label, kelas, petunjuk }: {
 }
 
 /* ── isian berbentuk tabel ─────────────────────────────────────────────── */
-function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v: unknown) => void }) {
+function TabelIsian({ medan, nilai, ubah, petaGt }: {
+  medan: Isian; nilai: any; ubah: (v: unknown) => void; petaGt?: Record<string, string>;
+}) {
   const [bukaUnggah, setBukaUnggah] = useState(false);
   const kolom = medan.kolom || [];
   const kosong = () => Object.fromEntries(kolom.map((k) => [k.id, ""]));
@@ -627,7 +661,11 @@ function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
               <tr key={idx} className="border-t border-slate-100 dark:border-slate-700/60">
                 <td className="px-2 py-1.5 text-xs text-slate-400">{idx + 1}</td>
                 {kolom.map((k) => (
-                  <td key={k.id} className="px-2 py-1.5" style={k.lebar ? { width: k.lebar } : undefined}>
+                  /* minWidth, bukan width saja: width hanya saran, dan saat kolom
+                     berdesakan peramban memampatkan yang paling lentur sampai
+                     tinggal panah daftar saran. Wadahnya sudah bisa digeser. */
+                  <td key={k.id} className="px-2 py-1.5"
+                    style={k.lebar ? { width: k.lebar, minWidth: k.lebar } : undefined}>
                     {k.jenis === "tanggal" ? (
                       <input type="date" value={r[k.id] || ""}
                         onChange={(e) => setSel(idx, k.id, e.target.value)}
@@ -646,7 +684,8 @@ function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
                             if (cocok && kolom.some((c) => c.id === "uraian") && k.id === "kode") {
                               const uraian = cocok.label.split("—")[1]?.trim() || "";
                               perbarui((lama) => lama.map((b2, k2) => (k2 === idx ? { ...b2, kode: v, uraian } : b2)));
-                            } else if (k.isiOtomatis && k.isiOtomatis.peta[v]) {
+                            } else if (k.isiOtomatis
+                              && cariPeta(k.isiOtomatis.sumber === "gtKapal" ? petaGt : k.isiOtomatis.peta, v)) {
                               /*
                                * Memilih nama kapal mengisi tonase kotornya.
                                *
@@ -657,13 +696,15 @@ function TabelIsian({ medan, nilai, ubah }: { medan: Isian; nilai: any; ubah: (v
                                * kapal yang benar — dan GT keliru pada surat dock
                                * space berarti dok yang dijanjikan bisa tak cukup.
                                */
-                              const { kolom: tujuanKol, peta } = k.isiOtomatis;
+                              const tujuanKol = k.isiOtomatis.kolom;
+                              const peta = (k.isiOtomatis.sumber === "gtKapal"
+                                ? petaGt : k.isiOtomatis.peta) || {};
                               perbarui((lama) => lama.map((b2, k2) => {
                                 if (k2 !== idx) return b2;
                                 const sekarang = String(b2[tujuanKol] || "").trim();
-                                const otomatisLama = peta[String(b2[k.id] || "")] || "";
+                                const otomatisLama = cariPeta(peta, String(b2[k.id] || ""));
                                 const diketikSendiri = sekarang && sekarang !== otomatisLama;
-                                return { ...b2, [k.id]: v, [tujuanKol]: diketikSendiri ? sekarang : peta[v] };
+                                return { ...b2, [k.id]: v, [tujuanKol]: diketikSendiri ? sekarang : cariPeta(peta, v) };
                               }));
                             } else setSel(idx, k.id, v);
                           }}
