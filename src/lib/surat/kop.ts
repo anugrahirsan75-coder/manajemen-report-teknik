@@ -9,7 +9,15 @@
 import { DataSurat, TemplateSurat } from "./types";
 import { NAMA_BULAN, romawi, tanggalSurat } from "./format";
 
-export interface PenandaTangan { nama: string; jabatan: string }
+export interface PenandaTangan {
+  nama: string;
+  jabatan: string;
+  /** jabatan sebelum nomenklatur 2026 — dipakai kalau surat bertanggal lebih awal */
+  jabatanLama?: string;
+}
+
+/** tahun berlakunya nomenklatur baru: "Manager" berganti "Department Head" */
+export const TAHUN_NOMENKLATUR = 2026;
 
 /**
  * Pejabat penanda tangan surat cabang. Daftar ini hanya NAMA dan JABATAN —
@@ -19,8 +27,30 @@ export interface PenandaTangan { nama: string; jabatan: string }
 export const PENANDA_TANGAN: PenandaTangan[] = [
   { nama: "Mushar Usman", jabatan: "General Manager Ternate" },
   { nama: "Muchlis Burhanuddin", jabatan: "PGS. General Manager Ternate" },
-  { nama: "Eryanto Sidabalok", jabatan: "Department Head Operasional dan Teknik Ternate" },
+  {
+    nama: "Eryanto Sidabalok",
+    jabatan: "Department Head Operasional dan Teknik Ternate",
+    jabatanLama: "Manager Teknik Ternate",
+  },
 ];
+
+/** tahun pada tanggal surat; kalau tanggalnya belum diisi, tahun berjalan */
+export function tahunSurat(tanggalIso: string): number {
+  const m = /^(\d{4})-/.exec((tanggalIso || "").trim());
+  return m ? Number(m[1]) : new Date().getFullYear();
+}
+
+/**
+ * Jabatan yang dipakai pada tanggal surat tertentu.
+ *
+ * Surat bertanggal 2025 harus menyebut jabatan yang berlaku waktu itu. Pak
+ * Eryanto baru menjadi Department Head pada 2026; sebelum itu Manager Teknik,
+ * dan surat lama yang menyebutnya Department Head akan salah di arsip.
+ */
+export function jabatanPada(p: PenandaTangan, tanggalIso: string): string {
+  if (!p.jabatanLama) return p.jabatan;
+  return tahunSurat(tanggalIso) < TAHUN_NOMENKLATUR ? p.jabatanLama : p.jabatan;
+}
 
 /** kode klasifikasi yang dipakai surat teknik cabang */
 export const KODE_SURAT = [
@@ -37,7 +67,7 @@ export const URUT_KOSONG = "[...]";
  */
 export function susunNomor(kode: string, urut: string, tanggalIso: string): string {
   const m = /^(\d{4})-(\d{2})-/.exec((tanggalIso || "").trim());
-  const tahun = m ? m[1] : String(new Date().getFullYear());
+  const tahun = String(tahunSurat(tanggalIso));
   const bulan = romawi(m ? Number(m[2]) : new Date().getMonth() + 1);
   const angka = (urut || "").replace(/\D/g, "");
   return `${kode || "TN.101"}/${angka ? angka.padStart(5, "0") : URUT_KOSONG}/${bulan}/ASDP-TTE/${tahun}`;

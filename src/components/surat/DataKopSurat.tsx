@@ -12,7 +12,10 @@
  * disalin ke dalam isian begitu template diganti, perihal yang sudah disunting
  * pengguna akan tertimpa tiap kali ia berpindah jenis surat.
  */
-import { PENANDA_TANGAN, KODE_SURAT, TEMBUSAN_SERING, URUT_KOSONG, susunNomor } from "@/lib/surat/kop";
+import {
+  PENANDA_TANGAN, KODE_SURAT, TEMBUSAN_SERING, URUT_KOSONG,
+  TAHUN_NOMENKLATUR, susunNomor, jabatanPada, tahunSurat,
+} from "@/lib/surat/kop";
 
 export interface DataKop {
   kode: string;
@@ -52,6 +55,17 @@ export default function DataKopSurat({ kop, ubah, bayanganPerihal, bayanganJabat
 }) {
   const nomor = susunNomor(kop.kode, kop.urut, kop.tanggal);
   const diLuarDaftar = !PENANDA_TANGAN.some((p) => p.nama === kop.namaPenanda);
+  const sebelumNomenklatur = tahunSurat(kop.tanggal) < TAHUN_NOMENKLATUR;
+
+  /**
+   * Tanggal surat menentukan jabatan penandanya, jadi keduanya berubah bersama.
+   * Mengubah tanggal ke 2025 tanpa ikut mengganti jabatan akan mencetak surat
+   * lama dengan nomenklatur yang belum berlaku waktu itu.
+   */
+  const gantiTanggal = (tanggal: string) => {
+    const p = PENANDA_TANGAN.find((x) => x.nama === kop.namaPenanda);
+    ubah(p ? { tanggal, jabatanPenanda: jabatanPada(p, tanggal) } : { tanggal });
+  };
 
   const tambahTembusan = (t: string) => {
     const ada = kop.tembusan.split("\n").map((x) => x.trim()).filter(Boolean);
@@ -87,7 +101,7 @@ export default function DataKopSurat({ kop, ubah, bayanganPerihal, bayanganJabat
 
       <div>
         <label className={LABEL}>Tanggal surat</label>
-        <input type="date" value={kop.tanggal} onChange={(e) => ubah({ tanggal: e.target.value })} className={KELAS} />
+        <input type="date" value={kop.tanggal} onChange={(e) => gantiTanggal(e.target.value)} className={KELAS} />
         <p className="mt-1 text-[11px] text-slate-400">Bulan romawi pada nomor diambil dari tanggal ini.</p>
       </div>
 
@@ -97,10 +111,12 @@ export default function DataKopSurat({ kop, ubah, bayanganPerihal, bayanganJabat
           onChange={(e) => {
             if (e.target.value === "__lain") { ubah({ namaPenanda: " ", jabatanPenanda: "" }); return; }
             const p = PENANDA_TANGAN.find((x) => x.nama === e.target.value)!;
-            ubah({ namaPenanda: p.nama, jabatanPenanda: p.jabatan });
+            ubah({ namaPenanda: p.nama, jabatanPenanda: jabatanPada(p, kop.tanggal) });
           }}
           className={KELAS}>
-          {PENANDA_TANGAN.map((p) => <option key={p.nama} value={p.nama}>{p.nama} — {p.jabatan}</option>)}
+          {PENANDA_TANGAN.map((p) => (
+            <option key={p.nama} value={p.nama}>{p.nama} — {jabatanPada(p, kop.tanggal)}</option>
+          ))}
           <option value="__lain">Lainnya…</option>
         </select>
         {diLuarDaftar && (
@@ -114,6 +130,12 @@ export default function DataKopSurat({ kop, ubah, bayanganPerihal, bayanganJabat
         <p className="mt-1 text-[11px] text-slate-400">
           Yang dicetak hanya nama dan jabatan. QR tanda tangan terbit dari e-office saat surat disahkan.
         </p>
+        {sebelumNomenklatur && !diLuarDaftar && (
+          <p className="mt-1 text-[11px] text-amber-600 dark:text-amber-400">
+            Surat bertanggal sebelum {TAHUN_NOMENKLATUR} — jabatan mengikuti nomenklatur lama
+            (Manager, belum Department Head).
+          </p>
+        )}
       </div>
 
       <div className="sm:col-span-2">
