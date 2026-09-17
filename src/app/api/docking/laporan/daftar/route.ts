@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { uraiJawabanGas } from "@/lib/lapor/jawabanGas";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -32,17 +33,9 @@ export async function GET(req: NextRequest) {
       signal: AbortSignal.timeout(45_000),
       cache: "no-store",
     });
-    const teks = await res.text();
-    let hasil: any;
-    try { hasil = JSON.parse(teks); }
-    catch {
-      // Apps Script selalu menjawab 200; balasan bukan-JSON berarti skripnya
-      // belum diperbarui ke versi yang mengenal aksi "daftar".
-      return NextResponse.json({
-        ok: false,
-        error: "Apps Script menjawab bukan JSON. Perbarui skripnya ke versi 4 (lihat docs/LAPOR_KAPAL_SETUP.md).",
-      }, { status: 502 });
-    }
+    const jawab = await uraiJawabanGas(gasUrl, res, 4);
+    if (!jawab.ok) return NextResponse.json({ ok: false, error: jawab.error }, { status: 502 });
+    const hasil: any = jawab.data;
     if (!hasil?.ok) {
       return NextResponse.json({ ok: false, error: hasil?.error || "gagal membaca folder" }, { status: 502 });
     }

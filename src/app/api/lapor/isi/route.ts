@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { uraiJawabanGas } from "@/lib/lapor/jawabanGas";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,15 +37,9 @@ export async function GET(req: NextRequest) {
       signal: AbortSignal.timeout(45_000),
       cache: "no-store",
     });
-    const teks = await r.text();
-    let hasil: any;
-    try { hasil = JSON.parse(teks); }
-    catch {
-      return NextResponse.json({
-        ok: false,
-        error: "Apps Script menjawab bukan JSON. Perbarui skripnya ke versi 5 (lihat docs/LAPOR_KAPAL_SETUP.md).",
-      }, { status: 502 });
-    }
+    const jawab = await uraiJawabanGas(gasUrl, r, 5);
+    if (!jawab.ok) return NextResponse.json({ ok: false, error: jawab.error }, { status: 502 });
+    const hasil: any = jawab.data;
 
     if (!hasil?.ok) {
       /**
