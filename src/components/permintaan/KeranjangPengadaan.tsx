@@ -1,22 +1,22 @@
 "use client";
 /**
- * KERANJANG PENGADAAN — bilah pilihan yang tahu pagu.
+ * KERANJANG PENGADAAN — kartu yang tahu pagu.
  *
  * Memilih barang dari permintaan kapal itu mudah; yang sulit adalah menjawab
- * "kalau yang ini semua saya ambil, pagu bulan itu masih cukup tidak?".
- * Selama jawabannya harus dicari di layar lain, orang memilih dulu baru tahu
- * belakangan bahwa pagunya lewat — dan pembatalan SPPBJ jauh lebih mahal
- * daripada satu baris angka di layar ini.
+ * "kalau semuanya saya ambil, pagu bulan itu masih cukup tidak?". Selama
+ * jawabannya harus dicari di layar lain, orang memilih dulu dan baru tahu
+ * belakangan bahwa pagunya lewat — membatalkan SPPBJ jauh lebih mahal daripada
+ * tiga baris angka di layar ini.
  *
- * Karena itu bilahnya menampilkan tiga angka yang sama urutannya dengan
- * Rencana Belanja: pagu → terpakai → keranjang, lalu sisanya. Sisa yang benar
- * adalah pagu dikurangi KEDUANYA; membandingkan keranjang dengan pagu saja
- * membuat bulan yang sudah banyak terpakai tampak masih lapang.
+ * Bentuknya KARTU DI POJOK, bukan bilah selebar layar. Tabel permintaan sudah
+ * penuh kolom; bilah bawah memotong tinggi layar justru ketika orang sedang
+ * menggulung daftar panjang. Kartu hanya menutupi sudut, dan angka yang paling
+ * sering dicari — total belanja — bisa dibuat besar tanpa berebut tempat.
  *
- * Rinciannya sengaja disembunyikan di laci yang bisa ditarik. Bilah bawah
- * dipakai sambil memilih — ia harus muat satu baris dan tidak menutupi tabel;
- * daftar barang, pengelompokan per kapal, dan tombol hapus baru diperlukan
- * ketika orang berhenti memilih dan mulai memeriksa.
+ * Tiga baris anggarannya berurutan sama dengan layar Rencana Belanja:
+ * pagu → terpakai → sisa. Sisa yang benar adalah pagu dikurangi KEDUANYA;
+ * membandingkan keranjang dengan pagu saja membuat bulan yang sudah banyak
+ * terpakai tampak masih lapang.
  */
 import { useEffect, useMemo, useState } from "react";
 import { Ikon } from "@/components/ikon";
@@ -52,14 +52,16 @@ const rupiahRingkas = (n: number) => {
   return rupiah(n);
 };
 
+const NAMA_BULAN = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
+  "Agustus", "September", "Oktober", "November", "Desember"];
+
 const namaBulan = (b: string) => {
   const [th, bl] = b.split("-");
-  const nama = ["Januari", "Februari", "Maret", "April", "Mei", "Juni", "Juli",
-    "Agustus", "September", "Oktober", "November", "Desember"][Number(bl) - 1];
+  const nama = NAMA_BULAN[Number(bl) - 1];
   return nama ? `${nama} ${th}` : b;
 };
 
-/** dua belas bulan ke depan dan ke belakang dari bulan ini */
+/** enam bulan ke belakang dan ke depan dari bulan berjalan */
 function daftarBulan(): string[] {
   const n = new Date();
   const keluar: string[] = [];
@@ -71,24 +73,31 @@ function daftarBulan(): string[] {
 }
 
 /**
- * Meteran pagu: satu batang, tiga bagian.
+ * Meteran pagu: satu batang, dua bagian.
  *
- * Batangnya dibaca sekali lihat — abu-abu yang sudah terpakai, biru yang
- * sedang di keranjang, sisanya kosong. Begitu keranjang melewati pagu, seluruh
- * batang menjadi merah: tidak ada gunanya menampilkan proporsi yang sudah tidak
- * masuk akal, yang perlu terbaca adalah "ini lewat".
+ * Abu-abu yang sudah terpakai bulan itu, biru yang sedang di keranjang,
+ * sisanya kosong. Begitu keduanya melewati pagu, batangnya penuh dan merah —
+ * menampilkan proporsi yang sudah tidak masuk akal tidak ada gunanya, yang
+ * perlu terbaca hanya "ini lewat".
  */
 function Meteran({ pagu, pakai, keranjang }: { pagu: number; pakai: number; keranjang: number }) {
   const lewat = pagu > 0 && pakai + keranjang > pagu;
-  const bagian = (v: number) => (pagu > 0 ? Math.min(100, (v / pagu) * 100) : 0);
+  const lebar = (v: number) => (pagu > 0 ? Math.max(0, Math.min(100, (v / pagu) * 100)) : 0);
   return (
-    <div className="h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
-      <div className="flex h-full">
-        <div className={`h-full ${lewat ? "bg-rose-300" : "bg-slate-400"}`}
-          style={{ width: `${bagian(pakai)}%` }} />
-        <div className={`h-full ${lewat ? "bg-rose-600" : "bg-[#16357f]"}`}
-          style={{ width: `${bagian(keranjang)}%` }} />
-      </div>
+    <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+      <span className={`h-full ${lewat ? "bg-rose-300" : "bg-slate-400"}`}
+        style={{ width: lewat ? "38%" : `${lebar(pakai)}%` }} />
+      <span className={`h-full ${lewat ? "bg-rose-600" : "bg-[#16357f]"}`}
+        style={{ width: lewat ? "62%" : `${lebar(keranjang)}%` }} />
+    </div>
+  );
+}
+
+function BarisAngka({ label, nilai, warna = "" }: { label: string; nilai: string; warna?: string }) {
+  return (
+    <div className="flex items-baseline justify-between py-[3px] text-[11.5px]">
+      <span className="text-slate-500 dark:text-slate-400">{label}</span>
+      <span className={`font-bold tabular-nums ${warna || "text-slate-800 dark:text-slate-100"}`}>{nilai}</span>
     </div>
   );
 }
@@ -111,14 +120,18 @@ export default function KeranjangPengadaan({
   const [pesan, setPesan] = useState("");
 
   useEffect(() => { if (!item.length) setBuka(false); }, [item.length]);
-  useEffect(() => { if (!pesan) return; const t = setTimeout(() => setPesan(""), 4000); return () => clearTimeout(t); }, [pesan]);
+  useEffect(() => {
+    if (!pesan) return;
+    const t = setTimeout(() => setPesan(""), 4000);
+    return () => clearTimeout(t);
+  }, [pesan]);
 
-  const nilai = useMemo(() => {
-    const jumlah = item.reduce((s, x) => s + x.nilai, 0);
-    return { jumlah, tanpaHarga: item.filter((x) => x.nilai <= 0).length };
-  }, [item]);
+  const nilai = useMemo(() => ({
+    jumlah: item.reduce((s, x) => s + x.nilai, 0),
+    tanpaHarga: item.filter((x) => x.nilai <= 0).length,
+  }), [item]);
 
-  /* pagu bulan yang dipilih untuk mata anggaran yang dipilih, dan pemakaiannya */
+  /* pagu bulan terpilih untuk mata anggaran terpilih, dan pemakaiannya */
   const anggaran = useMemo(() => {
     const kunciMa = maKey(ma);
     const p = plafon.find((x) => x.bulan === bulan);
@@ -129,8 +142,8 @@ export default function KeranjangPengadaan({
     return { pagu, pakai, sisa: pagu - pakai - nilai.jumlah };
   }, [plafon, pengadaan, bulan, ma, nilai.jumlah]);
 
-  const lewat = anggaran.pagu > 0 && anggaran.sisa < 0;
-  const belumAdaPagu = anggaran.pagu <= 0;
+  const adaPagu = anggaran.pagu > 0;
+  const lewat = adaPagu && anggaran.sisa < 0;
 
   const perKapal = useMemo(() => {
     const peta = new Map<string, ItemKeranjang[]>();
@@ -146,9 +159,9 @@ export default function KeranjangPengadaan({
   /**
    * Simpan keranjang sebagai rencana belanja — satu baris per kapal.
    *
-   * Yang disimpan taksiran nilainya saja, bukan daftar barangnya: begitu
-   * SPPBJ-nya terbit, yang berlaku SPPBJ itu, dan rencana hanya perlu
-   * menjawab "pagu bulan ini sudah dijanjikan untuk apa saja".
+   * Yang disimpan taksiran nilainya, bukan daftar barangnya: begitu SPPBJ
+   * terbit, yang berlaku SPPBJ itu sendiri, dan rencana hanya perlu menjawab
+   * "pagu bulan ini sudah dijanjikan untuk apa saja".
    */
   const keRencana = async () => {
     setSibuk(true);
@@ -173,6 +186,9 @@ export default function KeranjangPengadaan({
 
   if (!item.length) return null;
 
+  const kelasPilih = "min-w-0 flex-1 rounded-lg border border-slate-200 bg-white px-2 py-1.5 text-[11.5px] "
+    + "text-slate-700 outline-none transition focus:border-[#16357f] dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200";
+
   return (
     <>
       {/* ── laci rincian ─────────────────────────────────────────────────── */}
@@ -183,11 +199,11 @@ export default function KeranjangPengadaan({
           <aside className="fixed inset-y-0 right-0 z-50 flex w-full max-w-md flex-col border-l border-slate-200 bg-white shadow-2xl dark:border-slate-700 dark:bg-slate-900">
             <header className="flex items-center justify-between border-b border-slate-200 px-4 py-3 dark:border-slate-700">
               <div>
-                <p className="text-[13px] font-bold text-slate-800 dark:text-slate-100">Keranjang pengadaan</p>
+                <p className="text-[13px] font-bold text-slate-800 dark:text-slate-100">Isi keranjang</p>
                 <p className="text-[11px] text-slate-500">{item.length} barang · {perKapal.length} kapal</p>
               </div>
-              <button onClick={() => setBuka(false)}
-                className="rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+              <button onClick={() => setBuka(false)} aria-label="Tutup"
+                className="rounded-lg p-1.5 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800">
                 <Ikon nama="silang" className="h-4 w-4" />
               </button>
             </header>
@@ -201,9 +217,9 @@ export default function KeranjangPengadaan({
                       {rupiah(g.nilai)}
                     </span>
                   </div>
-                  <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
+                  <ul className="divide-y divide-slate-100 overflow-hidden rounded-xl border border-slate-200 dark:divide-slate-800 dark:border-slate-700">
                     {g.daftar.map((x) => (
-                      <li key={x.kunci} className="flex items-start gap-2 px-2.5 py-2">
+                      <li key={x.kunci} className="flex items-start gap-2 px-3 py-2">
                         <div className="min-w-0 flex-1">
                           <p className="truncate text-[12px] text-slate-800 dark:text-slate-100">{x.nama}</p>
                           <p className="text-[10.5px] text-slate-500">
@@ -214,7 +230,7 @@ export default function KeranjangPengadaan({
                           </p>
                         </div>
                         <button onClick={() => onHapus(x.kunci)} title="Keluarkan dari keranjang"
-                          className="mt-0.5 rounded p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950">
+                          className="mt-0.5 rounded-lg p-1 text-slate-400 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950">
                           <Ikon nama="silang" className="h-3.5 w-3.5" />
                         </button>
                       </li>
@@ -232,7 +248,7 @@ export default function KeranjangPengadaan({
                 </span>
               </div>
               <button onClick={onBersih}
-                className="w-full rounded-md border border-slate-300 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-800">
+                className="w-full rounded-lg border border-slate-200 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800">
                 Kosongkan keranjang
               </button>
             </footer>
@@ -240,77 +256,91 @@ export default function KeranjangPengadaan({
         </>
       )}
 
-      {/* ── bilah bawah ──────────────────────────────────────────────────── */}
-      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-200 bg-white/97 backdrop-blur dark:border-slate-700 dark:bg-slate-900/97">
-        {pesan && (
-          <p className="border-b border-slate-100 bg-slate-50 px-4 py-1.5 text-center text-[11.5px] font-semibold text-slate-700 dark:border-slate-800 dark:bg-slate-800 dark:text-slate-200">
-            {pesan}
-          </p>
-        )}
-        <div className="mx-auto flex max-w-[104rem] flex-wrap items-center gap-x-4 gap-y-2 px-4 py-2.5">
+      {/* ── kartu keranjang ──────────────────────────────────────────────── */}
+      <div className="fixed inset-x-3 bottom-3 z-30 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[21rem]">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,.16)] dark:border-slate-700 dark:bg-slate-900">
 
-          {/* jumlah & nilai */}
-          <button onClick={() => setBuka(true)}
-            className="flex items-center gap-2.5 rounded-lg px-1.5 py-1 text-left transition hover:bg-slate-100 dark:hover:bg-slate-800">
-            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[#16357f] text-[13px] font-bold text-white tabular-nums">
-              {item.length}
+          <div className="flex items-center justify-between px-4 pb-2 pt-3">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              Keranjang
             </span>
-            <span>
-              <span className="block text-[13px] font-bold leading-tight text-slate-900 dark:text-slate-50 tabular-nums">
-                {rupiah(nilai.jumlah)}
-              </span>
-              <span className="block text-[10.5px] leading-tight text-slate-500">
-                {kapalTerpilih.length === 1 ? kapalTerpilih[0] : `${kapalTerpilih.length} kapal`}
-                {nilai.tanpaHarga > 0 && ` · ${nilai.tanpaHarga} tanpa harga`}
-                <span className="ml-1 font-semibold text-[#16357f] dark:text-sky-400">· rincian</span>
-              </span>
+            <span className="rounded-md bg-[#16357f] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-white">
+              {item.length} barang
             </span>
-          </button>
-
-          {/* pagu bulan & mata anggaran */}
-          <div className="min-w-[17rem] flex-1">
-            <div className="mb-1 flex items-center gap-1.5">
-              <select value={bulan} onChange={(e) => setBulan(e.target.value)}
-                className="rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] font-semibold text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                {daftarBulan().map((b) => <option key={b} value={b}>{namaBulan(b)}</option>)}
-              </select>
-              <select value={ma} onChange={(e) => setMa(e.target.value)}
-                className="min-w-0 flex-1 rounded border border-slate-300 bg-white px-1.5 py-0.5 text-[11px] text-slate-700 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
-                {MA_BIAYA.map((m) => <option key={m.kode} value={m.kode}>{m.label}</option>)}
-              </select>
-            </div>
-            <Meteran pagu={anggaran.pagu} pakai={anggaran.pakai} keranjang={nilai.jumlah} />
-            <p className="mt-1 text-[10.5px] leading-tight text-slate-500">
-              {belumAdaPagu ? (
-                <span className="font-semibold text-amber-600">
-                  Pagu {labelMA(maKey(ma))} belum ada untuk {namaBulan(bulan)}
-                </span>
-              ) : (
-                <>
-                  pagu {rupiahRingkas(anggaran.pagu)} · terpakai {rupiahRingkas(anggaran.pakai)} ·{" "}
-                  <span className={`font-bold ${lewat ? "text-rose-600" : "text-emerald-700 dark:text-emerald-400"}`}>
-                    {lewat ? `lewat ${rupiahRingkas(-anggaran.sisa)}` : `sisa ${rupiahRingkas(anggaran.sisa)}`}
-                  </span>
-                </>
-              )}
-            </p>
           </div>
 
-          {/* tindakan */}
-          <div className="flex items-center gap-1.5">
-            <button onClick={onSalin} title="Salin daftar barang"
-              className="rounded-md border border-slate-300 p-2 text-slate-600 transition hover:bg-slate-50 dark:border-slate-600 dark:text-slate-300 dark:hover:bg-slate-800">
-              <Ikon nama="salin" className="h-4 w-4" />
-            </button>
-            <button onClick={keRencana} disabled={sibuk}
-              className="rounded-md border border-[#16357f] px-3 py-1.5 text-[12px] font-semibold text-[#16357f] transition hover:bg-[#16357f]/5 disabled:opacity-40 dark:border-sky-500 dark:text-sky-400">
-              {sibuk ? "Menyimpan…" : "Simpan ke Rencana"}
+          <p className="px-4 text-[23px] font-extrabold leading-none tracking-tight tabular-nums text-slate-900 dark:text-slate-50">
+            {rupiah(nilai.jumlah)}
+          </p>
+          <p className="px-4 pb-3 pt-1 text-[11.5px] text-slate-500 dark:text-slate-400">
+            {kapalTerpilih.length === 1 ? kapalTerpilih[0] : `${kapalTerpilih.length} kapal`}
+            {nilai.tanpaHarga > 0 && ` · ${nilai.tanpaHarga} barang tanpa pembanding harga`}
+          </p>
+
+          <div className="flex gap-1.5 px-4 pb-3">
+            <select value={bulan} onChange={(e) => setBulan(e.target.value)} aria-label="Bulan anggaran"
+              className={kelasPilih}>
+              {daftarBulan().map((b) => <option key={b} value={b}>{namaBulan(b)}</option>)}
+            </select>
+            <select value={ma} onChange={(e) => setMa(e.target.value)} aria-label="Mata anggaran"
+              className={kelasPilih}>
+              {MA_BIAYA.map((m) => <option key={m.kode} value={m.kode}>{m.label}</option>)}
+            </select>
+          </div>
+
+          <div className="px-4 pb-3">
+            {adaPagu ? (
+              <>
+                <BarisAngka label="Pagu bulan ini" nilai={rupiahRingkas(anggaran.pagu)} />
+                <BarisAngka label="Sudah terpakai" nilai={rupiahRingkas(anggaran.pakai)} />
+                <BarisAngka
+                  label={lewat ? "Melewati pagu" : "Sisa bila diambil"}
+                  nilai={lewat ? rupiahRingkas(-anggaran.sisa) : rupiahRingkas(anggaran.sisa)}
+                  warna={lewat ? "text-rose-600" : "text-emerald-700 dark:text-emerald-400"} />
+                <div className="mt-1.5">
+                  <Meteran pagu={anggaran.pagu} pakai={anggaran.pakai} keranjang={nilai.jumlah} />
+                </div>
+              </>
+            ) : (
+              <p className="rounded-lg bg-amber-50 px-3 py-2 text-[11.5px] font-semibold text-amber-700 dark:bg-amber-950/40 dark:text-amber-400">
+                Pagu {labelMA(maKey(ma))} belum ada untuk {namaBulan(bulan)}.
+              </p>
+            )}
+          </div>
+
+          {pesan && (
+            <p className="mx-4 mb-3 rounded-lg bg-slate-100 px-3 py-2 text-[11.5px] font-semibold text-slate-700 dark:bg-slate-800 dark:text-slate-200">
+              {pesan}
+            </p>
+          )}
+
+          <div className="flex items-center gap-1.5 border-t border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
+            <button onClick={() => setBuka(true)}
+              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
+              Rincian
             </button>
             <button onClick={onSppbj} disabled={kapalTerpilih.length !== 1}
               title={kapalTerpilih.length === 1 ? "" : "Satu SPPBJ hanya untuk satu kapal"}
-              className="rounded-md bg-[#16357f] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#12296a] disabled:opacity-40">
+              className="flex-1 rounded-lg bg-[#16357f] px-3 py-2 text-[12.5px] font-semibold text-white transition hover:bg-[#12296a] disabled:cursor-not-allowed disabled:opacity-40">
               Buat SPPBJ →
             </button>
+          </div>
+
+          <div className="flex items-center justify-between border-t border-slate-100 px-3 py-1.5 text-[11px] dark:border-slate-800">
+            <button onClick={keRencana} disabled={sibuk}
+              className="rounded px-1.5 py-1 font-semibold text-[#16357f] transition hover:bg-[#16357f]/5 disabled:opacity-40 dark:text-sky-400">
+              {sibuk ? "Menyimpan…" : "Simpan ke Rencana"}
+            </button>
+            <span className="flex items-center gap-1">
+              <button onClick={onSalin}
+                className="rounded px-1.5 py-1 text-slate-500 transition hover:bg-slate-100 dark:hover:bg-slate-800">
+                Salin
+              </button>
+              <button onClick={onBersih}
+                className="rounded px-1.5 py-1 text-slate-500 transition hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-950">
+                Kosongkan
+              </button>
+            </span>
           </div>
         </div>
       </div>
