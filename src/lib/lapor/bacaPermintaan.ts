@@ -78,6 +78,11 @@ export async function bacaPermintaan(
 
 const KUNCI_TITIPAN = "sppbj_titipan";
 
+/** dua teks dianggap sama bila hanya beda huruf besar-kecil dan spasi */
+const samaTeks = (a?: string, b?: string) =>
+  (a || "").trim().toLowerCase().replace(/\s+/g, " ")
+  === (b || "").trim().toLowerCase().replace(/\s+/g, " ");
+
 /**
  * Titipkan daftar barang untuk halaman pembuatan SPPBJ.
  *
@@ -85,13 +90,30 @@ const KUNCI_TITIPAN = "sppbj_titipan";
  * alamat yang kepanjangan dipotong diam-diam oleh sebagian peramban — barang
  * terakhir hilang tanpa ada yang tahu.
  */
-export function titipkanKeSppbj(kapal: string, baris: BarisPermintaan[], asal: string) {
+export function titipkanKeSppbj(
+  kapal: string,
+  baris: (BarisPermintaan & { hargaSatuan?: number })[],
+  asal: string,
+) {
   const isi = {
     kapal, asal, waktu: new Date().toISOString(),
     items: baris.map((b) => ({
       kapal, nama: b.nama, spesifikasi: b.spesifikasi || "",
       jumlah: keJumlah(b.jumlah), satuan: b.satuan || "pcs",
-      keterangan: b.keterangan || "", harga: 0,
+      /*
+       * Keterangan menjadi baris judul di atas barangnya pada borang SPPBJ.
+       * Juru baca kerap mengisinya dengan nama barang itu sendiri, dan
+       * hasilnya tiap barang tercetak dua kali: sekali sebagai judul, sekali
+       * sebagai barisnya. Keterangan yang cuma mengulang namanya dibuang.
+       */
+      keterangan: samaTeks(b.keterangan, b.nama) ? "" : (b.keterangan || ""),
+      /*
+       * Harga ikut berangkat. Layar permintaan sudah mencocokkan tiap barang
+       * ke Database RAB; mengirim nol memaksa orang mengetik ulang seluruh
+       * harga yang sebenarnya sudah diketahui, dan estimasi di borang SPPBJ
+       * tampil Rp 0 seolah pengadaannya tak bernilai.
+       */
+      harga: Math.round(b.hargaSatuan || 0),
     })),
   };
   try { localStorage.setItem(KUNCI_TITIPAN, JSON.stringify(isi)); } catch { /* penyimpanan penuh */ }

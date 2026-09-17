@@ -373,7 +373,9 @@ export default function IsiPermintaanKapal() {
    * keranjang untuk giliran berikutnya.
    */
   const keSppbjKapal = (kapal: string) => {
-    const baris = terpilih.filter((x) => x.kapal === kapal).map((x) => x.baris);
+    const baris = terpilih
+      .filter((x) => x.kapal === kapal)
+      .map((x) => ({ ...x.baris, hargaSatuan: hargaBerlaku(x.baris, estimasi[x.kunci]) }));
     if (!baris.length) return;
     const n = titipkanKeSppbj(kapal, baris, `Permintaan kapal — ${kapal}`);
     if (n) router.push("/sppbj/isi?dari=permintaan");
