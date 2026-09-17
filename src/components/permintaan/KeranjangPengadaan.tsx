@@ -118,12 +118,23 @@ export default function KeranjangPengadaan({
   const [bulan, setBulan] = useState(bulanIni);
   const [ma, setMa] = useState(MA_AWAL);
   const [buka, setBuka] = useState(false);
+  /**
+   * Kartunya terlipat menjadi lencana keranjang, seperti di lapak daring.
+   *
+   * Barangnya dipilih sambil menyisir tabel, dan kartu selebar 21 rem menutupi
+   * sudut kanan tabel itu sepanjang pekerjaan. Yang perlu selalu terlihat cuma
+   * dua hal — keranjangnya ada dan berapa isinya; sisanya baru dibutuhkan saat
+   * hendak memberangkatkan.
+   */
+  const [kembang, setKembang] = useState(false);
   /** daftar kapal untuk dipilih ketika keranjang memuat lebih dari satu */
   const [pilihKapal, setPilihKapal] = useState(false);
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
 
-  useEffect(() => { if (!item.length) { setBuka(false); setPilihKapal(false); } }, [item.length]);
+  useEffect(() => {
+    if (!item.length) { setBuka(false); setPilihKapal(false); setKembang(false); }
+  }, [item.length]);
   useEffect(() => {
     if (!pesan) return;
     const t = setTimeout(() => setPesan(""), 4000);
@@ -261,15 +272,34 @@ export default function KeranjangPengadaan({
       )}
 
       {/* ── kartu keranjang ──────────────────────────────────────────────── */}
-      <div className="fixed inset-x-3 bottom-3 z-30 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[21rem]">
+      {!kembang && (
+        <button onClick={() => setKembang(true)} title={`Keranjang — ${item.length} barang`}
+          className="fixed bottom-4 right-4 z-30 flex items-center gap-2.5 rounded-full bg-[#16357f] py-3 pl-4 pr-5 text-white shadow-[0_12px_28px_rgba(22,53,127,.4)] transition hover:bg-[#12296a] sm:bottom-5 sm:right-5">
+          <span className="relative">
+            <Ikon nama="keranjang" className="h-5 w-5" />
+            <span className={`absolute -right-2.5 -top-2 grid h-[18px] min-w-[18px] place-items-center rounded-full px-1 text-[10.5px] font-bold tabular-nums ring-2 ring-[#16357f] ${lewat ? "bg-rose-500 text-white" : "bg-white text-[#16357f]"}`}>
+              {item.length}
+            </span>
+          </span>
+          <span className="text-[13px] font-bold tabular-nums">{rupiahRingkas(nilai.jumlah)}</span>
+        </button>
+      )}
+
+      <div className={`fixed inset-x-3 bottom-3 z-30 sm:inset-x-auto sm:right-5 sm:bottom-5 sm:w-[21rem] ${kembang ? "" : "hidden"}`}>
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_18px_40px_rgba(15,23,42,.16)] dark:border-slate-700 dark:bg-slate-900">
 
           <div className="flex items-center justify-between px-4 pb-2 pt-3">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-              Keranjang
+            <span className="flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+              <Ikon nama="keranjang" className="h-3.5 w-3.5" /> Keranjang
             </span>
-            <span className="rounded-md bg-[#16357f] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-white">
-              {item.length} barang
+            <span className="flex items-center gap-1.5">
+              <span className="rounded-md bg-[#16357f] px-2 py-0.5 text-[10.5px] font-bold uppercase tracking-wide text-white">
+                {item.length} barang
+              </span>
+              <button onClick={() => setKembang(false)} aria-label="Lipat keranjang" title="Lipat"
+                className="rounded-md p-1 text-slate-400 transition hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800">
+                <Ikon nama="chevron" className="h-3.5 w-3.5 rotate-90" />
+              </button>
             </span>
           </div>
 
