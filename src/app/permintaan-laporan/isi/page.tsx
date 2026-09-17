@@ -20,6 +20,7 @@ import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Ikon } from "@/components/ikon";
 import { PratinjauBerkas } from "@/components/PratinjauBerkas";
+import KeranjangPengadaan, { ItemKeranjang } from "@/components/permintaan/KeranjangPengadaan";
 import { useJuruBaca } from "@/components/lapor/PilJuruBaca";
 import { BarisPermintaan, keJumlah, titipkanKeSppbj } from "@/lib/lapor/bacaPermintaan";
 import { bacaSekarang, nyalakanJuruBaca, putaran } from "@/lib/lapor/juruBaca";
@@ -335,12 +336,30 @@ export default function IsiPermintaanKapal() {
   }, [entri, pilih, estimasi]);
 
   const terpilih = useMemo(() => {
-    const keluar: { kapal: string; baris: BarisPermintaan }[] = [];
+    const keluar: { kapal: string; baris: BarisPermintaan; kunci: string; nilai: number }[] = [];
     entri.forEach((e) => (e.bacaan?.baris || []).forEach((b, i) => {
-      if (pilih.has(kunci(e.berkas.fileId, i))) keluar.push({ kapal: e.kiriman.kapal, baris: b });
+      const k = kunci(e.berkas.fileId, i);
+      if (!pilih.has(k)) return;
+      keluar.push({
+        kapal: e.kiriman.kapal, baris: b, kunci: k,
+        nilai: hargaBerlaku(b, estimasi[k]) * keAngkaJumlah(b.jumlah),
+      });
     }));
     return keluar;
-  }, [entri, pilih]);
+  }, [entri, pilih, estimasi]);
+
+  /* bentuk yang dipahami keranjang: satu baris, satu barang, satu taksiran */
+  const isiKeranjang = useMemo<ItemKeranjang[]>(() => terpilih.map((x) => ({
+    kunci: x.kunci,
+    kapal: x.kapal,
+    nama: x.baris.nama,
+    jumlah: keJumlah(x.baris.jumlah),
+    satuan: x.baris.satuan || "",
+    nilai: x.nilai,
+  })), [terpilih]);
+
+  const keluarkanDariKeranjang = (k: string) =>
+    setPilih((s) => { const n = new Set(s); n.delete(k); return n; });
 
   const kapalTerpilih = Array.from(new Set(terpilih.map((x) => x.kapal)));
 
@@ -716,46 +735,19 @@ export default function IsiPermintaanKapal() {
         </div>
         )}
 
-        {/* ── bilah pilihan ─────────────────────────────────────────────── */}
-        {terpilih.length > 0 && (
-          <div className="fixed inset-x-0 bottom-0 z-30 border-t border-slate-300 bg-white/97 px-4 py-2.5 backdrop-blur dark:border-slate-700 dark:bg-slate-900/97">
-            <div className="mx-auto flex max-w-[104rem] flex-wrap items-center gap-3">
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-md bg-[#16357f] text-[13px] font-bold text-white tabular-nums">
-                {terpilih.length}
-              </span>
-              <div className="min-w-[12rem] flex-1">
-                <p className="text-[12.5px] font-bold text-slate-800 dark:text-slate-100">
-                  {terpilih.length} barang terpilih{" "}
-                  {nilaiTerpilih.jumlah > 0 && (
-                    <span className="ml-2 font-semibold text-[#16357f] dark:text-sky-400">
-                      · estimasi {rupiahPenuh(nilaiTerpilih.jumlah)}
-                      {nilaiTerpilih.tanpaHarga > 0 && (
-                        <span className="font-normal text-slate-500"> ({nilaiTerpilih.tanpaHarga} barang tanpa pembanding)</span>
-                      )}
-                    </span>
-                  )}
-                </p>
-                <p className="text-[11px] text-slate-500">
-                  {kapalTerpilih.length === 1
-                    ? kapalTerpilih[0]
-                    : <span className="font-semibold text-rose-600">Terpilih dari {kapalTerpilih.length} kapal — satu SPPBJ hanya untuk satu kapal.</span>}
-                </p>
-              </div>
-              <button onClick={() => setPilih(new Set())}
-                className="rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
-                Bersihkan
-              </button>
-              <button onClick={salin}
-                className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 dark:border-slate-600 dark:text-slate-200">
-                <Ikon nama="salin" className="h-3.5 w-3.5" /> Salin daftar
-              </button>
-              <button onClick={keSppbj} disabled={kapalTerpilih.length !== 1}
-                className="rounded-md bg-[#16357f] px-3 py-1.5 text-[12px] font-semibold text-white transition hover:bg-[#12296a] disabled:opacity-40">
-                Buat SPPBJ →
-              </button>
-            </div>
-          </div>
-        )}
+        {/* ── keranjang pengadaan ───────────────────────────────────────
+         * Bilah pilihan lama hanya menghitung barang. Yang menentukan boleh
+         * tidaknya pengadaan berjalan adalah pagu bulan itu, jadi keranjangnya
+         * sekalian menampilkan pagu, pemakaian berjalan, dan sisanya.
+         */}
+        <KeranjangPengadaan
+          item={isiKeranjang}
+          kapalTerpilih={kapalTerpilih}
+          onHapus={keluarkanDariKeranjang}
+          onBersih={() => setPilih(new Set())}
+          onSalin={salin}
+          onSppbj={keSppbj}
+        />
       </main>
     </div>
   );
