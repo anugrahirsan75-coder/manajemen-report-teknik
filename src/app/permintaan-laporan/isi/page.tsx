@@ -40,6 +40,9 @@ type Saring = "semua" | "terbaca" | "belum" | "gagal";
 
 const kunci = (fileId: string, i: number) => `${fileId}|${i}`;
 
+/** keranjang pengadaan yang sedang disusun, disimpan di peramban */
+const KUNCI_PILIH = "permintaan_keranjang";
+
 /** perkiraan harga satu baris permintaan, hasil pencocokan ke Database RAB */
 interface Estimasi { harga: number; yakin: boolean; uraian: string; satuan: string }
 
@@ -105,8 +108,19 @@ export default function IsiPermintaanKapal() {
   const [periode, setPeriode] = useState("");
   const [cari, setCari] = useState("");
   const [saring, setSaring] = useState<Saring>("semua");
+  /*
+   * Isi keranjang bertahan di peramban.
+   *
+   * Menyusun satu paket pengadaan berarti menyisir puluhan berkas dari
+   * beberapa kapal — pekerjaan belasan menit. Sebelumnya pilihan itu hilang
+   * begitu layar berpindah ke borang SPPBJ, sehingga kapal kedua dan ketiga
+   * harus dipilih ulang dari awal, satu demi satu, padahal keranjangnya
+   * memang sengaja lintas kapal.
+   */
   const [pilih, setPilih] = useState<Set<string>>(new Set());
   const [tutupKapal, setTutupKapal] = useState<Set<string>>(new Set());
+  /** pilihan sudah dibaca dari peramban; sebelum itu jangan menimpanya */
+  const [pilihanTerbaca, setPilihanTerbaca] = useState(false);
   const [sibukBerkas, setSibukBerkas] = useState("");
   const [buktiGalat, setBuktiGalat] = useState(false);
   /** berkas yang sedang dibuka di panel kanan */
@@ -144,6 +158,24 @@ export default function IsiPermintaanKapal() {
   }, []);
 
   useEffect(() => { void ambil(); }, [ambil]);
+
+  /* baca keranjang yang tersimpan, sekali saat layar dibuka */
+  useEffect(() => {
+    try {
+      const t = localStorage.getItem(KUNCI_PILIH);
+      if (t) setPilih(new Set(JSON.parse(t) as string[]));
+    } catch { /* penyimpanan peramban dimatikan */ }
+    setPilihanTerbaca(true);
+  }, []);
+
+  /* simpan tiap kali berubah — termasuk saat dikosongkan */
+  useEffect(() => {
+    if (!pilihanTerbaca) return;
+    try {
+      if (pilih.size) localStorage.setItem(KUNCI_PILIH, JSON.stringify(Array.from(pilih)));
+      else localStorage.removeItem(KUNCI_PILIH);
+    } catch { /* penyimpanan penuh */ }
+  }, [pilih, pilihanTerbaca]);
 
   /**
    * Selama masih ada yang belum terbaca, layar menyegarkan dirinya tiap 20
@@ -378,7 +410,15 @@ export default function IsiPermintaanKapal() {
       .map((x) => ({ ...x.baris, hargaSatuan: hargaBerlaku(x.baris, estimasi[x.kunci]) }));
     if (!baris.length) return;
     const n = titipkanKeSppbj(kapal, baris, `Permintaan kapal — ${kapal}`);
-    if (n) router.push("/sppbj/isi?dari=permintaan");
+    if (!n) return;
+    /*
+     * Kapal yang sudah berangkat dikeluarkan dari keranjang, sisanya tetap
+     * tersimpan. Tanpa ini, kembali ke layar ini berarti memilihnya lagi satu
+     * per satu — dan barang yang sudah masuk SPPBJ ikut terpilih dua kali.
+     */
+    const dibawa = new Set(terpilih.filter((x) => x.kapal === kapal).map((x) => x.kunci));
+    setPilih((s) => new Set(Array.from(s).filter((k) => !dibawa.has(k))));
+    router.push("/sppbj/isi?dari=permintaan");
   };
 
   const keSppbj = () => { if (kapalTerpilih.length === 1) keSppbjKapal(kapalTerpilih[0]); };
