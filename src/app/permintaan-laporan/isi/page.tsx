@@ -1123,6 +1123,16 @@ function IsiBerkas({ e, pilih, estimasi, lihatFoto, setLihatFoto, alih, alihBany
         }
         const blob = await r.blob();
         if (batal) return;
+        /*
+         * Jawaban bisa lolos pemeriksaan di atas tetapi tetap bukan berkas:
+         * halaman HTML dari Apps Script, atau badan kosong. Dipasang sebagai
+         * gambar, keduanya berakhir sebagai kotak pecah tanpa keterangan —
+         * lebih baik ditolak di sini supaya jalan keluarnya ikut muncul.
+         */
+        if (!blob.size) throw new Error("Berkas terambil kosong dari Drive.");
+        if (/^text\/html/i.test(blob.type)) {
+          throw new Error("Drive menjawab halaman web, bukan berkas. Buka langsung di Drive.");
+        }
         objek = URL.createObjectURL(blob);
         setFoto({ url: objek, mime: blob.type || jenisIsi });
       } catch (err: any) {
@@ -1169,9 +1179,18 @@ function IsiBerkas({ e, pilih, estimasi, lihatFoto, setLihatFoto, alih, alihBany
           className="rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:text-slate-200">
           {lihatFoto ? "Sembunyikan foto" : "Tampilkan foto"}
         </button>
-        <a href={alamatSemat} target="_blank" rel="noreferrer"
+        {/*
+          * Tombol ini membuka BERKAS ASLINYA DI DRIVE, bukan salinan yang
+          * disajikan aplikasi. Ketika pengambilan lewat Apps Script sedang
+          * bermasalah, jalur aplikasi ikut mati — dan justru pada saat itulah
+          * orang perlu melihat fotonya. Drive tidak bergantung pada jalur itu.
+          * Tautan aplikasi hanya dipakai bila kiriman lama tidak menyimpan
+          * tautan Drive-nya.
+          */}
+        <a href={e.berkas.url || alamatSemat} target="_blank" rel="noreferrer"
+          title={e.berkas.url ? "Buka berkas aslinya di Google Drive" : "Buka berkas lewat aplikasi"}
           className="inline-flex items-center gap-1 rounded-md border border-slate-300 px-2.5 py-1.5 text-[11.5px] font-semibold text-slate-700 transition hover:border-slate-400 dark:border-slate-600 dark:text-slate-200">
-          Buka berkas <Ikon nama="keluarTaut" className="h-3 w-3" />
+          {e.berkas.url ? "Buka di Drive" : "Buka berkas"} <Ikon nama="keluarTaut" className="h-3 w-3" />
         </a>
         {bisaBaca && (
           <button onClick={() => bacaUlang(e)} disabled={sibuk}
@@ -1314,6 +1333,7 @@ function IsiBerkas({ e, pilih, estimasi, lihatFoto, setLihatFoto, alih, alihBany
               ) : foto?.mime.startsWith("image/") ? (
                 <button onClick={() => setPenuh(true)} title="Klik untuk memperbesar" className="block w-full">
                   <img src={foto.url} alt={`Scan ${namaPendek(e.berkas.nama)}`}
+                    onError={() => setFotoGalat("Berkas terambil, tetapi isinya tidak bisa digambar sebagai foto.")}
                     className="max-h-[26rem] w-full cursor-zoom-in object-contain xl:max-h-[calc(100vh-24rem)]" />
                 </button>
               ) : foto ? (
