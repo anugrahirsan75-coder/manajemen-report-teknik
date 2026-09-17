@@ -103,7 +103,7 @@ function BarisAngka({ label, nilai, warna = "" }: { label: string; nilai: string
 }
 
 export default function KeranjangPengadaan({
-  item, kapalTerpilih, onHapus, onBersih, onSalin, onSppbj,
+  item, kapalTerpilih, onHapus, onBersih, onSalin, onSppbj, onSppbjKapal,
 }: {
   item: ItemKeranjang[];
   kapalTerpilih: string[];
@@ -111,15 +111,19 @@ export default function KeranjangPengadaan({
   onBersih: () => void;
   onSalin: () => void;
   onSppbj: () => void;
+  /** berangkatkan barang satu kapal saja; sisanya tetap di keranjang */
+  onSppbjKapal: (kapal: string) => void;
 }) {
   const { plafon, pengadaan } = useAnggaran();
   const [bulan, setBulan] = useState(bulanIni);
   const [ma, setMa] = useState(MA_AWAL);
   const [buka, setBuka] = useState(false);
+  /** daftar kapal untuk dipilih ketika keranjang memuat lebih dari satu */
+  const [pilihKapal, setPilihKapal] = useState(false);
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
 
-  useEffect(() => { if (!item.length) setBuka(false); }, [item.length]);
+  useEffect(() => { if (!item.length) { setBuka(false); setPilihKapal(false); } }, [item.length]);
   useEffect(() => {
     if (!pesan) return;
     const t = setTimeout(() => setPesan(""), 4000);
@@ -273,7 +277,7 @@ export default function KeranjangPengadaan({
             {rupiah(nilai.jumlah)}
           </p>
           <p className="px-4 pb-3 pt-1 text-[11.5px] text-slate-500 dark:text-slate-400">
-            {kapalTerpilih.length === 1 ? kapalTerpilih[0] : `${kapalTerpilih.length} kapal`}
+            {kapalTerpilih.length === 1 ? kapalTerpilih[0] : `${kapalTerpilih.length} kapal — SPPBJ dibuat per kapal`}
             {nilai.tanpaHarga > 0 && ` · ${nilai.tanpaHarga} barang tanpa pembanding harga`}
           </p>
 
@@ -314,16 +318,51 @@ export default function KeranjangPengadaan({
             </p>
           )}
 
+          {kapalTerpilih.length > 1 && pilihKapal && (
+            <div className="border-t border-slate-200 px-3 py-2 dark:border-slate-700">
+              <p className="mb-1.5 text-[11px] text-slate-500">
+                Satu SPPBJ hanya untuk satu kapal. Pilih yang berangkat dulu —
+                sisanya tetap di keranjang.
+              </p>
+              <ul className="space-y-1">
+                {perKapal.map((g) => (
+                  <li key={g.kapal}>
+                    <button onClick={() => onSppbjKapal(g.kapal)}
+                      className="flex w-full items-center justify-between gap-2 rounded-lg border border-slate-200 px-2.5 py-1.5 text-left transition hover:border-[#16357f] hover:bg-[#16357f]/[0.04] dark:border-slate-700 dark:hover:border-sky-600">
+                      <span className="min-w-0 truncate text-[11.5px] font-semibold text-slate-700 dark:text-slate-200">
+                        {g.kapal}
+                      </span>
+                      <span className="shrink-0 text-[11px] tabular-nums text-slate-500">
+                        {g.daftar.length} brg · {rupiahRingkas(g.nilai)} →
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
           <div className="flex items-center gap-1.5 border-t border-slate-200 bg-slate-50 px-3 py-2.5 dark:border-slate-700 dark:bg-slate-800/60">
             <button onClick={() => setBuka(true)}
               className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-[12px] font-semibold text-slate-700 transition hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-200">
               Rincian
             </button>
-            <button onClick={onSppbj} disabled={kapalTerpilih.length !== 1}
-              title={kapalTerpilih.length === 1 ? "" : "Satu SPPBJ hanya untuk satu kapal"}
-              className="flex-1 rounded-lg bg-[#16357f] px-3 py-2 text-[12.5px] font-semibold text-white transition hover:bg-[#12296a] disabled:cursor-not-allowed disabled:opacity-40">
-              Buat SPPBJ →
-            </button>
+            {kapalTerpilih.length === 1 ? (
+              <button onClick={onSppbj}
+                className="flex-1 rounded-lg bg-[#16357f] px-3 py-2 text-[12.5px] font-semibold text-white transition hover:bg-[#12296a]">
+                Buat SPPBJ →
+              </button>
+            ) : (
+              /*
+               * Keranjang lintas kapal tidak lagi mematikan tombolnya tanpa
+               * penjelasan. Satu SPPBJ memang hanya untuk satu kapal, jadi yang
+               * ditawarkan adalah memilih kapal mana yang berangkat lebih dulu.
+               */
+              <button onClick={() => setPilihKapal((v) => !v)}
+                className="flex-1 rounded-lg bg-[#16357f] px-3 py-2 text-[12.5px] font-semibold text-white transition hover:bg-[#12296a]">
+                Buat SPPBJ per kapal {pilihKapal ? "▴" : "▾"}
+              </button>
+            )}
           </div>
 
           <div className="flex items-center justify-between border-t border-slate-100 px-3 py-1.5 text-[11px] dark:border-slate-800">

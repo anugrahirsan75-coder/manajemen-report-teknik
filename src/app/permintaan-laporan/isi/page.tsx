@@ -363,11 +363,23 @@ export default function IsiPermintaanKapal() {
 
   const kapalTerpilih = Array.from(new Set(terpilih.map((x) => x.kapal)));
 
-  const keSppbj = () => {
-    if (kapalTerpilih.length !== 1) return;
-    const n = titipkanKeSppbj(kapalTerpilih[0], terpilih.map((x) => x.baris), `Permintaan kapal — ${kapalTerpilih[0]}`);
+  /**
+   * Berangkatkan barang SATU KAPAL ke borang SPPBJ.
+   *
+   * Satu SPPBJ hanya boleh memuat satu kapal, sedangkan memilih barang lintas
+   * kapal itu wajar — pagunya satu, dan orang memeriksa seluruh permintaan
+   * bulan itu sekaligus. Maka pilihan lintas kapal tidak ditolak, melainkan
+   * dipecah: kapal yang dipilih berangkat lebih dulu, sisanya tetap di
+   * keranjang untuk giliran berikutnya.
+   */
+  const keSppbjKapal = (kapal: string) => {
+    const baris = terpilih.filter((x) => x.kapal === kapal).map((x) => x.baris);
+    if (!baris.length) return;
+    const n = titipkanKeSppbj(kapal, baris, `Permintaan kapal — ${kapal}`);
     if (n) router.push("/sppbj/isi?dari=permintaan");
   };
+
+  const keSppbj = () => { if (kapalTerpilih.length === 1) keSppbjKapal(kapalTerpilih[0]); };
 
   const salin = () => navigator.clipboard?.writeText(
     terpilih.map((x, i) => `${i + 1}. ${x.baris.nama}${x.baris.spesifikasi ? ` (${x.baris.spesifikasi})` : ""} — ${keJumlah(x.baris.jumlah)} ${x.baris.satuan || "pcs"}`).join("\n"));
@@ -747,6 +759,7 @@ export default function IsiPermintaanKapal() {
           onBersih={() => setPilih(new Set())}
           onSalin={salin}
           onSppbj={keSppbj}
+          onSppbjKapal={keSppbjKapal}
         />
       </main>
     </div>
