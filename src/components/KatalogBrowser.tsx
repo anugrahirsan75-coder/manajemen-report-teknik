@@ -53,6 +53,8 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
   /** yang digambar dibatasi: katalog perbaikan puluhan ribu baris, dan menggambar
       semuanya membuat tiap ketikan terasa tersendat tanpa menolong siapa pun */
   const BATAS = 250;
+  /** kelompok yang tampil sebelum dibuka semuanya */
+  const CHIP_RINGKAS = 6;
   const tampil = useMemo(() => filtered.slice(0, BATAS), [filtered]);
 
   const selectedItems = all.filter((i) => sel[i.kode]);
@@ -111,27 +113,28 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
         </div>
 
         {/* Kelompok pekerjaan — pintasan sekali klik, isinya sama dengan dropdown kategori.
-            Terlipat satu baris penuh: 21 kelompok memakan empat baris dan mendorong
-            tabelnya keluar layar. Dipotong tepat di batas baris, bukan di tengah chip,
-            supaya tidak ada deretan setengah tulisan di bawahnya. */}
+            Yang dibatasi JUMLAH chip, bukan tinggi kotaknya: tinggi dalam piksel ikut
+            ukuran huruf dan perbesaran layar pemakai, dan begitu chip lebih tinggi dari
+            batas itu barisnya terpotong di tengah tulisan. Membatasi jumlah selalu
+            berhenti di chip utuh, seberapa pun besar hurufnya. */}
         {fokus && kategoriList.length > 1 && (
-          <div className="px-5 py-2 border-b bg-white flex items-start gap-2">
-            <div className={`flex flex-wrap gap-1.5 flex-1 min-w-0 ${chipSemua ? "" : "max-h-[1.7rem] overflow-hidden"}`}>
-              <button onClick={() => setKategori("")}
-                className={`text-[11px] px-2.5 py-1 rounded-full border ${!kategori ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
-                Semua ({dasar.length})
-              </button>
-              {kategoriList.map((k) => (
-                <button key={k} onClick={() => setKategori(kategori === k ? "" : k)}
-                  className={`text-[11px] px-2.5 py-1 rounded-full border ${kategori === k ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
-                  {labelKategori(k)} ({dasar.filter((i) => i.kategori === k).length})
-                </button>
-              ))}
-            </div>
-            <button onClick={() => setChipSemua((x) => !x)}
-              className="shrink-0 text-[11px] font-semibold px-2.5 py-1 rounded-full border border-slate-300 text-slate-600 hover:bg-slate-50">
-              {chipSemua ? "▴ ringkas" : `▾ semua kelompok (${kategoriList.length})`}
+          <div className="px-5 py-2 border-b bg-white flex flex-wrap items-center gap-1.5">
+            <button onClick={() => setKategori("")}
+              className={`text-[11px] px-2.5 py-1 rounded-full border ${!kategori ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
+              Semua ({dasar.length.toLocaleString("id-ID")})
             </button>
+            {(chipSemua ? kategoriList : kategoriList.slice(0, CHIP_RINGKAS)).map((k) => (
+              <button key={k} onClick={() => setKategori(kategori === k ? "" : k)}
+                className={`text-[11px] px-2.5 py-1 rounded-full border ${kategori === k ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
+                {labelKategori(k)} ({dasar.filter((i) => i.kategori === k).length})
+              </button>
+            ))}
+            {kategoriList.length > CHIP_RINGKAS && (
+              <button onClick={() => setChipSemua((x) => !x)}
+                className="text-[11px] font-semibold px-2.5 py-1 rounded-full border border-[#16357f]/30 bg-[#16357f]/5 text-[#16357f] hover:bg-[#16357f]/10">
+                {chipSemua ? "▴ ringkas" : `▾ ${kategoriList.length - CHIP_RINGKAS} kelompok lain`}
+              </button>
+            )}
           </div>
         )}
 
