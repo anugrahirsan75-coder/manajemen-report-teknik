@@ -412,12 +412,16 @@ export default function IsiPermintaanKapal() {
     const n = titipkanKeSppbj(kapal, baris, `Permintaan kapal — ${kapal}`);
     if (!n) return;
     /*
-     * Kapal yang sudah berangkat dikeluarkan dari keranjang, sisanya tetap
-     * tersimpan. Tanpa ini, kembali ke layar ini berarti memilihnya lagi satu
-     * per satu — dan barang yang sudah masuk SPPBJ ikut terpilih dua kali.
+     * Keranjang TIDAK dikosongkan di sini.
+     *
+     * Menekan "Buat SPPBJ" belum berarti pengadaannya jadi: borangnya masih
+     * bisa ditinggalkan, ditutup, atau batal disimpan. Kalau isinya dibuang
+     * saat itu juga, barangnya hilang tanpa ada dokumen apa pun sebagai
+     * gantinya — dan menyisirnya ulang dari 107 berkas jauh lebih mahal
+     * daripada mencentang ulang satu kapal yang sudah terlanjur jadi SPPBJ.
+     * Yang mengosongkan keranjang hanyalah pemakainya sendiri, lewat tombol
+     * hapus per barang atau "Kosongkan".
      */
-    const dibawa = new Set(terpilih.filter((x) => x.kapal === kapal).map((x) => x.kunci));
-    setPilih((s) => new Set(Array.from(s).filter((k) => !dibawa.has(k))));
     router.push("/sppbj/isi?dari=permintaan");
   };
 
