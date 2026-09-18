@@ -30,6 +30,7 @@ function SppbjIsiInner() {
   const total = sppbjTotal(req.items);
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
   const [browseKatalog, setBrowseKatalog] = useState(false);
+  const [browsePerbaikan, setBrowsePerbaikan] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [rekapBusy, setRekapBusy] = useState(false);
   // kolom Mata Anggaran per item hanya perlu saat pengadaan mencentang >1 MA
@@ -586,6 +587,8 @@ function SppbjIsiInner() {
         <datalist id="kapalListSppbj">{KAPAL_LIST.map((k) => <option key={k} value={k} />)}</datalist>
         <div className="mb-2 flex flex-wrap items-center gap-2">
           <button onClick={() => addItemU()} className="bg-[#16357f] text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:opacity-90">＋ Tambah Item</button>
+          <button onClick={() => setBrowsePerbaikan(true)} title="Pekerjaan perbaikan siap pakai — item + rincian bahan langsung terisi"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100">🔧 Pekerjaan Perbaikan</button>
           <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
           <button onClick={() => setScanOpen(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">📷 Scan dari Excel (OCR)</button>
           <span className="text-[11px] text-slate-400">screenshot tabel → terisi otomatis</span>
@@ -611,6 +614,9 @@ function SppbjIsiInner() {
           </div>
         </div>
         <KatalogBrowser open={browseKatalog} onClose={() => setBrowseKatalog(false)} onAdd={addFromKatalog}
+          defaultKapal={req.items.length ? req.items[req.items.length - 1].kapal : ""} />
+        <KatalogBrowser open={browsePerbaikan} onClose={() => setBrowsePerbaikan(false)} onAdd={addFromKatalog}
+          fokus="Perbaikan —" judul="🔧 Pekerjaan Perbaikan (item + rincian bahan)"
           defaultKapal={req.items.length ? req.items[req.items.length - 1].kapal : ""} />
         <ScanSppbj open={scanOpen} onClose={() => setScanOpen(false)} onAdd={addFromScan} />
         <div className="overflow-x-auto">

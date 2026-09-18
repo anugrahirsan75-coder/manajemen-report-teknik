@@ -3,6 +3,7 @@
 // Opsional LIVE: set env NEXT_PUBLIC_KATALOG_CSV_URL (sheet KATALOG) + NEXT_PUBLIC_KATALOG_BREAKDOWN_CSV_URL
 //   (sheet BREAKDOWN flat: Kode|Uraian|Volume|Satuan|HargaSatuan|Spesifikasi) -> gviz CSV.
 import seed from "./katalogSeed.json";
+import { KATALOG_PERBAIKAN } from "./perbaikan";
 
 export interface KatalogItem {
   kode: string;
@@ -16,7 +17,10 @@ export interface KatalogItem {
   breakdown?: string[];     // rincian komponen (khusus item ber-detail)
 }
 
-const SEED_ITEMS: KatalogItem[] = (seed as any).items || [];
+// Pekerjaan perbaikan harian cabang tidak ada di RAB (RAB disusun untuk docking),
+// jadi paketnya digabung di sini — termasuk ke hasil gviz, karena sheet KATALOG
+// pun tidak memuatnya.
+const SEED_ITEMS: KatalogItem[] = [...KATALOG_PERBAIKAN, ...((seed as any).items || [])];
 
 // ---- util ----
 export const norm = (s: string) =>
@@ -96,7 +100,10 @@ export async function getKatalog(): Promise<KatalogItem[]> {
   if (cache) return cache;
   if (inflight) return inflight;
   inflight = (async () => {
-    try { const live = await fetchGviz(); if (live) { cache = live; return cache; } } catch { /* fallback seed */ }
+    try {
+      const live = await fetchGviz();
+      if (live) { cache = [...KATALOG_PERBAIKAN, ...live]; return cache; }
+    } catch { /* fallback seed */ }
     cache = SEED_ITEMS;
     return cache;
   })();

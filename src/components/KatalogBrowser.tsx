@@ -1,16 +1,23 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { getKatalog, searchKatalog, katalogSeed, KatalogItem } from "@/lib/katalog/source";
 import { KAPAL_LIST } from "@/lib/sppbj/db";
 import { rupiah } from "@/lib/format";
 
-/** Modal telusur SELURUH katalog HSPK → centang banyak → tambah ke tabel SPPBJ. */
-export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = "" }: {
+/** Modal telusur SELURUH katalog HSPK → centang banyak → tambah ke tabel SPPBJ.
+ *
+ * `fokus` mempersempit katalog ke satu rumpun kategori (mis. "Perbaikan —").
+ * Tanpa itu, pekerjaan perbaikan harian tenggelam di antara ratusan item
+ * docking: yang dicari pemakai justru yang paling sulit ditemukan.
+ */
+export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = "", fokus = "", judul = "" }: {
   open: boolean;
   onClose: () => void;
   onAdd: (items: KatalogItem[], kapal: string) => void;
   defaultKapal?: string;
+  fokus?: string;
+  judul?: string;
 }) {
   const [all, setAll] = useState<KatalogItem[]>(katalogSeed());
   const [q, setQ] = useState("");
@@ -18,20 +25,29 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
   const [sumber, setSumber] = useState("");
   const [kategori, setKategori] = useState("");
   const [sel, setSel] = useState<Record<string, boolean>>({});
+  const [buka, setBuka] = useState<Record<string, boolean>>({});
   const [kapal, setKapal] = useState(defaultKapal);
 
   useEffect(() => { if (open) getKatalog().then(setAll).catch(() => {}); }, [open]);
-  useEffect(() => { if (open) { setSel({}); setKapal(defaultKapal); } }, [open, defaultKapal]);
+  useEffect(() => {
+    if (open) { setSel({}); setBuka({}); setKapal(defaultKapal); setQ(""); setJenis(""); setSumber(""); setKategori(""); }
+  }, [open, defaultKapal, fokus]);
 
-  const kategoriList = useMemo(() => Array.from(new Set(all.map((i) => i.kategori).filter(Boolean))).sort(), [all]);
+  const dasar = useMemo(
+    () => (fokus ? all.filter((i) => (i.kategori || "").startsWith(fokus)) : all),
+    [all, fokus],
+  );
+  const kategoriList = useMemo(() => Array.from(new Set(dasar.map((i) => i.kategori).filter(Boolean))).sort(), [dasar]);
+  /** nama kelompok tanpa awalan fokus, supaya chip-nya pendek dan terbaca */
+  const labelKategori = (k: string) => (fokus && k.startsWith(fokus) ? k.slice(fokus.length).trim() : k);
 
   const filtered = useMemo(() => {
-    let r = all;
+    let r = dasar;
     if (jenis) r = r.filter((i) => i.jenis === jenis);
     if (sumber) r = r.filter((i) => i.sumber === sumber);
     if (kategori) r = r.filter((i) => i.kategori === kategori);
     return searchKatalog(r, q, 1000);
-  }, [all, jenis, sumber, kategori, q]);
+  }, [dasar, jenis, sumber, kategori, q]);
 
   const selectedItems = all.filter((i) => sel[i.kode]);
   const selCount = selectedItems.length;
@@ -51,8 +67,8 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
         {/* header */}
         <div className="px-5 py-3 border-b flex items-center justify-between gap-3 bg-slate-50">
           <div>
-            <h3 className="font-extrabold text-slate-800">📚 Katalog Harga Satuan (HSPK)</h3>
-            <p className="text-[11px] text-slate-500">{filtered.length} item tampil dari {all.length} · centang lalu tambah ke tabel SPPBJ</p>
+            <h3 className="font-extrabold text-slate-800">{judul || "📚 Katalog Harga Satuan (HSPK)"}</h3>
+            <p className="text-[11px] text-slate-500">{filtered.length} item tampil dari {dasar.length} · centang lalu tambah ke tabel SPPBJ · klik “rincian” untuk melihat bahannya</p>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none px-2">✕</button>
         </div>
@@ -77,6 +93,22 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
           {(q || jenis || sumber || kategori) && <button onClick={() => { setQ(""); setJenis(""); setSumber(""); setKategori(""); }} className="text-xs text-slate-500 hover:text-slate-700 underline">reset</button>}
         </div>
 
+        {/* kelompok pekerjaan — pintasan sekali klik, isinya sama dengan dropdown kategori */}
+        {fokus && kategoriList.length > 1 && (
+          <div className="px-5 py-2 border-b bg-white flex flex-wrap gap-1.5">
+            <button onClick={() => setKategori("")}
+              className={`text-[11px] px-2.5 py-1 rounded-full border ${!kategori ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
+              Semua ({dasar.length})
+            </button>
+            {kategoriList.map((k) => (
+              <button key={k} onClick={() => setKategori(kategori === k ? "" : k)}
+                className={`text-[11px] px-2.5 py-1 rounded-full border ${kategori === k ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
+                {labelKategori(k)} ({dasar.filter((i) => i.kategori === k).length})
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* tabel */}
         <div className="flex-1 min-h-0 overflow-auto">
           <table className="w-full text-xs">
@@ -95,19 +127,42 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
               {filtered.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-slate-400">Tak ada item cocok filter.</td></tr>}
               {filtered.map((it) => {
                 const on = !!sel[it.kode];
+                const rinci = it.breakdown || [];
+                const terbuka = !!buka[it.kode];
                 return (
-                  <tr key={it.kode} onClick={() => setSel((s) => ({ ...s, [it.kode]: !s[it.kode] }))}
-                    className={`border-b cursor-pointer ${on ? "bg-sky-50" : "hover:bg-slate-50"}`}>
-                    <td className="p-2 text-center" onClick={(e) => e.stopPropagation()}>
-                      <input type="checkbox" checked={on} onChange={() => setSel((s) => ({ ...s, [it.kode]: !s[it.kode] }))} />
-                    </td>
-                    <td className="p-2 font-mono text-[10px] text-slate-500">{it.kode}</td>
-                    <td className="p-2 text-slate-800">{it.nama}{it.breakdown?.length ? <span className="text-[9px] text-sky-600 ml-1">● {it.breakdown.length} rincian</span> : null}</td>
-                    <td className="p-2 text-slate-500">{it.spesifikasi}</td>
-                    <td className="p-2 text-center text-slate-500">{it.satuan}</td>
-                    <td className="p-2 text-right font-semibold text-slate-700">{rupiah(it.harga)}</td>
-                    <td className="p-2 text-center"><span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${it.sumber === "Riil" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{it.sumber === "Riil" ? "Riil ✓" : "Pasar ⚠"}</span></td>
-                  </tr>
+                  <Fragment key={it.kode}>
+                    <tr onClick={() => setSel((s) => ({ ...s, [it.kode]: !s[it.kode] }))}
+                      className={`border-b cursor-pointer ${on ? "bg-sky-50" : "hover:bg-slate-50"}`}>
+                      <td className="p-2 text-center" onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox" checked={on} onChange={() => setSel((s) => ({ ...s, [it.kode]: !s[it.kode] }))} />
+                      </td>
+                      <td className="p-2 font-mono text-[10px] text-slate-500">{it.kode}</td>
+                      <td className="p-2 text-slate-800">
+                        {it.nama}
+                        {rinci.length > 0 && (
+                          <button onClick={(e) => { e.stopPropagation(); setBuka((b) => ({ ...b, [it.kode]: !b[it.kode] })); }}
+                            className="text-[9px] text-sky-600 ml-1.5 underline hover:text-sky-800">
+                            {terbuka ? "▾" : "▸"} {rinci.length} rincian
+                          </button>
+                        )}
+                      </td>
+                      <td className="p-2 text-slate-500">{it.spesifikasi}</td>
+                      <td className="p-2 text-center text-slate-500">{it.satuan}</td>
+                      <td className="p-2 text-right font-semibold text-slate-700">{rupiah(it.harga)}</td>
+                      <td className="p-2 text-center"><span className={`text-[9px] font-semibold px-1.5 py-0.5 rounded ${it.sumber === "Riil" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{it.sumber === "Riil" ? "Riil ✓" : "Pasar ⚠"}</span></td>
+                    </tr>
+                    {terbuka && (
+                      <tr className="border-b bg-slate-50/70">
+                        <td />
+                        <td colSpan={6} className="px-2 pb-2 pt-0">
+                          <ul className="text-[11px] text-slate-600 leading-relaxed">
+                            {rinci.map((b, i) => <li key={i}>– {b}</li>)}
+                          </ul>
+                          <p className="text-[10px] text-slate-400 mt-1">Rincian ikut terbawa ke SPPBJ dan masih bisa disunting di sana.</p>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>
