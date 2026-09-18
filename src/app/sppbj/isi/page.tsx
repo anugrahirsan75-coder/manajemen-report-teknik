@@ -13,6 +13,7 @@ import FotoUploader from "@/components/FotoUploader";
 import KatalogPicker from "@/components/KatalogPicker";
 import KatalogBrowser from "@/components/KatalogBrowser";
 import ScanSppbj from "@/components/ScanSppbj";
+import PreviewPengadaan from "@/components/PreviewPengadaan";
 import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
 import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
@@ -31,6 +32,7 @@ function SppbjIsiInner() {
   const [openBd, setOpenBd] = useState<Record<string, boolean>>({});
   const [browseKatalog, setBrowseKatalog] = useState(false);
   const [browsePerbaikan, setBrowsePerbaikan] = useState(false);
+  const [preview, setPreview] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [rekapBusy, setRekapBusy] = useState(false);
   // kolom Mata Anggaran per item hanya perlu saat pengadaan mencentang >1 MA
@@ -591,6 +593,8 @@ function SppbjIsiInner() {
             className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100">🔧 Pekerjaan Perbaikan</button>
           <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
           <button onClick={() => setScanOpen(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">📷 Scan dari Excel (OCR)</button>
+          <button onClick={() => setPreview(true)} title="Lihat susunan dokumen SPPBJ dari isian saat ini — tanpa perlu menyimpan dulu"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100">👁️ Preview SPPBJ</button>
           <span className="text-[11px] text-slate-400">screenshot tabel → terisi otomatis</span>
           <span className="flex items-center gap-1 ml-2">
             <button onClick={undo} disabled={!past.length} title={past.length ? `Batalkan perubahan terakhir (${past.length} langkah tersimpan)` : "Belum ada yang bisa dibatalkan"}
@@ -619,6 +623,46 @@ function SppbjIsiInner() {
           fokus="Perbaikan —" judul="🔧 Pekerjaan Perbaikan (item + rincian bahan)"
           defaultKapal={req.items.length ? req.items[req.items.length - 1].kapal : ""} />
         <ScanSppbj open={scanOpen} onClose={() => setScanOpen(false)} onAdd={addFromScan} />
+        {/* Preview memakai isian yang sedang disunting, bukan yang tersimpan:
+            gunanya justru memeriksa sebelum menyimpan. */}
+        {preview && (
+          <div className="fixed inset-0 z-[70] bg-black/50 flex items-start justify-center p-3 overflow-auto print:static print:bg-white print:p-0 print:overflow-visible"
+            onMouseDown={() => setPreview(false)}>
+            <div className="bg-slate-100 w-full max-w-4xl rounded-2xl shadow-2xl my-4 print:shadow-none print:my-0 print:max-w-none" onMouseDown={(e) => e.stopPropagation()}>
+              <div className="px-5 py-3 border-b bg-white rounded-t-2xl flex items-center gap-3 sticky top-0 z-10 no-print">
+                <div>
+                  <h3 className="font-extrabold text-slate-800">👁️ Preview SPPBJ</h3>
+                  <p className="text-[11px] text-slate-500">
+                    Susunan isi tabel seperti yang akan ditulis ke Excel · {req.items.length} item · {rupiah(total)}
+                    {" · "}belum tersimpan, file resmi tetap dari tombol Excel/PDF di layar Detail
+                  </p>
+                </div>
+                <div className="ml-auto flex items-center gap-2">
+                  <button onClick={() => window.print()} className="text-xs font-semibold px-3 py-2 rounded-lg border border-slate-300 text-slate-600 hover:bg-slate-50">🖨️ Cetak</button>
+                  <button onClick={() => setPreview(false)} className="text-slate-400 hover:text-slate-700 text-xl leading-none px-2">✕</button>
+                </div>
+              </div>
+              <PreviewPengadaan
+                jenis="SPPBJ"
+                judul="Daftar Kebutuhan Pengadaan Barang/Jasa"
+                nomor={req.noSPPBJ || fullNoKontrak(req) || ""}
+                tanggal={req.tanggal}
+                noDRP={req.noDRP}
+                noPRSAP={req.noPRSAP}
+                noPOSAP={req.noPOSAP}
+                grSes={(req.grSes || []).map((g) => ({ ...g, nilai: nilaiGrEfektif(g, req.grSes || [], req.items || []) || undefined }))}
+                dasarPelimpahan={req.dasarPelimpahan}
+                namaPengadaan={req.namaPengadaan}
+                mataAnggaran={req.mataAnggaran || []}
+                jenisAnggaran={req.jenisAnggaran}
+                vendor={req.vendor}
+                stafTeknik={req.stafTeknik}
+                deptHead={req.deptHead}
+                items={req.items || []}
+              />
+            </div>
+          </div>
+        )}
         <div className="overflow-x-auto">
           <table className="w-full text-sm border">
             <thead className="bg-slate-50 text-xs">
