@@ -51,7 +51,7 @@ const RESEP: Resep[] = [
     nama: "Pengelasan dan ganti pipa saluran air pemadam, termasuk ganti bos",
     satuan: "Ls", harga: 1_950_000, sumber: "Riil",
     spesifikasi: "Pipa keropos diganti, sambungan las penuh, diuji tidak bocor pada tekanan kerja",
-    bahan: ["Pipa GIP 2 inci — SNI, medium class, batang 6 m",
+    bahan: ["Pipa GIP 2 inci — SNI, tebal dinding sedang, tekanan kerja 10 bar, batang 6 m",
       "Bos/soket 2 inci — galvanis, drat dalam", ...LAS],
   },
   {
@@ -59,7 +59,7 @@ const RESEP: Resep[] = [
     nama: "Pengelasan reling geladak",
     satuan: "Ls", harga: 1_000_000, sumber: "Riil",
     spesifikasi: "Reling tegak lurus, sambungan las penuh, permukaan digerinda dan dicat ulang",
-    bahan: ["Pipa galvanis 1.5 inci — medium class, batang 6 m", CAT_BESI, ...LAS],
+    bahan: ["Pipa galvanis 1.5 inci — tebal dinding sedang, tekanan kerja 10 bar, batang 6 m", CAT_BESI, ...LAS],
   },
   {
     kode: "PBK-LAS-003", kategori: "Perbaikan — Las & Konstruksi",
@@ -80,14 +80,14 @@ const RESEP: Resep[] = [
     nama: "Pengelasan lida bandar (ramp door kecil)",
     satuan: "Unit", harga: 400_000, sumber: "Riil",
     spesifikasi: "Las penuh pada engsel dan dudukan, diuji buka tutup tanpa macet",
-    bahan: ["Plat besi 8 mm — baja kapal grade A", "Besi siku 50 x 50 mm — tebal 5 mm", ...LAS],
+    bahan: ["Plat besi 8 mm — baja kapal grade A, kuat tarik 400–520 N/mm2", "Besi siku 50 x 50 mm — tebal 5 mm", ...LAS],
   },
   {
     kode: "PBK-LAS-006", kategori: "Perbaikan — Las & Konstruksi",
     nama: "Sambung dan las dinding kardek yang bolong/retak",
     satuan: "Titik", harga: 120_000, sumber: "Riil",
     spesifikasi: "Lubang ditambal plat dan dilas penuh, retakan digerinda lalu dilas, dicat dasar",
-    bahan: ["Plat besi 6 mm — baja kapal grade A", ...LAS],
+    bahan: ["Plat besi 6 mm — baja kapal grade A, kuat tarik 400–520 N/mm2", ...LAS],
   },
   {
     kode: "PBK-LAS-007", kategori: "Perbaikan — Las & Konstruksi",
@@ -102,7 +102,7 @@ const RESEP: Resep[] = [
     satuan: "Unit", harga: 500_000, sumber: "Riil",
     spesifikasi: "Tangga kokoh, anak tangga anti selip, dicat dasar dan cat akhir",
     bahan: ["Besi siku 40 x 40 mm — tebal 4 mm, batang 6 m",
-      "Pipa besi 1 inci — medium class, batang 6 m", CAT_BESI, LAS[0]],
+      "Pipa besi 1 inci — tebal dinding sedang, tekanan kerja 10 bar, batang 6 m", CAT_BESI, LAS[0]],
   },
   {
     kode: "PBK-LAS-009", kategori: "Perbaikan — Las & Konstruksi",
@@ -132,7 +132,7 @@ const RESEP: Resep[] = [
     nama: "Bikin dan pasang handrail tangga",
     satuan: "m", harga: 350_000, sumber: "Pasar",
     spesifikasi: "Pipa dilas pada tiang tiap 1.2 m, tinggi 90 cm, dicat dasar dan akhir",
-    bahan: ["Pipa galvanis 1.25 inci — medium class, batang 6 m", CAT_BESI, ...LAS],
+    bahan: ["Pipa galvanis 1.25 inci — tebal dinding sedang, tekanan kerja 10 bar, batang 6 m", CAT_BESI, ...LAS],
   },
 
   /* ── Jangkar, winch & perlengkapan geladak ────────────────────────── */
@@ -141,14 +141,14 @@ const RESEP: Resep[] = [
     nama: "Pengelasan lida haus jangkar dan penyangga samping winch jangkar",
     satuan: "Ls", harga: 250_000, sumber: "Riil",
     spesifikasi: "Las penuh pada dudukan, permukaan digerinda rata dan dicat dasar",
-    bahan: ["Plat besi 8 mm — baja kapal grade A", ...LAS],
+    bahan: ["Plat besi 8 mm — baja kapal grade A, kuat tarik 400–520 N/mm2", ...LAS],
   },
   {
     kode: "PBK-GLD-002", kategori: "Perbaikan — Geladak & Jangkar",
     nama: "Pengelasan/dobel pipa jangkar dan pengelasan roll block",
     satuan: "Ls", harga: 1_250_000, sumber: "Riil",
     spesifikasi: "Pipa didobel plat, roll block dilas penuh dan diuji berputar bebas",
-    bahan: ["Plat besi 8 mm — baja kapal grade A",
+    bahan: ["Plat besi 8 mm — baja kapal grade A, kuat tarik 400–520 N/mm2",
       "Pipa besi — diameter menyesuaikan pipa jangkar terpasang", ...LAS],
   },
   {
@@ -164,7 +164,7 @@ const RESEP: Resep[] = [
     nama: "Ganti penyangga kanvas rem jangkar dan tambah dudukan penyangga",
     satuan: "Ls", harga: 1_250_000, sumber: "Riil",
     spesifikasi: "Penyangga baru dilas penuh, rem jangkar diuji menahan beban",
-    bahan: ["Plat besi 10 mm — baja kapal grade A", "Baut dan mur — galvanis", ...LAS],
+    bahan: ["Plat besi 10 mm — baja kapal grade A, kuat tarik 400–520 N/mm2", "Baut dan mur — galvanis", ...LAS],
   },
   {
     kode: "PBK-GLD-005", kategori: "Perbaikan — Geladak & Jangkar",
@@ -186,7 +186,7 @@ const RESEP: Resep[] = [
     nama: "Perbaikan dan pelumasan winch geladak",
     satuan: "Unit", harga: 1_500_000, sumber: "Pasar",
     spesifikasi: "Winch dibongkar, bantalan dibersihkan dan dilumasi, diuji beban",
-    bahan: ["Gemuk (grease) — EP2, 1 kg", "Oli roda gigi — SAE 90, 5 liter",
+    bahan: ["Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 1 kg", "Oli roda gigi — SAE 90, 5 liter",
       "Seal dan packing — menyesuaikan tipe winch"],
   },
 
@@ -196,7 +196,7 @@ const RESEP: Resep[] = [
     nama: "Bongkar pasang dan pengelasan pipa pemadam berikut pemasangan kran",
     satuan: "Ls", harga: 1_000_000, sumber: "Riil",
     spesifikasi: "Jalur pipa tersambung penuh, kran terpasang, diuji tidak bocor",
-    bahan: ["Pipa GIP 2 inci — SNI, medium class, batang 6 m",
+    bahan: ["Pipa GIP 2 inci — SNI, tebal dinding sedang, tekanan kerja 10 bar, batang 6 m",
       "Kran 2 inci — kuningan, drat dalam", "Seal tape — 12 mm x 10 m", LAS[0], LAS[1]],
   },
   {
@@ -204,7 +204,7 @@ const RESEP: Resep[] = [
     nama: "Perbaikan dan pengelasan meteran air pemadam",
     satuan: "Ls", harga: 300_000, sumber: "Riil",
     spesifikasi: "Meteran terpasang kedap, penunjukan berfungsi normal",
-    bahan: ["Meteran air — diameter 2 inci, badan kuningan, kelas B",
+    bahan: ["Meteran air — diameter 2 inci, badan kuningan, ketelitian 2 persen",
       "Seal tape — 12 mm x 10 m", LAS[0], LAS[1]],
   },
   {
@@ -219,7 +219,7 @@ const RESEP: Resep[] = [
     nama: "Perbaikan saluran kamar mandi yang tersumbat",
     satuan: "Titik", harga: 300_000, sumber: "Riil",
     spesifikasi: "Saluran lancar, sambungan tidak merembes",
-    bahan: ["Pipa PVC 3 inci — kelas AW, batang 4 m",
+    bahan: ["Pipa PVC 3 inci — tekanan kerja 10 bar (tipe AW), batang 4 m",
       "Sambungan PVC — elbow dan sok 3 inci", "Lem PVC — kemasan 100 gram"],
   },
   {
@@ -227,7 +227,7 @@ const RESEP: Resep[] = [
     nama: "Perbaikan urinoir berikut pipa saluran dan pipa buangan",
     satuan: "Unit", harga: 390_000, sumber: "Riil",
     spesifikasi: "Urinoir terpasang rapat ke dinding, air masuk dan buangan lancar",
-    bahan: ["Urinoir — keramik, lengkap kran tekan", "Pipa PVC 2 inci — kelas AW, batang 4 m",
+    bahan: ["Urinoir — keramik, lengkap kran tekan", "Pipa PVC 2 inci — tekanan kerja 10 bar (tipe AW), batang 4 m",
       "Flexible hose — stainless 40 cm", "Sealant — silikon netral 300 ml"],
   },
   {
@@ -235,7 +235,7 @@ const RESEP: Resep[] = [
     nama: "Pasang tutup pipa pembuangan air AC",
     satuan: "Titik", harga: 150_000, sumber: "Riil",
     spesifikasi: "Ujung pipa tertutup rapat, air buangan terarah ke saluran",
-    bahan: ["Pipa PVC 1 inci — kelas AW, batang 4 m", "Dop PVC — 1 inci",
+    bahan: ["Pipa PVC 1 inci — tekanan kerja 10 bar (tipe AW), batang 4 m", "Dop PVC — 1 inci",
       "Klem pipa — 1 inci, galvanis"],
   },
   {
@@ -244,7 +244,7 @@ const RESEP: Resep[] = [
     satuan: "Ls", harga: 1_750_000, sumber: "Riil",
     spesifikasi: "Pompa terpasang pada dudukan, instalasi diuji mengalir tanpa bocor",
     bahan: ["Pompa air — daya menyesuaikan instalasi terpasang",
-      "Pipa GIP 1 inci — SNI, medium class, batang 6 m",
+      "Pipa GIP 1 inci — SNI, tebal dinding sedang, tekanan kerja 10 bar, batang 6 m",
       "Fitting dan stop kran — kuningan 1 inci", "Seal tape — 12 mm x 10 m"],
   },
   {
@@ -276,16 +276,16 @@ const RESEP: Resep[] = [
     kode: "PBK-PIP-011", kategori: "Perbaikan — Perpipaan",
     nama: "Perbaikan tangki air tawar (bocor/karat)",
     satuan: "Ls", harga: 2_500_000, sumber: "Pasar",
-    spesifikasi: "Bagian bocor ditambal dan dilas, bagian dalam dicat epoksi food grade",
-    bahan: ["Plat besi 4 mm — baja kapal grade A",
-      "Cat epoksi food grade — 4 liter (2 komponen)", ...LAS],
+    spesifikasi: "Bagian bocor ditambal dan dilas, bagian dalam dicat epoksi aman untuk air minum",
+    bahan: ["Plat besi 4 mm — baja kapal grade A, kuat tarik 400–520 N/mm2",
+      "Cat epoksi aman untuk air minum — 4 liter, dua komponen, bersertifikat pangan", ...LAS],
   },
   {
     kode: "PBK-PIP-012", kategori: "Perbaikan — Perpipaan",
     nama: "Ganti pipa air bersih (jalur akomodasi)",
     satuan: "m", harga: 95_000, sumber: "Pasar",
     spesifikasi: "Jalur baru diklem tiap 1 m, diuji tekan tanpa bocor",
-    bahan: ["Pipa PPR 3/4 inci — PN10, batang 4 m", "Fitting PPR — sok, elbow, tee",
+    bahan: ["Pipa PPR 3/4 inci — tekanan kerja 10 bar, batang 4 m", "Fitting PPR — sok, elbow, tee",
       "Klem pipa — 3/4 inci"],
   },
 
@@ -297,7 +297,7 @@ const RESEP: Resep[] = [
     spesifikasi: "Pintu terpasang rapat dan berfungsi, saluran lancar tanpa rembes",
     bahan: ["Daun pintu PVC — 70 x 200 cm, tahan air", "Kusen aluminium — profil 3 inci",
       "Engsel dan kunci pintu — engsel stainless 3 inci, kunci silinder",
-      "Pipa PVC 3 inci — kelas AW, batang 4 m", "Lem PVC — kemasan 100 gram"],
+      "Pipa PVC 3 inci — tekanan kerja 10 bar (tipe AW), batang 4 m", "Lem PVC — kemasan 100 gram"],
   },
   {
     kode: "PBK-AKM-002", kategori: "Perbaikan — Akomodasi & Interior",
@@ -384,8 +384,8 @@ const RESEP: Resep[] = [
     kode: "PBK-LIS-002", kategori: "Perbaikan — Kelistrikan & Penerangan",
     nama: "Ganti lampu sorot geladak",
     satuan: "Unit", harga: 850_000, sumber: "Pasar",
-    spesifikasi: "Lampu tahan cuaca (IP65), dudukan dilas/dibaut kuat, arah sorot disetel",
-    bahan: ["Lampu sorot LED — 100 W, IP65", "Kabel NYY 3 x 2.5 mm — SNI",
+    spesifikasi: "Lampu tahan debu dan semprotan air (IP65), dudukan dilas/dibaut kuat, arah sorot disetel",
+    bahan: ["Lampu sorot LED — 100 W, tahan debu dan semprotan air (IP65)", "Kabel NYY 3 x 2.5 mm — SNI",
       "Klem kabel dan isolasi", "Baut dan mur — stainless"],
   },
   {
@@ -424,7 +424,7 @@ const RESEP: Resep[] = [
     nama: "Pemasangan lampu hias LED (strip)",
     satuan: "m", harga: 56_000, sumber: "Riil",
     spesifikasi: "Strip terpasang lurus dan rapat, sambungan disolder dan diisolasi",
-    bahan: ["Lampu strip LED — 12 V, IP65", "Adaptor/power supply — 12 V sesuai panjang",
+    bahan: ["Lampu strip LED — 12 V, tahan debu dan semprotan air (IP65)", "Adaptor/power supply — 12 V sesuai panjang",
       "Isolasi dan klem"],
   },
   {
@@ -433,7 +433,7 @@ const RESEP: Resep[] = [
     satuan: "Unit", harga: 1_450_000, sumber: "Pasar",
     spesifikasi: "Kipas berputar tanpa getaran berlebih, bantalan diganti, arus diukur",
     bahan: ["Bearing kipas — sepasang, sesuai tipe", "Kapasitor motor — sesuai daya",
-      "Gemuk (grease) — EP2, 1 kg"],
+      "Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 1 kg"],
   },
 
   /* ── Keselamatan ──────────────────────────────────────────────────── */
@@ -465,14 +465,14 @@ const RESEP: Resep[] = [
     satuan: "Unit", harga: 325_000, sumber: "Pasar",
     spesifikasi: "Pelampung bersih, tulisan nama kapal dicat ulang, tali pegangan diganti",
     bahan: ["Cat marine — putih dan oranye, 1 liter", "Tali pegangan (grab line) — PP 10 mm",
-      "Pita reflektif — SOLAS grade"],
+      "Pita reflektif — memenuhi SOLAS, memantul dari jarak 100 m"],
   },
   {
     kode: "PBK-KSL-005", kategori: "Perbaikan — Keselamatan",
     nama: "Ganti dan pasang rambu keselamatan / jalur evakuasi",
     satuan: "Titik", harga: 125_000, sumber: "Pasar",
-    spesifikasi: "Rambu terbaca dari 5 m, bahan photoluminescent, terpasang kuat",
-    bahan: ["Pelat rambu — akrilik/vinyl photoluminescent",
+    spesifikasi: "Rambu terbaca dari 5 m, bahan menyala dalam gelap minimal 30 menit, terpasang kuat",
+    bahan: ["Pelat rambu — akrilik/vinyl menyala dalam gelap minimal 30 menit",
       "Sekrup atau perekat 3M — tahan air"],
   },
   {
@@ -537,7 +537,7 @@ const RESEP: Resep[] = [
     nama: "Perbaikan dan pengelasan pagar pengaman dermaga",
     satuan: "m", harga: 425_000, sumber: "Pasar",
     spesifikasi: "Pagar tegak lurus, sambungan dilas penuh, dicat tahan cuaca",
-    bahan: ["Pipa galvanis 2 inci — medium class, batang 6 m", CAT_BESI, ...LAS],
+    bahan: ["Pipa galvanis 2 inci — tebal dinding sedang, tekanan kerja 10 bar, batang 6 m", CAT_BESI, ...LAS],
   },
   {
     kode: "PBK-PLB-003", kategori: "Perbaikan — Fasilitas Pelabuhan",
@@ -567,7 +567,7 @@ const RESEP: Resep[] = [
     nama: "Perbaikan instalasi air toilet umum pelabuhan",
     satuan: "Ls", harga: 2_250_000, sumber: "Pasar",
     spesifikasi: "Air mengalir di seluruh titik, tidak ada kebocoran, buangan lancar",
-    bahan: ["Pipa PVC 3/4 dan 3 inci — kelas AW", "Kran dan fitting — kuningan",
+    bahan: ["Pipa PVC 3/4 dan 3 inci — tekanan kerja 10 bar (tipe AW)", "Kran dan fitting — kuningan",
       "Sealant dan lem PVC"],
   },
   {
@@ -575,7 +575,7 @@ const RESEP: Resep[] = [
     nama: "Perbaikan lampu penerangan halaman/dermaga",
     satuan: "Titik", harga: 950_000, sumber: "Pasar",
     spesifikasi: "Lampu menyala otomatis pada malam hari, tiang dan kabel aman",
-    bahan: ["Lampu jalan LED — 50 W, IP66", "Photocell — 10 A",
+    bahan: ["Lampu jalan LED — 50 W, tahan debu dan semprotan air bertekanan (IP66)", "Photocell — 10 A",
       "Kabel NYY 3 x 2.5 mm — SNI", "Klem dan pipa pelindung"],
   },
   {

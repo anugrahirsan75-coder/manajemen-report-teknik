@@ -3,7 +3,7 @@ import { Pola, SEAL_TAPE, KAWAT_LAS, KAWAT_LAS_SS, OKSIGEN, GERINDA, CAT_BESI, M
 
 /* ── pipa ─────────────────────────────────────────────────────────────── */
 
-/** harga per BATANG 6 m untuk pipa GIP medium class; bahan lain dikali faktor */
+/** harga per BATANG 6 m untuk pipa GIP tebal dinding sedang; bahan lain dikali faktor */
 const UKURAN = [
   { id: "05", label: "1/2 inci", mm: 15, batang: 38_000 },
   { id: "075", label: "3/4 inci", mm: 20, batang: 52_000 },
@@ -20,13 +20,13 @@ const UKURAN = [
 ];
 
 const BAHAN_PIPA = [
-  { id: "gip", nama: "GIP galvanis", spek: "SNI, medium class, ulir, batang 6 m", f: 1, las: true, maks: 200 },
-  { id: "pvc", nama: "PVC", spek: "kelas AW, SNI, batang 4 m", f: 0.35, las: false, maks: 200 },
-  { id: "ppr", nama: "PPR", spek: "PN10, tahan air panas, batang 4 m", f: 0.8, las: false, maks: 100 },
-  { id: "ss", nama: "stainless 304", spek: "SUS 304, sch 10, batang 6 m", f: 3.2, las: true, maks: 150 },
+  { id: "gip", nama: "GIP galvanis", spek: "SNI, tebal dinding sedang, tekanan kerja 10 bar, berulir, batang 6 m", f: 1, las: true, maks: 200 },
+  { id: "pvc", nama: "PVC", spek: "tekanan kerja 10 bar (tipe AW), SNI, batang 4 m", f: 0.35, las: false, maks: 200 },
+  { id: "ppr", nama: "PPR", spek: "tekanan kerja 10 bar, tahan air panas sampai 70 derajat C, batang 4 m", f: 0.8, las: false, maks: 100 },
+  { id: "ss", nama: "stainless 304", spek: "stainless SUS 304, tebal dinding 3 mm, batang 6 m", f: 3.2, las: true, maks: 150 },
   { id: "cu", nama: "tembaga", spek: "tembaga lunak, tebal dinding 0.9 mm", f: 4, las: false, maks: 40 },
-  { id: "hdpe", nama: "HDPE", spek: "PE100 PN10, roll", f: 0.55, las: false, maks: 200 },
-  { id: "bh", nama: "besi hitam", spek: "seamless sch 40, batang 6 m", f: 0.9, las: true, maks: 200 },
+  { id: "hdpe", nama: "HDPE", spek: "PE100, tekanan kerja 10 bar, roll", f: 0.55, las: false, maks: 200 },
+  { id: "bh", nama: "besi hitam", spek: "baja tanpa sambungan, tebal dinding standar (sch 40), batang 6 m", f: 0.9, las: true, maks: 200 },
 ];
 
 const SISTEM = [
@@ -113,17 +113,17 @@ export const POLA_PIPA: Pola[] = [{
 /* ── katup & kran ─────────────────────────────────────────────────────── */
 
 const KATUP = [
-  { id: "gate", nama: "gate valve", spek: "badan kuningan/besi cor, ulir, PN16", f: 1, min: 15, maks: 200 },
-  { id: "globe", nama: "globe valve", spek: "badan besi cor, flens, PN16", f: 1.35, min: 20, maks: 150 },
-  { id: "ball", nama: "ball valve", spek: "badan kuningan, bola stainless, PN25", f: 0.9, min: 15, maks: 100 },
-  { id: "bfly", nama: "butterfly valve", spek: "wafer type, cakram stainless, seat EPDM, PN10", f: 0.8, min: 50, maks: 300 },
-  { id: "check", nama: "check valve", spek: "swing type, badan besi cor, PN16", f: 1.1, min: 20, maks: 200 },
-  { id: "foot", nama: "foot valve", spek: "lengkap saringan kuningan, PN10", f: 1.2, min: 40, maks: 150 },
+  { id: "gate", nama: "gate valve", spek: "badan kuningan/besi cor, berulir, tekanan kerja 16 bar", f: 1, min: 15, maks: 200 },
+  { id: "globe", nama: "globe valve", spek: "badan besi cor, sambungan flens, tekanan kerja 16 bar", f: 1.35, min: 20, maks: 150 },
+  { id: "ball", nama: "ball valve", spek: "badan kuningan, bola stainless, tekanan kerja 25 bar", f: 0.9, min: 15, maks: 100 },
+  { id: "bfly", nama: "butterfly valve", spek: "pasang sisip (wafer), cakram stainless, dudukan karet EPDM, tekanan kerja 10 bar", f: 0.8, min: 50, maks: 300 },
+  { id: "check", nama: "check valve", spek: "daun ayun, badan besi cor, tekanan kerja 16 bar", f: 1.1, min: 20, maks: 200 },
+  { id: "foot", nama: "foot valve", spek: "lengkap saringan kuningan, tekanan kerja 10 bar", f: 1.2, min: 40, maks: 150 },
   { id: "relief", nama: "safety relief valve", spek: "bersertifikat, tekanan buka disetel sesuai sistem", f: 3.2, min: 15, maks: 100 },
   { id: "kran", nama: "kran taman", spek: "kuningan krom, drat dalam", f: 0.35, min: 15, maks: 25 },
-  { id: "hid", nama: "kran hidran", spek: "kuningan, kopling machino, PN16", f: 1.4, min: 40, maks: 65 },
-  { id: "strain", nama: "saringan Y (strainer)", spek: "badan besi cor, elemen stainless mesh 40", f: 1.15, min: 20, maks: 200 },
-  { id: "seaco", nama: "sea chest valve", spek: "badan perunggu, tahan air laut, PN16, bersertifikat klas", f: 2.6, min: 50, maks: 300 },
+  { id: "hid", nama: "kran hidran", spek: "kuningan, kopling machino, tekanan kerja 16 bar", f: 1.4, min: 40, maks: 65 },
+  { id: "strain", nama: "saringan Y (strainer)", spek: "badan besi cor, elemen saring stainless lubang 0,4 mm", f: 1.15, min: 20, maks: 200 },
+  { id: "seaco", nama: "sea chest valve", spek: "badan perunggu, tahan air laut, tekanan kerja 16 bar, bersertifikat klas", f: 2.6, min: 50, maks: 300 },
 ];
 
 const KERJA_KATUP = [
@@ -161,7 +161,7 @@ export const POLA_KATUP: Pola[] = [{
     MAJUN,
   ] : v.kj.id === "packing" ? [
     "Gland packing — serat grafit, ukuran sesuai tangkai katup",
-    "Gemuk tahan air (grease) — EP2, 1 kg",
+    "Gemuk tahan air (grease) — lithium EP2, tahan air laut, 1 kg",
     MAJUN,
   ] : [
     "Gasket flens — karet tahan minyak, sesuai diameter",
@@ -237,8 +237,8 @@ export const POLA_POMPA: Pola[] = [{
     ];
     if (v.kj.id === "seal") return ["Mechanical seal — sesuai tipe dan diameter poros pompa", "O-ring dan gasket dudukan seal", MAJUN];
     if (v.kj.id === "imp") return ["Impeller — sesuai tipe dan diameter pompa", "Kunci impeller dan mur pengunci", "Gasket rumah pompa", MAJUN];
-    if (v.kj.id === "bear") return ["Bantalan (bearing) — sepasang, sesuai nomor pabrikan", "Gemuk (grease) — EP2, 1 kg", "Seal poros — sesuai diameter", MAJUN];
-    if (v.kj.id === "kop") return ["Kopling fleksibel — sesuai daya dan diameter poros", "Karet kopling (rubber element) — satu set", "Baut dan mur kopling — kelas 8.8"];
+    if (v.kj.id === "bear") return ["Bantalan (bearing) — sepasang, sesuai nomor pabrikan", "Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 1 kg", "Seal poros — sesuai diameter", MAJUN];
+    if (v.kj.id === "kop") return ["Kopling fleksibel — sesuai daya dan diameter poros", "Karet kopling (rubber element) — satu set", "Baut dan mur kopling — baja kuat tarik 800 N/mm2"];
     if (v.kj.id === "align") return ["Shim plat pelurusan — stainless 0.05–1 mm, satu set", "Dial indicator dan alat ukur — sewa alat", MAJUN];
     return ["Alat ukur tekanan dan debit — manometer dan flow meter tera", "Air pengujian dan sambungan uji", MAJUN];
   },

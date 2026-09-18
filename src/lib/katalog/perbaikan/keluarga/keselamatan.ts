@@ -138,7 +138,7 @@ export const POLA_PENOLONG: Pola[] = [{
   harga: (v) => v.pn.dasar * (v.pn.kap ? 0.55 + v.kp.k / 22 : 1) * v.kj.f + (UPAH.teknisi / 8) * v.kj.jam,
   bahan: (v) =>
     v.kj.id === "service" ? ["Jasa stasiun servis resmi — lengkap sertifikat", "Penggantian perlengkapan kedaluwarsa — ransum, pyrotechnics, baterai", "HRU baru bila jatuh tempo"]
-      : v.kj.id === "rawat" ? ["Cat marine — putih dan oranye, 1 liter", "Pita reflektif — SOLAS grade", "Tali pegangan (grab line) — PP 10 mm"]
+      : v.kj.id === "rawat" ? ["Cat marine — putih dan oranye, 1 liter", "Pita reflektif — memenuhi SOLAS, memantul dari jarak 100 m", "Tali pegangan (grab line) — PP 10 mm"]
         : v.kj.id === "uji" ? ["Beban uji dan dinamometer — sewa alat", "Lembar hasil uji dan berita acara", MAJUN]
           : [
             `${v.pn.nama[0].toUpperCase()}${v.pn.nama.slice(1)}${v.pn.kap ? ` ${v.kp.nama}` : ""} — bersertifikat SOLAS, masa berlaku baru`,

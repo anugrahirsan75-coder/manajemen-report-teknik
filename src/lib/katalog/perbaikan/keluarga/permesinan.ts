@@ -82,11 +82,11 @@ export const POLA_MESIN: Pola[] = [{
       utama, "Gasket dan seal lengkap (overhaul kit) — satu set sesuai tipe mesin",
       "Bantalan dan bushing — sesuai nomor pabrikan",
       "Oli dan gemuk pelumas — sesuai kapasitas dan spesifikasi mesin",
-      "Baut dan mur pengikat — kelas 10.9, sesuai momen manual", MAJUN,
+      "Baut dan mur pengikat — baja kuat tarik 1000 N/mm2, dikencangkan sesuai momen di buku manual", MAJUN,
     ];
     return [
       utama, "Gasket dan O-ring pemasangan — satu set sesuai bagian",
-      "Baut dan mur pengikat — kelas 10.9, sesuai momen manual",
+      "Baut dan mur pengikat — baja kuat tarik 1000 N/mm2, dikencangkan sesuai momen di buku manual",
       "Oli dan cairan pendingin pengganti — sesuai kapasitas", MAJUN,
     ];
   },
@@ -244,14 +244,14 @@ export const POLA_GELADAK: Pola[] = [{
   satuan: (v) => (v.gl.id === "rantai" ? "Segel" : "Unit"),
   harga: (v) => v.gl.dasar * v.kj.f + (UPAH.teknisi / 8) * v.kj.jam,
   bahan: (v) => {
-    if (v.kj.id === "rawat") return ["Gemuk (grease) — EP2, 5 kg", "Oli roda gigi — SAE 140, 20 liter", "Cairan pembersih dan sikat kawat", MAJUN];
+    if (v.kj.id === "rawat") return ["Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 5 kg", "Oli roda gigi — SAE 140, 20 liter", "Cairan pembersih dan sikat kawat", MAJUN];
     if (v.kj.id === "ukur") return ["Alat ukur (jangka sorong, mikrometer, kaliper rantai) — kalibrasi berlaku", "Cat penanda dan lembar hasil ukur", MAJUN];
     if (v.kj.id === "beban") return ["Beban uji dan dinamometer — sewa alat", "Lembar hasil uji dan berita acara", MAJUN];
     if (v.kj.id === "las") return ["Plat/profil baja penambal — baja kapal grade A", KAWAT_LAS, OKSIGEN, GERINDA, CAT_BESI];
     return [
       `${v.gl.nama[0].toUpperCase()}${v.gl.nama.slice(1)} — sesuai gambar dan sertifikat klas`,
       "Baut, mur, dan pasak pengikat — sesuai gambar konstruksi",
-      "Gemuk (grease) — EP2, 5 kg", CAT_BESI, MAJUN,
+      "Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 5 kg", CAT_BESI, MAJUN,
     ];
   },
 }];

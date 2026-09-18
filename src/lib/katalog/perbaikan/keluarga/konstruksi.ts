@@ -63,8 +63,8 @@ export const POLA_PLAT: Pola[] = [{
   harga: (v) => v.kj.kgm2 * v.tb.t * PLAT_KG * v.lok.f * v.kj.f + (UPAH.tukang / 8) * v.kj.jam * v.lok.f * 2,
   bahan: (v) => [
     v.kj.id === "stiff" || v.kj.id === "gading"
-      ? `Profil baja ${v.tb.nama} — baja kapal grade A, profil T/L sesuai gambar konstruksi`
-      : `Plat baja ${v.tb.nama} — baja kapal grade A, bersertifikat klas`,
+      ? `Profil baja ${v.tb.nama} — baja kapal grade A, kuat tarik 400–520 N/mm2, profil T/L sesuai gambar konstruksi`
+      : `Plat baja ${v.tb.nama} — baja kapal grade A, kuat tarik 400–520 N/mm2, bersertifikat klas`,
     KAWAT_LAS,
     v.tb.t >= 10 ? "Kawat las low hydrogen — AWS E7018, 3.2 mm, kemasan 5 kg" : undefined,
     OKSIGEN, ASETILEN, GERINDA, GERINDA_ASAH,
@@ -98,7 +98,7 @@ const SISTEM_CAT = [
   { id: "tie", nama: "tie coat", lt: 108_000, hanya: ["bawah", "boottop"] },
   { id: "af", nama: "cat antifouling (AF)", lt: 145_000, hanya: ["bawah", "boottop"] },
   { id: "epoksi", nama: "cat epoksi dua komponen", lt: 135_000, hanya: null },
-  { id: "food", nama: "cat epoksi food grade", lt: 210_000, hanya: ["tair"] },
+  { id: "food", nama: "cat epoksi aman untuk air minum", lt: 210_000, hanya: ["tair"] },
   { id: "enamel", nama: "cat marine enamel", lt: 88_000, hanya: null },
   { id: "panas", nama: "cat tahan panas 400 derajat", lt: 245_000, hanya: ["cerobong", "rmesin"] },
   { id: "selip", nama: "cat anti selip", lt: 165_000, hanya: ["gutama", "gkend", "ramp"] },

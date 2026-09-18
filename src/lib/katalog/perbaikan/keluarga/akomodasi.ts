@@ -203,7 +203,7 @@ export const POLA_MEBEL: Pola[] = [{
   satuan: () => "Unit",
   harga: (v) => v.mb.dasar * v.kj.f + (UPAH.tukang / 8) * v.kj.jam,
   bahan: (v) =>
-    v.kj.id === "busa" ? ["Busa jok — tebal 5 cm, densitas 24 kg/m3", "Kulit sintetis (oscar) — tahan air dan tahan api", "Benang dan lem jok — sesuai bahan pelapis"]
+    v.kj.id === "busa" ? ["Busa jok — tebal 5 cm, kepadatan 24 kg/m3", "Kulit sintetis (oscar) — tahan air dan tahan api", "Benang dan lem jok — sesuai bahan pelapis"]
       : v.kj.id === "rangka" ? ["Besi siku / pipa rangka — sesuai profil terpasang", KAWAT_LAS, GERINDA, CAT_BESI]
         : v.kj.id === "cat" ? [CAT_BESI, "Amplas dan dempul — sesuai bahan rangka", "Kuas dan thinner"]
           : [
@@ -251,13 +251,13 @@ export const POLA_SANITASI: Pola[] = [{
   satuan: () => "Unit",
   harga: (v) => v.sn.dasar * v.kj.f + (UPAH.tukang / 8) * v.kj.jam,
   bahan: (v) =>
-    v.kj.id === "saluran" ? ["Pipa PVC 2–4 inci — kelas AW, batang 4 m", "Sambungan PVC — elbow, sok, dan tee", "Lem PVC — kemasan 100 gram", SEALANT]
+    v.kj.id === "saluran" ? ["Pipa PVC 2–4 inci — tekanan kerja 10 bar (tipe AW), batang 4 m", "Sambungan PVC — elbow, sok, dan tee", "Lem PVC — kemasan 100 gram", SEALANT]
       : v.kj.id === "aksesoris" ? ["Kran dan flexible hose — kuningan krom dan selang stainless 40 cm", "Seal dan karet penyekat — sesuai fixture", SEAL_TAPE]
         : v.kj.id === "service" ? ["Seal, karet, dan packing — satu set sesuai unit", "Cairan pembersih dan penghilang kerak", SEAL_TAPE, MAJUN]
           : [
             `${v.sn.nama[0].toUpperCase()}${v.sn.nama.slice(1)} — mutu marine, lengkap kelengkapan bawaan`,
             "Flexible hose dan kran — stainless 40 cm, kran kuningan",
-            "Pipa dan sambungan buangan — PVC kelas AW",
+            "Pipa dan sambungan buangan — PVC tekanan kerja 10 bar (tipe AW)",
             "Seal dan baut pengikat — sesuai fixture", SEALANT,
           ],
 }];
@@ -336,8 +336,8 @@ export const POLA_VENTILASI: Pola[] = [{
   satuan: () => "Unit",
   harga: (v) => v.vn.dasar * v.kj.f + (UPAH.teknisi / 8) * v.kj.jam,
   bahan: (v) =>
-    v.kj.id === "service" ? ["Cairan pembersih dan degreaser — 5 liter", "Gemuk (grease) — EP2, 1 kg", MAJUN]
-      : v.kj.id === "bearing" ? ["Bantalan (bearing) — sepasang, sesuai nomor pabrikan", "Kapasitor motor — sesuai daya", "Gemuk (grease) — EP2, 1 kg"]
+    v.kj.id === "service" ? ["Cairan pembersih dan degreaser — 5 liter", "Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 1 kg", MAJUN]
+      : v.kj.id === "bearing" ? ["Bantalan (bearing) — sepasang, sesuai nomor pabrikan", "Kapasitor motor — sesuai daya", "Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 1 kg"]
         : v.kj.id === "uji" ? ["Anemometer — kalibrasi berlaku", "Lembar hasil pengukuran", MAJUN]
           : [
             `${v.vn.nama[0].toUpperCase()}${v.vn.nama.slice(1)} — mutu marine, tahan lembap dan getar`,

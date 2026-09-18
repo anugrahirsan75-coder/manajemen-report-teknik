@@ -6,9 +6,9 @@ import { Pola, ISOLASI, MAJUN, CAT_BESI, UPAH } from "../pola";
 const LAMPU = [
   { id: "bulb", nama: "lampu LED bulb", spek: "fitting E27, 220 V", dasar: 55_000, daya: true },
   { id: "tl", nama: "lampu LED tube (TL)", spek: "tabung T8, 220 V, lengkap rumah", dasar: 95_000, daya: true },
-  { id: "sorot", nama: "lampu sorot (floodlight)", spek: "IP65, badan aluminium, 220 V", dasar: 285_000, daya: true },
-  { id: "baret", nama: "lampu baret plafon", spek: "IP44, kaca buram, 220 V", dasar: 145_000, daya: true },
-  { id: "kedap", nama: "lampu kedap air ruang mesin", spek: "IP67, badan aluminium, kaca temper", dasar: 620_000, daya: true },
+  { id: "sorot", nama: "lampu sorot (floodlight)", spek: "tahan debu dan semprotan air (IP65), badan aluminium, 220 V", dasar: 285_000, daya: true },
+  { id: "baret", nama: "lampu baret plafon", spek: "tahan cipratan air (IP44), kaca buram, 220 V", dasar: 145_000, daya: true },
+  { id: "kedap", nama: "lampu kedap air ruang mesin", spek: "tahan rendaman air sementara (IP67), badan aluminium, kaca temper", dasar: 620_000, daya: true },
   { id: "darurat", nama: "lampu darurat (emergency)", spek: "baterai cadangan minimal 3 jam, otomatis nyala", dasar: 385_000, daya: false },
   { id: "nav-hal", nama: "lampu navigasi haluan (masthead)", spek: "putih 225 derajat, bersertifikat", dasar: 2_450_000, daya: false },
   { id: "nav-ka", nama: "lampu navigasi lambung kanan", spek: "hijau 112.5 derajat, bersertifikat", dasar: 1_850_000, daya: false },
@@ -18,7 +18,7 @@ const LAMPU = [
   { id: "nav-nuc", nama: "lampu NUC (tidak terkendali)", spek: "merah keliling 360 derajat, sepasang", dasar: 2_150_000, daya: false },
   { id: "morse", nama: "lampu morse / aldis", spek: "lengkap tombol morse dan baterai", dasar: 3_250_000, daya: false },
   { id: "cari", nama: "lampu sorot cari (searchlight)", spek: "dapat diputar, jangkauan minimal 300 m", dasar: 6_800_000, daya: false },
-  { id: "geladak", nama: "lampu penerangan geladak kendaraan", spek: "IP65, tahan getar dan air laut", dasar: 745_000, daya: true },
+  { id: "geladak", nama: "lampu penerangan geladak kendaraan", spek: "tahan debu dan semprotan air (IP65), tahan getar dan air laut", dasar: 745_000, daya: true },
 ];
 
 const DAYA = [
@@ -65,7 +65,7 @@ const KABEL = [
   { id: "nyy", nama: "NYY", spek: "SNI, inti tembaga, tahan tanam dan lembap", f: 1.25, min: 1.5, maks: 95 },
   { id: "nya", nama: "NYA", spek: "SNI, inti tunggal, dipasang dalam pipa", f: 0.55, min: 1.5, maks: 50 },
   { id: "nyaf", nama: "NYAF", spek: "serabut lentur, untuk panel", f: 0.7, min: 1.5, maks: 25 },
-  { id: "frc", nama: "marine FRC tahan api", spek: "IEC 60332, tahan api 3 jam, berselubung baja", f: 3.4, min: 2.5, maks: 95 },
+  { id: "frc", nama: "marine FRC tahan api", spek: "tidak merambatkan api (IEC 60332), tetap berfungsi 3 jam dalam kebakaran, berselubung baja", f: 3.4, min: 2.5, maks: 95 },
   { id: "ktrl", nama: "kabel kontrol berpelindung", spek: "berperisai (screened), inti banyak", f: 1.9, min: 1.5, maks: 6 },
 ];
 
@@ -113,11 +113,11 @@ export const POLA_KABEL: Pola[] = [{
 /* ── panel & proteksi ─────────────────────────────────────────────────── */
 
 const PROTEKSI = [
-  { id: "mcb", nama: "MCB", spek: "kurva C, kapasitas putus 6 kA", dasar: 78_000, arus: [6, 10, 16, 20, 25, 32, 40, 63] },
+  { id: "mcb", nama: "MCB", spek: "pemutusan pada 5–10x arus nominal (kurva C), kapasitas putus 6 kA", dasar: 78_000, arus: [6, 10, 16, 20, 25, 32, 40, 63] },
   { id: "mccb", nama: "MCCB", spek: "dapat disetel, kapasitas putus 25 kA", dasar: 1_450_000, arus: [80, 100, 125, 160, 250, 400] },
   { id: "elcb", nama: "ELCB / RCBO", spek: "arus bocor 30 mA", dasar: 385_000, arus: [16, 25, 32, 40, 63] },
   { id: "kont", nama: "kontaktor", spek: "kumparan 220 V, AC-3", dasar: 425_000, arus: [9, 12, 18, 25, 32, 40, 65, 95] },
-  { id: "ovl", nama: "thermal overload relay", spek: "dapat disetel, kelas 10 A", dasar: 315_000, arus: [6, 10, 16, 25, 40, 65] },
+  { id: "ovl", nama: "thermal overload relay", spek: "dapat disetel, memutus dalam 10 detik pada 6x arus setelan", dasar: 315_000, arus: [6, 10, 16, 25, 40, 65] },
   { id: "fuse", nama: "sekring (fuse) dan dudukan", spek: "tipe NH, lengkap dudukan", dasar: 165_000, arus: [16, 25, 40, 63, 100, 160] },
 ];
 
@@ -173,9 +173,9 @@ export const POLA_PANEL: Pola[] = [{
     v.kj.id === "bersih" ? ["Contact cleaner — 500 ml, aman untuk elektronik", "Kuas dan penyedot debu — sewa alat", "Label penanda jalur", MAJUN]
       : v.kj.id === "termo" ? ["Kamera termal — sewa alat, kalibrasi berlaku", "Lembar hasil pemeriksaan dan foto", MAJUN]
         : v.kj.id === "busbar" ? ["Busbar tembaga — sesuai arus panel", "Isolator penyangga busbar — resin, sesuai tegangan", "Baut dan mur — kuningan/stainless", MAJUN]
-          : v.kj.id === "meter" ? ["Ampere meter dan volt meter — analog/digital, kelas 1.5", "Trafo arus (CT) — rasio sesuai beban", "Kabel kontrol dan skun"]
+          : v.kj.id === "meter" ? ["Ampere meter dan volt meter — analog/digital, ketelitian 1,5 persen", "Trafo arus (CT) — rasio sesuai beban", "Kabel kontrol dan skun"]
             : v.kj.id === "pilot" ? ["Lampu indikator — LED 22 mm, merah/kuning/hijau", "Tombol tekan — 22 mm, NO/NC", ISOLASI]
-              : ["Box panel — plat 1.6 mm, cat oven, IP54", "Rel DIN dan kanal kabel — satu set", "Komponen proteksi dan terminal — sesuai diagram", "Kabel NYAF dan skun — sesuai arus", "Label penanda jalur"],
+              : ["Box panel — plat 1.6 mm, cat oven, tahan debu dan cipratan air (IP54)", "Rel DIN dan kanal kabel — satu set", "Komponen proteksi dan terminal — sesuai diagram", "Kabel NYAF dan skun — sesuai arus", "Label penanda jalur"],
 }];
 
 /* ── motor, generator, baterai ────────────────────────────────────────── */
@@ -200,9 +200,9 @@ export const POLA_MOTOR: Pola[] = [{
   satuan: () => "Unit",
   harga: (v) => (1_450_000 + v.dy.hp * 620_000) * v.kj.f + (UPAH.teknisi / 8) * v.kj.jam,
   bahan: (v) =>
-    v.kj.id === "ganti" ? [`Motor listrik ${v.dy.nama} — 3 fasa 380 V, IP55, lengkap kaki dudukan`, "Kabel dan skun sambungan — sesuai arus motor", "Baut dudukan — kelas 8.8"]
-      : v.kj.id === "rewind" ? ["Kawat email tembaga — kelas F, sesuai data gulungan", "Isolasi gulungan dan varnish — kelas F", "Bantalan (bearing) — sepasang, sesuai nomor pabrikan", MAJUN]
-        : v.kj.id === "bearing" ? ["Bantalan (bearing) — sepasang, sesuai nomor pabrikan", "Gemuk (grease) — EP2, 1 kg", "Seal poros — sesuai diameter"]
+    v.kj.id === "ganti" ? [`Motor listrik ${v.dy.nama} — 3 fasa 380 V, tertutup rapat tahan cipratan air (IP55), lengkap kaki dudukan`, "Kabel dan skun sambungan — sesuai arus motor", "Baut dudukan — baja kuat tarik 800 N/mm2, galvanis"]
+      : v.kj.id === "rewind" ? ["Kawat email tembaga — tahan panas sampai 155 derajat C, diameter sesuai data gulungan", "Isolasi gulungan dan varnish — tahan panas sampai 155 derajat C", "Bantalan (bearing) — sepasang, sesuai nomor pabrikan", MAJUN]
+        : v.kj.id === "bearing" ? ["Bantalan (bearing) — sepasang, sesuai nomor pabrikan", "Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 1 kg", "Seal poros — sesuai diameter"]
           : ["Alat uji isolasi (megger) dan tang ampere — kalibrasi berlaku", MAJUN],
 }];
 
@@ -231,7 +231,7 @@ export const POLA_GENSET: Pola[] = [{
     v.kj.id === "service" ? ["Oli mesin — SAE 15W-40 CH-4, sesuai kapasitas karter", "Filter oli, solar, dan udara — sesuai tipe mesin", "Air pendingin (coolant) — siap pakai, 20 liter", MAJUN]
       : v.kj.id === "overhaul" ? ["Gasket lengkap (overhaul kit) — sesuai tipe mesin", "Ring piston dan bearing — satu set sesuai nomor pabrikan", "Injektor dan nozzle — dikalibrasi ulang", "Oli, filter, dan coolant — satu set penggantian", MAJUN]
         : v.kj.id === "avr" ? ["AVR — sesuai tipe alternator", "Kabel kontrol dan skun", ISOLASI]
-          : v.kj.id === "bearing" ? ["Bantalan alternator — sepasang, sesuai nomor pabrikan", "Gemuk (grease) — EP2, 1 kg", MAJUN]
+          : v.kj.id === "bearing" ? ["Bantalan alternator — sepasang, sesuai nomor pabrikan", "Gemuk (grease) — lithium EP2, tahan sampai 130 derajat C, 1 kg", MAJUN]
             : v.kj.id === "radiator" ? ["Radiator atau inti radiator — sesuai tipe mesin", "Selang radiator dan klem — sesuai diameter", "Air pendingin (coolant) — siap pakai, 20 liter"]
               : ["Bank beban (load bank) — sewa alat", "Solar untuk pengujian — sesuai lama uji", "Lembar hasil uji dan berita acara"],
 }];
