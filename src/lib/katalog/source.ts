@@ -3,7 +3,7 @@
 // Opsional LIVE: set env NEXT_PUBLIC_KATALOG_CSV_URL (sheet KATALOG) + NEXT_PUBLIC_KATALOG_BREAKDOWN_CSV_URL
 //   (sheet BREAKDOWN flat: Kode|Uraian|Volume|Satuan|HargaSatuan|Spesifikasi) -> gviz CSV.
 import seed from "./katalogSeed.json";
-import { KATALOG_PERBAIKAN } from "./perbaikan";
+import { katalogPerbaikan } from "./perbaikan";
 
 export interface KatalogItem {
   kode: string;
@@ -20,7 +20,9 @@ export interface KatalogItem {
 // Pekerjaan perbaikan harian cabang tidak ada di RAB (RAB disusun untuk docking),
 // jadi paketnya digabung di sini — termasuk ke hasil gviz, karena sheet KATALOG
 // pun tidak memuatnya.
-const SEED_ITEMS: KatalogItem[] = [...KATALOG_PERBAIKAN, ...((seed as any).items || [])];
+let seedCache: KatalogItem[] | null = null;
+const SEED_ITEMS = (): KatalogItem[] =>
+  (seedCache ||= [...katalogPerbaikan(), ...(((seed as any).items || []) as KatalogItem[])]);
 
 // ---- util ----
 export const norm = (s: string) =>
@@ -102,16 +104,16 @@ export async function getKatalog(): Promise<KatalogItem[]> {
   inflight = (async () => {
     try {
       const live = await fetchGviz();
-      if (live) { cache = [...KATALOG_PERBAIKAN, ...live]; return cache; }
+      if (live) { cache = [...katalogPerbaikan(), ...live]; return cache; }
     } catch { /* fallback seed */ }
-    cache = SEED_ITEMS;
+    cache = SEED_ITEMS();
     return cache;
   })();
   return inflight;
 }
 
 /** akses sinkron seed (mis. fallback awal sebelum getKatalog selesai) */
-export const katalogSeed = (): KatalogItem[] => SEED_ITEMS;
+export const katalogSeed = (): KatalogItem[] => SEED_ITEMS();
 
 /** Cari item: multi-token AND, abaikan tanda baca; ranking sederhana. */
 export function searchKatalog(all: KatalogItem[], query: string, limit = 30): KatalogItem[] {

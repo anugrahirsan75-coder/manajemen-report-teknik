@@ -21,7 +21,7 @@
  * Semua isian di sini titik awal, bukan harga mati — setiap baris masih bisa
  * disunting di borang SPPBJ setelah dipilih.
  */
-import type { KatalogItem } from "./source";
+import type { KatalogItem } from "../source";
 
 /** bahan las yang berulang di hampir semua pekerjaan pengelasan */
 const LAS = [
@@ -192,7 +192,7 @@ const RESEP: Resep[] = [
 
   /* ── Pipa, sanitasi & air ─────────────────────────────────────────── */
   {
-    kode: "PBK-PIP-001", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-001", kategori: "Perbaikan — Perpipaan",
     nama: "Bongkar pasang dan pengelasan pipa pemadam berikut pemasangan kran",
     satuan: "Ls", harga: 1_000_000, sumber: "Riil",
     spesifikasi: "Jalur pipa tersambung penuh, kran terpasang, diuji tidak bocor",
@@ -200,7 +200,7 @@ const RESEP: Resep[] = [
       "Kran 2 inci — kuningan, drat dalam", "Seal tape — 12 mm x 10 m", LAS[0], LAS[1]],
   },
   {
-    kode: "PBK-PIP-002", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-002", kategori: "Perbaikan — Perpipaan",
     nama: "Perbaikan dan pengelasan meteran air pemadam",
     satuan: "Ls", harga: 300_000, sumber: "Riil",
     spesifikasi: "Meteran terpasang kedap, penunjukan berfungsi normal",
@@ -208,14 +208,14 @@ const RESEP: Resep[] = [
       "Seal tape — 12 mm x 10 m", LAS[0], LAS[1]],
   },
   {
-    kode: "PBK-PIP-003", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-003", kategori: "Perbaikan — Perpipaan",
     nama: "Perbaikan kran hidran",
     satuan: "Unit", harga: 250_000, sumber: "Riil",
     spesifikasi: "Kran berfungsi, sambungan tidak bocor pada tekanan kerja",
     bahan: ["Kran hidran 2 inci — kuningan, drat dalam", "Seal tape — 12 mm x 10 m"],
   },
   {
-    kode: "PBK-PIP-004", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-004", kategori: "Perbaikan — Perpipaan",
     nama: "Perbaikan saluran kamar mandi yang tersumbat",
     satuan: "Titik", harga: 300_000, sumber: "Riil",
     spesifikasi: "Saluran lancar, sambungan tidak merembes",
@@ -223,7 +223,7 @@ const RESEP: Resep[] = [
       "Sambungan PVC — elbow dan sok 3 inci", "Lem PVC — kemasan 100 gram"],
   },
   {
-    kode: "PBK-PIP-005", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-005", kategori: "Perbaikan — Sanitasi",
     nama: "Perbaikan urinoir berikut pipa saluran dan pipa buangan",
     satuan: "Unit", harga: 390_000, sumber: "Riil",
     spesifikasi: "Urinoir terpasang rapat ke dinding, air masuk dan buangan lancar",
@@ -231,7 +231,7 @@ const RESEP: Resep[] = [
       "Flexible hose — stainless 40 cm", "Sealant — silikon netral 300 ml"],
   },
   {
-    kode: "PBK-PIP-006", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-006", kategori: "Perbaikan — Perpipaan",
     nama: "Pasang tutup pipa pembuangan air AC",
     satuan: "Titik", harga: 150_000, sumber: "Riil",
     spesifikasi: "Ujung pipa tertutup rapat, air buangan terarah ke saluran",
@@ -239,7 +239,7 @@ const RESEP: Resep[] = [
       "Klem pipa — 1 inci, galvanis"],
   },
   {
-    kode: "PBK-PIP-007", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-007", kategori: "Perbaikan — Perpipaan",
     nama: "Pemasangan pompa air berikut pipa instalasi",
     satuan: "Ls", harga: 1_750_000, sumber: "Riil",
     spesifikasi: "Pompa terpasang pada dudukan, instalasi diuji mengalir tanpa bocor",
@@ -248,7 +248,7 @@ const RESEP: Resep[] = [
       "Fitting dan stop kran — kuningan 1 inci", "Seal tape — 12 mm x 10 m"],
   },
   {
-    kode: "PBK-PIP-008", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-008", kategori: "Perbaikan — Perpipaan",
     nama: "Ganti pipa hidrolik berikut pengelasan dan bongkar pasang",
     satuan: "Jalur", harga: 500_000, sumber: "Riil",
     spesifikasi: "Jalur diganti baru, diuji pada tekanan kerja tanpa rembes",
@@ -257,7 +257,7 @@ const RESEP: Resep[] = [
       "Oli hidrolik — ISO VG 46, 20 liter"],
   },
   {
-    kode: "PBK-PIP-009", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-009", kategori: "Perbaikan — Sanitasi",
     nama: "Ganti kloset duduk berikut instalasi",
     satuan: "Unit", harga: 1_850_000, sumber: "Pasar",
     spesifikasi: "Kloset terpasang rapat, penyiraman lancar, tidak ada rembesan di kaki",
@@ -265,7 +265,7 @@ const RESEP: Resep[] = [
       "Flexible hose — stainless 40 cm", "Seal kloset (wax ring)", "Sealant — silikon netral 300 ml"],
   },
   {
-    kode: "PBK-PIP-010", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-010", kategori: "Perbaikan — Sanitasi",
     nama: "Ganti wastafel berikut kran dan pipa buangan",
     satuan: "Unit", harga: 950_000, sumber: "Pasar",
     spesifikasi: "Wastafel terpasang kuat, kran tidak menetes, buangan lancar",
@@ -273,7 +273,7 @@ const RESEP: Resep[] = [
       "Pipa buangan (P-trap) — PVC 1.25 inci", "Sealant — silikon netral 300 ml"],
   },
   {
-    kode: "PBK-PIP-011", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-011", kategori: "Perbaikan — Perpipaan",
     nama: "Perbaikan tangki air tawar (bocor/karat)",
     satuan: "Ls", harga: 2_500_000, sumber: "Pasar",
     spesifikasi: "Bagian bocor ditambal dan dilas, bagian dalam dicat epoksi food grade",
@@ -281,7 +281,7 @@ const RESEP: Resep[] = [
       "Cat epoksi food grade — 4 liter (2 komponen)", ...LAS],
   },
   {
-    kode: "PBK-PIP-012", kategori: "Perbaikan — Pipa, Sanitasi & Air",
+    kode: "PBK-PIP-012", kategori: "Perbaikan — Perpipaan",
     nama: "Ganti pipa air bersih (jalur akomodasi)",
     satuan: "m", harga: 95_000, sumber: "Pasar",
     spesifikasi: "Jalur baru diklem tiap 1 m, diuji tekan tanpa bocor",
@@ -589,7 +589,7 @@ const RESEP: Resep[] = [
 ];
 
 /** Katalog pekerjaan perbaikan dalam bentuk KatalogItem, siap digabung. */
-export const KATALOG_PERBAIKAN: KatalogItem[] = RESEP.map((r) => ({
+export const PERBAIKAN_DASAR: KatalogItem[] = RESEP.map((r) => ({
   kode: r.kode,
   jenis: "JASA",
   kategori: r.kategori,

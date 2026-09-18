@@ -21,6 +21,7 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
 }) {
   const [all, setAll] = useState<KatalogItem[]>(katalogSeed());
   const [q, setQ] = useState("");
+  const [ketik, setKetik] = useState("");
   const [jenis, setJenis] = useState("");
   const [sumber, setSumber] = useState("");
   const [kategori, setKategori] = useState("");
@@ -30,7 +31,7 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
 
   useEffect(() => { if (open) getKatalog().then(setAll).catch(() => {}); }, [open]);
   useEffect(() => {
-    if (open) { setSel({}); setBuka({}); setKapal(defaultKapal); setQ(""); setJenis(""); setSumber(""); setKategori(""); }
+    if (open) { setSel({}); setBuka({}); setKapal(defaultKapal); setQ(""); setKetik(""); setJenis(""); setSumber(""); setKategori(""); }
   }, [open, defaultKapal, fokus]);
 
   const dasar = useMemo(
@@ -46,16 +47,20 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
     if (jenis) r = r.filter((i) => i.jenis === jenis);
     if (sumber) r = r.filter((i) => i.sumber === sumber);
     if (kategori) r = r.filter((i) => i.kategori === kategori);
-    return searchKatalog(r, q, 1000);
+    return searchKatalog(r, q, 20000);
   }, [dasar, jenis, sumber, kategori, q]);
+  /** yang digambar dibatasi: katalog perbaikan puluhan ribu baris, dan menggambar
+      semuanya membuat tiap ketikan terasa tersendat tanpa menolong siapa pun */
+  const BATAS = 250;
+  const tampil = useMemo(() => filtered.slice(0, BATAS), [filtered]);
 
   const selectedItems = all.filter((i) => sel[i.kode]);
   const selCount = selectedItems.length;
-  const allShownSelected = filtered.length > 0 && filtered.every((i) => sel[i.kode]);
+  const allShownSelected = tampil.length > 0 && tampil.every((i) => sel[i.kode]);
   const toggleAllShown = () => {
     const next = { ...sel };
-    if (allShownSelected) filtered.forEach((i) => delete next[i.kode]);
-    else filtered.forEach((i) => (next[i.kode] = true));
+    if (allShownSelected) tampil.forEach((i) => delete next[i.kode]);
+    else tampil.forEach((i) => (next[i.kode] = true));
     setSel(next);
   };
   const tambah = () => { if (!selCount) return; onAdd(selectedItems, kapal.trim()); onClose(); };
@@ -68,18 +73,29 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
         <div className="px-5 py-3 border-b flex items-center justify-between gap-3 bg-slate-50">
           <div>
             <h3 className="font-extrabold text-slate-800">{judul || "📚 Katalog Harga Satuan (HSPK)"}</h3>
-            <p className="text-[11px] text-slate-500">{filtered.length} item tampil dari {dasar.length} · centang lalu tambah ke tabel SPPBJ · klik “rincian” untuk melihat bahannya</p>
+            <p className="text-[11px] text-slate-500">{filtered.length.toLocaleString("id-ID")} item cocok dari {dasar.length.toLocaleString("id-ID")}{filtered.length > BATAS ? ` · ${BATAS} teratas ditampilkan, persempit dengan pencarian` : ""} · centang lalu tambah ke tabel SPPBJ</p>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none px-2">✕</button>
+          {/* aksi utama ikut di header: pada layar pendek baris aksi bawah bisa
+              terpotong, dan tombol yang tak terlihat sama saja dengan tak ada */}
+          <div className="ml-auto flex items-center gap-2">
+            <button onClick={tambah} disabled={!selCount}
+              className="text-xs font-semibold px-4 py-2 rounded-lg asdp-gradient text-white disabled:opacity-40">
+              ＋ Tambah {selCount || ""} item ke SPPBJ
+            </button>
+            <button onClick={onClose} className="text-slate-400 hover:text-slate-700 text-xl leading-none px-2">✕</button>
+          </div>
         </div>
 
         {/* filter bar */}
         <div className="px-5 py-2.5 border-b flex flex-wrap items-center gap-2 bg-white">
           <div className="relative flex-1 min-w-[180px]">
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="cari nama / kode / kategori…"
+            <input value={ketik} onChange={(e) => { setKetik(e.target.value); setQ(e.target.value); }}
+              onKeyDown={(e) => { if (e.key === "Enter") setQ(ketik); if (e.key === "Escape") { setKetik(""); setQ(""); } }}
+              placeholder="cari nama / kode / kategori… (mis. pipa 2 inci)"
               className="w-full text-xs border rounded-lg pl-7 pr-3 py-1.5 focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 outline-none" />
             <span className="absolute left-2 top-1/2 -translate-y-1/2 text-slate-400 text-xs">🔍</span>
           </div>
+          <button onClick={() => setQ(ketik)} className="text-xs font-semibold px-3 py-1.5 rounded-lg bg-[#16357f] text-white hover:opacity-90">Cari</button>
           <select value={jenis} onChange={(e) => setJenis(e.target.value)} className="text-xs border rounded-lg px-2 py-1.5 bg-white">
             <option value="">Semua jenis</option><option value="JASA">Jasa</option><option value="BARANG">Barang</option>
           </select>
@@ -90,12 +106,14 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
             <option value="">Semua kategori</option>
             {kategoriList.map((k) => <option key={k} value={k}>{k}</option>)}
           </select>
-          {(q || jenis || sumber || kategori) && <button onClick={() => { setQ(""); setJenis(""); setSumber(""); setKategori(""); }} className="text-xs text-slate-500 hover:text-slate-700 underline">reset</button>}
+          {(q || jenis || sumber || kategori) && <button onClick={() => { setQ(""); setKetik(""); setJenis(""); setSumber(""); setKategori(""); }} className="text-xs text-slate-500 hover:text-slate-700 underline">reset</button>}
         </div>
 
         {/* kelompok pekerjaan — pintasan sekali klik, isinya sama dengan dropdown kategori */}
+        {/* tingginya dibatasi: 21 kelompok memenuhi empat baris dan mendorong
+            tabelnya keluar layar, padahal tabel itu yang dicari */}
         {fokus && kategoriList.length > 1 && (
-          <div className="px-5 py-2 border-b bg-white flex flex-wrap gap-1.5">
+          <div className="px-5 py-2 border-b bg-white flex flex-wrap gap-1.5 max-h-[5rem] overflow-y-auto">
             <button onClick={() => setKategori("")}
               className={`text-[11px] px-2.5 py-1 rounded-full border ${!kategori ? "bg-[#16357f] text-white border-[#16357f]" : "bg-white text-slate-600 border-slate-300 hover:bg-slate-50"}`}>
               Semua ({dasar.length})
@@ -125,7 +143,7 @@ export default function KatalogBrowser({ open, onClose, onAdd, defaultKapal = ""
             </thead>
             <tbody>
               {filtered.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-slate-400">Tak ada item cocok filter.</td></tr>}
-              {filtered.map((it) => {
+              {tampil.map((it) => {
                 const on = !!sel[it.kode];
                 const rinci = it.breakdown || [];
                 const terbuka = !!buka[it.kode];
