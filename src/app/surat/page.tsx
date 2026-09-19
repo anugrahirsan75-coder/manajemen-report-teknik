@@ -67,6 +67,7 @@ export default function BuatSuratEOffice() {
   const [semuaData, setSemuaData] = useState<Record<string, DataSurat>>(() =>
     Object.fromEntries(TEMPLATE_SURAT.map((t) => [t.id, dataAwal(t)])));
   const [tab, setTab] = useState<"pratinjau" | "kode">("pratinjau");
+  const [cariSurat, setCariSurat] = useState("");
   const [pesan, setPesan] = useState("");
   const [sudahMuat, setSudahMuat] = useState(false);
   const kodeRef = useRef<HTMLTextAreaElement>(null);
@@ -83,6 +84,24 @@ export default function BuatSuratEOffice() {
    * hidup berdampingan tanpa ada yang tahu mana yang benar.
    */
   const { ships } = useKapalDb();
+  /**
+   * Penyaring jenis surat.
+   *
+   * Yang dicari disapu ke nama, keterangan, tujuan, dan perihalnya sekaligus —
+   * orang mengingat suratnya dengan cara berbeda-beda: kadang namanya
+   * ("denda"), kadang kepada siapa ("KSOP"), kadang kata pada perihalnya
+   * ("dock space"). Tiap kata dicari terpisah supaya urutan ketikan tak
+   * menentukan.
+   */
+  const suratCocok = useMemo(() => {
+    const kata = cariSurat.toLowerCase().split(/\s+/).filter(Boolean);
+    if (!kata.length) return TEMPLATE_SURAT;
+    return TEMPLATE_SURAT.filter((t) => {
+      const jerami = `${t.nama} ${t.deskripsi} ${t.tujuan} ${t.perihal} ${t.id}`.toLowerCase();
+      return kata.every((k) => jerami.includes(k));
+    });
+  }, [cariSurat]);
+
   const petaGt = useMemo(() => Object.fromEntries(
     ships.filter((s) => String(s.dimension?.gt || "").trim())
       .map((s) => [s.nama, String(s.dimension.gt).trim()])), [ships]);
@@ -278,9 +297,35 @@ export default function BuatSuratEOffice() {
 
       {/* ── pilih template ───────────────────────────────────────────────── */}
       <section className="anim-in mb-5 rounded-3xl bg-white/90 p-4 shadow-sm ring-1 ring-slate-200 backdrop-blur dark:bg-slate-900/80 dark:ring-slate-700">
-        <h2 className="mb-3 text-sm font-extrabold uppercase tracking-[0.12em] text-slate-500">Pilih jenis surat</h2>
+        <div className="mb-3 flex flex-wrap items-center gap-2">
+          <h2 className="text-sm font-extrabold uppercase tracking-[0.12em] text-slate-500">Pilih jenis surat</h2>
+          <div className="relative ml-auto w-full sm:w-72">
+            <input value={cariSurat} onChange={(e) => setCariSurat(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Escape") setCariSurat("");
+                // Enter memilih satu-satunya yang tersisa: kalau penyaringnya
+                // sudah menyisakan satu surat, mengetik lalu menekan Enter
+                // lebih cepat daripada memindahkan tangan ke tetikus
+                if (e.key === "Enter" && suratCocok.length === 1) setIdTemplate(suratCocok[0].id);
+              }}
+              placeholder="cari surat… (mis. dock space, denda, IO)"
+              className="w-full rounded-lg border border-slate-300 py-1.5 pl-7 pr-3 text-xs outline-none focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 dark:border-slate-600 dark:bg-slate-800" />
+            <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-xs text-slate-400">🔍</span>
+          </div>
+          <span className="text-[11px] text-slate-400">
+            {cariSurat ? `${suratCocok.length} dari ${TEMPLATE_SURAT.length}` : `${TEMPLATE_SURAT.length} jenis`}
+          </span>
+          {cariSurat && (
+            <button onClick={() => setCariSurat("")} className="text-[11px] text-slate-500 underline">hapus</button>
+          )}
+        </div>
+        {suratCocok.length === 0 && (
+          <p className="rounded-xl bg-slate-50 px-3 py-4 text-center text-xs text-slate-400 dark:bg-slate-800">
+            Tak ada surat yang cocok “{cariSurat}”. Coba kata lain, atau pakai <b>Surat Kustom</b> untuk menulis sendiri.
+          </p>
+        )}
         <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-5">
-          {TEMPLATE_SURAT.map((t) => {
+          {suratCocok.map((t) => {
             const aktif = t.id === idTemplate;
             return (
               <button key={t.id} onClick={() => setIdTemplate(t.id)}
