@@ -1,0 +1,1493 @@
+{
+ "sumber": "Susunan Crew Kapal Cabang Ternate NEW.xlsx — November 2024",
+ "kapal": [
+  {
+   "kapal": "KMP. ARIWANGAN",
+   "awak": [
+    {
+     "nama": "ERIEK PUTRA NEGARA",
+     "jabatan": "NAKHODA",
+     "nik": "062144698",
+     "coc": "ANT-II",
+     "tmt": "2020-10-15"
+    },
+    {
+     "nama": "RAMLI HUSEN",
+     "jabatan": "MUALIM I",
+     "nik": "032103237",
+     "coc": "ANT-III",
+     "tmt": "2022-08-10"
+    },
+    {
+     "nama": "SUDARTO",
+     "jabatan": "MUALIM II",
+     "nik": "022042454",
+     "coc": "ANT-IV",
+     "tmt": "2024-02-29"
+    },
+    {
+     "nama": "ERKANTO",
+     "jabatan": "KKM/MASINIS I",
+     "nik": "072011980",
+     "coc": "ATT-V",
+     "tmt": "2019-03-13"
+    },
+    {
+     "nama": "HASAN SAMUAL",
+     "jabatan": "MASINIS II",
+     "nik": "012102902",
+     "coc": "ATT-IV",
+     "tmt": "2022-12-23"
+    },
+    {
+     "nama": "ALWAN ROBO",
+     "jabatan": "MASINIS III",
+     "nik": "072103318",
+     "coc": "ATT-IV",
+     "tmt": "2021-03-01"
+    },
+    {
+     "nama": "SYAHMI LESSY",
+     "jabatan": "MANDOR MESIN",
+     "nik": "042134441",
+     "coc": "ATT-IV",
+     "tmt": "2022-07-18"
+    },
+    {
+     "nama": "MUH. RIDWAN",
+     "jabatan": "JURU MUDI",
+     "nik": "012134382",
+     "coc": "RAS-D",
+     "tmt": "2019-03-13"
+    },
+    {
+     "nama": "LA ODE  M RAHMAD R",
+     "jabatan": "KELASI",
+     "nik": "062134478",
+     "coc": "RAS-D",
+     "tmt": "2024-03-25"
+    },
+    {
+     "nama": "DJUFRI A. MAJID",
+     "jabatan": "JURU MUDI",
+     "nik": "092154997",
+     "coc": "ANT-IV",
+     "tmt": "2023-06-19"
+    },
+    {
+     "nama": "MUH HUDARI OPIER",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_1155L",
+     "coc": "RFPW-E",
+     "tmt": "2024-02-01"
+    },
+    {
+     "nama": "SUBHAN NAYA",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_1138L",
+     "coc": "RFPW-E",
+     "tmt": "2024-08-20"
+    },
+    {
+     "nama": "ACHMAD RIDWAN",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_878L",
+     "coc": "RAS-E",
+     "tmt": "2022-02-04"
+    },
+    {
+     "nama": "NABIL TUNY",
+     "jabatan": "KELASI",
+     "nik": "KKP_781",
+     "coc": "RFPN-W",
+     "tmt": "2023-06-25"
+    },
+    {
+     "nama": "ISAM LESTUSEN",
+     "jabatan": "KELASI",
+     "nik": "KKP_1154L",
+     "coc": "RFPN-W",
+     "tmt": "31 Januari 2024"
+    },
+    {
+     "nama": "ABDUL RAHMAT BITIA",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1099L",
+     "coc": "RFPN-W",
+     "tmt": "2024-05-02"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. BARONANG",
+   "awak": [
+    {
+     "nama": "SAMSON TINUNGKI",
+     "jabatan": "NAKHODA",
+     "nik": "107961356",
+     "coc": "ANT-III",
+     "tmt": "2023-10-26"
+    },
+    {
+     "nama": "M TAUFIK AKBAR",
+     "jabatan": "MUALIM I",
+     "nik": "2101705360",
+     "coc": "ANT-III",
+     "tmt": "2022-08-10"
+    },
+    {
+     "nama": "MUHAMMAD FAISAL",
+     "jabatan": "MUALIM II",
+     "nik": "042113571",
+     "coc": "ANT-IV",
+     "tmt": "2024-05-27"
+    },
+    {
+     "nama": "ANANG SUPRANOTO",
+     "jabatan": "MUALIM III",
+     "nik": "032113533",
+     "coc": "ANTI-IV",
+     "tmt": "2023-11-13"
+    },
+    {
+     "nama": "IRWAN ADAM BANTULU",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "022042448",
+     "coc": "ATT-IV",
+     "tmt": "2016-01-25"
+    },
+    {
+     "nama": "PONGKI RAGIL SAPUTRO",
+     "jabatan": "MASINIS II",
+     "nik": "KKP_940L",
+     "coc": "ATT-III",
+     "tmt": "2023-06-25"
+    },
+    {
+     "nama": "ARIS LAMBE",
+     "jabatan": "MASINIS III",
+     "nik": "052154890",
+     "coc": "ATT-IV",
+     "tmt": "2022-04-18"
+    },
+    {
+     "nama": "DADANG J DULINGO",
+     "jabatan": "MASINIS IV",
+     "nik": "012102979",
+     "coc": "ATT-IV",
+     "tmt": "2022-04-18"
+    },
+    {
+     "nama": "ARIF WANGSA",
+     "jabatan": "MANDOR MESIN",
+     "nik": "2041705295",
+     "coc": "ATT-V",
+     "tmt": "14 Desember 2023"
+    },
+    {
+     "nama": "FAISAL",
+     "jabatan": "SERANG",
+     "nik": "012134344",
+     "coc": "ANT-V",
+     "tmt": "2022-11-09"
+    },
+    {
+     "nama": "LILIK HARYANTO",
+     "jabatan": "JURU MUDI",
+     "nik": "042165152",
+     "coc": "ANT-V",
+     "tmt": "2019-11-29"
+    },
+    {
+     "nama": "KHALID A AZIZ",
+     "jabatan": "JURU MUDI",
+     "nik": "012103081",
+     "coc": "ANT-V",
+     "tmt": "2020-01-20"
+    },
+    {
+     "nama": "AZIZ SOANGARE",
+     "jabatan": "KELASI",
+     "nik": "KKP_287L",
+     "coc": "RFPN-W",
+     "tmt": "2023-06-25"
+    },
+    {
+     "nama": "AGUNG MAHU",
+     "jabatan": "KELASI",
+     "nik": "KKP_927L",
+     "coc": "RFPN-W",
+     "tmt": "2024-03-05"
+    },
+    {
+     "nama": "TAUFIL ISMAIL",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_600L",
+     "coc": "ANT-V",
+     "tmt": "2024-08-20"
+    },
+    {
+     "nama": "REZA FEBRIAWAN",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_333L",
+     "coc": "ATT-V",
+     "tmt": "2024-02-01"
+    },
+    {
+     "nama": "RUSLI",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_930L",
+     "coc": "RFPW-E",
+     "tmt": "2022-09-13"
+    },
+    {
+     "nama": "TARMIZI TAHER LESSY",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1176L",
+     "coc": "RFPN-W",
+     "tmt": "2023-09-07"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. BOBARA",
+   "awak": [
+    {
+     "nama": "PHILIPUS MAHUBESSY",
+     "jabatan": "NAKHODA",
+     "nik": "082113788",
+     "coc": "ANT-IV",
+     "tmt": "2020-11-30"
+    },
+    {
+     "nama": "JOANES SIAHAAN",
+     "jabatan": "MUALIM I",
+     "nik": "KKP_1117L",
+     "coc": "ANT-III",
+     "tmt": "2024-02-27"
+    },
+    {
+     "nama": "BURHAN SELANG",
+     "jabatan": "MUALIM II",
+     "nik": "022103205",
+     "coc": "ANT-IV",
+     "tmt": "2024-02-29"
+    },
+    {
+     "nama": "USMAN ABDULLAH",
+     "jabatan": "MUALIM III",
+     "nik": "032113510",
+     "coc": "ANT-IV",
+     "tmt": "2022-11-09"
+    },
+    {
+     "nama": "PIERRE G. REHATTA",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "072001949",
+     "coc": "ATT-III",
+     "tmt": "2022-08-10"
+    },
+    {
+     "nama": "SLAMET DAROINI",
+     "jabatan": "MASINIS II",
+     "nik": "052154885",
+     "coc": "ATT-III",
+     "tmt": "2016-06-03"
+    },
+    {
+     "nama": "EVER P. KOMAUSUM",
+     "jabatan": "MASINIS III",
+     "nik": "052154899",
+     "coc": "ATT-III",
+     "tmt": "2021-03-01"
+    },
+    {
+     "nama": "YOHANES PHILIPUS ROJU",
+     "jabatan": "MASINIS IV",
+     "nik": "062144690",
+     "coc": "ATT-IV",
+     "tmt": "2022-04-18"
+    },
+    {
+     "nama": "ABU BAKAR",
+     "jabatan": "MANDOR MESIN",
+     "nik": "012134346",
+     "coc": "ATT-V",
+     "tmt": "2021-03-01"
+    },
+    {
+     "nama": "MUHAMMAD YASIN",
+     "jabatan": "JURU MUDI",
+     "nik": "012102842",
+     "coc": "RAS-D",
+     "tmt": "2017-05-30"
+    },
+    {
+     "nama": "FADLI AHMAD",
+     "jabatan": "JURU MUDI",
+     "nik": "012134360",
+     "coc": "RAS-D",
+     "tmt": "2018-06-28"
+    },
+    {
+     "nama": "HARDI",
+     "jabatan": "JURU MUDI",
+     "nik": "022134392",
+     "coc": "ANT-V",
+     "tmt": "2022-08-17"
+    },
+    {
+     "nama": "LA ODE BATALION SADAR",
+     "jabatan": "JURU MINYAK",
+     "nik": "042165169",
+     "coc": "ATT-V",
+     "tmt": "2021-12-16"
+    },
+    {
+     "nama": "ALWI SAMOAL",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_783L",
+     "coc": "RFPW-E",
+     "tmt": "2021-08-04"
+    },
+    {
+     "nama": "YUSDIYANTO MURAD",
+     "jabatan": "JURU MINYAK",
+     "nik": "102155007",
+     "coc": "RAS-E",
+     "tmt": "2022-02-10"
+    },
+    {
+     "nama": "DUFIN",
+     "jabatan": "KELASI",
+     "nik": "052165197",
+     "coc": "ANT-V",
+     "tmt": "2021-12-16"
+    },
+    {
+     "nama": "KRISTI RANDY BODE",
+     "jabatan": "KELASI",
+     "nik": "KKP_289L",
+     "coc": "RFPN-W",
+     "tmt": "2021-07-31"
+    },
+    {
+     "nama": "LAUJAN SAMOAL",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1100L",
+     "coc": "RFPN-W",
+     "tmt": "2023-09-07"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. GORANGO",
+   "awak": [
+    {
+     "nama": "ANTON WAHYUDI MAUZU",
+     "jabatan": "NAKHODA",
+     "nik": "012072569",
+     "coc": "ANT-II",
+     "tmt": "2023-09-12"
+    },
+    {
+     "nama": "MANSUR",
+     "jabatan": "MUALIM I",
+     "nik": "KKP_814L",
+     "coc": "ANT-III",
+     "tmt": "2024-05-14"
+    },
+    {
+     "nama": "PONIMAN GULO",
+     "jabatan": "MUALIM II",
+     "nik": "KKP_267L",
+     "coc": "ANT-III",
+     "tmt": "2023-08-16"
+    },
+    {
+     "nama": "DARSUKI",
+     "jabatan": "MUALIM III",
+     "nik": "101981463",
+     "coc": "ANT-V",
+     "tmt": "14 September 2015"
+    },
+    {
+     "nama": "AHDIAT MATTARANG",
+     "jabatan": "KKM/MASINIS I",
+     "nik": "101961264",
+     "coc": "ATT-III",
+     "tmt": "2020-04-02"
+    },
+    {
+     "nama": "SLAMET RIYADI",
+     "jabatan": "MASINIS II",
+     "nik": "112134600",
+     "coc": "ATT-III",
+     "tmt": "2023-06-19"
+    },
+    {
+     "nama": "USMAN SUAIB",
+     "jabatan": "MASINIS III",
+     "nik": "022042392",
+     "coc": "ATT-III",
+     "tmt": "2021-07-13"
+    },
+    {
+     "nama": "RUSTAM DG. AMIR",
+     "jabatan": "MASINIS IV",
+     "nik": "012072615",
+     "coc": "ATT-V",
+     "tmt": "2013-02-11"
+    },
+    {
+     "nama": "M. FAUZI SYIKO",
+     "jabatan": "SERANG",
+     "nik": "042113573",
+     "coc": "ANT-V",
+     "tmt": "2022-08-17"
+    },
+    {
+     "nama": "RANDI PAKAYA",
+     "jabatan": "JURU MUDI",
+     "nik": "012134355",
+     "coc": "ANT-V",
+     "tmt": "2016-06-30"
+    },
+    {
+     "nama": "M. GUNTUR ARSYAD",
+     "jabatan": "JURU MUDI",
+     "nik": "092154995",
+     "coc": "ANT-V",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "HUSNI TUATOY",
+     "jabatan": "JURU MUDI",
+     "nik": "2041705280",
+     "coc": "ANT-V",
+     "tmt": "2016-06-30"
+    },
+    {
+     "nama": "M. SYUKUR",
+     "jabatan": "MANDOR MESIN",
+     "nik": "112155023",
+     "coc": "ATT-V",
+     "tmt": "2023-06-19"
+    },
+    {
+     "nama": "BUDI PAMUNGKAS",
+     "jabatan": "JURU MINYAK",
+     "nik": "022134393",
+     "coc": "ATT-V",
+     "tmt": "2023-02-21"
+    },
+    {
+     "nama": "GANDHY BANTULU",
+     "jabatan": "JURU MINYAK",
+     "nik": "2041705289",
+     "coc": "ATT-V",
+     "tmt": "2023-06-19"
+    },
+    {
+     "nama": "SAHBUDIN YUSUF",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_328L",
+     "coc": "ATT-V",
+     "tmt": "2020-04-02"
+    },
+    {
+     "nama": "ARJUN NARJO LAANGKA",
+     "jabatan": "KELASI",
+     "nik": "KKP_493L",
+     "coc": "RFPN-W",
+     "tmt": "2023-03-05"
+    },
+    {
+     "nama": "ANGGA",
+     "jabatan": "KELASI",
+     "nik": "KKP_495L",
+     "coc": "ANT-V",
+     "tmt": "2017-05-15"
+    },
+    {
+     "nama": "ROBERTO J FERNANDO SEREH",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1068L",
+     "coc": "RAS-D",
+     "tmt": "2023-05-17"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. KERAPU II",
+   "awak": [
+    {
+     "nama": "FAHRIL",
+     "jabatan": "NAKHODA",
+     "nik": "062134468",
+     "coc": "ANT-III",
+     "tmt": "28 MEI 2021"
+    },
+    {
+     "nama": "HAMID",
+     "jabatan": "MUALIM I",
+     "nik": "103971404",
+     "coc": "ANT-IV",
+     "tmt": "2023-09-12"
+    },
+    {
+     "nama": "APEN ROKUA",
+     "jabatan": "MUALIM III",
+     "nik": "042113590",
+     "coc": "ANT-V",
+     "tmt": "2024-02-29"
+    },
+    {
+     "nama": "ABDULLAH ISKANDAR ALAM",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "092144724",
+     "coc": "ATT-IV",
+     "tmt": "2018-06-28"
+    },
+    {
+     "nama": "MUSLIM",
+     "jabatan": "MASINIS II",
+     "nik": "2101705350",
+     "coc": "ATT-II",
+     "tmt": "2024-05-30"
+    },
+    {
+     "nama": "SYARIFUDDIN",
+     "jabatan": "MASINIS III",
+     "nik": "082124228",
+     "coc": "ATT-V",
+     "tmt": "2020-02-06"
+    },
+    {
+     "nama": "AGUNG MULYAMAN",
+     "jabatan": "MANDOR MESIN",
+     "nik": "KKP_282L",
+     "coc": "ATT-V",
+     "tmt": "2023-06-25"
+    },
+    {
+     "nama": "YADI H REDJEB",
+     "jabatan": "JURU MUDI",
+     "nik": "012134357",
+     "coc": "RAS-D",
+     "tmt": "2018-10-23"
+    },
+    {
+     "nama": "HERU SURYO KUSUMO",
+     "jabatan": "JURU MUDI",
+     "nik": "042165139",
+     "coc": "RAS-D",
+     "tmt": "2020-01-20"
+    },
+    {
+     "nama": "SAIFUL OPIER",
+     "jabatan": "JURU MUDI",
+     "nik": "052124079",
+     "coc": "ANT-V",
+     "tmt": "2023-07-03"
+    },
+    {
+     "nama": "GILAN ALFANI WAEL",
+     "jabatan": "KELASI",
+     "nik": "KKP_928L",
+     "coc": "RFPN-W",
+     "tmt": "2024-04-01"
+    },
+    {
+     "nama": "RIFALDY TAHER",
+     "jabatan": "KELASI",
+     "nik": "KKP_929L",
+     "coc": "RAS-D",
+     "tmt": "2024-04-01"
+    },
+    {
+     "nama": "RENALDY LESSY",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_1139L",
+     "coc": "RFPW-E",
+     "tmt": "15 Desember 2023"
+    },
+    {
+     "nama": "ARIFIN",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_285L",
+     "coc": "ATT-V",
+     "tmt": "2024-08-20"
+    },
+    {
+     "nama": "SUBQI H.S",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_599L",
+     "coc": "RFPW-E",
+     "tmt": "2023-10-02"
+    },
+    {
+     "nama": "WANDI SAMOAL",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1079L",
+     "coc": "RFPN-W",
+     "tmt": "2023-07-18"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. KOLORAI",
+   "awak": [
+    {
+     "nama": "KORNELIS NONG",
+     "jabatan": "NAKHODA",
+     "nik": "KKP_443L",
+     "coc": "ANT-IV",
+     "tmt": "2021-12-30"
+    },
+    {
+     "nama": "KHAERUL",
+     "jabatan": "MUALIM I",
+     "nik": "KKP_437L",
+     "coc": "ANT-IV",
+     "tmt": "2021-12-30"
+    },
+    {
+     "nama": "NASRULLAH",
+     "jabatan": "KKM/MASINIS I",
+     "nik": "KKP_498L",
+     "coc": "ATT-IV",
+     "tmt": "2022-01-31"
+    },
+    {
+     "nama": "RIZKY LOLO PAYUNG",
+     "jabatan": "MASINIS II",
+     "nik": "KKP_606L",
+     "coc": "ATT-V",
+     "tmt": "2023-09-21"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. LOMPA",
+   "awak": [
+    {
+     "nama": "YONDI U SAKTI",
+     "jabatan": "NAKHODA",
+     "nik": "107991789",
+     "coc": "ANT-III",
+     "tmt": "02 Desember 2022"
+    },
+    {
+     "nama": "HARTONO BAHCRUN",
+     "jabatan": "MUALIM I",
+     "nik": "107971456",
+     "coc": "ANT-III",
+     "tmt": "2023-09-12"
+    },
+    {
+     "nama": "TOHIRON",
+     "jabatan": "MUALIM II",
+     "nik": "042113570",
+     "coc": "ANT-III",
+     "tmt": "2022-11-09"
+    },
+    {
+     "nama": "MULYADI",
+     "jabatan": "MUALIM III",
+     "nik": "022134394",
+     "coc": "ANT-IV",
+     "tmt": "2022-11-09"
+    },
+    {
+     "nama": "ABDUL MALIK",
+     "jabatan": "KKM/MASINIS II",
+     "nik": "10193477",
+     "coc": "ATT-III",
+     "tmt": "2024-08-05"
+    },
+    {
+     "nama": "DENNY SETYAWAN",
+     "jabatan": "PJS KKM",
+     "nik": "022165092",
+     "coc": "ATT-III",
+     "tmt": "2024-05-17"
+    },
+    {
+     "nama": "ASEP DIKI DERMAWAN",
+     "jabatan": "MASINIS III",
+     "nik": "2071605225",
+     "coc": "ATT-III",
+     "tmt": "2022-12-19"
+    },
+    {
+     "nama": "WAHYU SETYO UTOMO",
+     "jabatan": "MASINIS IV",
+     "nik": "012134345",
+     "coc": "ATT-IV",
+     "tmt": "2022-04-18"
+    },
+    {
+     "nama": "SUPRAPMAN",
+     "jabatan": "SERANG",
+     "nik": "012103079",
+     "coc": "ANT-V",
+     "tmt": "2024-02-29"
+    },
+    {
+     "nama": "DEDY SOFYAN SAPUTRA",
+     "jabatan": "JURU MUDI",
+     "nik": "072154959",
+     "coc": "ANT-IV",
+     "tmt": "2021-10-15"
+    },
+    {
+     "nama": "RAMLI",
+     "jabatan": "JURU MUDI",
+     "nik": "012103079",
+     "coc": "ANT-V",
+     "tmt": "2017-05-30"
+    },
+    {
+     "nama": "MIDUN",
+     "jabatan": "JURU MUDI",
+     "nik": "KKP_286L",
+     "coc": "ANT-V",
+     "tmt": "2024-03-05"
+    },
+    {
+     "nama": "OLVIN TATUHE",
+     "jabatan": "MANDOR",
+     "nik": "042134442",
+     "coc": "ATT-V",
+     "tmt": "2019-01-23"
+    },
+    {
+     "nama": "MUHAMMAD HAYALE",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_931L",
+     "coc": "RFPW-E",
+     "tmt": "2023-10-16"
+    },
+    {
+     "nama": "HELMI SALMUN",
+     "jabatan": "JURU MINYAK",
+     "nik": "022103200",
+     "coc": "RAS-E",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "IKHZAR PRATAMA",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_1031L",
+     "coc": "RFPW-E",
+     "tmt": "2023-02-17"
+    },
+    {
+     "nama": "ALFIAN",
+     "jabatan": "KELASI",
+     "nik": "KKP_876L",
+     "coc": "RFPN-W",
+     "tmt": "2023-10-16"
+    },
+    {
+     "nama": "MUNJI LESSYTUSEN",
+     "jabatan": "KELASI",
+     "nik": "KKP_496L",
+     "coc": "ANT-V",
+     "tmt": "2022-09-13"
+    },
+    {
+     "nama": "IKLAL",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1032L",
+     "coc": "RFPN-W",
+     "tmt": "2023-02-17"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. MAMING",
+   "awak": [
+    {
+     "nama": "M U H A D I",
+     "jabatan": "NAKHODA",
+     "nik": "112124310",
+     "coc": "ANT-III",
+     "tmt": "2023-01-09"
+    },
+    {
+     "nama": "ROMANUS A. HAYON",
+     "jabatan": "MUALIM I",
+     "nik": "KKP_1117L",
+     "coc": "ANT-III",
+     "tmt": "2024-01-18"
+    },
+    {
+     "nama": "NANA MULYANA",
+     "jabatan": "MUALIM II",
+     "nik": "101961275",
+     "coc": "ANT-IV",
+     "tmt": "2021-10-15"
+    },
+    {
+     "nama": "M IKSAN MANGANTAR",
+     "jabatan": "MUALIM III",
+     "nik": "072103319",
+     "coc": "ANT-IV",
+     "tmt": "2023-08-14"
+    },
+    {
+     "nama": "HAMID HAFID",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "10195926",
+     "coc": "ATT-III",
+     "tmt": "2017-02-08"
+    },
+    {
+     "nama": "IRFAN ARHAS",
+     "jabatan": "MASINIS II",
+     "nik": "032134421",
+     "coc": "ATT-III",
+     "tmt": "2018-06-28"
+    },
+    {
+     "nama": "SAIFUL MAHFUD",
+     "jabatan": "MASINIS III",
+     "nik": "052165212",
+     "coc": "ATT-III",
+     "tmt": "2022-12-19"
+    },
+    {
+     "nama": "AHMAD SUDARMAN",
+     "jabatan": "MASINIS IV",
+     "nik": "122103448",
+     "coc": "ATT-IV",
+     "tmt": "14 Desember 2023"
+    },
+    {
+     "nama": "ARI MUSTOFA SETYAWAN",
+     "jabatan": "MANDOR MESIN",
+     "nik": "042165164",
+     "coc": "ATT-V",
+     "tmt": "2023-06-19"
+    },
+    {
+     "nama": "USMAN WALI",
+     "jabatan": "SERANG",
+     "nik": "107971440",
+     "coc": "RAS-D",
+     "tmt": "2016-02-12"
+    },
+    {
+     "nama": "FAHMI ALHADDAD",
+     "jabatan": "JURU MUDI",
+     "nik": "012134362",
+     "coc": "RAS-D",
+     "tmt": "2019-04-02"
+    },
+    {
+     "nama": "MUSYAHID SAMUAL",
+     "jabatan": "JURU MUDI",
+     "nik": "032113521",
+     "coc": "ANT-V",
+     "tmt": "2024-03-25"
+    },
+    {
+     "nama": "FAHRUL SALIM",
+     "jabatan": "JURU MUDI",
+     "nik": "052154870",
+     "coc": "RFPW-E",
+     "tmt": "2021-04-09"
+    },
+    {
+     "nama": "RAUF PAPALIA",
+     "jabatan": "KELASI",
+     "nik": "KKP_280L",
+     "coc": "RFPN-W",
+     "tmt": "2018-05-21"
+    },
+    {
+     "nama": "M.SYAHRIL.R.WAEL",
+     "jabatan": "KELASI",
+     "nik": "KKP_341L",
+     "coc": "RFPN-W",
+     "tmt": "2023-04-19"
+    },
+    {
+     "nama": "FIKRI TUNY",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1067L",
+     "coc": "RFPN-W",
+     "tmt": "17 Juni 2023"
+    },
+    {
+     "nama": "JALI MAABUAT",
+     "jabatan": "JURU MINYAK",
+     "nik": "2041705300",
+     "coc": "ATT-V",
+     "tmt": "2020-02-13"
+    },
+    {
+     "nama": "NUAISIR R SOMUAL",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_1030 L",
+     "coc": "RFPW-E",
+     "tmt": "2023-02-17"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. NGAFI",
+   "awak": [
+    {
+     "nama": "ASMIN MANSUR",
+     "jabatan": "NAKHODA",
+     "nik": "2091605232",
+     "coc": "ANT-II",
+     "tmt": "2019-09-26"
+    },
+    {
+     "nama": "SUNARDI",
+     "jabatan": "MUALIM I",
+     "nik": "122103451",
+     "coc": "ANT-IV",
+     "tmt": "2023-10-26"
+    },
+    {
+     "nama": "SAIFUL SJAHDJUAN",
+     "jabatan": "MUALIM II",
+     "nik": "022042380",
+     "coc": "ANT-V",
+     "tmt": "2016-02-12"
+    },
+    {
+     "nama": "MUID YUSUF",
+     "jabatan": "MUALIM III",
+     "nik": "022103207",
+     "coc": "ANT-IV",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "SURYADI WIJAYA",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "022042338",
+     "coc": "ATT-III",
+     "tmt": "2022-08-10"
+    },
+    {
+     "nama": "AGUSTINUS SOO",
+     "jabatan": "MASINIS II",
+     "nik": "102103381",
+     "coc": "ATT-IV",
+     "tmt": "2024-05-30"
+    },
+    {
+     "nama": "AHMAD B.L",
+     "jabatan": "MASINIS III",
+     "nik": "082103342",
+     "coc": "ATT-IV",
+     "tmt": "2022-12-19"
+    },
+    {
+     "nama": "AKHMAD SHOFI",
+     "jabatan": "MASINIS IV",
+     "nik": "112103398",
+     "coc": "ATT-IV",
+     "tmt": "2022-12-19"
+    },
+    {
+     "nama": "FIRHAN NASRUL",
+     "jabatan": "SERANG",
+     "nik": "042165136",
+     "coc": "ANT-V",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "FERDI EITA",
+     "jabatan": "MANDOR MESIN",
+     "nik": "KKP_283L",
+     "coc": "ATT-V",
+     "tmt": "2023-10-16"
+    },
+    {
+     "nama": "INDRA A.R",
+     "jabatan": "JURU MUDI",
+     "nik": "022134391",
+     "coc": "ANT-V",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "M NOR KADDASE",
+     "jabatan": "JURU MUDI",
+     "nik": "KKP_288L",
+     "coc": "ANT-V",
+     "tmt": "2023-10-16"
+    },
+    {
+     "nama": "M.ERLIN",
+     "jabatan": "JURU MUDI",
+     "nik": "KKP_281L",
+     "coc": "RFPW-E",
+     "tmt": "2021-07-30"
+    },
+    {
+     "nama": "RIYAN HIDAYAT",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_598L",
+     "coc": "RFPW-E",
+     "tmt": "2024-08-20"
+    },
+    {
+     "nama": "RAHMAT SAMUAL",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_1078L",
+     "coc": "RFPW-E",
+     "tmt": "2023-07-18"
+    },
+    {
+     "nama": "BASRI SAMUAL",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_500L",
+     "coc": "RFPW-E",
+     "tmt": "2023-10-16"
+    },
+    {
+     "nama": "RISALDI HOLBALA",
+     "jabatan": "KELASI",
+     "nik": "KKP_780L",
+     "coc": "RFPN-W",
+     "tmt": "2021-08-04"
+    },
+    {
+     "nama": "M.MAHSYUN NAYA",
+     "jabatan": "KELASI",
+     "nik": "KKP_595L",
+     "coc": "RFPN-W",
+     "tmt": "2022-12-26"
+    },
+    {
+     "nama": "RIZALDHI WAEL",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1125",
+     "coc": "RFPN-W",
+     "tmt": "2024-09-11"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. PORTLINK VIII",
+   "awak": [
+    {
+     "nama": "SARAFUDIN HAYALE",
+     "jabatan": "NAKHODA",
+     "nik": "012134373",
+     "coc": "ANT-II",
+     "tmt": "2022-08-10"
+    },
+    {
+     "nama": "FAUZAN EFFENDI",
+     "jabatan": "MUALIM I",
+     "nik": "052144649",
+     "coc": "ANT-III",
+     "tmt": "2022-08-10"
+    },
+    {
+     "nama": "FRANKLYN LATUMAELISSA",
+     "jabatan": "MUALIM II",
+     "nik": "042124063",
+     "coc": "ANT-III",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "IKSAN SAMUAL",
+     "jabatan": "MUALIM III",
+     "nik": "042113591",
+     "coc": "ANT-III",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "PAWIT SUTRISNO",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "092144723",
+     "coc": "ATT-II",
+     "tmt": "2024-08-16"
+    },
+    {
+     "nama": "ADE IRWAN FIRMANSYAH",
+     "jabatan": "MASINIS II",
+     "nik": "062154926",
+     "coc": "ATT-II",
+     "tmt": "2018-06-28"
+    },
+    {
+     "nama": "YOSEP MITAN",
+     "jabatan": "MASINIS III",
+     "nik": "101981529",
+     "coc": "ATT-IV",
+     "tmt": "2023-08-10"
+    },
+    {
+     "nama": "ANDI AWU SAPUTRA",
+     "jabatan": "MASINIS IV",
+     "nik": "052154908",
+     "coc": "ATT-IV",
+     "tmt": "2022-12-19"
+    },
+    {
+     "nama": "ROLLAN SAUKOTA",
+     "jabatan": "SERANG",
+     "nik": "072113703",
+     "coc": "ANT-V",
+     "tmt": "2016-11-18"
+    },
+    {
+     "nama": "SUBANDI NGATMO",
+     "jabatan": "MANDOR MESIN",
+     "nik": "101951113",
+     "coc": "ATT-V",
+     "tmt": "2023-10-23"
+    },
+    {
+     "nama": "RIFALDI",
+     "jabatan": "JURU MUDI",
+     "nik": "KKP_308L",
+     "coc": "ANT-V",
+     "tmt": "2023-08-16"
+    },
+    {
+     "nama": "SURADI WALI",
+     "jabatan": "JURU MUDI",
+     "nik": "012102846",
+     "coc": "RAS-D",
+     "tmt": "2020-01-20"
+    },
+    {
+     "nama": "VALENTIE SOARES",
+     "jabatan": "JURU MUDI",
+     "nik": "101991753",
+     "coc": "RAS-D",
+     "tmt": "2022-08-17"
+    },
+    {
+     "nama": "MAARLON F PALIJAMA",
+     "jabatan": "JURU MUDI",
+     "nik": "042124062",
+     "coc": "RAS-D",
+     "tmt": "2023-02-21"
+    },
+    {
+     "nama": "MUHAMADIN TUNY",
+     "jabatan": "KELASI",
+     "nik": "KKP_779L",
+     "coc": "RFPN-W",
+     "tmt": "2021-08-04"
+    },
+    {
+     "nama": "M ZIDAN ALWENI",
+     "jabatan": "KELASI",
+     "nik": "KKP_151L",
+     "coc": "ANT-V",
+     "tmt": "2022-11-09"
+    },
+    {
+     "nama": "SALMAN AZIZ REHALAT",
+     "jabatan": "KELASI",
+     "nik": "2121605257",
+     "coc": "RFPN-W",
+     "tmt": "2022-12-19"
+    },
+    {
+     "nama": "RIKKY PAUJIAN LESSY",
+     "jabatan": "JURU MINYAK",
+     "nik": "2041705293",
+     "coc": "ATT-V",
+     "tmt": "2018-02-13"
+    },
+    {
+     "nama": "M ABRIANTO RUMUAR",
+     "jabatan": "JURU MINYAK",
+     "nik": "122155034",
+     "coc": "RAS-E",
+     "tmt": "2022-02-08"
+    },
+    {
+     "nama": "RISMAN",
+     "jabatan": "JURU MINYAK",
+     "nik": "082154977",
+     "coc": "RFPW-E",
+     "tmt": "2021-07-13"
+    },
+    {
+     "nama": "SOFYAN UMAR OPPIER",
+     "jabatan": "JURU MINYAK",
+     "nik": "042165174",
+     "coc": "ATT.V",
+     "tmt": "2024-09-03"
+    },
+    {
+     "nama": "SANDY RAHMAN",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1174L",
+     "coc": "RFPN-W",
+     "tmt": "2024-09-11"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. PULAU SAGORI",
+   "awak": [
+    {
+     "nama": "SARPUDIN SANDUAN",
+     "jabatan": "NAKHODA",
+     "nik": "082134532",
+     "coc": "ANT-III",
+     "tmt": "2021-05-28"
+    },
+    {
+     "nama": "IKSAR",
+     "jabatan": "MUALIM I",
+     "nik": "012072617",
+     "coc": "ANT-IV",
+     "tmt": "2021-05-28"
+    },
+    {
+     "nama": "ABDUL RAHMAN KARIM",
+     "jabatan": "MUALIM II",
+     "nik": "012102980",
+     "coc": "ANT-IV",
+     "tmt": "2023-11-13"
+    },
+    {
+     "nama": "PETER A. TUWANKOTTA",
+     "jabatan": "MUALIM III",
+     "nik": "012102844",
+     "coc": "ANT-V",
+     "tmt": "2019-12-23"
+    },
+    {
+     "nama": "SELSIUS S. PONTO",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "112124320",
+     "coc": "ATT-III",
+     "tmt": "2018-06-28"
+    },
+    {
+     "nama": "RAHMATULLAH",
+     "jabatan": "MASINIS II",
+     "nik": "052154913",
+     "coc": "ATT-IV",
+     "tmt": "2017-05-30"
+    },
+    {
+     "nama": "BAMBANG JATMIKO",
+     "jabatan": "MASINIS III",
+     "nik": "KKP_815L",
+     "coc": "ATT-III",
+     "tmt": "2021-10-15"
+    },
+    {
+     "nama": "BAMBANG PRAMANA",
+     "jabatan": "MASINIS IV",
+     "nik": "102113803",
+     "coc": "ATT-IV",
+     "tmt": "2022-07-18"
+    },
+    {
+     "nama": "SAMSUL ARIPIN",
+     "jabatan": "MANDOR MESIN",
+     "nik": "082124217",
+     "coc": "ATT-V",
+     "tmt": "2023-10-13"
+    },
+    {
+     "nama": "RESKY SAPUTRA",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_782L",
+     "coc": "RFPW-E",
+     "tmt": "2021-08-04"
+    },
+    {
+     "nama": "SYAMSUL A.I MUKADAR",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_893L",
+     "coc": "RFPW-E",
+     "tmt": "2022-05-30"
+    },
+    {
+     "nama": "FAKIR SURA",
+     "jabatan": "JURU MUDI",
+     "nik": "122155031",
+     "coc": "ANT-V",
+     "tmt": "2022-12-19"
+    },
+    {
+     "nama": "BOY SANDI DG AWIN",
+     "jabatan": "KELASI",
+     "nik": "KKP_135L",
+     "coc": "RFPN-W",
+     "tmt": "2021-07-30"
+    },
+    {
+     "nama": "MUHAMMAD JUSLIN",
+     "jabatan": "KELASI",
+     "nik": "KKP_497L",
+     "coc": "RFPN-W",
+     "tmt": "2022-09-13"
+    },
+    {
+     "nama": "GUNANDAR",
+     "jabatan": "JURU MUDI",
+     "nik": "KKP_494L",
+     "coc": "RFPN-W",
+     "tmt": "2022-09-13"
+    },
+    {
+     "nama": "MUH. YUSUF AGUS",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1175L",
+     "coc": "RFPN-W",
+     "tmt": "2024-05-02"
+    }
+   ]
+  },
+  {
+   "kapal": "KMP. TUNA",
+   "awak": [
+    {
+     "nama": "SAID UR",
+     "jabatan": "NAKHODA",
+     "nik": "022042415",
+     "coc": "ANT-II",
+     "tmt": "04 Desember 2023"
+    },
+    {
+     "nama": "RIMANSYAH",
+     "jabatan": "MUALIM I",
+     "nik": "122103438",
+     "coc": "ANT-III",
+     "tmt": "2018-12-03"
+    },
+    {
+     "nama": "ANDRI NOVIANTO",
+     "jabatan": "MUALIM II",
+     "nik": "062103299",
+     "coc": "ANT-IV",
+     "tmt": "2024-02-29"
+    },
+    {
+     "nama": "YONATHAN P.",
+     "jabatan": "MUALIM III",
+     "nik": "042144631",
+     "coc": "ANT-II",
+     "tmt": "2023-03-02"
+    },
+    {
+     "nama": "RUSLI",
+     "jabatan": "KKM / MASINIS I",
+     "nik": "10193544",
+     "coc": "ATT-III",
+     "tmt": "2017-12-18"
+    },
+    {
+     "nama": "FIKO AVANDO",
+     "jabatan": "MASINIS II",
+     "nik": "022165103",
+     "coc": "ATT-III",
+     "tmt": "2020-03-09"
+    },
+    {
+     "nama": "DOMINGGUS M.",
+     "jabatan": "MASINIS III",
+     "nik": "072001948",
+     "coc": "ATT-IV",
+     "tmt": "2014-10-02"
+    },
+    {
+     "nama": "KUKUH RIADYI",
+     "jabatan": "MASINIS IV",
+     "nik": "082154979",
+     "coc": "ATT-IV",
+     "tmt": "19 Desember 2022"
+    },
+    {
+     "nama": "TAUFIK ISMAIL",
+     "jabatan": "MANDOR MESIN",
+     "nik": "112155019",
+     "coc": "ATT-V",
+     "tmt": "2022-07-18"
+    },
+    {
+     "nama": "FARONI A. NUR HASAN",
+     "jabatan": "SERANG",
+     "nik": "012102987",
+     "coc": "ANT-V",
+     "tmt": "2023-11-13"
+    },
+    {
+     "nama": "AKBAR",
+     "jabatan": "JURU MUDI",
+     "nik": "012102856",
+     "coc": "RAS-D",
+     "tmt": "2012-03-12"
+    },
+    {
+     "nama": "IBRAHIM OPIER",
+     "jabatan": "JURU MUDI",
+     "nik": "022134414",
+     "coc": "ANT-V",
+     "tmt": "2023-11-13"
+    },
+    {
+     "nama": "AKMAL",
+     "jabatan": "JURU MUDI",
+     "nik": "012165046",
+     "coc": "ANT-V",
+     "tmt": "2021-05-28"
+    },
+    {
+     "nama": "FAJRUL WARIS",
+     "jabatan": "KELASI",
+     "nik": "KKP_696L",
+     "coc": "RFPN-W",
+     "tmt": "2021-04-05"
+    },
+    {
+     "nama": "MUH. SADLI",
+     "jabatan": "KELASI",
+     "nik": "KKP_694L",
+     "coc": "RFPN-W",
+     "tmt": "2023-04-19"
+    },
+    {
+     "nama": "ARWANDI",
+     "jabatan": "JURU MASAK",
+     "nik": "KKP_1066L",
+     "coc": "RFPN-W",
+     "tmt": "2023-03-17"
+    },
+    {
+     "nama": "DAYU ANGGI PRAYOGA",
+     "jabatan": "JURU MINYAK",
+     "nik": "2041705291",
+     "coc": "RFPW-E",
+     "tmt": "2023-10-17"
+    },
+    {
+     "nama": "EMEN NURDIN",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_508L",
+     "coc": "ATT-V",
+     "tmt": "2020-03-17"
+    },
+    {
+     "nama": "MUHAMMAD RIFAL",
+     "jabatan": "JURU MINYAK",
+     "nik": "KKP_932L",
+     "coc": "RFPW-E",
+     "tmt": "2022-09-13"
+    }
+   ]
+  }
+ ]
+}
