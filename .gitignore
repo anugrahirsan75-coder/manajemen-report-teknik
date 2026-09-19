@@ -28,5 +28,7 @@ ind.traineddata
 # Surat acuan e-office (memuat QR tanda tangan asli pejabat, bukan kode)
 /Template Surat/
 
-# basis data lokal (suntingan rekap dokumentasi) — isinya milik laptop ini
-data/
+# basis data lokal: suntingan rekap dokumentasi, milik laptop ini saja.
+# Hanya berkas itu yang diabaikan — folder data/ juga memuat hargaIndex.json
+# yang memang ikut repo.
+data/dokumentasi-ubahan.json
