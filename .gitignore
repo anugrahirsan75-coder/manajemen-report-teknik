@@ -27,3 +27,6 @@ ind.traineddata
 
 # Surat acuan e-office (memuat QR tanda tangan asli pejabat, bukan kode)
 /Template Surat/
+
+# basis data lokal (suntingan rekap dokumentasi) — isinya milik laptop ini
+data/
