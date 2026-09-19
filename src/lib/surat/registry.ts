@@ -23,6 +23,7 @@ import { laporanBerangkatDock } from "./templates/laporanBerangkatDock";
 import { dockSpace } from "./templates/dockSpace";
 import { dockSpaceArmada } from "./templates/dockSpaceArmada";
 import { exemptionStability } from "./templates/exemptionStability";
+import { pelimpahanWewenang } from "./templates/pelimpahanWewenang";
 import { suratKustom } from "./templates/suratKustom";
 
 export const TEMPLATE_SURAT: TemplateSurat[] = [
@@ -34,6 +35,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   penunjukanPengadaan,
   penunjukanRampdoor,
   penunjukanGabungan,
+  pelimpahanWewenang,
   tambahanHariDock,
   dendaDocking,
   laporanBerangkatDock,
