@@ -7,6 +7,7 @@ import { useMaterial } from "@/lib/material/store";
 import { itemKategori } from "@/lib/material/types";
 import { bulanTahun } from "@/lib/format";
 import { generateMaterial, generateMaterialAll, MATERIAL_DOCS } from "@/lib/material/generateClient";
+import { formatDok } from "@/lib/material/formatDok";
 import { beritahu } from "@/components/Konfirmasi";
 
 export default function MaterialDashboard() {
@@ -44,8 +45,23 @@ export default function MaterialDashboard() {
         <button onClick={() => run(() => generateMaterialAll(req), "all")} disabled={!!busy}
           className="card-hover bg-white rounded-2xl elev-sm ring-line border border-transparent p-4 flex items-center gap-4 text-left disabled:opacity-60">
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 grid place-items-center text-2xl text-white shadow-md">🗂️</div>
-          <div><p className="font-semibold text-slate-800">{busy === "all" ? "Menyiapkan ZIP…" : "Generate Semua"}</p><p className="text-xs text-slate-400">4 dokumen Excel sekaligus (.zip)</p></div>
+          <div><p className="font-semibold text-slate-800">{busy === "all" ? "Menyiapkan ZIP…" : "Generate Semua"}</p><p className="text-xs text-slate-400">4 dokumen: template Excel, sisanya PDF (.zip)</p></div>
         </button>
+      </section>
+
+      {/* Sesudah berkasnya jadi, yang dikerjakan berikutnya selalu sama:
+          menulis surat pengantarnya ke pusat. Tautannya ditaruh di sini supaya
+          tidak perlu dicari lagi di daftar 20 jenis surat. */}
+      <section className="mt-5 rounded-2xl bg-sky-50 ring-1 ring-sky-200 p-4 flex flex-wrap items-center gap-3">
+        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-sky-500 to-blue-700 grid place-items-center text-xl text-white shadow">📨</div>
+        <div className="flex-1 min-w-[16rem]">
+          <p className="font-semibold text-slate-800 text-sm">Surat pengantar ke divisi pusat</p>
+          <p className="text-xs text-slate-500">
+            “Terlampir permohonan kode material … bulan … tahun ….” — badan surat disusun di layar Surat E-Office,
+            penandatanganan dan QR sahnya tetap di e-office.
+          </p>
+        </div>
+        <Link href="/surat?t=pengantar-kode-material" className="btn btn-primary text-xs">✉️ Buat surat pengantar</Link>
       </section>
 
       <h2 className="font-bold text-slate-700 mt-8 mb-3">Dokumen ({MATERIAL_DOCS.length})</h2>
@@ -59,16 +75,30 @@ export default function MaterialDashboard() {
                 <p className="text-xs text-slate-400">{d.ket}</p>
               </div>
             </div>
-            <div className="flex gap-2 mt-3">
-              <button onClick={() => run(() => generateMaterial(d.slug, "native", req), d.slug + "x")} disabled={!!busy}
-                className="btn btn-success text-xs disabled:opacity-50">📊 Excel</button>
-              <button onClick={() => run(() => generateMaterial(d.slug, "pdf", req), d.slug + "p")} disabled={!!busy}
-                className="btn btn-rose text-xs disabled:opacity-50">📄 PDF</button>
+            {/* bentuk utama tiap dokumen berbeda — lihat lib/material/formatDok.ts.
+                Bentuk satunya tetap disediakan sebagai tombol kecil, karena
+                sesekali dibutuhkan (mis. menyunting angka di Excel dulu). */}
+            <div className="flex items-center gap-2 mt-3">
+              {formatDok(d.slug) === "xlsx" ? (
+                <>
+                  <button onClick={() => run(() => generateMaterial(d.slug, "native", req), d.slug + "x")} disabled={!!busy}
+                    className="btn btn-success text-xs disabled:opacity-50">📊 Excel</button>
+                  <button onClick={() => run(() => generateMaterial(d.slug, "pdf", req), d.slug + "p")} disabled={!!busy}
+                    className="text-[11px] text-slate-400 hover:text-slate-600 underline disabled:opacity-50">PDF</button>
+                </>
+              ) : (
+                <>
+                  <button onClick={() => run(() => generateMaterial(d.slug, "pdf", req), d.slug + "p")} disabled={!!busy}
+                    className="btn btn-rose text-xs disabled:opacity-50">📄 PDF</button>
+                  <button onClick={() => run(() => generateMaterial(d.slug, "native", req), d.slug + "x")} disabled={!!busy}
+                    className="text-[11px] text-slate-400 hover:text-slate-600 underline disabled:opacity-50">Excel</button>
+                </>
+              )}
             </div>
           </div>
         ))}
       </div>
-      <footer className="mt-10 text-center text-xs text-slate-400">Output mengikuti template asli · PDF via MS Office (lokal)</footer>
+      <footer className="mt-10 text-center text-xs text-slate-400">Output mengikuti template asli · PDF via MS Office di laptop ini</footer>
     </main>
   );
 }

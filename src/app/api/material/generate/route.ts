@@ -2,24 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { spawn } from "child_process";
 import { MaterialRequest } from "@/lib/material/types";
 import { MATERIAL_FILLERS, MATERIAL_META } from "@/lib/material/fill";
+import { officeAda, xlsxKePdf } from "@/lib/material/toPdf";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
 
 const safe = (s: string) => s.replace(/[\\/:*?"<>|]/g, "");
-
-function toPdf(input: string, output: string): Promise<void> {
-  const script = path.join(process.cwd(), "scripts", "to-pdf.ps1");
-  return new Promise((resolve, reject) => {
-    const ps = spawn("powershell.exe", ["-NoProfile", "-ExecutionPolicy", "Bypass", "-File", script, "-In", input, "-Out", output]);
-    let err = "";
-    ps.stderr.on("data", (d) => (err += d.toString()));
-    ps.on("close", (code) => (code === 0 && fs.existsSync(output) ? resolve() : reject(new Error("Konversi PDF gagal. " + err))));
-  });
-}
 
 export async function POST(req: NextRequest) {
   try {
@@ -40,7 +30,7 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    if (process.platform !== "win32" || process.env.DISABLE_OFFICE_PDF === "1") {
+    if (!officeAda()) {
       return NextResponse.json({ error: "Generate PDF hanya tersedia di mode lokal (MS Office). Online pakai Excel lalu Save As PDF." }, { status: 501 });
     }
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), "mat-"));
@@ -48,7 +38,7 @@ export async function POST(req: NextRequest) {
     const outF = path.join(dir, "d.pdf");
     fs.writeFileSync(inF, xlsx);
     try {
-      await toPdf(inF, outF);
+      await xlsxKePdf(inF, outF);
       const pdf = fs.readFileSync(outF);
       return new NextResponse(pdf as any, {
         headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${encodeURIComponent(base)}.pdf"` },

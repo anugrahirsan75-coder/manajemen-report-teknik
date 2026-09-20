@@ -136,6 +136,18 @@ export default function BuatSuratEOffice() {
         if (isi?.template && cariTemplate(isi.template)) setIdTemplate(isi.template);
       }
     } catch { /* draf rusak: abaikan, pakai isian kosong */ }
+
+    /*
+     * ?t=<id surat> membuka surat tertentu — dipakai tombol "Buat surat
+     * pengantar" di layar Kode Material.
+     *
+     * Dibaca SESUDAH draf dipulihkan, dan dengan sengaja menimpanya: kalau
+     * dibaca lebih dulu, draf terakhir langsung menggantikannya dan tautannya
+     * seperti tidak berfungsi. Dibaca dari window, bukan useSearchParams,
+     * supaya halaman ini tidak perlu dibungkus Suspense hanya demi satu param.
+     */
+    const t = new URLSearchParams(window.location.search).get("t");
+    if (t && cariTemplate(t)) setIdTemplate(t);
     setSudahMuat(true);
   }, []);
 
