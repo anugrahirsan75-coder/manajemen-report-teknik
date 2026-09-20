@@ -80,6 +80,7 @@ const KELOMPOK: Kelompok[] = [
       { href: "/pms", icon: "meter", label: "Beranda PMS", desc: "Jatuh tempo seluruh armada", tepat: true },
       { href: "/pms/peralatan", icon: "obeng", label: "Daftar Peralatan", desc: "Tag peralatan per kapal" },
       { href: "/pms/rencana", icon: "kalenderCentang", label: "Rencana Kerja", desc: "Interval jam & kalender" },
+      { href: "/pms/pengerjaan", icon: "centang", label: "Riwayat & Pengesahan", desc: "Sahkan laporan kerja kapal" },
     ],
   },
   {

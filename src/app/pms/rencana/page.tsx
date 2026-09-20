@@ -18,7 +18,8 @@ import {
   Basis, PENANGGUNG, RencanaKerja, TEMPLATE_RENCANA, WARNA_KRITIS, WARNA_STATUS,
   LABEL_STATUS, hitungJatuh, rencanaBaru,
 } from "@/lib/pms/types";
-import { KAPAL_LIST } from "@/lib/sppbj/db";
+import { Pengerjaan, WARNA_KERJA, LABEL_KERJA, pengerjaanBaru, urutRiwayat } from "@/lib/pms/kerja";
+import { KAPAL_LIST, STAF_TEKNIK } from "@/lib/sppbj/db";
 import { Ikon } from "@/components/ikon";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
@@ -27,13 +28,15 @@ const hariIni = () => new Date().toISOString().slice(0, 10);
 const KELAS_INPUT = "w-full text-xs border rounded-lg px-2 py-1.5 focus:border-[#1ca3dd] focus:ring-2 focus:ring-[#1ca3dd]/20 outline-none";
 
 export default function RencanaPms() {
-  const { list, jam, loading, galat, reload, simpan } = usePms();
+  const { list, kerja, jam, loading, galat, reload, simpan, catat } = usePms();
   const [kapal, setKapal] = useState(KAPAL_LIST[0]);
   const [cari, setCari] = useState("");
   const [sunting, setSunting] = useState<RencanaKerja | null>(null);
+  const [selesai, setSelesai] = useState<Pengerjaan | null>(null);
   const [sibuk, setSibuk] = useState(false);
 
   const doc = list.find((x) => x.kapal === kapal);
+  const riwayat = useMemo(() => kerja.find((x) => x.kapal === kapal)?.riwayat || [], [kerja, kapal]);
   const peralatan = useMemo(() => doc?.peralatan || [], [doc]);
   const rencana = useMemo(() => doc?.rencana || [], [doc]);
   const petaAlat = useMemo(() => new Map(peralatan.map((p) => [p.tag, p])), [peralatan]);
@@ -43,13 +46,22 @@ export default function RencanaPms() {
     return alat?.sumberJam ? jam[kapal]?.[alat.sumberJam] : undefined;
   };
 
+  /** catatan pengerjaan terakhir tiap rencana — dipakai memberi tahu ASAL angka "Terakhir" */
+  const kerjaTerakhir = useMemo(() => {
+    const peta = new Map<string, Pengerjaan>();
+    [...riwayat].sort(urutRiwayat).forEach((k) => {
+      if (k.status !== "ditolak" && !peta.has(k.rencanaId)) peta.set(k.rencanaId, k);
+    });
+    return peta;
+  }, [riwayat]);
+
   const baris = useMemo(() => {
     const q = cari.toLowerCase().trim();
     return rencana
       .filter((r) => !q || `${r.tag} ${r.pekerjaan} ${r.penanggung}`.toLowerCase().includes(q))
-      .map((r) => ({ r, alat: petaAlat.get(r.tag), jatuh: hitungJatuh(r, jamUntuk(r.tag)) }))
+      .map((r) => ({ r, alat: petaAlat.get(r.tag), jatuh: hitungJatuh(r, jamUntuk(r.tag)), akhir: kerjaTerakhir.get(r.id) }))
       .sort((a, b) => (a.r.tag).localeCompare(b.r.tag) || a.r.pekerjaan.localeCompare(b.r.pekerjaan));
-  }, [rencana, cari, petaAlat, jam, kapal]);
+  }, [rencana, cari, petaAlat, jam, kapal, kerjaTerakhir]);
 
   const simpanSemua = async (baru: RencanaKerja[]) => {
     setSibuk(true);
@@ -93,32 +105,39 @@ export default function RencanaPms() {
     setSunting(null);
   };
 
-  /** catat pekerjaan selesai hari ini — capaian inilah dasar hitungan berikutnya */
-  const catatSelesai = async (r: RencanaKerja) => {
+  /**
+   * Buka borang "pekerjaan selesai".
+   *
+   * Sengaja borang, bukan sekadar tombol ya/tidak. Yang dicatat bukan hanya
+   * "sudah" melainkan siapa yang mengerjakan, pada jam berapa, dan suku cadang
+   * apa yang terpakai — tiga hal yang setahun kemudian menjadi dasar menyusun
+   * kebutuhan belanja, dan yang tidak mungkin diingat kalau tidak ditulis saat
+   * pekerjaannya masih hangat.
+   */
+  const bukaSelesai = (r: RencanaKerja) => {
+    const k = pengerjaanBaru(r, "kantor");
     const jamKini = jamUntuk(r.tag);
-    if (r.basis === "jam" && jamKini === undefined) {
+    setSelesai({ ...k, jam: r.basis === "jam" ? jamKini : undefined, olehAkun: STAF_TEKNIK[0] });
+  };
+
+  const kirimSelesai = async () => {
+    if (!selesai) return;
+    if (!selesai.tanggal) { await beritahu("Tanggal pengerjaan belum diisi."); return; }
+    if (!selesai.pelaksana.trim()) { await beritahu("Isi siapa yang mengerjakan."); return; }
+    if (selesai.basis === "jam" && (selesai.jam === undefined || Number.isNaN(selesai.jam))) {
       await beritahu({
-        nada: "perhatian", judul: "Jam jalan mesin belum ada",
-        pesan: `Kapal belum mengirim jam jalan untuk ${petaAlat.get(r.tag)?.sumberJam || "mesin ini"} lewat Portal Kapal, jadi capaiannya tidak bisa dicatat otomatis.`,
-        rincian: [
-          "Minta ABK mesin mengisi Jam kerja mesin di Portal Kapal, atau",
-          "Klik “ubah” pada baris ini dan isi sendiri kolom “Jam saat terakhir dikerjakan”.",
-        ],
+        nada: "perhatian", judul: "Jam jalan belum diisi",
+        pesan: "Rencana ini berjarak jam jalan mesin, jadi angka jamnya wajib ada — tanpa itu jatuh tempo berikutnya tidak bisa dihitung.",
+        rincian: ["Angka terisi sendiri bila ABK mesin mengisi Jam kerja mesin di Portal Kapal."],
       });
       return;
     }
-    if (!(await konfirmasi({
-      nada: "biasa", ikon: "✓", judul: "Catat pekerjaan selesai?",
-      pesan: `${r.tag} — ${r.pekerjaan}`,
-      rincian: [
-        `Tanggal dicatat: ${hariIni()}`,
-        r.basis === "jam" ? `Jam jalan dicatat: ${jamKini!.toLocaleString("id-ID")} jam` : `Jatuh tempo berikutnya: ${r.intervalHari} hari lagi`,
-      ],
-      tombolYa: "Ya, catat selesai",
-    }))) return;
-    await simpanSemua(rencana.map((x) => x.id === r.id
-      ? { ...x, terakhirTanggal: hariIni(), terakhirJam: r.basis === "jam" ? jamKini : x.terakhirJam }
-      : x));
+    setSibuk(true);
+    try {
+      await catat(kapal, { ...selesai, dicatatPada: new Date().toISOString() });
+      setSelesai(null);
+    } catch (e: any) { await beritahu("Gagal mencatat: " + (e?.message ?? e)); }
+    finally { setSibuk(false); }
   };
 
   const hapus = async (r: RencanaKerja) => {
@@ -269,6 +288,67 @@ export default function RencanaPms() {
         </section>
       )}
 
+      {selesai && (
+        <section className="mt-4 rounded-2xl bg-white ring-2 ring-emerald-400/60 p-4">
+          <h2 className="font-bold text-slate-800 text-sm">✓ Catat pekerjaan selesai</h2>
+          <p className="text-[11px] text-slate-500 mb-3">
+            <span className="font-mono font-bold text-[#16357f]">{selesai.tag}</span> — {selesai.pekerjaan}
+          </p>
+          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <label className="text-[11px] font-semibold text-slate-600">
+              Tanggal dikerjakan <span className="text-red-500">*</span>
+              <input type="date" value={selesai.tanggal} max={hariIni()}
+                onChange={(e) => setSelesai({ ...selesai, tanggal: e.target.value })} className={`${KELAS_INPUT} mt-1`} />
+            </label>
+            {selesai.basis === "jam" && (
+              <label className="text-[11px] font-semibold text-slate-600">
+                Jam jalan saat dikerjakan <span className="text-red-500">*</span>
+                <input type="number" min={0} value={selesai.jam ?? ""}
+                  onChange={(e) => setSelesai({ ...selesai, jam: e.target.value === "" ? undefined : Number(e.target.value) })}
+                  className={`${KELAS_INPUT} mt-1`} />
+                <span className="block mt-0.5 font-normal text-[10px] text-slate-400">
+                  {jamUntuk(selesai.tag) !== undefined
+                    ? `terisi dari kiriman kapal (${jamUntuk(selesai.tag)!.toLocaleString("id-ID")} jam) — ubah bila pekerjaannya dilakukan lebih dulu`
+                    : "kapal belum mengirim jam jalan — isi dari buku jurnal mesin"}
+                </span>
+              </label>
+            )}
+            <label className="text-[11px] font-semibold text-slate-600">
+              Dikerjakan oleh <span className="text-red-500">*</span>
+              <input value={selesai.pelaksana} onChange={(e) => setSelesai({ ...selesai, pelaksana: e.target.value })}
+                placeholder="Masinis II / bengkel" className={`${KELAS_INPUT} mt-1`} />
+            </label>
+            <label className="text-[11px] font-semibold text-slate-600">
+              Dicatat oleh (staf kantor)
+              <input list="stafPms" value={selesai.olehAkun} onChange={(e) => setSelesai({ ...selesai, olehAkun: e.target.value })}
+                className={`${KELAS_INPUT} mt-1`} />
+              <datalist id="stafPms">{STAF_TEKNIK.map((s) => <option key={s} value={s} />)}</datalist>
+            </label>
+            <label className="text-[11px] font-semibold text-slate-600 sm:col-span-2">
+              Suku cadang yang terpakai
+              <input value={selesai.sukuCadangDipakai || ""}
+                onChange={(e) => setSelesai({ ...selesai, sukuCadangDipakai: e.target.value })}
+                className={`${KELAS_INPUT} mt-1`} />
+            </label>
+            <label className="text-[11px] font-semibold text-slate-600 sm:col-span-2">
+              Catatan temuan
+              <input value={selesai.catatan || ""} onChange={(e) => setSelesai({ ...selesai, catatan: e.target.value })}
+                placeholder="mis. gasket head mulai rembes, siapkan penggantian" className={`${KELAS_INPUT} mt-1`} />
+            </label>
+          </div>
+          <p className="mt-3 text-[10px] text-slate-400">
+            Dicatat staf kantor → langsung berstatus <b>Disahkan</b>. Laporan yang datang dari kapal lewat
+            Portal masuk sebagai <b>Menunggu pengesahan</b> dan disahkan di halaman Riwayat &amp; Pengesahan.
+          </p>
+          <div className="flex items-center gap-2 mt-3">
+            <button onClick={kirimSelesai} disabled={sibuk} className="btn btn-primary text-xs disabled:opacity-50">
+              {sibuk ? "…" : "✓ Simpan catatan"}
+            </button>
+            <button onClick={() => setSelesai(null)} className="btn btn-ghost text-xs">Batal</button>
+          </div>
+        </section>
+      )}
+
       {!peralatan.length ? (
         <section className="mt-4 rounded-2xl bg-white ring-1 ring-slate-200 p-8 text-center">
           <p className="text-3xl">🔧</p>
@@ -298,7 +378,7 @@ export default function RencanaPms() {
                 </tr>
               </thead>
               <tbody>
-                {baris.map(({ r, alat, jatuh }) => (
+                {baris.map(({ r, alat, jatuh, akhir }) => (
                   <tr key={r.id} className={`border-b hover:bg-slate-50 ${r.aktif ? "" : "opacity-50"}`}>
                     <td className="p-2 align-top">
                       <span className="font-mono text-[11px] font-bold text-[#16357f]">{r.tag}</span>
@@ -320,6 +400,18 @@ export default function RencanaPms() {
                       {r.basis === "jam"
                         ? (r.terakhirJam !== undefined ? `${r.terakhirJam.toLocaleString("id-ID")} jam` : "—")
                         : (r.terakhirTanggal || "—")}
+                      {akhir && (
+                        <>
+                          <span className="block text-[10px] text-slate-400">
+                            {akhir.pelaksana}{akhir.sumber === "kapal" ? " · lapor kapal" : ""}
+                          </span>
+                          {akhir.status === "menunggu" && (
+                            <span className={`inline-block mt-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded ring-1 ${WARNA_KERJA.menunggu}`}>
+                              {LABEL_KERJA.menunggu}
+                            </span>
+                          )}
+                        </>
+                      )}
                     </td>
                     <td className="p-2 align-top text-slate-600">{r.penanggung}</td>
                     <td className="p-2 align-top">
@@ -330,7 +422,7 @@ export default function RencanaPms() {
                     </td>
                     <td className="p-2 align-top">
                       <div className="flex items-center justify-end gap-1.5">
-                        <button onClick={() => catatSelesai(r)} disabled={sibuk}
+                        <button onClick={() => bukaSelesai(r)} disabled={sibuk}
                           className="text-[10px] font-semibold px-2 py-1 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:opacity-50">
                           ✓ Catat selesai
                         </button>

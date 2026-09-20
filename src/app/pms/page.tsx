@@ -17,7 +17,7 @@ import { Ikon } from "@/components/ikon";
 const ringkas = (k: string) => k.replace(/^KMP\.?\s*/i, "");
 
 export default function BerandaPms() {
-  const { list, jam, loading, galat, reload } = usePms();
+  const { list, kerja, jam, loading, galat, reload } = usePms();
   const [saring, setSaring] = useState<StatusJatuh | "semua">("semua");
   const [kapal, setKapal] = useState("");
 
@@ -27,6 +27,10 @@ export default function BerandaPms() {
 
   const tampil = useMemo(() => baris.filter((b) =>
     (saring === "semua" || b.jatuh.status === saring) && (!kapal || b.kapal === kapal)), [baris, saring, kapal]);
+
+  const menunggu = useMemo(
+    () => kerja.reduce((n, k) => n + (k.riwayat || []).filter((x) => x.status === "menunggu").length, 0),
+    [kerja]);
 
   const belumMulai = list.length === 0;
 
@@ -44,6 +48,7 @@ export default function BerandaPms() {
           <div className="flex items-center gap-2">
             <Link href="/pms/peralatan" className="btn btn-ghost text-xs">🔧 Peralatan</Link>
             <Link href="/pms/rencana" className="btn btn-ghost text-xs">🗓️ Rencana Kerja</Link>
+            <Link href="/pms/pengerjaan" className="btn btn-ghost text-xs">✓ Riwayat</Link>
             <button onClick={reload} disabled={loading} className="btn btn-ghost text-xs disabled:opacity-50">
               {loading ? "memuat…" : "⟲ Muat ulang"}
             </button>
@@ -55,6 +60,27 @@ export default function BerandaPms() {
         <p className="mt-3 text-xs bg-red-50 border border-red-200 text-red-700 rounded-xl px-3 py-2">
           Data dari server gagal dimuat: {galat}
         </p>
+      )}
+
+      {/*
+        Laporan kapal yang menganggur tanpa disahkan adalah cara paling halus
+        sebuah PMS kehilangan nilainya: catatannya ada, tetapi tidak ada yang
+        pernah menandatanganinya, dan saat diperiksa auditor semuanya berstatus
+        "menunggu". Karena itu angkanya ditaruh di atas, bukan disembunyikan di
+        halaman riwayat yang jarang dibuka.
+      */}
+      {menunggu > 0 && (
+        <Link href="/pms/pengerjaan"
+          className="mt-4 flex flex-wrap items-center gap-3 rounded-2xl bg-amber-50 ring-1 ring-amber-300 px-4 py-3 hover:bg-amber-100 transition">
+          <span className="text-xl">✋</span>
+          <span className="flex-1 min-w-[14rem]">
+            <b className="text-amber-900 text-sm">{menunggu} laporan pengerjaan dari kapal menunggu pengesahan</b>
+            <span className="block text-[11px] text-amber-800">
+              Jam jatuh temponya sudah bergeser; yang belum ada tanda tangan kantornya.
+            </span>
+          </span>
+          <span className="text-[11px] font-bold text-amber-900 underline">Buka Riwayat &amp; Pengesahan ›</span>
+        </Link>
       )}
 
       {belumMulai ? (

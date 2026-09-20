@@ -38,6 +38,8 @@ export function RangkaPortal({ aku, children }: { aku: Aku | null; children: Rea
 
   const menu = [
     { href: "/portal", label: "Beranda", ikon: "🏠" },
+    // perawatan berkala: dikerjakan ABK, ditandai selesai dari sini
+    { href: "/portal/perawatan", label: "Perawatan", ikon: "🛠️" },
     { href: "/portal/kirim", label: "Kirim", ikon: "📤" },
     // arsip berkas tidak rutin: berita acara, temuan, bunker, serah terima
     { href: "/portal/dokumen", label: "Dokumen", ikon: "🗂️" },
