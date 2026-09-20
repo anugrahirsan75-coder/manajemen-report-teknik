@@ -84,6 +84,20 @@ export default function MaterialDashboard() {
             </span>
           </span>
         </label>
+
+        <label className="flex items-start gap-3 cursor-pointer mt-3 pt-3 border-t">
+          <input type="checkbox" className="mt-1" checked={!!req.tampakPindai}
+            onChange={(e) => update({ tampakPindai: e.target.checked })} />
+          <span className="flex-1">
+            <span className="font-semibold text-slate-800 text-sm">PDF dibuat tampak seperti hasil pindaian</span>
+            <span className="block text-xs text-slate-500 mt-0.5">
+              Warna kertas, sedikit bintik, dan kemiringan halus seperti lembar yang dipindai.
+              <span className="text-amber-700">
+                {" "}Halaman berubah jadi gambar: teksnya tidak bisa dicari lagi dan berkasnya sekitar dua kali lebih besar.
+              </span>
+            </span>
+          </span>
+        </label>
       </section>
 
       {/* Sesudah berkasnya jadi, yang dikerjakan berikutnya selalu sama:

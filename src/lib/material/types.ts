@@ -31,6 +31,12 @@ export interface MaterialRequest {
    * lihat lib/material/ttd.ts.
    */
   bubuhiTtd?: boolean;
+  /**
+   * Keluarkan PDF yang tampak seperti lembar hasil pindaian. Murni tampilan:
+   * teks berubah jadi gambar, jadi tak bisa dicari lagi dan berkasnya lebih
+   * besar — lihat lib/material/tampakPindai.ts.
+   */
+  tampakPindai?: boolean;
 }
 
 export const itemKategori = (it: MaterialItem): "SC" | "UMUM" =>

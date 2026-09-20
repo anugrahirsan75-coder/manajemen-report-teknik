@@ -5,6 +5,7 @@ import path from "path";
 import { MaterialRequest } from "@/lib/material/types";
 import { MATERIAL_FILLERS, MATERIAL_META } from "@/lib/material/fill";
 import { officeAda, xlsxKePdf } from "@/lib/material/toPdf";
+import { keTampakPindai } from "@/lib/material/tampakPindai";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -39,7 +40,14 @@ export async function POST(req: NextRequest) {
     fs.writeFileSync(inF, xlsx);
     try {
       await xlsxKePdf(inF, outF);
-      const pdf = fs.readFileSync(outF);
+      let hasil = outF;
+      if (data.tampakPindai) {
+        const pindai = path.join(dir, "d-pindai.pdf");
+        // efek tampilan tidak boleh menggagalkan ekspor: kalau gagal,
+        // yang dikirim PDF tajamnya
+        try { await keTampakPindai(outF, pindai); hasil = pindai; } catch { /* pakai PDF tajam */ }
+      }
+      const pdf = fs.readFileSync(hasil);
       return new NextResponse(pdf as any, {
         headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${encodeURIComponent(base)}.pdf"` },
       });

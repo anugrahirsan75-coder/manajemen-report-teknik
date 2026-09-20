@@ -19,6 +19,7 @@ import { MaterialRequest } from "@/lib/material/types";
 import { MATERIAL_FILLERS, MATERIAL_META } from "@/lib/material/fill";
 import { formatDok } from "@/lib/material/formatDok";
 import { officeAda, xlsxKePdf } from "@/lib/material/toPdf";
+import { keTampakPindai } from "@/lib/material/tampakPindai";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -46,7 +47,12 @@ export async function POST(req: NextRequest) {
         fs.writeFileSync(inF, xlsx);
         try {
           await xlsxKePdf(inF, outF);
-          zip.file(`${label}.pdf`, fs.readFileSync(outF));
+          let hasil = outF;
+          if (data.tampakPindai) {
+            const pindai = path.join(dir, `${slug}-pindai.pdf`);
+            try { await keTampakPindai(outF, pindai); hasil = pindai; } catch { /* pakai PDF tajam */ }
+          }
+          zip.file(`${label}.pdf`, fs.readFileSync(hasil));
         } catch {
           // satu dokumen gagal dikonversi tidak boleh menjatuhkan seluruh ZIP
           gagal.push(label);
