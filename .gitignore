@@ -35,6 +35,7 @@ data/dokumentasi-ubahan.json
 
 # gambar tanda tangan & stempel — milik orangnya, tidak ikut ke penyimpanan kode
 data/ttd/
+data/vercel-env-ttd.txt
 
 # daftar awak lengkap dengan NIK — data pribadi, hanya di laptop
 data/abk-lengkap.json

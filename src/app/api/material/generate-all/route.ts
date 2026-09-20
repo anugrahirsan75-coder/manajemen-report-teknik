@@ -20,6 +20,7 @@ import { MATERIAL_FILLERS, MATERIAL_META } from "@/lib/material/fill";
 import { formatDok } from "@/lib/material/formatDok";
 import { officeAda, xlsxKePdf } from "@/lib/material/toPdf";
 import { keTampakPindai } from "@/lib/material/tampakPindai";
+import { pdfFormulir } from "@/lib/material/pdfFormulir";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
@@ -37,6 +38,11 @@ export async function POST(req: NextRequest) {
       for (const slug of Object.keys(MATERIAL_FILLERS)) {
         const label = safe(MATERIAL_META[slug].label);
         const xlsx = await MATERIAL_FILLERS[slug](data);
+        // formulir tidak butuh Office — digambar langsung sebagai PDF
+        if (slug === "formulir") {
+          zip.file(`${label}.pdf`, await pdfFormulir(data));
+          continue;
+        }
         if (formatDok(slug) === "xlsx" || !bisaPdf) {
           if (formatDok(slug) === "pdf") gagal.push(label);
           zip.file(`${label}.xlsx`, xlsx);

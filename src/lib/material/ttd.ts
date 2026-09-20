@@ -14,6 +14,7 @@
 import fs from "fs";
 import path from "path";
 import ExcelJS from "exceljs";
+import { ambilTtd } from "./ttdSumber";
 
 export type PeranTtd = "deptHead" | "stafTeknik" | "stempel";
 
@@ -39,13 +40,8 @@ export const statusTtd = () => ({
   stempel: adaTtd("stempel"),
 });
 
-function baca(peran: PeranTtd): Buffer | null {
-  try {
-    return fs.readFileSync(path.join(folderTtd(), BERKAS[peran]));
-  } catch {
-    return null;
-  }
-}
+// sumbernya satu pintu dengan jalur PDF: peubah lingkungan dulu, baru berkas
+const baca = (peran: PeranTtd): Buffer | null => ambilTtd(peran);
 
 interface Tempat {
   /** kolom & baris Excel berbasis 1, sama seperti yang dibaca orang */

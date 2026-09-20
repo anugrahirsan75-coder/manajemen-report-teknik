@@ -6,6 +6,7 @@ import { MaterialRequest } from "@/lib/material/types";
 import { MATERIAL_FILLERS, MATERIAL_META } from "@/lib/material/fill";
 import { officeAda, xlsxKePdf } from "@/lib/material/toPdf";
 import { keTampakPindai } from "@/lib/material/tampakPindai";
+import { pdfFormulir } from "@/lib/material/pdfFormulir";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
@@ -28,6 +29,20 @@ export async function POST(req: NextRequest) {
           "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
           "Content-Disposition": `attachment; filename="${encodeURIComponent(base)}.xlsx"`,
         },
+      });
+    }
+
+    /*
+     * Formulir Permintaan Master Data digambar langsung sebagai PDF.
+     *
+     * Dokumen lain masih lewat Excel + MS Office, yang hanya ada di laptop.
+     * Formulir inilah yang ditandatangani dan paling sering perlu diterbitkan
+     * dari mana saja, jadi dia tidak boleh bergantung pada Office.
+     */
+    if (slug === "formulir") {
+      const pdf = await pdfFormulir(data);
+      return new NextResponse(pdf as any, {
+        headers: { "Content-Type": "application/pdf", "Content-Disposition": `attachment; filename="${encodeURIComponent(base)}.pdf"` },
       });
     }
 

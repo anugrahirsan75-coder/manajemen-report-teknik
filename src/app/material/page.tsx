@@ -13,7 +13,7 @@ import { beritahu } from "@/components/Konfirmasi";
 export default function MaterialDashboard() {
   const { req, update } = useMaterial();
   const [busy, setBusy] = useState<string | null>(null);
-  const [ttd, setTtd] = useState<{ deptHead: boolean; stafTeknik: boolean; stempel: boolean; folder: string } | null>(null);
+  const [ttd, setTtd] = useState<{ deptHead: boolean; stafTeknik: boolean; stempel: boolean; folder: string; diAwan?: boolean } | null>(null);
 
   // berkas tanda tangan ada di laptop, bukan di kode — layar menanyakannya
   // supaya pilihan membubuhkan tak ditawarkan saat berkasnya belum ada
@@ -69,16 +69,23 @@ export default function MaterialDashboard() {
             </span>
             <span className="block text-xs text-slate-500 mt-0.5">
               Tanda tangan Dept. Head dan staf teknik, stempel cabang di sisi Dept. Head.
-              {ttd && !ttdSiap && (
+              {ttd && !ttdSiap && (ttd.diAwan ? (
+                <span className="text-amber-700">
+                  {" "}Belum diisi di Environment Variables Vercel — perlu
+                  {!ttd.deptHead ? " TTD_DEPT_HEAD_B64" : ""}{!ttd.stafTeknik ? " TTD_STAF_TEKNIK_B64" : ""}
+                  {!ttd.stempel ? " STEMPEL_B64" : ""} (isi base64 gambarnya).
+                </span>
+              ) : (
                 <span className="text-amber-700">
                   {" "}Berkasnya belum lengkap di <code className="text-[11px]">{ttd.folder}</code> — perlu
                   {!ttd.deptHead ? " ttd-dept-head.png" : ""}{!ttd.stafTeknik ? " ttd-staf-teknik.png" : ""}
                   {!ttd.stempel ? " stempel.png" : ""}.
                 </span>
-              )}
+              ))}
               {ttdSiap && (
                 <span className="text-slate-400">
-                  {" "}Gambarnya tersimpan di laptop ini saja ({ttd!.folder}) dan tidak ikut ke GitHub.
+                  {" "}Gambarnya {ttd!.diAwan ? "dibaca dari Environment Variables Vercel" : `tersimpan di laptop ini saja (${ttd!.folder})`} —
+                  tidak pernah ikut ke repositori.
                 </span>
               )}
             </span>

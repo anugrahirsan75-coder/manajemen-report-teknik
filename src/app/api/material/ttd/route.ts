@@ -8,11 +8,11 @@
  * Yang dikembalikan hanya ADA atau TIDAK, bukan gambarnya.
  */
 import { NextResponse } from "next/server";
-import { folderTtd, statusTtd } from "@/lib/material/ttd";
+import { folderTtd, statusTtd } from "@/lib/material/ttdSumber";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function GET() {
-  return NextResponse.json({ ...statusTtd(), folder: folderTtd() });
+  return NextResponse.json({ ...statusTtd(), folder: folderTtd(), diAwan: !!process.env.VERCEL });
 }
