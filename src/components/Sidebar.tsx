@@ -73,6 +73,16 @@ const KELOMPOK: Kelompok[] = [
     ],
   },
   {
+    // Berdiri sendiri, bukan disisipkan ke Docking atau Kerusakan: keduanya
+    // mencatat yang sudah terjadi, PMS menghadap ke depan.
+    judul: "PMS Kapal",
+    menu: [
+      { href: "/pms", icon: "meter", label: "Beranda PMS", desc: "Jatuh tempo seluruh armada", tepat: true },
+      { href: "/pms/peralatan", icon: "obeng", label: "Daftar Peralatan", desc: "Tag peralatan per kapal" },
+      { href: "/pms/rencana", icon: "kalenderCentang", label: "Rencana Kerja", desc: "Interval jam & kalender" },
+    ],
+  },
+  {
     judul: "Kapal & Armada",
     menu: [
       { href: "/inspeksi", icon: "kaca", label: "Inspeksi Kapal", desc: "Temuan & penutupannya" },
