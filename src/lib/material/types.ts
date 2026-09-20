@@ -25,6 +25,12 @@ export interface MaterialRequest {
   judulUmum: string; // file4: "Pengadaan Barang Umum Kapal {Bulan Tahun}"
   items: MaterialItem[];
   fotoDokumentasi?: string[]; // foto dokumentasi (URL/base64)
+  /**
+   * Bubuhkan tanda tangan Dept. Head, staf teknik, dan stempel pada Formulir
+   * Permintaan Master Data. Gambarnya diambil dari data/ttd di laptop ini —
+   * lihat lib/material/ttd.ts.
+   */
+  bubuhiTtd?: boolean;
 }
 
 export const itemKategori = (it: MaterialItem): "SC" | "UMUM" =>

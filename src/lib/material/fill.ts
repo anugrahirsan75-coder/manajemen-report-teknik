@@ -1,5 +1,6 @@
 import path from "path";
 import ExcelJS from "exceljs";
+import { bubuhiFormulir } from "./ttd";
 import { MaterialRequest, MaterialItem, itemKategori, itemPOText } from "./types";
 import { KAPAL_DB, kapalKode, kapalCostCenter, descByKode } from "./db";
 import { bulanTahun, bulanRomawi, rupiah, terbilangRupiah } from "@/lib/format";
@@ -103,6 +104,9 @@ export async function fillFormulir(req: MaterialRequest): Promise<Buffer> {
   set(ws, "H17", `Ternate, ${ddmmyyyy(req.tanggal)}`);
   set(ws, "B23", req.deptHead);
   set(ws, "G23", req.stafTeknik);
+  // tanda tangan dibubuhkan hanya bila diminta; tanpa itu dokumen terbit
+  // dengan ruang tanda tangan kosong seperti sebelumnya
+  if (req.bubuhiTtd) bubuhiFormulir(wb, ws);
   return out(wb);
 }
 

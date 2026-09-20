@@ -32,3 +32,6 @@ ind.traineddata
 # Hanya berkas itu yang diabaikan — folder data/ juga memuat hargaIndex.json
 # yang memang ikut repo.
 data/dokumentasi-ubahan.json
+
+# gambar tanda tangan & stempel — milik orangnya, tidak ikut ke penyimpanan kode
+data/ttd/

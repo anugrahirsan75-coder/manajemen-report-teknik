@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useMaterial } from "@/lib/material/store";
 import { itemKategori } from "@/lib/material/types";
 import { bulanTahun } from "@/lib/format";
@@ -11,8 +11,16 @@ import { formatDok } from "@/lib/material/formatDok";
 import { beritahu } from "@/components/Konfirmasi";
 
 export default function MaterialDashboard() {
-  const { req } = useMaterial();
+  const { req, update } = useMaterial();
   const [busy, setBusy] = useState<string | null>(null);
+  const [ttd, setTtd] = useState<{ deptHead: boolean; stafTeknik: boolean; stempel: boolean; folder: string } | null>(null);
+
+  // berkas tanda tangan ada di laptop, bukan di kode — layar menanyakannya
+  // supaya pilihan membubuhkan tak ditawarkan saat berkasnya belum ada
+  useEffect(() => {
+    fetch("/api/material/ttd").then((r) => (r.ok ? r.json() : null)).then(setTtd).catch(() => setTtd(null));
+  }, []);
+  const ttdSiap = !!ttd && ttd.deptHead && ttd.stafTeknik && ttd.stempel;
   const totalSC = req.items.filter((i) => itemKategori(i) === "SC").length;
   const totalUmum = req.items.length - totalSC;
 
@@ -47,6 +55,35 @@ export default function MaterialDashboard() {
           <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-slate-700 to-slate-900 grid place-items-center text-2xl text-white shadow-md">🗂️</div>
           <div><p className="font-semibold text-slate-800">{busy === "all" ? "Menyiapkan ZIP…" : "Generate Semua"}</p><p className="text-xs text-slate-400">4 dokumen: template Excel, sisanya PDF (.zip)</p></div>
         </button>
+      </section>
+
+      {/* Pembubuhan tanda tangan. Hanya menyentuh Formulir Permintaan Master
+          Data — dokumen itu yang memang bertanda tangan Dept. Head dan staf. */}
+      <section className="mt-5 rounded-2xl bg-white ring-1 ring-slate-200 p-4">
+        <label className="flex items-start gap-3 cursor-pointer">
+          <input type="checkbox" className="mt-1" checked={!!req.bubuhiTtd} disabled={!ttdSiap}
+            onChange={(e) => update({ bubuhiTtd: e.target.checked })} />
+          <span className="flex-1">
+            <span className="font-semibold text-slate-800 text-sm">
+              Bubuhkan tanda tangan &amp; stempel pada Formulir Permintaan Master Data
+            </span>
+            <span className="block text-xs text-slate-500 mt-0.5">
+              Tanda tangan Dept. Head dan staf teknik, stempel cabang di sisi Dept. Head.
+              {ttd && !ttdSiap && (
+                <span className="text-amber-700">
+                  {" "}Berkasnya belum lengkap di <code className="text-[11px]">{ttd.folder}</code> — perlu
+                  {!ttd.deptHead ? " ttd-dept-head.png" : ""}{!ttd.stafTeknik ? " ttd-staf-teknik.png" : ""}
+                  {!ttd.stempel ? " stempel.png" : ""}.
+                </span>
+              )}
+              {ttdSiap && (
+                <span className="text-slate-400">
+                  {" "}Gambarnya tersimpan di laptop ini saja ({ttd!.folder}) dan tidak ikut ke GitHub.
+                </span>
+              )}
+            </span>
+          </span>
+        </label>
       </section>
 
       {/* Sesudah berkasnya jadi, yang dikerjakan berikutnya selalu sama:
