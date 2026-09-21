@@ -85,14 +85,17 @@ function tempel(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet, gambar: Buffer, t: 
 export async function bubuhiFormulir(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet) {
   const [dept, staf, cap] = await Promise.all([baca("deptHead"), baca("stafTeknik"), baca("stempel")]);
 
-  // Stempel ditaruh DI SAMPING tanda tangan, bukan menindihnya. Urutan tumpuk
-  // gambar pada lembar Excel tidak dijamin, jadi kalau keduanya ditumpuk,
-  // tanda tangannya bisa hilang sepenuhnya di balik stempel — dan itu persis
-  // yang terjadi pada percobaan pertama. Keduanya juga berhenti di atas baris
-  // nama supaya nama tercetaknya tetap terbaca.
-  if (cap) tempel(wb, ws, cap, { kolom: 2, baris: 19, lebar: 88, tinggi: 87, geserX: 0.02, geserY: -0.25 });
-  if (dept) tempel(wb, ws, dept, { kolom: 3, baris: 19, lebar: 124, tinggi: 82, geserX: 0.15, geserY: 0.35 });
+  /*
+   * Stempel MENIMPA tanda tangan Dept. Head, seperti di lembar yang
+   * dibubuhkan orang. Dulu keduanya ditaruh bersebelahan karena percobaan
+   * pertama membuat tanda tangannya hilang di balik stempel — penyebabnya
+   * ukuran dan letak, bukan urutan: ketiga berkasnya berlatar tembus pandang
+   * (stempel 79% tembus), jadi yang di bawah tetap terbaca. Stempel ditempel
+   * PALING AKHIR supaya berada di lapis teratas.
+   */
+  if (dept) tempel(wb, ws, dept, { kolom: 2, baris: 19, lebar: 124, tinggi: 82, geserX: 0.6, geserY: 0.35 });
   if (staf) tempel(wb, ws, staf, { kolom: 7, baris: 19, lebar: 52, tinggi: 81, geserX: 0.3, geserY: 0.3 });
+  if (cap) tempel(wb, ws, cap, { kolom: 2, baris: 19, lebar: 84, tinggi: 83, geserX: 0.5, geserY: 0.2 });
 
   return { deptHead: !!dept, stafTeknik: !!staf, stempel: !!cap };
 }

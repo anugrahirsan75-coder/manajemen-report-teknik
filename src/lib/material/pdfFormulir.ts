@@ -80,12 +80,14 @@ function penggal(font: PDFFont, teks: string, ukuran: number, lebar: number): st
   return baris;
 }
 
-async function sisipGambar(a: Alat, buf: Buffer, x: number, yAtas: number, lebar: number, tinggi: number) {
+async function sisipGambar(
+  a: Alat, buf: Buffer, x: number, yAtas: number, lebar: number, tinggi: number, pekat = 1,
+) {
   // jenisnya dibaca dari isi berkas: unggahan pemakai bisa saja JPEG, dan
   // embedPng atas berkas JPEG melempar galat yang menggagalkan seluruh dokumen
   const jpeg = buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
   const img = jpeg ? await a.pdf.embedJpg(buf) : await a.pdf.embedPng(buf);
-  a.hal.drawImage(img, { x, y: A4.t - yAtas - tinggi, width: lebar, height: tinggi });
+  a.hal.drawImage(img, { x, y: A4.t - yAtas - tinggi, width: lebar, height: tinggi, opacity: pekat });
 }
 
 export async function pdfFormulir(req: MaterialRequest): Promise<Buffer> {
@@ -171,23 +173,57 @@ export async function pdfFormulir(req: MaterialRequest): Promise<Buffer> {
   tulis(a, "Diperiksa dan Disetujui Oleh,", kiri + 90, y, { rata: "tengah" });
   tulis(a, "Dibuat Oleh,", xKolom2 + 70, y, { rata: "tengah" });
 
-  const yTtd = y + 12;
+  /*
+   * Nama dicetak DULU, tanda tangan dan stempel di atasnya.
+   *
+   * Di kertas, urutannya memang begitu: lembar tercetak lebih dulu, lalu
+   * ditandatangani dan distempel. Versi sebelumnya menggambar tanda tangan
+   * lebih dulu sehingga nama tercetak menimpa tinta — susunan yang tidak
+   * pernah terjadi pada lembar sungguhan dan langsung terasa janggal saat
+   * dibandingkan dengan hasil pindaian.
+   */
+  const yNama = y + 82;
+  const xNamaKiri = kiri + 90;
+  const xNamaKanan = xKolom2 + 70;
+  tulis(a, req.deptHead, xNamaKiri, yNama, { rata: "tengah" });
+  tulis(a, "Dept Head Operasional dan Teknik", xNamaKiri, yNama + 13, { font: "tebal", rata: "tengah" });
+  tulis(a, req.stafTeknik, xNamaKanan, yNama, { rata: "tengah" });
+  tulis(a, "Staf Teknik Armada dan Fasilitas", xNamaKanan, yNama + 13, { font: "tebal", rata: "tengah" });
+
   if (req.bubuhiTtd) {
-    // Stempel di samping tanda tangan, bukan menindihnya: yang harus terbaca
-    // adalah tanda tangan dan nama, bukan lingkaran stempelnya.
     const [cap, dept, staf] = await Promise.all([
       ambilTtdPenuh("stempel"), ambilTtdPenuh("deptHead"), ambilTtdPenuh("stafTeknik"),
     ]);
-    if (cap) await sisipGambar(a, cap, kiri + 12, yTtd - 2, 62, 61);
-    if (dept) await sisipGambar(a, dept, kiri + 78, yTtd + 8, 96, 63);
-    if (staf) await sisipGambar(a, staf, xKolom2 + 52, yTtd + 6, 40, 62);
-  }
 
-  const yNama = y + 82;
-  tulis(a, req.deptHead, kiri + 90, yNama, { rata: "tengah" });
-  tulis(a, "Dept Head Operasional dan Teknik", kiri + 90, yNama + 13, { font: "tebal", rata: "tengah" });
-  tulis(a, req.stafTeknik, xKolom2 + 70, yNama, { rata: "tengah" });
-  tulis(a, "Staf Teknik Armada dan Fasilitas", xKolom2 + 70, yNama + 13, { font: "tebal", rata: "tengah" });
+    /*
+     * Letaknya mengikuti lembar yang sudah ditandatangani basah: tanda tangan
+     * duduk di ATAS nama dan ujung bawahnya melewati baris nama sedikit,
+     * bukan berhenti rapi di atasnya. Stempel MENIMPA tanda tangan Dept.
+     * Head — begitu stempel dibubuhkan di atas kertas — dan bisa begitu di
+     * sini karena ketiga berkasnya berlatar tembus pandang (stempel 79%
+     * tembus), jadi yang di bawah tetap terbaca. Urutan gambarnya pasti di
+     * pdf-lib: yang digambar belakangan ada di atas.
+     */
+    const lebarDept = 132;
+    const tinggiDept = 86;
+    if (dept) {
+      await sisipGambar(a, dept, xNamaKiri - lebarDept / 2 + 6, yNama - tinggiDept + 12, lebarDept, tinggiDept);
+    }
+    const lebarStaf = 56;
+    const tinggiStaf = 86;
+    if (staf) {
+      await sisipGambar(a, staf, xNamaKanan - lebarStaf / 2, yNama - tinggiStaf + 14, lebarStaf, tinggiStaf);
+    }
+    // sedikit dipudarkan: tinta stempel di kertas tidak pernah sepekat cetakan,
+    // dan tanpa itu lingkarannya tampak seperti tempelan gambar
+    const sisiCap = 78;
+    if (cap) {
+      // digeser sedikit ke kiri-bawah dari titik tengah nama: itu tempat
+      // stempel jatuh kalau dibubuhkan orang, dan cukup rendah supaya tidak
+      // menabrak baris "Diperiksa dan Disetujui Oleh," di atasnya
+      await sisipGambar(a, cap, xNamaKiri - sisiCap / 2 - 20, yNama - sisiCap + 21, sisiCap, sisiCap, 0.88);
+    }
+  }
 
   // ── lembar pengesahan (diisi pusat) ──────────────────────────────────
   const sahAtas = badanAtas + badanTinggi;
