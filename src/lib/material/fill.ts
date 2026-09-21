@@ -106,7 +106,7 @@ export async function fillFormulir(req: MaterialRequest): Promise<Buffer> {
   set(ws, "G23", req.stafTeknik);
   // tanda tangan dibubuhkan hanya bila diminta; tanpa itu dokumen terbit
   // dengan ruang tanda tangan kosong seperti sebelumnya
-  if (req.bubuhiTtd) bubuhiFormulir(wb, ws);
+  if (req.bubuhiTtd) await bubuhiFormulir(wb, ws);
   return out(wb);
 }
 

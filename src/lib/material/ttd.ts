@@ -14,7 +14,7 @@
 import fs from "fs";
 import path from "path";
 import ExcelJS from "exceljs";
-import { ambilTtd } from "./ttdSumber";
+import { ambilTtdPenuh } from "./ttdSumber";
 
 export type PeranTtd = "deptHead" | "stafTeknik" | "stempel";
 
@@ -40,8 +40,8 @@ export const statusTtd = () => ({
   stempel: adaTtd("stempel"),
 });
 
-// sumbernya satu pintu dengan jalur PDF: peubah lingkungan dulu, baru berkas
-const baca = (peran: PeranTtd): Buffer | null => ambilTtd(peran);
+// sumbernya satu pintu dengan jalur PDF: env, berkas laptop, lalu brankas
+const baca = (peran: PeranTtd): Promise<Buffer | null> => ambilTtdPenuh(peran);
 
 interface Tempat {
   /** kolom & baris Excel berbasis 1, sama seperti yang dibaca orang */
@@ -63,7 +63,9 @@ interface Tempat {
  * konversinya dikerjakan di satu tempat ini saja.
  */
 function tempel(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet, gambar: Buffer, t: Tempat) {
-  const id = wb.addImage({ buffer: gambar as any, extension: "png" });
+  // sama seperti jalur PDF: jenisnya dari isi berkas, bukan dianggap PNG
+  const jpeg = gambar.length > 3 && gambar[0] === 0xff && gambar[1] === 0xd8 && gambar[2] === 0xff;
+  const id = wb.addImage({ buffer: gambar as any, extension: jpeg ? "jpeg" : "png" });
   ws.addImage(id, {
     tl: { col: t.kolom - 1 + (t.geserX || 0), row: t.baris - 1 + (t.geserY || 0) } as any,
     ext: { width: t.lebar, height: t.tinggi },
@@ -80,10 +82,8 @@ function tempel(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet, gambar: Buffer, t: 
  * Dept. Head dan sengaja menindih sebagian tanda tangannya — begitulah
  * stempel dibubuhkan di atas kertas.
  */
-export function bubuhiFormulir(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet) {
-  const dept = baca("deptHead");
-  const staf = baca("stafTeknik");
-  const cap = baca("stempel");
+export async function bubuhiFormulir(wb: ExcelJS.Workbook, ws: ExcelJS.Worksheet) {
+  const [dept, staf, cap] = await Promise.all([baca("deptHead"), baca("stafTeknik"), baca("stempel")]);
 
   // Stempel ditaruh DI SAMPING tanda tangan, bukan menindihnya. Urutan tumpuk
   // gambar pada lembar Excel tidak dijamin, jadi kalau keduanya ditumpuk,

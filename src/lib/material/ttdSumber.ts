@@ -7,12 +7,20 @@
  *     pengaturan proyek, bukan di dalam kode — repositori ini publik, dan
  *     tanda tangan yang sekali masuk riwayat git tidak bisa ditarik kembali.
  *  2. Berkas di data/ttd pada laptop. Dipakai saat bekerja lokal.
+ *  3. Brankas tersandi di basis data. Diisi lewat halaman Kode Material,
+ *     tanpa perlu membuka dasbor Vercel. Lihat ttdBrankas.ts.
  *
- * Kalau dua-duanya kosong, dokumen tetap terbit dengan ruang tanda tangan
+ * Urutannya disengaja: yang disetel sengaja oleh pengelola (env, lalu berkas
+ * laptop) mengalahkan yang diunggah lewat layar. Kalau terbalik, sebuah
+ * unggahan keliru diam-diam menggantikan tanda tangan yang sudah benar dan
+ * tidak ada cara mengembalikannya selain menghapus unggahan itu.
+ *
+ * Kalau ketiganya kosong, dokumen tetap terbit dengan ruang tanda tangan
  * kosong — siap dicetak dan ditandatangani seperti biasa.
  */
 import fs from "fs";
 import path from "path";
+import { ambilDariBrankas, brankasSiap, bukaSandi, isiBrankas } from "./ttdBrankas";
 
 export type PeranTtd = "deptHead" | "stafTeknik" | "stempel";
 
@@ -51,16 +59,46 @@ export function ambilTtd(peran: PeranTtd): Buffer | null {
 
 export const adaTtd = (peran: PeranTtd) => !!ambilTtd(peran);
 
-export function statusTtd() {
-  const asal = (peran: PeranTtd): "env" | "berkas" | "tidak ada" => {
-    const e = process.env[ENV[peran]];
-    if (e && e.trim()) return "env";
-    return adaTtd(peran) ? "berkas" : "tidak ada";
-  };
+/** sumber lengkap termasuk brankas basis data — inilah yang dipakai saat membubuhkan */
+export async function ambilTtdPenuh(peran: PeranTtd): Promise<Buffer | null> {
+  return ambilTtd(peran) || (await ambilDariBrankas(peran));
+}
+
+export type AsalTtd = "env" | "berkas" | "brankas" | "tidak ada";
+
+export interface StatusTtd {
+  deptHead: boolean;
+  stafTeknik: boolean;
+  stempel: boolean;
+  asal: Record<PeranTtd, AsalTtd>;
+  /** gambar ada di brankas tapi tidak bisa dibuka — hampir selalu AUTH_TOKEN berganti */
+  rusak: PeranTtd[];
+  brankasSiap: boolean;
+}
+
+export async function statusTtd(): Promise<StatusTtd> {
+  const isi = brankasSiap() ? await isiBrankas() : {};
+  const peran: PeranTtd[] = ["deptHead", "stafTeknik", "stempel"];
+  const asal = {} as Record<PeranTtd, AsalTtd>;
+  const rusak: PeranTtd[] = [];
+
+  for (const p of peran) {
+    const e = process.env[ENV[p]];
+    if (e && e.trim() && ambilTtd(p)) { asal[p] = "env"; continue; }
+    if (ambilTtd(p)) { asal[p] = "berkas"; continue; }
+    if (isi[p]) {
+      // ada kotaknya, tapi belum tentu bisa dibuka — yang menentukan "ada"
+      // adalah bisa-tidaknya dipakai, bukan ada-tidaknya baris di basis data
+      if (bukaSandi(isi[p])) { asal[p] = "brankas"; continue; }
+      rusak.push(p);
+    }
+    asal[p] = "tidak ada";
+  }
+
   return {
-    deptHead: adaTtd("deptHead"),
-    stafTeknik: adaTtd("stafTeknik"),
-    stempel: adaTtd("stempel"),
-    asal: { deptHead: asal("deptHead"), stafTeknik: asal("stafTeknik"), stempel: asal("stempel") },
+    deptHead: asal.deptHead !== "tidak ada",
+    stafTeknik: asal.stafTeknik !== "tidak ada",
+    stempel: asal.stempel !== "tidak ada",
+    asal, rusak, brankasSiap: brankasSiap(),
   };
 }

@@ -16,7 +16,7 @@ import { PDFDocument, PDFFont, PDFPage, StandardFonts, rgb } from "pdf-lib";
 import { MaterialRequest } from "./types";
 import { kapalCostCenter } from "./db";
 import { bulanTahun } from "@/lib/format";
-import { ambilTtd } from "./ttdSumber";
+import { ambilTtdPenuh } from "./ttdSumber";
 
 const A4 = { l: 595.28, t: 841.89 };
 const TEPI = 42;                       // jarak dari tepi kertas
@@ -81,7 +81,10 @@ function penggal(font: PDFFont, teks: string, ukuran: number, lebar: number): st
 }
 
 async function sisipGambar(a: Alat, buf: Buffer, x: number, yAtas: number, lebar: number, tinggi: number) {
-  const img = await a.pdf.embedPng(buf);
+  // jenisnya dibaca dari isi berkas: unggahan pemakai bisa saja JPEG, dan
+  // embedPng atas berkas JPEG melempar galat yang menggagalkan seluruh dokumen
+  const jpeg = buf.length > 3 && buf[0] === 0xff && buf[1] === 0xd8 && buf[2] === 0xff;
+  const img = jpeg ? await a.pdf.embedJpg(buf) : await a.pdf.embedPng(buf);
   a.hal.drawImage(img, { x, y: A4.t - yAtas - tinggi, width: lebar, height: tinggi });
 }
 
@@ -172,9 +175,9 @@ export async function pdfFormulir(req: MaterialRequest): Promise<Buffer> {
   if (req.bubuhiTtd) {
     // Stempel di samping tanda tangan, bukan menindihnya: yang harus terbaca
     // adalah tanda tangan dan nama, bukan lingkaran stempelnya.
-    const cap = ambilTtd("stempel");
-    const dept = ambilTtd("deptHead");
-    const staf = ambilTtd("stafTeknik");
+    const [cap, dept, staf] = await Promise.all([
+      ambilTtdPenuh("stempel"), ambilTtdPenuh("deptHead"), ambilTtdPenuh("stafTeknik"),
+    ]);
     if (cap) await sisipGambar(a, cap, kiri + 12, yTtd - 2, 62, 61);
     if (dept) await sisipGambar(a, dept, kiri + 78, yTtd + 8, 96, 63);
     if (staf) await sisipGambar(a, staf, xKolom2 + 52, yTtd + 6, 40, 62);

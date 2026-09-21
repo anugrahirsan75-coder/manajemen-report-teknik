@@ -8,19 +8,74 @@ import { itemKategori } from "@/lib/material/types";
 import { bulanTahun } from "@/lib/format";
 import { generateMaterial, generateMaterialAll, MATERIAL_DOCS } from "@/lib/material/generateClient";
 import { formatDok } from "@/lib/material/formatDok";
-import { beritahu } from "@/components/Konfirmasi";
+import { beritahu, konfirmasi } from "@/components/Konfirmasi";
+
+type PeranTtd = "deptHead" | "stafTeknik" | "stempel";
+type AsalTtd = "env" | "berkas" | "brankas" | "tidak ada";
+
+interface StatusTtdUI {
+  deptHead: boolean; stafTeknik: boolean; stempel: boolean;
+  asal: Record<PeranTtd, AsalTtd>;
+  rusak: PeranTtd[];
+  brankasSiap: boolean;
+  folder: string;
+  diAwan?: boolean;
+}
+
+const LABEL_TTD: Record<PeranTtd, string> = {
+  deptHead: "Tanda tangan Dept. Head",
+  stafTeknik: "Tanda tangan staf teknik",
+  stempel: "Stempel cabang",
+};
+
+const ASAL_KATA: Record<AsalTtd, string> = {
+  env: "dari Environment Variables",
+  berkas: "dari berkas di laptop ini",
+  brankas: "tersimpan tersandi di basis data",
+  "tidak ada": "belum ada",
+};
 
 export default function MaterialDashboard() {
   const { req, update } = useMaterial();
   const [busy, setBusy] = useState<string | null>(null);
-  const [ttd, setTtd] = useState<{ deptHead: boolean; stafTeknik: boolean; stempel: boolean; folder: string; diAwan?: boolean } | null>(null);
+  const [ttd, setTtd] = useState<StatusTtdUI | null>(null);
+  const [kelola, setKelola] = useState(false);
+  const [unggah, setUnggah] = useState<PeranTtd | "">("");
+  const [pesanTtd, setPesanTtd] = useState("");
 
-  // berkas tanda tangan ada di laptop, bukan di kode — layar menanyakannya
-  // supaya pilihan membubuhkan tak ditawarkan saat berkasnya belum ada
-  useEffect(() => {
+  // gambar tanda tangan tidak pernah ikut kode — layar menanyakan keadaannya
+  // supaya pilihan membubuhkan tak ditawarkan saat gambarnya belum ada
+  const muatTtd = () =>
     fetch("/api/material/ttd").then((r) => (r.ok ? r.json() : null)).then(setTtd).catch(() => setTtd(null));
-  }, []);
+  useEffect(() => { void muatTtd(); }, []);
   const ttdSiap = !!ttd && ttd.deptHead && ttd.stafTeknik && ttd.stempel;
+
+  const kirimGambar = async (peran: PeranTtd, berkas: File) => {
+    setUnggah(peran); setPesanTtd("");
+    try {
+      const fd = new FormData();
+      fd.append("peran", peran);
+      fd.append("berkas", berkas);
+      const r = await fetch("/api/material/ttd", { method: "POST", body: fd });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Gagal mengunggah");
+      setTtd(d);
+      setPesanTtd(`${LABEL_TTD[peran]} tersimpan ✓`);
+      setTimeout(() => setPesanTtd(""), 4000);
+    } catch (e: any) { setPesanTtd(e?.message || String(e)); }
+    finally { setUnggah(""); }
+  };
+
+  const buangGambar = async (peran: PeranTtd) => {
+    setUnggah(peran); setPesanTtd("");
+    try {
+      const r = await fetch(`/api/material/ttd?peran=${peran}`, { method: "DELETE" });
+      const d = await r.json();
+      if (!d.ok) throw new Error(d.error || "Gagal menghapus");
+      setTtd(d);
+    } catch (e: any) { setPesanTtd(e?.message || String(e)); }
+    finally { setUnggah(""); }
+  };
   const totalSC = req.items.filter((i) => itemKategori(i) === "SC").length;
   const totalUmum = req.items.length - totalSC;
 
@@ -69,28 +124,103 @@ export default function MaterialDashboard() {
             </span>
             <span className="block text-xs text-slate-500 mt-0.5">
               Tanda tangan Dept. Head dan staf teknik, stempel cabang di sisi Dept. Head.
-              {ttd && !ttdSiap && (ttd.diAwan ? (
+              {ttd && !ttdSiap && (
                 <span className="text-amber-700">
-                  {" "}Belum diisi di Environment Variables Vercel — perlu
-                  {!ttd.deptHead ? " TTD_DEPT_HEAD_B64" : ""}{!ttd.stafTeknik ? " TTD_STAF_TEKNIK_B64" : ""}
-                  {!ttd.stempel ? " STEMPEL_B64" : ""} (isi base64 gambarnya).
+                  {" "}Belum lengkap — {[
+                    !ttd.deptHead ? "tanda tangan Dept. Head" : "",
+                    !ttd.stafTeknik ? "tanda tangan staf teknik" : "",
+                    !ttd.stempel ? "stempel" : "",
+                  ].filter(Boolean).join(", ")} belum ada. Unggah gambarnya di bawah ini.
                 </span>
-              ) : (
-                <span className="text-amber-700">
-                  {" "}Berkasnya belum lengkap di <code className="text-[11px]">{ttd.folder}</code> — perlu
-                  {!ttd.deptHead ? " ttd-dept-head.png" : ""}{!ttd.stafTeknik ? " ttd-staf-teknik.png" : ""}
-                  {!ttd.stempel ? " stempel.png" : ""}.
-                </span>
-              ))}
+              )}
               {ttdSiap && (
-                <span className="text-slate-400">
-                  {" "}Gambarnya {ttd!.diAwan ? "dibaca dari Environment Variables Vercel" : `tersimpan di laptop ini saja (${ttd!.folder})`} —
-                  tidak pernah ikut ke repositori.
-                </span>
+                <span className="text-slate-400"> Gambarnya tidak pernah ikut ke repositori.</span>
               )}
             </span>
           </span>
         </label>
+
+        {/*
+          Pengelolaan gambar dikerjakan DI SINI, bukan lewat dasbor Vercel.
+          Selama satu-satunya jalan adalah menempelkan base64 ke Environment
+          Variables, fiturnya mati sampai ada yang sempat membuka dasbor itu —
+          dan tanda tangan yang berganti orang membuatnya mati lagi.
+        */}
+        {ttd && (
+          <div className="mt-3 pt-3 border-t">
+            <button onClick={() => setKelola(!kelola)} className="text-xs font-semibold text-[#16357f] hover:underline">
+              {kelola ? "▾" : "▸"} Kelola gambar tanda tangan &amp; stempel
+            </button>
+
+            {ttd.rusak.length > 0 && (
+              <p className="mt-2 text-xs bg-rose-50 ring-1 ring-rose-200 text-rose-800 rounded-xl px-3 py-2">
+                {ttd.rusak.map((p) => LABEL_TTD[p]).join(", ")} tersimpan tapi tidak bisa dibuka — hampir selalu karena
+                AUTH_TOKEN berganti sesudah gambarnya diunggah. Unggah ulang gambarnya.
+              </p>
+            )}
+
+            {kelola && (
+              <div className="mt-3 space-y-2">
+                {(["deptHead", "stafTeknik", "stempel"] as PeranTtd[]).map((p) => {
+                  const asal = ttd.asal[p];
+                  const terkunci = asal === "env" || asal === "berkas";
+                  return (
+                    <div key={p} className="flex flex-wrap items-center gap-2 rounded-xl bg-slate-50 px-3 py-2">
+                      <span className={`h-2 w-2 rounded-full shrink-0 ${ttd[p] ? "bg-emerald-500" : "bg-slate-300"}`} />
+                      <span className="text-xs font-semibold text-slate-700 w-48">{LABEL_TTD[p]}</span>
+                      <span className="text-[11px] text-slate-500 flex-1 min-w-[10rem]">{ASAL_KATA[asal]}</span>
+                      {terkunci ? (
+                        <span className="text-[11px] text-slate-400">
+                          {asal === "env" ? "disetel lewat Environment Variables" : "dibaca dari data/ttd"}
+                        </span>
+                      ) : (
+                        <>
+                          <label className="text-[11px] font-semibold text-[#16357f] cursor-pointer hover:underline">
+                            {unggah === p ? "mengunggah…" : ttd[p] ? "Ganti gambar" : "Pilih gambar"}
+                            <input type="file" accept="image/png,image/jpeg" className="hidden"
+                              disabled={!!unggah || !ttd.brankasSiap}
+                              onChange={(e) => {
+                                const f = e.target.files?.[0];
+                                e.target.value = "";
+                                if (f) void kirimGambar(p, f);
+                              }} />
+                          </label>
+                          {asal === "brankas" && (
+                            <button disabled={!!unggah}
+                              onClick={async () => {
+                                if (!(await konfirmasi({
+                                  nada: "bahaya", ikon: "🗑️", judul: "Hapus gambar ini?",
+                                  pesan: LABEL_TTD[p],
+                                  tegasan: "Dokumen berikutnya terbit dengan ruang tanda tangan kosong.",
+                                  tombolYa: "Ya, hapus",
+                                }))) return;
+                                void buangGambar(p);
+                              }}
+                              className="text-[11px] text-slate-400 hover:text-red-600 disabled:opacity-50">hapus</button>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  );
+                })}
+
+                {!ttd.brankasSiap && (
+                  <p className="text-xs bg-amber-50 ring-1 ring-amber-200 text-amber-800 rounded-xl px-3 py-2">
+                    Unggahan belum bisa dipakai: AUTH_TOKEN atau sambungan basis data belum siap di server ini.
+                  </p>
+                )}
+                {pesanTtd && <p className="text-xs text-slate-600">{pesanTtd}</p>}
+
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  PNG berlatar tembus pandang paling rapi hasilnya; JPEG juga diterima. Gambar yang diunggah
+                  <b> disandikan</b> (AES-256-GCM, kunci diturunkan dari AUTH_TOKEN) sebelum disimpan, jadi isinya
+                  tidak terbaca walau barisnya terambil orang lain — dan tidak pernah ikut ke repositori.
+                  {ttd.diAwan ? "" : ` Berkas di ${ttd.folder} tetap menang bila ada.`}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
 
         <label className="flex items-start gap-3 cursor-pointer mt-3 pt-3 border-t">
           <input type="checkbox" className="mt-1" checked={!!req.tampakPindai}
