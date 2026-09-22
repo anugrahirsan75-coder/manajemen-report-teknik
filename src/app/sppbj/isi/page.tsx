@@ -13,6 +13,7 @@ import FotoUploader from "@/components/FotoUploader";
 import KatalogPicker from "@/components/KatalogPicker";
 import KatalogBrowser from "@/components/KatalogBrowser";
 import ScanSppbj from "@/components/ScanSppbj";
+import TempelTabelSppbj, { ItemTempel } from "@/components/TempelTabelSppbj";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
 import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
@@ -34,6 +35,7 @@ function SppbjIsiInner() {
   const [browsePerbaikan, setBrowsePerbaikan] = useState(false);
   const [preview, setPreview] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
+  const [tempelOpen, setTempelOpen] = useState(false);
   const [rekapBusy, setRekapBusy] = useState(false);
   // kolom Mata Anggaran per item hanya perlu saat pengadaan mencentang >1 MA
   const multiMA = (req.mataAnggaran || []).length > 1;
@@ -330,6 +332,28 @@ function SppbjIsiInner() {
     }));
     setItems([...req.items, ...baru]);
   };
+  /**
+   * Hasil "Tempel Tabel Excel" -> baris tabel SPPBJ.
+   *
+   * Dipisah dari handlePaste: yang itu menimpa sel mulai dari tempat kursor
+   * (untuk menambal satu-dua kolom), sedangkan yang ini MENAMBAH item baru
+   * hasil pembacaan satu tabel utuh beserta kapal, golongan, dan rinciannya.
+   */
+  const addFromTempel = (rows: ItemTempel[]) => {
+    if (!rows.length) return;
+    snapshot();
+    const baru = rows.map((r) => ({
+      ...emptySppbjItem(r.kapal || ""),
+      jumlah: r.jumlah || 1,
+      satuan: r.satuan || "unit",
+      nama: r.nama,
+      spesifikasi: r.spesifikasi || "",
+      harga: r.harga || 0,
+      keterangan: r.keterangan || undefined,
+      breakdown: r.breakdown?.length ? [...r.breakdown] : undefined,
+    }));
+    setItems([...req.items, ...baru]);
+  };
   const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text/plain");
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
@@ -562,7 +586,7 @@ function SppbjIsiInner() {
 
       <Section title={`Item SPPBJ (${req.items.length}) — multi kapal · harga ESTIMASI`} icon="🛠️">
         <div className="bg-sky-50 border border-sky-200 rounded-xl p-3 mb-3 text-sm text-slate-700">
-          <b className="text-sky-800">📋 Paste dari Excel:</b> urutan <b>Kapal · Jumlah · Satuan · Nama Barang/Jasa · Spesifikasi · Harga</b> → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>. Item dengan kapal sama dikelompokkan + dibuat sheet BSTB-nya nanti.
+          <b className="text-sky-800">📋 Tempel satu tabel utuh:</b> pakai tombol <b>Tempel Tabel Excel</b> di bawah — baris kapal, judul golongan, rincian dan harga dibaca sendiri, lalu jumlahnya diadu dengan baris Jumlah/PPn/Total di lembar sebelum masuk. <span className="text-slate-500">Untuk menambal beberapa sel saja: salin dari Excel dengan urutan <b>Kapal · Jumlah · Satuan · Nama Barang/Jasa · Spesifikasi · Harga</b> → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>.</span> Item dengan kapal sama dikelompokkan + dibuat sheet BSTB-nya nanti.
         </div>
         {/* pembagian per sumber anggaran — muncul begitu pengadaan ini membebani >1 sumber */}
         {(req.anggaranPerItem || campuran.n > 1) && (
@@ -592,6 +616,8 @@ function SppbjIsiInner() {
           <button onClick={() => setBrowsePerbaikan(true)} title="Pekerjaan perbaikan siap pakai — item + rincian bahan langsung terisi"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100">🔧 Pekerjaan Perbaikan</button>
           <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
+          <button onClick={() => setTempelOpen(true)} title="Salin seluruh tabel SPPB/J di Excel lalu tempel — kapal, golongan, rincian dan harga terbaca sendiri, lengkap dengan pemeriksaan jumlah"
+            className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100">📋 Tempel Tabel Excel</button>
           <button onClick={() => setScanOpen(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">📷 Scan dari Excel (OCR)</button>
           <button onClick={() => setPreview(true)} title="Lihat susunan dokumen SPPBJ dari isian saat ini — tanpa perlu menyimpan dulu"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-violet-300 bg-violet-50 text-violet-700 hover:bg-violet-100">👁️ Preview SPPBJ</button>
@@ -623,6 +649,8 @@ function SppbjIsiInner() {
           fokus="Perbaikan —" judul="🔧 Pekerjaan Perbaikan (item + rincian bahan)"
           defaultKapal={req.items.length ? req.items[req.items.length - 1].kapal : ""} />
         <ScanSppbj open={scanOpen} onClose={() => setScanOpen(false)} onAdd={addFromScan} />
+        <TempelTabelSppbj open={tempelOpen} onClose={() => setTempelOpen(false)} onAdd={addFromTempel}
+          kapalAwal={req.items[req.items.length - 1]?.kapal || ""} />
         {/* Preview memakai isian yang sedang disunting, bukan yang tersimpan:
             gunanya justru memeriksa sebelum menyimpan. */}
         {preview && (
