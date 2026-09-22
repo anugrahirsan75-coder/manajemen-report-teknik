@@ -18,6 +18,7 @@
  * menekan tombol itu.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import {
   BarisTempel, HasilTempel, PERAN_LABEL, Peran, pecah, tebakKolom, uraikan,
 } from "@/lib/sppbj/tempelTabel";
@@ -55,7 +56,14 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
   const [kapal, setKapal] = useState(kapalAwal);
   const [pakai, setPakai] = useState<Record<number, boolean>>({});
   const [lihatMentah, setLihatMentah] = useState(false);
+  /*
+    Portal baru boleh dipasang SESUDAH terpasang di peramban. Kalau tidak,
+    peladen menggambar kosong sementara peramban langsung menggambar kotaknya,
+    dan React menolak hidrasinya — halamannya digambar ulang dari nol.
+  */
+  const [terpasang, setTerpasang] = useState(false);
   const areaRef = useRef<HTMLTextAreaElement>(null);
+  useEffect(() => setTerpasang(true), []);
 
   useEffect(() => {
     if (!open) { setTeks(""); setKolom([]); setPakai({}); setLihatMentah(false); }
@@ -74,7 +82,14 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
     if (!open) return;
     const tekan = (e: KeyboardEvent) => { if (e.key === "Escape") onClose(); };
     window.addEventListener("keydown", tekan);
-    return () => window.removeEventListener("keydown", tekan);
+    // halaman di belakang dikunci: menggulung latar sementara kotak terbuka
+    // membuat isi kotaknya ikut bergeser dan terasa seperti layar rusak
+    const simpan = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", tekan);
+      document.body.style.overflow = simpan;
+    };
   }, [open, onClose]);
 
   const hasil: HasilTempel | null = useMemo(
@@ -86,7 +101,7 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
   const dipakai = useMemo(() => item.filter((b) => (pakai[b.sumber] ?? b.pakai)), [item, pakai]);
   const totalDipakai = dipakai.reduce((s, b) => s + b.jumlah * b.harga, 0);
 
-  if (!open) return null;
+  if (!open || !terpasang) return null;
 
   const gantiKolom = (i: number, p: Peran) => {
     setKolom((lama) => {
@@ -109,7 +124,16 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
   const lebar = hasil?.kolom.length || 0;
   const kosong = !teks.trim();
 
-  return (
+  /*
+    Kotaknya DIPASANG LANGSUNG DI <body> lewat portal.
+    Ini bukan kerapian belaka: "position: fixed" berhenti mengacu ke layar
+    begitu salah satu induknya punya transform, filter, atau backdrop-filter —
+    dan halaman isi SPPBJ penuh dengan ketiganya (kartu melayang, animasi
+    masuk, panel kaca). Dirender di tempatnya, kotak ini terkurung di dalam
+    seksi induknya: bagian bawahnya terpotong dan tidak bisa digulung sama
+    sekali.
+  */
+  const isi = (
     /*
       Latar belakangnya DIBURAMKAN, bukan sekadar digelapkan. Halaman isi SPPBJ
       penuh tabel dan tombol; kalau hanya diberi selubung gelap, mata masih
@@ -385,4 +409,6 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
       </div>
     </div>
   );
+
+  return typeof document !== "undefined" ? createPortal(isi, document.body) : null;
 }
