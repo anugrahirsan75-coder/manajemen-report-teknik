@@ -110,9 +110,18 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
   const kosong = !teks.trim();
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/55 p-2 sm:p-4 grid place-items-center" onMouseDown={onClose}>
+    /*
+      Latar belakangnya DIBURAMKAN, bukan sekadar digelapkan. Halaman isi SPPBJ
+      penuh tabel dan tombol; kalau hanya diberi selubung gelap, mata masih
+      menangkap barisnya dan kotak ini terasa menumpuk di atas keramaian.
+      Diburamkan, halaman induknya mundur jadi latar dan yang tersisa tajam
+      hanya kotak ini.
+    */
+    <div
+      className="fixed inset-0 z-50 bg-slate-900/45 backdrop-blur-md p-5 sm:p-10 grid place-items-center"
+      onMouseDown={onClose}>
       <div
-        className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/10 w-full max-w-[104rem] h-[97vh] flex flex-col overflow-hidden"
+        className="bg-white rounded-3xl shadow-[0_32px_80px_-12px_rgba(0,0,0,0.45)] ring-1 ring-black/10 w-full max-w-[92rem] h-[90vh] flex flex-col overflow-hidden"
         onMouseDown={(e) => e.stopPropagation()}>
 
         {/* ── kepala ── */}
