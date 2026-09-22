@@ -40,11 +40,18 @@ const LABEL_JENIS: Record<BarisTempel["jenis"], string> = {
   penutup: "penutup", lewat: "dilewati",
 };
 
-export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" }: {
+export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "", sebagaiHalaman = false }: {
   open: boolean;
   onClose: () => void;
   onAdd: (items: ItemTempel[]) => void;
   kapalAwal?: string;
+  /**
+   * Dipakai sebagai HALAMAN penuh di jendela terpisah, bukan kotak melayang.
+   * Jendela sendiri bisa dibesarkan dan digeser pemakainya — pada tabel
+   * puluhan baris itu jauh lebih lega daripada kotak yang terkurung tinggi
+   * jendela induknya.
+   */
+  sebagaiHalaman?: boolean;
 }) {
   const [teks, setTeks] = useState("");
   const [kolom, setKolom] = useState<Peran[]>([]);
@@ -105,10 +112,11 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
   const lebar = hasil?.kolom.length || 0;
   const kosong = !teks.trim();
 
-  return (
-    <div className="fixed inset-0 z-50 bg-black/55 p-3 sm:p-6 grid place-items-center" onMouseDown={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-[86rem] h-[94vh] flex flex-col overflow-hidden"
-        onMouseDown={(e) => e.stopPropagation()}>
+  const isi = (
+    <div className={sebagaiHalaman
+      ? "bg-white w-full h-screen flex flex-col overflow-hidden"
+      : "bg-white rounded-2xl shadow-2xl w-full max-w-[86rem] h-[94vh] flex flex-col overflow-hidden"}
+      onMouseDown={(e) => e.stopPropagation()}>
 
         {/* ── kepala ── */}
         <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b-2 border-slate-200">
@@ -120,7 +128,7 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
               Baris kapal, judul golongan, dan baris Jumlah/PPn/Total dikenali sendiri.
             </p>
           </div>
-          <button onClick={onClose} title="Tutup (Esc)"
+          <button onClick={onClose} title={sebagaiHalaman ? "Tutup jendela" : "Tutup (Esc)"}
             className="shrink-0 h-9 w-9 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 text-xl">✕</button>
         </div>
 
@@ -242,6 +250,34 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
                   })}
                 </div>
 
+                {/*
+                  Tidak ada item terbaca adalah jalan buntu yang paling
+                  membingungkan: tombol "pilih semua item" ditekan berkali-kali
+                  dan tidak terjadi apa-apa, karena memang tidak ada yang bisa
+                  dipilih. Jadi keadaan itu diberi penjelasan sendiri beserta
+                  langkah keluarnya, bukan sekadar tabel kosong.
+                */}
+                {item.length === 0 && (
+                  <div className="rounded-xl bg-rose-50 ring-2 ring-rose-300 px-4 py-3 mb-3">
+                    <p className="text-[14px] font-extrabold text-rose-900 mb-1">
+                      Belum ada baris yang terbaca sebagai item
+                    </p>
+                    <p className="text-[13px] text-rose-900 mb-2">
+                      Hampir selalu karena kolomnya salah petakan. Aplikasi butuh minimal
+                      dua kolom: <b>Nama Barang/Jasa</b> dan <b>Harga Satuan</b> (atau <b>Jumlah</b> total baris).
+                    </p>
+                    <ol className="text-[13px] text-rose-900 list-decimal list-inside space-y-0.5 font-semibold">
+                      <li>Tekan <b>lihat isi mentah per kolom</b> di atas — lihat kolom ke berapa nama barangnya.</li>
+                      <li>Pada <b>Pemetaan kolom</b>, setel kolom itu jadi <b>Nama Barang/Jasa</b>.</li>
+                      <li>Setel kolom angkanya jadi <b>Harga Satuan</b> dan <b>Jumlah (total baris)</b>.</li>
+                    </ol>
+                    <button onClick={() => setLihatMentah(true)}
+                      className="mt-2 text-[12px] font-extrabold px-3 py-1.5 rounded-lg bg-rose-600 text-white hover:opacity-90">
+                      Tampilkan isi mentah per kolom
+                    </button>
+                  </div>
+                )}
+
                 {hasil.masalah.length > 0 && (
                   <ul className="rounded-xl bg-amber-50 ring-2 ring-amber-300 px-4 py-2.5 text-[13px] font-semibold text-amber-900 list-disc list-inside space-y-1">
                     {hasil.masalah.map((m, i) => <li key={i}>{m}</li>)}
@@ -340,7 +376,13 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" 
             ＋ Masukkan {dipakai.length || ""} item
           </button>
         </div>
-      </div>
+    </div>
+  );
+
+  if (sebagaiHalaman) return isi;
+  return (
+    <div className="fixed inset-0 z-50 bg-black/55 p-3 sm:p-6 grid place-items-center" onMouseDown={onClose}>
+      {isi}
     </div>
   );
 }

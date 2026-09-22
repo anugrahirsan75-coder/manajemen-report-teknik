@@ -191,7 +191,21 @@ export function tebakKolom(baris: string[][]): Peran[] {
     if (iHarga >= 0) {
       for (let i = iHarga + 1; i < lebar; i++) if (peran[i] === "jumlah") peran[i] = "total";
     }
-    if (peran.some((p) => p !== "abaikan")) return uangCadangan(lengkapi(peran, baris), baris);
+    /*
+     * Pemetaan dari judul harus LOLOS UJI pada barisnya sendiri.
+     *
+     * Lembar SPPB/J memakai sel gabungan, jadi judul "Nama Barang" kerap
+     * duduk di lajur yang berbeda dengan tempat teks itemnya benar-benar
+     * berada. Kalau itu terjadi, kolom nama terbaca kosong di hampir semua
+     * baris dan seluruh tabel jatuh ke "tidak dikenali" — persis kegagalan
+     * yang tidak bisa ditebak pemakainya dari layar. Maka hasil tebakan
+     * diadu dulu dengan isinya; kalau tidak terbukti, judulnya diabaikan dan
+     * susunan kolom dicari dari isi tabel.
+     */
+    if (peran.some((p) => p !== "abaikan") && terbukti(peran, baris)) {
+      return uangCadangan(lengkapi(peran, baris), baris);
+    }
+    peran.fill("abaikan");
   }
 
   // 2) tanpa judul: tebak dari isi
@@ -207,15 +221,28 @@ export function tebakKolom(baris: string[][]): Peran[] {
       panjang[i] += s.length;
     }
   }
-  const kolomUang = skorUang.map((v, i) => ({ i, v })).filter((x) => x.v >= Math.max(2, isi.length * 0.3));
+  // ambang 2 baris, bukan persentase: lembar penunjang sering cuma 3-5 item,
+  // dan ambang 30% membuat kolom uangnya tidak pernah lolos
+  const kolomUang = skorUang.map((v, i) => ({ i, v })).filter((x) => x.v >= 2);
   if (kolomUang.length >= 2) {
     peran[kolomUang[kolomUang.length - 1].i] = "total";
     peran[kolomUang[kolomUang.length - 2].i] = "harga";
   } else if (kolomUang.length === 1) {
     peran[kolomUang[0].i] = "harga";
   }
-  const kolomJumlah = skorPendek.map((v, i) => ({ i, v })).filter((x) => x.v >= 2 && peran[x.i] === "abaikan");
-  if (kolomJumlah.length) peran[kolomJumlah[0].i] = "jumlah";
+  /*
+   * Dua lajur berangka kecil berarti "No" lalu "Jumlah" — itu susunan baku
+   * borang SPPB/J. Mengambil yang pertama sebagai Jumlah menghasilkan angka
+   * yang kebetulan benar selama nomor urut dan kuantitasnya sama, lalu
+   * diam-diam salah begitu berbeda (No 3, Jumlah 12).
+   */
+  const kolomKecil = skorPendek.map((v, i) => ({ i, v })).filter((x) => x.v >= 2 && peran[x.i] === "abaikan");
+  if (kolomKecil.length >= 2) {
+    peran[kolomKecil[0].i] = "no";
+    peran[kolomKecil[1].i] = "jumlah";
+  } else if (kolomKecil.length === 1) {
+    peran[kolomKecil[0].i] = "jumlah";
+  }
   const teks = panjang.map((v, i) => ({ i, v })).filter((x) => peran[x.i] === "abaikan").sort((a, b) => b.v - a.v);
   if (teks[0]) peran[teks[0].i] = "nama";
   if (teks[1]) peran[teks[1].i] = "spesifikasi";
@@ -240,7 +267,7 @@ function uangCadangan(peran: Peran[], baris: string[][]): Peran[] {
     isi.filter((b) => selAngka(b[i] || "") && bacaAngka(b[i] || "") >= 1000).length);
   const calon = skor
     .map((v, i) => ({ i, v }))
-    .filter((x) => x.v >= Math.max(2, isi.length * 0.3) && !["nama", "spesifikasi", "satuan", "kapal", "no", "jumlah"].includes(peran[x.i]));
+    .filter((x) => x.v >= 2 && !["nama", "spesifikasi", "satuan", "kapal", "no", "jumlah"].includes(peran[x.i]));
   if (!calon.length) return peran;
   if (!peran.includes("total")) peran[calon[calon.length - 1].i] = "total";
   if (!peran.includes("harga") && calon.length >= 2) peran[calon[calon.length - 2].i] = "harga";
@@ -248,13 +275,46 @@ function uangCadangan(peran: Peran[], baris: string[][]): Peran[] {
   return peran;
 }
 
-/** tambal peran yang masih kosong tapi kelihatan jelas (satuan di kanan jumlah) */
+/**
+ * Apakah pemetaan ini benar-benar cocok dengan isi tabelnya?
+ *
+ * Ukurannya sederhana dan keras: harus ada minimal dua baris yang pada lajur
+ * "nama" berisi teks DAN pada salah satu lajur angka berisi angka. Satu baris
+ * bisa kebetulan; dua baris berarti susunannya memang begitu.
+ */
+function terbukti(peran: Peran[], baris: string[][]): boolean {
+  const iNama = peran.indexOf("nama");
+  if (iNama < 0) return false;
+  const lajurAngka = peran
+    .map((p, i) => ({ p, i }))
+    .filter((x) => x.p === "jumlah" || x.p === "harga" || x.p === "total")
+    .map((x) => x.i);
+  if (!lajurAngka.length) return false;
+  let cocok = 0;
+  for (const b of baris) {
+    const nama = (b[iNama] || "").trim();
+    if (!nama || RX_GOLONGAN.test(nama) || RX_PENUTUP.test(nama)) continue;
+    if (lajurAngka.some((i) => selAngka(b[i] || ""))) cocok++;
+    if (cocok >= 2) return true;
+  }
+  return false;
+}
+
+/**
+ * Tambal peran yang masih kosong tapi kelihatan jelas: satuan adalah lajur
+ * teks pendek pertama di KANAN jumlah. Dicari sampai beberapa lajur ke kanan,
+ * bukan tepat sebelah — sel gabungan di Excel kerap menyisipkan lajur kosong
+ * di antaranya.
+ */
 function lengkapi(peran: Peran[], baris: string[][]): Peran[] {
   const iJumlah = peran.indexOf("jumlah");
-  if (iJumlah >= 0 && peran[iJumlah + 1] === "abaikan") {
-    const contoh = baris.map((b) => b[iJumlah + 1] || "").filter(Boolean);
+  if (iJumlah < 0 || peran.includes("satuan")) return peran;
+  for (let i = iJumlah + 1; i < Math.min(iJumlah + 4, peran.length); i++) {
+    if (peran[i] !== "abaikan") continue;
+    const contoh = baris.map((b) => b[i] || "").filter(Boolean);
+    if (!contoh.length) continue;
     const pendek = contoh.filter((s) => s.length <= 6 && !selAngka(s));
-    if (contoh.length && pendek.length >= contoh.length * 0.6) peran[iJumlah + 1] = "satuan";
+    if (pendek.length >= contoh.length * 0.6) { peran[i] = "satuan"; break; }
   }
   return peran;
 }

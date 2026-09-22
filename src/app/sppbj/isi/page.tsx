@@ -332,6 +332,23 @@ function SppbjIsiInner() {
     }));
     setItems([...req.items, ...baru]);
   };
+  /*
+   * Terima kiriman dari jendela "Tempel Tabel" yang dibuka terpisah.
+   *
+   * Asal pesan diperiksa: postMessage bisa dikirim halaman mana pun yang
+   * memegang rujukan ke jendela ini, jadi yang bukan dari alamat kita sendiri
+   * diabaikan — tanpa itu, sebuah tab lain bisa menyuntikkan baris pengadaan.
+   */
+  useEffect(() => {
+    const terima = (e: MessageEvent) => {
+      if (e.origin !== window.location.origin) return;
+      if (e.data?.tipe !== "sppbj-tempel" || !Array.isArray(e.data.items)) return;
+      addFromTempel(e.data.items as ItemTempel[]);
+    };
+    window.addEventListener("message", terima);
+    return () => window.removeEventListener("message", terima);
+  });
+
   /**
    * Hasil "Tempel Tabel Excel" -> baris tabel SPPBJ.
    *
@@ -339,6 +356,13 @@ function SppbjIsiInner() {
    * (untuk menambal satu-dua kolom), sedangkan yang ini MENAMBAH item baru
    * hasil pembacaan satu tabel utuh beserta kapal, golongan, dan rinciannya.
    */
+  /** buka alat tempel sebagai jendela sendiri; kalau diblokir, pakai kotak melayang */
+  const bukaTempel = () => {
+    const kapal = req.items[req.items.length - 1]?.kapal || "";
+    const u = `/sppbj/tempel?kapal=${encodeURIComponent(kapal)}`;
+    const w = window.open(u, "sppbjTempel", "popup=yes,width=1280,height=860,resizable=yes,scrollbars=yes");
+    if (w) w.focus(); else setTempelOpen(true);
+  };
   const addFromTempel = (rows: ItemTempel[]) => {
     if (!rows.length) return;
     snapshot();
@@ -616,7 +640,7 @@ function SppbjIsiInner() {
           <button onClick={() => setBrowsePerbaikan(true)} title="Pekerjaan perbaikan siap pakai — item + rincian bahan langsung terisi"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-orange-300 bg-orange-50 text-orange-700 hover:bg-orange-100">🔧 Pekerjaan Perbaikan</button>
           <button onClick={() => setBrowseKatalog(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-sky-300 bg-sky-50 text-sky-700 hover:bg-sky-100">📚 Pilih dari Katalog (banyak)</button>
-          <button onClick={() => setTempelOpen(true)} title="Salin seluruh tabel SPPB/J di Excel lalu tempel — kapal, golongan, rincian dan harga terbaca sendiri, lengkap dengan pemeriksaan jumlah"
+          <button onClick={bukaTempel} title="Salin seluruh tabel SPPB/J di Excel lalu tempel — terbuka di jendela sendiri supaya bisa disandingkan dengan Excel"
             className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100">📋 Tempel Tabel Excel</button>
           <button onClick={() => setScanOpen(true)} className="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 bg-emerald-50 text-emerald-700 hover:bg-emerald-100">📷 Scan dari Excel (OCR)</button>
           <button onClick={() => setPreview(true)} title="Lihat susunan dokumen SPPBJ dari isian saat ini — tanpa perlu menyimpan dulu"
