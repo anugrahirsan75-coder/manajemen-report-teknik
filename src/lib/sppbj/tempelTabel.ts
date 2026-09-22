@@ -160,27 +160,38 @@ export function tebakKolom(baris: string[][]): Peran[] {
   const peran: Peran[] = Array.from({ length: lebar }, () => "abaikan");
   if (!lebar) return peran;
 
-  // 1) cari baris judul kolom
-  const judul = baris.find((b) => b.filter((s) => RX_JUDUL_KOLOM.test(s)).length >= 3);
-  if (judul) {
+  /*
+   * 1) Judul kolom — dibaca dari BEBERAPA baris, bukan satu.
+   *
+   * Lembar SPPB/J memakai judul bertingkat: satu sel "Estimasi Harga" digabung
+   * melebar, lalu di bawahnya "Harga Satuan" dan "Jumlah". Membaca satu baris
+   * saja membuat dua kolom uang itu tidak pernah terpetakan, dan tabelnya masuk
+   * tanpa harga sama sekali.
+   */
+  const iJudul = baris.findIndex((b) => b.filter((s) => RX_JUDUL_KOLOM.test(s)).length >= 3);
+  if (iJudul >= 0) {
+    const pakai = (i: number, p: Peran) => { if (peran[i] === "abaikan") peran[i] = p; };
     let sudahJumlah = false;
-    judul.forEach((s, i) => {
-      const t = s.toLowerCase().replace(/\s+/g, " ").trim();
-      if (/^no\.?$/.test(t)) peran[i] = "no";
-      else if (/kapal/.test(t)) peran[i] = "kapal";
-      else if (/^(jumlah|qty)$/.test(t)) { peran[i] = sudahJumlah ? "total" : "jumlah"; sudahJumlah = true; }
-      else if (/^(satuan|sat)\.?$/.test(t)) peran[i] = "satuan";
-      else if (/nama|uraian/.test(t)) peran[i] = "nama";
-      else if (/spesifikasi|spek/.test(t)) peran[i] = "spesifikasi";
-      else if (/harga\s*satuan/.test(t)) peran[i] = "harga";
-      else if (/keterangan|ket\.?/.test(t)) peran[i] = "keterangan";
-    });
-    // "Jumlah" kedua di kanan harga = total baris
+    for (let r = iJudul; r < Math.min(iJudul + 3, baris.length); r++) {
+      baris[r].forEach((s, i) => {
+        const t = s.toLowerCase().replace(/\s+/g, " ").trim();
+        if (!t) return;
+        if (/^no\.?$/.test(t)) pakai(i, "no");
+        else if (/kapal/.test(t)) pakai(i, "kapal");
+        else if (/harga\s*satuan/.test(t)) pakai(i, "harga");
+        else if (/^(satuan|sat)\.?$/.test(t)) pakai(i, "satuan");
+        else if (/nama|uraian/.test(t)) pakai(i, "nama");
+        else if (/spesifikasi|spek/.test(t)) pakai(i, "spesifikasi");
+        else if (/keterangan|^ket\.?$/.test(t)) pakai(i, "keterangan");
+        else if (/^(jumlah|qty)$/.test(t)) { pakai(i, sudahJumlah ? "total" : "jumlah"); sudahJumlah = true; }
+      });
+    }
+    // "Jumlah" yang berada di KANAN harga satuan adalah total baris
     const iHarga = peran.indexOf("harga");
     if (iHarga >= 0) {
       for (let i = iHarga + 1; i < lebar; i++) if (peran[i] === "jumlah") peran[i] = "total";
     }
-    if (peran.some((p) => p !== "abaikan")) return lengkapi(peran, baris);
+    if (peran.some((p) => p !== "abaikan")) return uangCadangan(lengkapi(peran, baris), baris);
   }
 
   // 2) tanpa judul: tebak dari isi
@@ -208,7 +219,33 @@ export function tebakKolom(baris: string[][]): Peran[] {
   const teks = panjang.map((v, i) => ({ i, v })).filter((x) => peran[x.i] === "abaikan").sort((a, b) => b.v - a.v);
   if (teks[0]) peran[teks[0].i] = "nama";
   if (teks[1]) peran[teks[1].i] = "spesifikasi";
-  return lengkapi(peran, baris);
+  return uangCadangan(lengkapi(peran, baris), baris);
+}
+
+/**
+ * Jaring pengaman kolom uang.
+ *
+ * Kalau judulnya terbaca tapi kolom harga/total tidak ketemu — judulnya
+ * bertingkat, disingkat, atau salah ketik — kolom uang dicari dari ISINYA:
+ * kolom paling kanan yang sebagian besar selnya berisi angka >= 1000. Tanpa
+ * ini tabel tetap masuk, hanya saja seluruh harganya nol, dan itu kesalahan
+ * yang paling mahal di antara semua kemungkinan di layar ini.
+ */
+function uangCadangan(peran: Peran[], baris: string[][]): Peran[] {
+  if (peran.includes("harga") && peran.includes("total")) return peran;
+  const lebar = peran.length;
+  const isi = baris.filter((b) => b.filter((s) => s).length >= 3);
+  if (!isi.length) return peran;
+  const skor = Array.from({ length: lebar }, (_, i) =>
+    isi.filter((b) => selAngka(b[i] || "") && bacaAngka(b[i] || "") >= 1000).length);
+  const calon = skor
+    .map((v, i) => ({ i, v }))
+    .filter((x) => x.v >= Math.max(2, isi.length * 0.3) && !["nama", "spesifikasi", "satuan", "kapal", "no", "jumlah"].includes(peran[x.i]));
+  if (!calon.length) return peran;
+  if (!peran.includes("total")) peran[calon[calon.length - 1].i] = "total";
+  if (!peran.includes("harga") && calon.length >= 2) peran[calon[calon.length - 2].i] = "harga";
+  else if (!peran.includes("harga") && calon.length === 1 && peran.indexOf("total") !== calon[0].i) peran[calon[0].i] = "harga";
+  return peran;
 }
 
 /** tambal peran yang masih kosong tapi kelihatan jelas (satuan di kanan jumlah) */
