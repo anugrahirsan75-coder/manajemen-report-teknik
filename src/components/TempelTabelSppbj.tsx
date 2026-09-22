@@ -7,11 +7,15 @@
  * dulu membuat kolom yang tergeser satu lajur berubah menjadi harga yang
  * salah, dan kesalahan seperti itu baru ketahuan setelah dokumennya terbit.
  *
- * Tata letaknya kotak setinggi layar dengan tiga bagian tetap: kepala, isi yang
- * bisa digulung, dan kaki. Versi pertama memakai kotak yang tingginya mengikuti
- * isi, dan pada layar pendek kaki kotaknya menindih baris pemetaan kolom —
- * tombol "Masukkan" menutup persis kendali yang harus dilihat sebelum menekan
- * tombol itu.
+ * Bentuknya kotak melayang di atas halaman isi SPPBJ — tetap di halaman yang
+ * sama, tidak membuka jendela peramban baru — dan mengambil hampir seluruh
+ * layar, karena yang diperiksa di dalamnya adalah tabel berpuluh baris.
+ *
+ * Tinggi kotaknya DIPATOK ke layar, bukan mengikuti isi, dengan tiga bagian
+ * tetap: kepala, isi yang bisa digulung, dan kaki. Versi pertama tingginya
+ * mengikuti isi, dan pada layar pendek kaki kotaknya menindih baris pemetaan
+ * kolom — tombol "Masukkan" menutup persis kendali yang harus dilihat sebelum
+ * menekan tombol itu.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -40,18 +44,11 @@ const LABEL_JENIS: Record<BarisTempel["jenis"], string> = {
   penutup: "penutup", lewat: "dilewati",
 };
 
-export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "", sebagaiHalaman = false }: {
+export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "" }: {
   open: boolean;
   onClose: () => void;
   onAdd: (items: ItemTempel[]) => void;
   kapalAwal?: string;
-  /**
-   * Dipakai sebagai HALAMAN penuh di jendela terpisah, bukan kotak melayang.
-   * Jendela sendiri bisa dibesarkan dan digeser pemakainya — pada tabel
-   * puluhan baris itu jauh lebih lega daripada kotak yang terkurung tinggi
-   * jendela induknya.
-   */
-  sebagaiHalaman?: boolean;
 }) {
   const [teks, setTeks] = useState("");
   const [kolom, setKolom] = useState<Peran[]>([]);
@@ -112,11 +109,11 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "",
   const lebar = hasil?.kolom.length || 0;
   const kosong = !teks.trim();
 
-  const isi = (
-    <div className={sebagaiHalaman
-      ? "bg-white w-full h-screen flex flex-col overflow-hidden"
-      : "bg-white rounded-2xl shadow-2xl w-full max-w-[86rem] h-[94vh] flex flex-col overflow-hidden"}
-      onMouseDown={(e) => e.stopPropagation()}>
+  return (
+    <div className="fixed inset-0 z-50 bg-black/55 p-2 sm:p-4 grid place-items-center" onMouseDown={onClose}>
+      <div
+        className="bg-white rounded-2xl shadow-2xl ring-1 ring-black/10 w-full max-w-[104rem] h-[97vh] flex flex-col overflow-hidden"
+        onMouseDown={(e) => e.stopPropagation()}>
 
         {/* ── kepala ── */}
         <div className="shrink-0 flex items-center gap-3 px-6 py-4 border-b-2 border-slate-200">
@@ -128,7 +125,7 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "",
               Baris kapal, judul golongan, dan baris Jumlah/PPn/Total dikenali sendiri.
             </p>
           </div>
-          <button onClick={onClose} title={sebagaiHalaman ? "Tutup jendela" : "Tutup (Esc)"}
+          <button onClick={onClose} title="Tutup (Esc)"
             className="shrink-0 h-9 w-9 grid place-items-center rounded-lg text-slate-500 hover:bg-slate-100 hover:text-slate-800 text-xl">✕</button>
         </div>
 
@@ -376,13 +373,7 @@ export default function TempelTabelSppbj({ open, onClose, onAdd, kapalAwal = "",
             ＋ Masukkan {dipakai.length || ""} item
           </button>
         </div>
-    </div>
-  );
-
-  if (sebagaiHalaman) return isi;
-  return (
-    <div className="fixed inset-0 z-50 bg-black/55 p-3 sm:p-6 grid place-items-center" onMouseDown={onClose}>
-      {isi}
+      </div>
     </div>
   );
 }
