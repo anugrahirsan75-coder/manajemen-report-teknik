@@ -135,7 +135,16 @@ const selAngka = (s: string) => /^[\s(]*(Rp\.?\s*)?-?[\d.,]+\)?\s*$/.test((s || 
 const RX_KAPAL = /\bKMP\b|\bKMP\.|\bKM\.\s|\bKMT\b/i;
 const RX_GOLONGAN = /^(?:[IVXLC]+|[A-H])[.)]\s*\S/;          // I. / II. / A.
 const RX_PENUTUP = /^(jumlah|sub\s*total|total|ppn|ppn\s*11|pajak)\b/i;
-const RX_JUDUL_KOLOM = /^(no|jumlah|satuan|nama\s*barang|nama\s*barang\s*\/\s*jasa|spesifikasi|harga\s*satuan|estimasi|keterangan|uraian|kapal|qty|sat)\.?$/i;
+/*
+ * Judul kolom yang dikenali.
+ *
+ * Diperluas untuk lembar SPBJ/PO, yang judulnya lebih pendek daripada lembar
+ * SPPB/J: "Jml" bukan "Jumlah", dan kolom uangnya "Harga SPBJ" atau "Harga"
+ * saja, bukan "Harga Satuan". Tanpa ini barisnya tetap terbaca, tetapi "Jml"
+ * jatuh ke abaikan dan "Jumlah" (yang di lembar SPBJ artinya total baris)
+ * terbaca sebagai kuantitas - harga satuan lalu dihitung dari angka yang salah.
+ */
+const RX_JUDUL_KOLOM = /^(no|jumlah|jml|vol|volume|satuan|nama|nama\s*barang|nama\s*barang\s*\/\s*jasa|nama\s*barang\s*\/\s*pekerjaan|barang\s*\/\s*jasa|pekerjaan|spesifikasi|harga|harga\s*satuan|harga\s*spbj|harga\s*po|estimasi|keterangan|uraian|kapal|qty|sat)\.?$/i;
 
 /** buang baris kosong di ujung + pecah jadi sel */
 export function pecah(teks: string): string[][] {
@@ -178,12 +187,17 @@ export function tebakKolom(baris: string[][]): Peran[] {
         if (!t) return;
         if (/^no\.?$/.test(t)) pakai(i, "no");
         else if (/kapal/.test(t)) pakai(i, "kapal");
-        else if (/harga\s*satuan/.test(t)) pakai(i, "harga");
+        // "Harga" apa pun embel-embelnya (Satuan, SPBJ, PO, Final) adalah harga
+        // satuan; di lembar SPBJ kolom totalnya selalu berjudul "Jumlah"
+        else if (/^harga\b/.test(t) || /harga\s*(satuan|spbj|po|final|net)/.test(t)) pakai(i, "harga");
         else if (/^(satuan|sat)\.?$/.test(t)) pakai(i, "satuan");
-        else if (/nama|uraian/.test(t)) pakai(i, "nama");
+        // sesudah "Jml" terbaca sebagai kuantitas, kolom "Jumlah" yang menyusul
+        // pasti total baris - kuantitasnya sudah punya lajur sendiri
+        else if (/^(jml|qty|vol|volume)\.?$/.test(t)) { pakai(i, "jumlah"); sudahJumlah = true; }
+        else if (/nama|uraian|^pekerjaan$|barang\s*\/\s*jasa/.test(t)) pakai(i, "nama");
         else if (/spesifikasi|spek/.test(t)) pakai(i, "spesifikasi");
         else if (/keterangan|^ket\.?$/.test(t)) pakai(i, "keterangan");
-        else if (/^(jumlah|qty)$/.test(t)) { pakai(i, sudahJumlah ? "total" : "jumlah"); sudahJumlah = true; }
+        else if (/^jumlah$/.test(t)) { pakai(i, sudahJumlah ? "total" : "jumlah"); sudahJumlah = true; }
       });
     }
     // "Jumlah" yang berada di KANAN harga satuan adalah total baris
@@ -202,14 +216,21 @@ export function tebakKolom(baris: string[][]): Peran[] {
      * diadu dulu dengan isinya; kalau tidak terbukti, judulnya diabaikan dan
      * susunan kolom dicari dari isi tabel.
      */
-    if (peran.some((p) => p !== "abaikan") && terbukti(peran, baris)) {
+    if (peran.some((p) => p !== "abaikan") && terbukti(peran, baris, iJudul + 1)) {
       return uangCadangan(lengkapi(peran, baris), baris);
     }
     peran.fill("abaikan");
   }
 
-  // 2) tanpa judul: tebak dari isi
-  const isi = baris.filter((b) => b.filter((s) => s).length >= 3);
+  /*
+   * 2) tanpa judul: tebak dari isi.
+   *
+   * Lembar SPBJ yang ditempel sering cuma dua-tiga lajur ("Nama" dan "Harga"),
+   * karena yang disalin memang hanya kolom yang berubah. Syarat tiga sel terisi
+   * membuat tabel selebar itu tidak punya satu pun baris untuk dinilai, dan
+   * seluruh kolomnya jatuh jadi teks - harganya hilang tanpa pesan apa pun.
+   */
+  const isi = baris.filter((b) => b.filter((s) => s).length >= (lebar <= 3 ? 2 : 3));
   const skorUang: number[] = Array.from({ length: lebar }, () => 0);
   const skorPendek: number[] = Array.from({ length: lebar }, () => 0);
   const panjang: number[] = Array.from({ length: lebar }, () => 0);
@@ -221,9 +242,18 @@ export function tebakKolom(baris: string[][]): Peran[] {
       panjang[i] += s.length;
     }
   }
-  // ambang 2 baris, bukan persentase: lembar penunjang sering cuma 3-5 item,
-  // dan ambang 30% membuat kolom uangnya tidak pernah lolos
-  const kolomUang = skorUang.map((v, i) => ({ i, v })).filter((x) => x.v >= 2);
+  /*
+   * Ambang dihitung dalam BARIS, bukan persentase: lembar penunjang sering cuma
+   * 3-5 item, dan ambang 30% membuat kolom uangnya tidak pernah lolos.
+   *
+   * Pada tempelan yang isinya satu-dua baris saja - lazim di lembar SPBJ, yang
+   * ditempel hanya item yang harganya berubah - ambang dua baris mustahil
+   * dipenuhi. Di situ satu baris sudah cukup; risikonya salah tebak, tapi
+   * tebakan itu masih ditunjukkan ke pemakai sebelum dipakai, sedangkan
+   * harga yang hilang tidak terlihat sama sekali.
+   */
+  const minBukti = isi.length >= 3 ? 2 : 1;
+  const kolomUang = skorUang.map((v, i) => ({ i, v })).filter((x) => x.v >= minBukti);
   if (kolomUang.length >= 2) {
     peran[kolomUang[kolomUang.length - 1].i] = "total";
     peran[kolomUang[kolomUang.length - 2].i] = "harga";
@@ -236,7 +266,7 @@ export function tebakKolom(baris: string[][]): Peran[] {
    * yang kebetulan benar selama nomor urut dan kuantitasnya sama, lalu
    * diam-diam salah begitu berbeda (No 3, Jumlah 12).
    */
-  const kolomKecil = skorPendek.map((v, i) => ({ i, v })).filter((x) => x.v >= 2 && peran[x.i] === "abaikan");
+  const kolomKecil = skorPendek.map((v, i) => ({ i, v })).filter((x) => x.v >= minBukti && peran[x.i] === "abaikan");
   if (kolomKecil.length >= 2) {
     peran[kolomKecil[0].i] = "no";
     peran[kolomKecil[1].i] = "jumlah";
@@ -267,7 +297,14 @@ function uangCadangan(peran: Peran[], baris: string[][]): Peran[] {
     isi.filter((b) => selAngka(b[i] || "") && bacaAngka(b[i] || "") >= 1000).length);
   const calon = skor
     .map((v, i) => ({ i, v }))
-    .filter((x) => x.v >= 2 && !["nama", "spesifikasi", "satuan", "kapal", "no", "jumlah"].includes(peran[x.i]));
+    /*
+     * Lajur yang SUDAH punya peran tidak boleh diambil alih di sini - termasuk
+     * yang sudah jadi "harga". Sebelumnya tidak demikian, dan lembar yang punya
+     * kolom harga satuan tanpa kolom total membuat kolom harganya sendiri
+     * ditimpa jadi total; harga satuannya lalu dihitung ulang sebagai
+     * total/jumlah, jadi tepat sebesar harga asli dibagi kuantitas.
+     */
+    .filter((x) => x.v >= 2 && !["nama", "spesifikasi", "satuan", "kapal", "no", "jumlah", "harga", "total"].includes(peran[x.i]));
   if (!calon.length) return peran;
   if (!peran.includes("total")) peran[calon[calon.length - 1].i] = "total";
   if (!peran.includes("harga") && calon.length >= 2) peran[calon[calon.length - 2].i] = "harga";
@@ -281,8 +318,20 @@ function uangCadangan(peran: Peran[], baris: string[][]): Peran[] {
  * Ukurannya sederhana dan keras: harus ada minimal dua baris yang pada lajur
  * "nama" berisi teks DAN pada salah satu lajur angka berisi angka. Satu baris
  * bisa kebetulan; dua baris berarti susunannya memang begitu.
+ *
+ * Dua pengecualian, keduanya berasal dari lembar SPBJ yang pendek:
+ *
+ *   Baris judulnya sendiri tidak ikut dinilai (parameter `mulai`). Judul kolom
+ *   selalu berisi teks pada lajur nama dan bukan angka pada lajur angka, jadi
+ *   ia selalu menjadi satu baris yang "gagal" dan ikut menenggelamkan tabel
+ *   yang itemnya cuma satu.
+ *
+ *   Kalau baris kandidatnya memang cuma satu, satu baris cocok sudah cukup.
+ *   Menuntut dua baris pada tabel satu baris berarti judul kolomnya selalu
+ *   dibuang, lalu susunan kolom ditebak ulang dari isi - dan tebakan itu tidak
+ *   bisa membedakan kolom "Jumlah" (total) dari kolom "Harga Satuan".
  */
-function terbukti(peran: Peran[], baris: string[][]): boolean {
+function terbukti(peran: Peran[], baris: string[][], mulai = 0): boolean {
   const iNama = peran.indexOf("nama");
   if (iNama < 0) return false;
   const lajurAngka = peran
@@ -290,12 +339,16 @@ function terbukti(peran: Peran[], baris: string[][]): boolean {
     .filter((x) => x.p === "jumlah" || x.p === "harga" || x.p === "total")
     .map((x) => x.i);
   if (!lajurAngka.length) return false;
-  let cocok = 0;
-  for (const b of baris) {
+  const kandidat = baris.slice(mulai).filter((b) => {
     const nama = (b[iNama] || "").trim();
-    if (!nama || RX_GOLONGAN.test(nama) || RX_PENUTUP.test(nama)) continue;
+    return !!nama && !RX_GOLONGAN.test(nama) && !RX_PENUTUP.test(nama);
+  });
+  if (!kandidat.length) return false;
+  const perlu = Math.min(2, kandidat.length);
+  let cocok = 0;
+  for (const b of kandidat) {
     if (lajurAngka.some((i) => selAngka(b[i] || ""))) cocok++;
-    if (cocok >= 2) return true;
+    if (cocok >= perlu) return true;
   }
   return false;
 }

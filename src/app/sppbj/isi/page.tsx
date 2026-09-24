@@ -14,6 +14,7 @@ import KatalogPicker from "@/components/KatalogPicker";
 import KatalogBrowser from "@/components/KatalogBrowser";
 import ScanSppbj from "@/components/ScanSppbj";
 import TempelTabelSppbj, { ItemTempel } from "@/components/TempelTabelSppbj";
+import TempelHargaSpbj from "@/components/TempelHargaSpbj";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
 import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
@@ -36,6 +37,7 @@ function SppbjIsiInner() {
   const [preview, setPreview] = useState(false);
   const [scanOpen, setScanOpen] = useState(false);
   const [tempelOpen, setTempelOpen] = useState(false);
+  const [tempelHargaOpen, setTempelHargaOpen] = useState(false);
   const [rekapBusy, setRekapBusy] = useState(false);
   // kolom Mata Anggaran per item hanya perlu saat pengadaan mencentang >1 MA
   const multiMA = (req.mataAnggaran || []).length > 1;
@@ -354,6 +356,21 @@ function SppbjIsiInner() {
     }));
     setItems([...req.items, ...baru]);
   };
+  /**
+   * Hasil "Tempel Harga SPBJ" -> kolom Harga SPBJ pada item yang sudah ada.
+   *
+   * Sengaja TIDAK memakai setItem satu per satu: tiap panggilan setItem menulis
+   * ulang seluruh daftar dari salinan state yang sama, jadi memanggilnya dalam
+   * perulangan membuat hanya perubahan terakhir yang tersisa. Semua harga
+   * ditimpa sekaligus lewat satu setItems.
+   */
+  const terapkanHargaSpbj = (ubah: { id: string; hargaSpbj: number }[]) => {
+    if (!ubah.length) return;
+    snapshot();
+    const peta: Record<string, number> = {};
+    ubah.forEach((u) => { peta[u.id] = u.hargaSpbj; });
+    setItems(req.items.map((it) => (peta[it.id] === undefined ? it : { ...it, hargaSpbj: peta[it.id] })));
+  };
   const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text/plain");
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
@@ -651,6 +668,12 @@ function SppbjIsiInner() {
         <ScanSppbj open={scanOpen} onClose={() => setScanOpen(false)} onAdd={addFromScan} />
         <TempelTabelSppbj open={tempelOpen} onClose={() => setTempelOpen(false)} onAdd={addFromTempel}
           kapalAwal={req.items[req.items.length - 1]?.kapal || ""} />
+        <TempelHargaSpbj open={tempelHargaOpen} onClose={() => setTempelHargaOpen(false)}
+          onTerapkan={terapkanHargaSpbj}
+          items={req.items.map((it) => ({
+            id: it.id, kapal: it.kapal, jumlah: it.jumlah, satuan: it.satuan,
+            nama: namaLengkap(it), harga: it.harga, hargaSpbj: it.hargaSpbj,
+          }))} />
         {/* Preview memakai isian yang sedang disunting, bukan yang tersimpan:
             gunanya justru memeriksa sebelum menyimpan. */}
         {preview && (
@@ -919,7 +942,14 @@ function SppbjIsiInner() {
         )}
 
         <div className="mt-5">
-          <p className="text-xs font-medium text-slate-600 mb-1">Tabel Item SPBJ — otomatis dari Item SPPBJ di atas. Isi <b>Harga SPBJ</b> (final/PO) → jadi acuan <b>BSTB &amp; BAPP</b>.</p>
+          <div className="flex flex-wrap items-center gap-2 mb-1">
+            <p className="text-xs font-medium text-slate-600">Tabel Item SPBJ — otomatis dari Item SPPBJ di atas. Isi <b>Harga SPBJ</b> (final/PO) → jadi acuan <b>BSTB &amp; BAPP</b>.</p>
+            <button onClick={() => setTempelHargaOpen(true)} disabled={!req.items.length}
+              title="Salin tabel SPBJ/PO final di Excel lalu tempel — harganya dijodohkan sendiri ke item di atas, tanpa menambah baris baru"
+              className="ml-auto text-xs font-semibold px-3 py-1.5 rounded-lg border border-teal-300 bg-teal-50 text-teal-700 hover:bg-teal-100 disabled:opacity-40 disabled:cursor-not-allowed">
+              💰 Tempel Harga dari Excel
+            </button>
+          </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm border">
               <thead className="bg-slate-50 text-xs">
