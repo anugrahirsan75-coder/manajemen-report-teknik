@@ -8,11 +8,18 @@
  * dan semuanya harus terbaca sekaligus, tanpa mengarahkan tetikus ke mana pun.
  */
 import { BerkasLihat, ikonBerkas } from "./PenampilDokumen";
-import { jenisDokumen } from "@/lib/portal/dokumen";
+import { golonganArsip } from "@/lib/portal/dokumen";
+import { STATUS_LAPOR, bulanIndo } from "@/lib/lapor/types";
 
 export interface DokumenTampil {
   id: string; jenis: string; judul: string; tanggal: string; nomor: string;
   catatan: string; olehAkun: string; dibuatPada: string; berkas: BerkasLihat[];
+  /** "borang" = kiriman bulanan dari halaman Permintaan & Laporan, bukan arsip kantor */
+  sumber?: string;
+  /** hanya untuk borang: YYYY-MM periode yang dilaporkan */
+  periode?: string;
+  /** hanya untuk borang: baru / dibaca / ditindaklanjuti / selesai */
+  status?: string;
 }
 
 const BULAN = ["", "Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Agu", "Sep", "Okt", "Nov", "Des"];
@@ -32,8 +39,10 @@ export default function KartuDokumen({ d, onLihat, onHapus }: {
   onLihat: (d: DokumenTampil, ke: number) => void;
   onHapus?: (d: DokumenTampil) => void;
 }) {
-  const j = jenisDokumen(d.jenis);
-  const kantor = asalDokumen(d.olehAkun) === "Kantor";
+  const j = golonganArsip(d.jenis);
+  const borang = d.sumber === "borang";
+  const kantor = !borang && asalDokumen(d.olehAkun) === "Kantor";
+  const st = borang ? STATUS_LAPOR.find((x) => x.id === d.status) : undefined;
 
   return (
     <article className="group flex flex-col overflow-hidden rounded-2xl bg-white ring-1 ring-slate-200 transition hover:ring-[#16357f]/40 dark:bg-slate-900 dark:ring-slate-700">
@@ -41,16 +50,26 @@ export default function KartuDokumen({ d, onLihat, onHapus }: {
         <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-black ring-1 ${j?.warna || "bg-slate-100 text-slate-700 ring-slate-200"}`}>
           {j?.ikon} {j?.label || d.jenis}
         </span>
-        <span className="text-[11.5px] font-bold text-slate-500">{tglIndo(d.tanggal)}</span>
+        <span className="text-[11.5px] font-bold text-slate-500">
+          {/* borang dilaporkan per BULAN, bukan per tanggal — menampilkan
+              "1 Agu 2026" untuk laporan Agustus akan terbaca sebagai tanggal
+              kejadian, dan itu tanggal yang tidak pernah dimaksudkan siapa pun */}
+          {borang ? bulanIndo(d.periode || "") : tglIndo(d.tanggal)}
+        </span>
         <span className={`ml-auto rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
-          kantor ? "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300" : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"}`}>
-          {kantor ? "kantor" : "kapal"}
+          borang ? "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300"
+          : kantor ? "bg-sky-50 text-sky-700 dark:bg-sky-950 dark:text-sky-300"
+          : "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300"}`}>
+          {borang ? "borang" : kantor ? "kantor" : "kapal"}
         </span>
       </div>
 
       <div className="px-3 pb-2 pt-1.5">
         <h4 className="text-[13.5px] font-bold leading-snug text-slate-900 dark:text-white">{d.judul}</h4>
         {d.nomor && <p className="mt-0.5 font-mono text-[11px] text-slate-500">{d.nomor}</p>}
+        {st && (
+          <span className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-bold ring-1 ${st.kelas}`}>{st.label}</span>
+        )}
         {d.catatan && <p className="mt-1 line-clamp-2 text-[11.5px] leading-snug text-slate-600 dark:text-slate-300" title={d.catatan}>{d.catatan}</p>}
       </div>
 
@@ -81,7 +100,7 @@ export default function KartuDokumen({ d, onLihat, onHapus }: {
 
         <div className="mt-1.5 flex items-center gap-2 border-t border-slate-100 pt-1.5 dark:border-slate-800">
           <span className="truncate text-[10.5px] text-slate-400" title={d.olehAkun}>
-            diunggah {d.olehAkun || "—"}
+            {borang ? "dikirim" : "diunggah"} {d.olehAkun || "—"}
           </span>
           {onHapus && (
             <button onClick={() => onHapus(d)}

@@ -15,12 +15,75 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Ikon } from "@/components/ikon";
 import { NADA_ALKES, sisaHariAlkes, tingkatAlkes } from "@/lib/portal/types";
-import { jenisDokumen } from "@/lib/portal/dokumen";
 import UnggahDokumenKantor from "@/components/kapal/UnggahDokumenKantor";
 import RekapDokumen from "@/components/kapal/RekapDokumen";
 import KartuDokumen, { DokumenTampil } from "@/components/kapal/KartuDokumen";
 import PenampilDokumen from "@/components/kapal/PenampilDokumen";
-import { jenisDokumen as golonganDokumen } from "@/lib/portal/dokumen";
+import { GOLONGAN_ARSIP, golonganArsip as golonganDokumen } from "@/lib/portal/dokumen";
+import { bulanIndo } from "@/lib/lapor/types";
+
+/**
+ * Kelompokkan dokumen per golongan, urut sesuai daftar golongan resmi.
+ *
+ * Golongan yang tidak dikenal (data lama, atau id yang sudah dihapus dari
+ * daftar) TIDAK dibuang - dia ditaruh paling bawah apa adanya. Dokumen yang
+ * hilang dari layar karena golongannya tidak dikenali adalah cara paling
+ * halus untuk kehilangan arsip: tidak ada pesan galat, tidak ada yang sadar.
+ */
+function kelompokGolongan(daftar: any[]) {
+  const urutan = new Map(GOLONGAN_ARSIP.map((j, i) => [j.id, i]));
+  const wadah = new Map<string, any[]>();
+  daftar.forEach((d) => {
+    const id = d.jenis || "lainnya";
+    if (!wadah.has(id)) wadah.set(id, []);
+    wadah.get(id)!.push(d);
+  });
+
+  // Array.from, bukan sebaran [...map]: target TypeScript proyek ini di bawah
+  // es2015, dan menyebar iterator Map di sana ditolak compiler (TS2802).
+  return Array.from(wadah.entries())
+    .sort((a, b) => (urutan.get(a[0]) ?? 999) - (urutan.get(b[0]) ?? 999))
+    .map(([id, isi]) => {
+      const j = golonganDokumen(id);
+      return {
+        id,
+        label: j?.label || id,
+        ikon: j?.ikon || "📄",
+        warna: j?.warna || "bg-slate-100 text-slate-700 ring-slate-200",
+        isi,
+      };
+    });
+}
+
+/**
+ * Kluster tanggal: satu rumpun per BULAN, terbaru di atas.
+ *
+ * Arsip kapal dibaca per bulan, bukan per hari — pertanyaannya selalu
+ * "Agustus kemarin kapal ini kirim apa saja", karena bulan adalah satuan
+ * tagihan borangnya. Dokumen tak rutin ikut jatuh ke bulan kejadiannya, jadi
+ * berita acara kerusakan muncul persis di samping laporan mesin bulan itu.
+ *
+ * Yang tanggalnya kosong TIDAK dibuang — ditaruh paling bawah sebagai
+ * "Tanpa tanggal". Baris yang hilang dari layar karena datanya kurang rapi
+ * adalah cara paling halus untuk kehilangan arsip.
+ */
+function kelompokBulan(daftar: any[]) {
+  const wadah = new Map<string, any[]>();
+  daftar.forEach((d) => {
+    const t = String(d.tanggal || "");
+    const kunci = /^\d{4}-\d{2}/.test(t) ? t.slice(0, 7) : "";
+    if (!wadah.has(kunci)) wadah.set(kunci, []);
+    wadah.get(kunci)!.push(d);
+  });
+  return Array.from(wadah.entries())
+    .sort((x, y) => (x[0] ? (y[0] ? y[0].localeCompare(x[0]) : -1) : 1))
+    .map(([kunci, isi]) => ({
+      kunci: kunci || "tanpa",
+      label: kunci ? bulanIndo(kunci) : "Tanpa tanggal",
+      isi: isi.slice().sort((m, n) =>
+        (n.tanggal || n.dibuatPada || "").localeCompare(m.tanggal || m.dibuatPada || "")),
+    }));
+}
 
 interface DataKapal {
   kapal: string;
@@ -36,6 +99,9 @@ interface DataKapal {
   };
   dokumen: {
     jumlah: number; berkas: number; tanpaBerkas: number; terbaru: string; daftar: any[];
+    /* kiriman borang bulanan — larik terpisah dari `daftar`, lihat catatan di
+       src/app/api/armada-data/route.ts */
+    borang: any[]; jumlahBorang: number; berkasBorang: number;
   };
 }
 
@@ -66,6 +132,14 @@ export default function DataIsianKapal() {
   const [lihat, setLihat] = useState<{ d: DokumenTampil; kapal: string; ke: number } | null>(null);
   /** pencarian di dalam satu kapal yang barisnya sedang terbuka */
   const [cariDok, setCariDok] = useState("");
+  /* dikelompokkan per golongan, atau datar urut tanggal. Bawaannya
+     berkelompok: yang dicari orang kantor hampir selalu "mana bukti
+     drill-nya", bukan "apa yang terakhir masuk". */
+  const [kelompokDok, setKelompokDok] = useState(true);
+  /* borang bulanan ikut ditampilkan bersama arsip. Bawaannya IKUT: itu isi
+     arsip kapal yang paling banyak, dan menyembunyikannya membuat kapal yang
+     rajin mengirim borang terlihat seolah tidak pernah mengirim apa pun. */
+  const [ikutBorang, setIkutBorang] = useState(true);
   const [kabar, setKabar] = useState("");
 
   const ambil = useCallback(async () => {
@@ -228,8 +302,11 @@ export default function DataIsianKapal() {
       {rupa === "dokumen" && rekap ? <RekapDokumen armada={armada} /> : (
       <ul className="space-y-2.5">
         {armada.map((a) => {
-          const dok = a.dokumen || { jumlah: 0, berkas: 0, tanpaBerkas: 0, terbaru: "", daftar: [] };
-          const d = rupa === "stok" ? a.stok : rupa === "alkes" ? a.alkes : { adaIsi: dok.jumlah > 0, diperbaruiPada: dok.terbaru, olehAkun: "" };
+          const dok = a.dokumen || { jumlah: 0, berkas: 0, tanpaBerkas: 0, terbaru: "", daftar: [], borang: [], jumlahBorang: 0, berkasBorang: 0 };
+          /* kapal yang cuma mengirim borang TIDAK lagi ditandai "belum ada
+             dokumen": borangnya kini terbaca dari layar ini juga */
+          const d = rupa === "stok" ? a.stok : rupa === "alkes" ? a.alkes
+            : { adaIsi: dok.jumlah + dok.jumlahBorang > 0, diperbaruiPada: dok.terbaru, olehAkun: "" };
           const perhatian = rupa === "stok"
             ? a.stok.menipis + a.stok.gantiDekat
             : rupa === "alkes" ? a.alkes.lewat + a.alkes.kritis
@@ -253,6 +330,11 @@ export default function DataIsianKapal() {
                   <span className="flex flex-wrap items-center gap-2 text-[12px]">
                     <span className="font-bold text-slate-700 dark:text-slate-200">{dok.jumlah} dokumen</span>
                     <span className="text-slate-500">{dok.berkas} berkas</span>
+                    {!!dok.jumlahBorang && (
+                      <span className="rounded bg-violet-100 px-1.5 py-0.5 font-bold text-violet-800 dark:bg-violet-950 dark:text-violet-200">
+                        + {dok.jumlahBorang} borang
+                      </span>
+                    )}
                     {!!dok.tanpaBerkas && <span className="rounded bg-amber-100 px-1.5 py-0.5 font-bold text-amber-800">{dok.tanpaBerkas} unggahan putus</span>}
                   </span>
                 ) : rupa === "stok" ? (
@@ -282,37 +364,114 @@ export default function DataIsianKapal() {
                 <div className="border-t border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-800/40">
                   {rupa === "dokumen" ? (() => {
                     const k = cariDok.trim().toLowerCase();
-                    const tampil = dok.daftar.filter((x: any) =>
+                    /*
+                     * ARSIP DAN BORANG DISATUKAN DI SINI, bukan di server.
+                     *
+                     * Di layar ini pertanyaannya "kapal ini pernah kirim apa
+                     * saja" - dan pemisahan arsip lawan borang cuma nyata di
+                     * dalam basis data. Penyatuannya ditaruh di peramban supaya
+                     * Rekap Dokumen dan berkas Excel-nya tetap membaca `daftar`
+                     * yang artinya tidak berubah.
+                     */
+                    const semua = ikutBorang ? dok.daftar.concat(dok.borang || []) : dok.daftar;
+                    const tampil = semua.filter((x: any) =>
                       !k || `${x.judul} ${x.nomor} ${x.catatan} ${golonganDokumen(x.jenis)?.label || ""}`.toLowerCase().includes(k));
+                    const kartu = (x: any) => (
+                      <KartuDokumen key={x.id} d={x as DokumenTampil}
+                        onLihat={(dd, ke) => setLihat({ d: dd, kapal: a.kapal, ke })}
+                        /* borang dihapus dari layar Permintaan & Laporan, bukan
+                           dari sini: yang dihapus di sana ikut riwayat status
+                           dan tagihan bulanannya, yang dihapus di sini tidak */
+                        onHapus={x.sumber === "borang" ? undefined : (dd) => hapusDokumen(dd.id, dd.judul)} />
+                    );
                     return (
                     <>
                     <div className="mb-2.5 flex flex-wrap items-center gap-2">
                       <button onClick={() => setUnggah(a.kapal)}
                         className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11.5px] font-bold text-white transition hover:bg-emerald-700">
-                        ⬆️ Unggah dokumen
+                        &#11014;&#65039; Unggah dokumen
                       </button>
-                      {dok.jumlah > 3 && (
+                      {semua.length > 3 && (
                         <input value={cariDok} onChange={(e) => setCariDok(e.target.value)}
-                          placeholder="Cari judul / nomor / golongan…"
+                          placeholder="Cari judul / nomor / golongan&#8230;"
                           className="min-w-[12rem] flex-1 rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[12px] outline-none focus:border-[#16357f] dark:border-slate-600 dark:bg-slate-900 dark:text-white" />
                       )}
+                      <button onClick={() => setKelompokDok(!kelompokDok)}
+                        title={kelompokDok ? "Tampilkan datar di dalam tiap bulan" : "Kelompokkan per golongan di dalam tiap bulan"}
+                        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-[11.5px] font-bold text-slate-600 transition hover:border-[#16357f] hover:text-[#16357f] dark:border-slate-600 dark:bg-slate-900 dark:text-slate-300">
+                        {kelompokDok ? "\u25a6 Per golongan" : "\u2261 Urut tanggal"}
+                      </button>
+                      {!!dok.jumlahBorang && (
+                        <button onClick={() => setIkutBorang(!ikutBorang)}
+                          title={ikutBorang ? "Sembunyikan kiriman borang bulanan" : "Tampilkan kiriman borang bulanan"}
+                          className={`rounded-lg px-2.5 py-1.5 text-[11.5px] font-bold ring-1 transition ${
+                            ikutBorang
+                              ? "bg-violet-100 text-violet-800 ring-violet-300 dark:bg-violet-950 dark:text-violet-200 dark:ring-violet-800"
+                              : "bg-white text-slate-500 ring-slate-300 hover:text-violet-700 dark:bg-slate-900 dark:ring-slate-600"}`}>
+                          {ikutBorang ? "\u2713" : "\u25cb"} Borang bulanan
+                        </button>
+                      )}
                       <span className="text-[11.5px] text-slate-500">
-                        {k ? `${tampil.length} dari ${dok.jumlah} dokumen` : `${dok.jumlah} dokumen · ${dok.berkas} berkas`}
+                        {k
+                          ? `${tampil.length} dari ${semua.length} catatan`
+                          : `${dok.jumlah} dokumen${ikutBorang && dok.jumlahBorang ? ` + ${dok.jumlahBorang} borang` : ""} \u00b7 ${dok.berkas + (ikutBorang ? dok.berkasBorang : 0)} berkas`}
                       </span>
                     </div>
 
                     {!tampil.length ? (
                       <p className="rounded-xl bg-white px-4 py-8 text-center text-[12.5px] text-slate-500 ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700">
-                        {dok.jumlah
-                          ? "Tidak ada dokumen yang cocok dengan pencarian."
-                          : "Belum ada dokumen. Unggah berita acara, temuan, atau salinan sertifikat kapal ini."}
+                        {semua.length
+                          ? "Tidak ada yang cocok dengan pencarian."
+                          : "Belum ada apa pun dari kapal ini \u2014 belum ada borang bulanan, belum ada berita acara, temuan, atau salinan sertifikat."}
                       </p>
                     ) : (
-                      <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
-                        {tampil.map((x: any) => (
-                          <KartuDokumen key={x.id} d={x as DokumenTampil}
-                            onLihat={(d, ke) => setLihat({ d, kapal: a.kapal, ke })}
-                            onHapus={(d) => hapusDokumen(d.id, d.judul)} />
+                      /* KLUSTER BULAN DI LUAR, GOLONGAN DI DALAM.
+                         Urutannya sengaja begitu: arsip ditelusuri dengan
+                         pertanyaan berwaktu ("Agustus kemarin apa saja"), dan
+                         golongan baru berguna sesudah bulannya dipersempit.
+                         Dibalik - golongan di luar, bulan di dalam - layarnya
+                         jadi belasan daftar panjang yang tiap-tiapnya harus
+                         digulung sendiri untuk menjawab satu pertanyaan. */
+                      <div className="space-y-4">
+                        {kelompokBulan(tampil).map(({ kunci, label, isi }) => (
+                          <section key={kunci}>
+                            <div className="mb-2 flex items-center gap-2">
+                              <span className="rounded-lg bg-slate-800 px-2.5 py-1 text-[11.5px] font-black uppercase tracking-wide text-white dark:bg-slate-700">
+                                {label}
+                              </span>
+                              <span className="text-[11px] font-bold text-slate-400">{isi.length} catatan</span>
+                              <span className="h-px flex-1 bg-slate-300 dark:bg-slate-700" />
+                            </div>
+
+                            {!kelompokDok ? (
+                              <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                                {isi.map(kartu)}
+                              </div>
+                            ) : (
+                              /* URUTAN GOLONGAN MENGIKUTI GOLONGAN_ARSIP, BUKAN
+                                 JUMLAHNYA. Kalau diurut dari yang terbanyak,
+                                 letak "Bukti Perawatan" berpindah-pindah antar
+                                 bulan dan orang harus membaca ulang tiap kali
+                                 turun satu rumpun. Urutan tetap membuat matanya
+                                 hafal, dan golongan yang KOSONG jadi terasa -
+                                 itu justru yang perlu ditindaklanjuti. */
+                              <div className="space-y-2.5 border-l-2 border-slate-200 pl-3 dark:border-slate-700">
+                                {kelompokGolongan(isi).map(({ id, label: gl, ikon, warna, isi: gi }) => (
+                                  <div key={id}>
+                                    <div className="mb-1.5 flex items-center gap-2">
+                                      <span className={`inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-black ring-1 ${warna}`}>
+                                        {ikon} {gl}
+                                      </span>
+                                      <span className="text-[11px] font-bold text-slate-400">{gi.length}</span>
+                                    </div>
+                                    <div className="grid gap-2.5 sm:grid-cols-2 xl:grid-cols-3">
+                                      {gi.map(kartu)}
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </section>
                         ))}
                       </div>
                     )}

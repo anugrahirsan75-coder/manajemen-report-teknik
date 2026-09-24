@@ -132,3 +132,41 @@ export interface DokumenKapal {
   dibuatPada: string;
   olehAkun: string;
 }
+
+/* ────────────────────────────────────────────────────────────────────────
+ * GOLONGAN ARSIP = dokumen kapal + empat borang bulanan.
+ *
+ * Layar arsip kapal menampilkan keduanya bercampur: orang kantor yang membuka
+ * satu kapal ingin melihat SELURUH yang pernah masuk dari kapal itu, dan
+ * pemisahan "dokumen" lawan "borang" cuma nyata di kepala pembuat aplikasi —
+ * di kepala pemakainya semuanya sama-sama berkas kiriman kapal.
+ *
+ * Yang TIDAK dilakukan: menambahkan keempatnya ke JENIS_DOKUMEN. Daftar itu
+ * dipakai borang unggah dan pembentuk folder Drive; menaruh golongan borang
+ * di sana akan membuat kantor bisa mengunggah "Laporan Deck" ke jalur arsip,
+ * lalu dua jalur berbeda mengisi hal yang sama dan rekap bulanan pecah.
+ * ──────────────────────────────────────────────────────────────────────── */
+
+import { JENIS_LAPOR } from "@/lib/lapor/types";
+
+/* ditulis utuh, bukan dirakit — alasannya sama dengan `warna` di atas */
+const WARNA_BORANG: Record<string, string> = {
+  permintaan_deck: "bg-teal-100 text-teal-900 ring-teal-200 dark:bg-teal-950 dark:text-teal-200 dark:ring-teal-800",
+  permintaan_mesin: "bg-lime-100 text-lime-900 ring-lime-200 dark:bg-lime-950 dark:text-lime-200 dark:ring-lime-800",
+  laporan_deck: "bg-blue-100 text-blue-900 ring-blue-200 dark:bg-blue-950 dark:text-blue-200 dark:ring-blue-800",
+  laporan_mesin: "bg-fuchsia-100 text-fuchsia-900 ring-fuchsia-200 dark:bg-fuchsia-950 dark:text-fuchsia-200 dark:ring-fuchsia-800",
+};
+
+export interface GolonganArsip { id: string; label: string; ikon: string; warna: string; borang: boolean }
+
+/* borang di ATAS dokumen tak rutin: itu yang ditagih tiap bulan, jadi itu yang
+   pertama dicari saat satu kapal dibuka */
+export const GOLONGAN_ARSIP: GolonganArsip[] = [
+  ...JENIS_LAPOR.map((j) => ({
+    id: j.id as string, label: j.singkat, ikon: j.ikon,
+    warna: WARNA_BORANG[j.id] || "bg-slate-100 text-slate-700 ring-slate-200", borang: true,
+  })),
+  ...JENIS_DOKUMEN.map((j) => ({ id: j.id, label: j.label, ikon: j.ikon, warna: j.warna, borang: false })),
+];
+
+export const golonganArsip = (id: string) => GOLONGAN_ARSIP.find((g) => g.id === id);
