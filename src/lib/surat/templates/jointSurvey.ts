@@ -167,50 +167,39 @@ export const jointSurvey: TemplateSurat = {
     const CABANG = "PT. ASDP Indonesia Ferry (Persero) Cabang Ternate";
 
     /*
-     * Rincian a, b, c tidak mengulang "Rencana pelaksanaan Docking" — kalimat
-     * pembuka butirnya sudah menyebut itu, dan mengulangnya tiap baris membuat
-     * daftar dua kapal berbunyi seperti tiga kalimat yang sama.
+     * SELURUH DASAR MASUK KE BUTIR 1 SEBAGAI RINCIAN a, b, c.
+     *
+     * Susunan pertama menaikkan tiap dasar menjadi butir bernomor tersendiri,
+     * sehingga butir 1 dan 2 berisi dasar sedangkan permohonannya baru muncul
+     * di butir 3 — dan kalimat rujukannya terpaksa berbunyi "butir 1 sampai
+     * dengan 2". Surat dinas di lingkungan ini menempatkan seluruh dasar di
+     * bawah satu kepala "Mendasari dan Menindaklanjuti", sehingga permohonan
+     * selalu jatuh di butir 2 dan rujukannya selalu "butir 1 (satu)".
      */
-    const rincian = (r: BarisKapal) =>
-      `${esc(namaKapalSurat(r.kapal))} dalam rangka ${esc(r.jenisSurvey || "")} `
-      + `pada bulan ${esc(r.bulan || "")} Tahun ${tahun}`;
-    const rencana = (r: BarisKapal) => `Rencana pelaksanaan Docking ${rincian(r)}`;
-
-    /*
-     * Satu kapal ditulis sebagai kalimat utuh, beberapa kapal sebagai rincian
-     * a, b, c. Rincian untuk satu baris terbaca janggal ("1. Mendasari: a.
-     * ...") dan itu bukan bentuk yang dipakai pada surat yang sudah terbit.
-     */
-    const butirDasar: ButirSurat = isi.length === 1
-      ? { teks: rencana(isi[0]) + ";" }
-      : {
-        teks: `Rencana pelaksanaan Docking Kapal-kapal ${CABANG} Tahun ${tahun}, yaitu :`,
-        sub: isi.map((r) => rincian(r) + ";"),
-      };
-
-    const butir: ButirSurat[] = [butirDasar];
+    const dasar: string[] = isi.map((r) =>
+      `Rencana pelaksanaan Docking ${esc(namaKapalSurat(r.kapal))} dalam rangka `
+      + `${esc(r.jenisSurvey || "")} pada bulan ${esc(r.bulan || "")} Tahun ${tahun};`);
 
     const noDs = String(d.noDockSpace || "").trim();
     if (noDs) {
       const tgl = String(d.tglDockSpace || "").trim();
-      butir.push({
-        teks: `Surat ${esc(String(d.galangan || ""))} Nomor : ${b(esc(noDs))}`
-          + (tgl ? ` tanggal ${esc(tanggalSurat(tgl))}` : "")
-          + ` perihal ketersediaan Dock Space untuk ${nama};`,
-      });
+      dasar.push(
+        `Surat ${esc(String(d.galangan || ""))} Nomor : ${b(esc(noDs))}`
+        + (tgl ? ` tanggal ${esc(tanggalSurat(tgl))}` : "")
+        + ` perihal ketersediaan Dock Space untuk ${nama};`);
     }
+
+    const butir: ButirSurat[] = [{ teks: "Mendasari dan Menindaklanjuti :", sub: dasar }];
 
     const mulai = String(d.tglMulai || "").trim();
     const selesai = String(d.tglSelesai || "").trim();
     const kapan = selesai && selesai !== mulai
       ? `${esc(tanggalSurat(mulai))} s.d ${esc(tanggalSurat(selesai))}`
       : esc(tanggalSurat(mulai));
-    const jumlahDasar = butir.length;
 
     butir.push({
-      teks: `Terkait butir ${jumlahDasar === 1 ? "1 (satu)" : `1 (satu) sampai dengan ${jumlahDasar} (${jumlahDasar === 2 ? "dua" : "tiga"})`} `
-        + `tersebut di atas, bersama ini kami memohon agar dapat dilaksanakan `
-        + `${b("Joint Survey Pra Docking")} ${nama} bersama Divisi Teknik ${CABANG}, `
+      teks: "Terkait butir 1 (satu) tersebut di atas, bersama ini kami memohon agar dapat "
+        + `dilaksanakan ${b("Joint Survey Pra Docking")} ${nama} bersama Divisi Teknik ${CABANG}, `
         + `yang akan dilaksanakan pada tanggal ${b(kapan)}.`,
     });
 
