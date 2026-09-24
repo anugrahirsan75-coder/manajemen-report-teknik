@@ -22,6 +22,7 @@ import { dendaDocking } from "./templates/dendaDocking";
 import { laporanBerangkatDock } from "./templates/laporanBerangkatDock";
 import { dockSpace } from "./templates/dockSpace";
 import { dockSpaceArmada } from "./templates/dockSpaceArmada";
+import { jointSurvey } from "./templates/jointSurvey";
 import { exemptionStability } from "./templates/exemptionStability";
 import { pelimpahanWewenang } from "./templates/pelimpahanWewenang";
 import { pengantarKodeMaterial } from "./templates/pengantarKodeMaterial";
@@ -30,6 +31,7 @@ import { suratKustom } from "./templates/suratKustom";
 export const TEMPLATE_SURAT: TemplateSurat[] = [
   dockSpaceArmada,
   dockSpace,
+  jointSurvey,
   dockingInvestasi,
   pekerjaanTambahan,
   penunjukanLangsung,
