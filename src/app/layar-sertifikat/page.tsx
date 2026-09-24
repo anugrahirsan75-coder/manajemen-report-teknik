@@ -41,7 +41,12 @@ interface Dokumen {
   status: string;
 }
 
-const SELANG_MUAT = 60 * 1000;        // tarik data tiap menit
+/*
+ * Tiga menit, bukan satu. Sumbernya sendiri hanya dibaca ulang paling cepat
+ * tiap tiga menit di sisi server, jadi memanggil tiap menit menghasilkan dua
+ * dari tiga panggilan yang isinya dijamin sama.
+ */
+const SELANG_MUAT = 3 * 60 * 1000;
 const SELANG_HALAMAN = 10 * 1000;     // ganti halaman daftar tiap 10 detik
 /*
  * Sesudah halaman digeser dengan tangan, putaran otomatis berhenti dulu. Kalau
@@ -136,7 +141,14 @@ export default function LayarSertifikat() {
 
   const ambil = useCallback(async () => {
     try {
-      const r = await fetch("/api/publik/sertifikat", { cache: "no-store" });
+      /*
+       * Sengaja TANPA cache:"no-store". Layar ini menyala berhari-hari dan
+       * memanggil berulang; "no-store" memaksa seluruh isi diunduh ulang tiap
+       * kali, padahal lembarnya berubah paling cepat tiap tiga menit. Dengan
+       * bawaan, singgahan CDN dan ETag bekerja: yang tidak berubah dibalas
+       * 304 tanpa badan.
+       */
+      const r = await fetch("/api/publik/sertifikat");
       const d = await r.json();
       if (!d?.ok) { setGalat(d?.error || "Data tidak terbaca"); return; }
       setDokumen(d.dokumen || []);

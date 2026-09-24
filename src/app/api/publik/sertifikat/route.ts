@@ -26,7 +26,25 @@ export const maxDuration = 60;
 const JEDA_SEGAR = 3 * 60 * 1000;
 let terakhirSegar = 0;
 
-export async function GET() {
+/**
+ * Sidik isi jawaban, dipakai sebagai ETag.
+ *
+ * Dihitung dari isi yang BERARTI saja — daftar dokumen dan waktu lembar
+ * terakhir dibaca — bukan dari seluruh badan jawaban. "dilayaniPada" berubah
+ * tiap permintaan, dan kalau ikut dihitung, sidiknya tidak pernah sama
+ * sehingga 304 tidak pernah terjadi dan seluruh 89 KB dikirim ulang tiap menit.
+ */
+function sidik(isi: unknown): string {
+  const t = JSON.stringify(isi);
+  let a = 0x811c9dc5;
+  for (let i = 0; i < t.length; i++) {
+    a ^= t.charCodeAt(i);
+    a = Math.imul(a, 0x01000193);
+  }
+  return `W/"${(a >>> 0).toString(16)}-${t.length.toString(16)}"`;
+}
+
+export async function GET(req: Request) {
   try {
     const bolehSegar = Date.now() - terakhirSegar > JEDA_SEGAR;
     if (bolehSegar) terakhirSegar = Date.now();
@@ -51,13 +69,32 @@ export async function GET() {
         status: statusSert(s),
       }));
 
-    return NextResponse.json({
-      ok: true,
-      kapal,
-      dokumen,
-      diambilPada,
-      dilayaniPada: new Date().toISOString(),
-    }, { headers: { "Cache-Control": "no-store" } });
+    /*
+     * Layar kantor memanggil tiap menit dan dibiarkan menyala berhari-hari.
+     * Dengan "no-store" seluruh 89 KB menyeberang tiap panggilan — 1.440 kali
+     * sehari, sekitar 3,8 GB sebulan untuk SATU layar, padahal isinya berubah
+     * paling cepat tiap 3 menit. Itu yang menghabiskan kuota Fast Origin
+     * Transfer dan mem-pause seluruh situs pada 24 September 2026.
+     *
+     * Dua lapis penahan sekarang:
+     *
+     *   s-maxage: CDN menjawab sendiri selama 2 menit, fungsinya tidak
+     *   dipanggil sama sekali — inilah yang memotong transfer origin.
+     *
+     *   ETag: kalaupun sampai ke fungsi, jawaban yang isinya tidak berubah
+     *   dibalas 304 tanpa badan, jadi yang menyeberang hanya kepala.
+     */
+    const inti = { ok: true, kapal, dokumen, diambilPada };
+    const etag = sidik(inti);
+    const kepala = {
+      "Cache-Control": "public, s-maxage=120, stale-while-revalidate=300",
+      ETag: etag,
+    };
+    if (req.headers.get("if-none-match") === etag) {
+      return new NextResponse(null, { status: 304, headers: kepala });
+    }
+    return NextResponse.json(
+      { ...inti, dilayaniPada: new Date().toISOString() }, { headers: kepala });
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: e?.message || "Lembar sertifikat tidak terbaca" }, { status: 502 });
   }

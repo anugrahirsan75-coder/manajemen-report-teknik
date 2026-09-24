@@ -20,10 +20,7 @@ import {
 } from "./kumpul";
 
 const LS = "pengingat_cache";
-const KINDS = ["rr", "docking_jadwal", "kelas_bki", "servis", "kerusakan", "anggaran", "lapor_kapal"];
 
-const isoDari = (d: Date) =>
-  `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 
 export function usePengingat() {
   const ready = isSupabaseReady;
@@ -35,23 +32,22 @@ export function usePengingat() {
     try { const a = localStorage.getItem(LS); if (a) setList(JSON.parse(a)); } catch {}
   }, []);
 
+  /*
+   * Penyusunannya sekarang di server (/api/pengingat), bukan di sini.
+   *
+   * Dulu peramban menarik sendiri payload utuh tujuh kind — 1 MB sekali tarik,
+   * tiap menit, di setiap halaman, untuk setiap pemakai — lalu menyusunnya
+   * jadi belasan baris pengingat. Yang menyeberang sekarang tinggal hasilnya.
+   */
   const muat = useCallback(async () => {
     if (!supabase) return;
     setLoading(true);
     try {
-      const { data } = await supabase.from("projects").select("id,payload")
-        .or(KINDS.map((k) => `payload->>kind.eq.${k}`).join(","));
-      // Payload kiriman kapal membawa token pengirim. Token itu tidak ada
-      // gunanya bagi lonceng dan tidak boleh ikut mengendap di localStorage
-      // peramban kantor, jadi dibuang begitu data sampai.
-      const rows = (data || [])
-        .map((r: any) => {
-          if (!r.payload) return null;
-          const { token, ...sisa } = r.payload as Record<string, unknown>;
-          return { ...sisa, __rowId: r.id };
-        })
-        .filter(Boolean);
-      const hasil = susun(rows);
+      const r = await fetch("/api/pengingat");
+      if (!r.ok) return;
+      const d = await r.json();
+      if (!d?.ok) return;
+      const hasil: Pengingat[] = d.list || [];
       setList(hasil);
       setWaktu(new Date().toLocaleTimeString("id-ID"));
       try { localStorage.setItem(LS, JSON.stringify(hasil)); } catch {}
@@ -62,7 +58,16 @@ export function usePengingat() {
 
   useEffect(() => {
     muat();
-    const timer = window.setInterval(muat, 60_000);
+    /*
+     * Tab yang tersembunyi tidak ditarik ulang. Komputer kantor biasa
+     * meninggalkan aplikasi ini terbuka di satu tab seharian sambil bekerja di
+     * tab lain; tanpa penjagaan ini ia tetap menarik tiap menit sepanjang hari
+     * untuk lonceng yang tidak sedang dilihat siapa pun. Begitu tabnya
+     * ditengok lagi, pendengar visibilitychange di bawah menariknya segar.
+     */
+    const timer = window.setInterval(() => {
+      if (document.visibilityState === "visible") muat();
+    }, 60_000);
     const saatAktif = () => { if (document.visibilityState === "visible") muat(); };
     const dimintaUlang = () => muat();
     document.addEventListener("visibilitychange", saatAktif);
@@ -78,187 +83,3 @@ export function usePengingat() {
 }
 
 /** ubah baris payload menjadi daftar pengingat */
-function susun(rows: any[]): Pengingat[] {
-  const now = new Date();
-  const hariIni = isoHariIni(now);
-  const out: Pengingat[] = [];
-  const tambah = (p: Omit<Pengingat, "tingkat"> & { tingkat?: Pengingat["tingkat"] }) =>
-    out.push({ ...p, tingkat: p.tingkat ?? tingkatDariSisa(p.sisaHari) } as Pengingat);
-
-  const rr = rows.filter((r) => r.kind === "rr").map((r) => r.doc).filter(Boolean);
-  const dok = rows.filter((r) => r.kind === "docking_jadwal").map((r) => r.doc).filter(Boolean);
-  const kelas = rows.filter((r) => r.kind === "kelas_bki").map((r) => r.doc).filter(Boolean);
-  const servis = rows.filter((r) => r.kind === "servis");
-  const rusak = rows.filter((r) => r.kind === "kerusakan").map((r) => r.doc).filter(Boolean);
-  const anggaran = rows.find((r) => r.kind === "anggaran");
-  const laporanBaru = rows.filter((r) => r.kind === "lapor_kapal" && r.status === "baru");
-
-  // ---------- 0. Kiriman baru dari ABK kapal ----------
-  laporanBaru.forEach((l: any) => {
-    const id = l.__rowId || `${l.kapal}-${l.jenis}-${l.dikirimPada || "baru"}`;
-    const jenis = String(l.jenis || "laporan").replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    tambah({
-      id: `lapor-${id}`, jenis: "notifikasi", modul: "Permintaan & Laporan Kapal", ikon: "📨", tingkat: "info",
-      judul: `${ringkasKapal(l.kapal || "Kapal")} baru mengirim ${jenis}`,
-      rincian: `${l.pengirim || "ABK kapal"} · ${l.periode ? namaBulan(l.periode) : "tanpa periode"} · ${(l.berkas || []).length} berkas`,
-      href: `/permintaan-laporan?buka=${encodeURIComponent(id)}`,
-    });
-  });
-
-  // ---------- 1. Lampiran 3: rencana & realisasi ----------
-  const per = periodeAktif(now);
-  [per.mulai, per.akhir].forEach((bulan) => {
-    const belum = KAPAL_ANGGARAN.filter((k) =>
-      !rr.some((d: any) => d.tipe === "rencana" && d.bulan === bulan && d.status === "terkirim"));
-    if (!belum.length) return;
-    const sisa = selisihHari(hariIni, isoDari(tenggatRencana(bulan)));
-    tambah({
-      id: `rr-rencana-${bulan}`, modul: "Rencana & Realisasi", ikon: "📆",
-      judul: `Rencana ${namaBulan(bulan)} — ${belum.length} kapal belum dikirim`,
-      rincian: belum.slice(0, 6).map(ringkasKapal).join(", ") + (belum.length > 6 ? `, +${belum.length - 6}` : ""),
-      tenggat: isoDari(tenggatRencana(bulan)), sisaHari: sisa, href: "/rencana",
-    });
-  });
-  const bulanReal = bulanRealisasiAktif(now);
-  const belumReal = KAPAL_ANGGARAN.filter((k) =>
-    !rr.some((d: any) => d.tipe === "realisasi" && d.bulan === bulanReal && d.status === "terkirim"));
-  if (belumReal.length) {
-    const t = isoDari(tenggatRealisasi(bulanReal));
-    tambah({
-      id: `rr-realisasi-${bulanReal}`, modul: "Rencana & Realisasi", ikon: "✅",
-      judul: `Realisasi ${namaBulan(bulanReal)} — ${belumReal.length} kapal belum dikirim`,
-      rincian: belumReal.slice(0, 6).map(ringkasKapal).join(", ") + (belumReal.length > 6 ? `, +${belumReal.length - 6}` : ""),
-      tenggat: t, sisaHari: selisihHari(hariIni, t), href: "/rencana",
-    });
-  }
-  // dokumen realisasi yang isinya masih kosong padahal bulannya sudah lewat
-  const kosong = rr.filter((d: any) => d.tipe === "realisasi" && d.bulan < bulanReal
-    && d.status !== "terkirim" && totalDoc(d).total <= 0);
-  if (kosong.length) {
-    tambah({
-      id: "rr-kosong", modul: "Rencana & Realisasi", ikon: "📭", tingkat: "info",
-      judul: `${kosong.length} dokumen realisasi bulan lalu masih kosong`,
-      rincian: kosong.slice(0, 5).map((d: any) => `${ringkasKapal(d.kapal)} ${namaBulan(d.bulan)}`).join(", "),
-      href: "/rencana",
-    });
-  }
-
-  // ---------- 2. Termin pembayaran docking ----------
-  dok.forEach((d: any) => {
-    ringkasTermin(d, now).forEach((t) => {
-      if (t.status === "dibayar" || t.status === "belum_siap") return;
-      const acuan = t.tanggalPemicu || t.perkiraan;
-      const sisa = acuan ? selisihHari(hariIni, acuan) : null;
-      tambah({
-        id: `termin-${d.id}-${t.ke}`, modul: "Termin Docking", ikon: "💰",
-        tingkat: t.status === "terlambat" ? "lewat" : t.status === "siap" ? "mendesak" : tingkatDariSisa(sisa),
-        judul: `${t.label} ${ringkasKapal(d.kapal)} belum tercatat dibayar`,
-        rincian: t.tanggalPemicu
-          ? `${t.baLabel} terbit ${t.tanggalPemicu}`
-          : `${t.baLabel} diperkirakan ${t.perkiraan || "-"}`,
-        tenggat: acuan, sisaHari: sisa, href: "/docking",
-      });
-    });
-  });
-
-  // ---------- 3. Docking: lewat target & berkas BA belum lengkap ----------
-  dok.forEach((d: any) => {
-    const r = ringkasDocking(d, now);
-    if (r.status === "berjalan" && r.target && (r.berjalan ?? 0) > r.target) {
-      tambah({
-        id: `dock-lewat-${d.id}`, modul: "Monitoring Docking", ikon: "⚓", tingkat: "lewat",
-        judul: `${ringkasKapal(d.kapal)} masih docking, sudah lewat target`,
-        rincian: `berjalan ${r.berjalan} hari dari target ${r.target} hari`,
-        sisaHari: r.target - (r.berjalan ?? 0), href: "/docking",
-      });
-    }
-    const kurang = JENIS_BA.filter((j) => j.key !== "lain" && j.tahap && (d as any)[j.tahap]
-      && !(d.berkas || []).some((b: any) => b.jenis === j.key));
-    if (kurang.length) {
-      tambah({
-        id: `dock-ba-${d.id}`, modul: "Monitoring Docking", ikon: "📄", tingkat: "info",
-        judul: `${ringkasKapal(d.kapal)} — ${kurang.length} berkas BA belum diunggah`,
-        rincian: kurang.map((j) => j.label.replace(/^BA /, "")).join(", "),
-        href: "/docking",
-      });
-    }
-  });
-
-  // ---------- 4. Kelas BKI ----------
-  kelas.forEach((k: any) => {
-    if (k.status === "selesai") return;
-    const acuan = k.dueDate || k.rentangSampai;
-    if (!acuan) return;
-    const sisa = selisihHari(hariIni, acuan);
-    if (sisa != null && sisa > 60) return;      // masih jauh, jangan berisik
-    tambah({
-      id: `kelas-${k.id}`, modul: "Kelas BKI", ikon: "🏷️",
-      judul: `${k.jenis} ${ringkasKapal(k.kapal)} belum selesai`,
-      rincian: k.dueDate ? `jatuh tempo ${k.dueDate}` : `jendela survey berakhir ${k.rentangSampai}`,
-      tenggat: acuan, sisaHari: sisa, href: "/docking",
-    });
-  });
-
-  // ---------- 5. Servis bengkel ----------
-  servis.forEach((s: any) => {
-    if (!s.id || s.status === "kembali" || s.tanggalKembali) return;
-    if (s.tanggalEstimasi) {
-      const sisa = selisihHari(hariIni, s.tanggalEstimasi);
-      if (sisa != null && sisa > 7) return;
-      tambah({
-        id: `servis-${s.id}`, modul: "Monitoring Servis", ikon: "🔧",
-        judul: `${s.namaBarang} (${ringkasKapal(s.kapal || "")}) belum kembali dari bengkel`,
-        rincian: `${s.bengkel || "bengkel"} · estimasi ${s.tanggalEstimasi}`,
-        tenggat: s.tanggalEstimasi, sisaHari: sisa, href: "/servis",
-      });
-      return;
-    }
-    const lama = s.tanggalKirim ? selisihHari(s.tanggalKirim, hariIni) : null;
-    if (lama != null && lama >= 30) {
-      tambah({
-        id: `servis-${s.id}`, modul: "Monitoring Servis", ikon: "🔧", tingkat: "lewat",
-        judul: `${s.namaBarang} (${ringkasKapal(s.kapal || "")}) sudah ${lama} hari di bengkel`,
-        rincian: `${s.bengkel || "bengkel"} · tanpa tanggal estimasi selesai`,
-        sisaHari: -lama, href: "/servis",
-      });
-    }
-  });
-
-  // ---------- 6. Kerusakan kapal ----------
-  const terbuka = rusak.filter((k: any) => k.status === "terbuka");
-  if (terbuka.length) {
-    tambah({
-      id: "rusak-terbuka", modul: "Rekap Kerusakan", ikon: "🛠️", tingkat: "mendesak",
-      judul: `${terbuka.length} kerusakan belum ditangani`,
-      rincian: terbuka.slice(0, 4).map((k: any) => `${ringkasKapal(k.kapal)}: ${k.kejadian}`).join(" · "),
-      href: "/kerusakan",
-    });
-  }
-  const proses = rusak.filter((k: any) => k.status === "proses");
-  if (proses.length) {
-    tambah({
-      id: "rusak-proses", modul: "Rekap Kerusakan", ikon: "🛠️", tingkat: "info",
-      judul: `${proses.length} kerusakan sedang ditangani`,
-      rincian: proses.slice(0, 4).map((k: any) => ringkasKapal(k.kapal)).join(", "),
-      href: "/kerusakan",
-    });
-  }
-
-  // ---------- 7. Pagu Rutin bulan berikutnya ----------
-  if (anggaran) {
-    const plafon: any[] = anggaran.plafon || [];
-    const dep = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const bulanDepan = `${dep.getFullYear()}-${String(dep.getMonth() + 1).padStart(2, "0")}`;
-    if (!plafon.some((p) => p.bulan === bulanDepan && (p.rows || []).length)) {
-      const t = isoDari(new Date(now.getFullYear(), now.getMonth(), 25));
-      tambah({
-        id: `pagu-${bulanDepan}`, modul: "Anggaran Rutin", ikon: "🧭",
-        judul: `Pagu Rutin ${namaBulan(bulanDepan)} belum diisi`,
-        rincian: "isi pagunya supaya realisasi bulan depan punya pembanding",
-        tenggat: t, sisaHari: selisihHari(hariIni, t), href: "/dashboard?v=rutin",
-      });
-    }
-  }
-
-  return out.sort(urutPengingat);
-}
