@@ -84,6 +84,97 @@ function validasiCsv(teks: string): { ok: true; rows: KodeRow[] } | { ok: false;
   return { ok: true, rows: parsed };
 }
 
+/* ── sumber XLSX (utama) ─────────────────────────────────────────────────── */
+
+/**
+ * Tarik seluruh isi spreadsheet lewat ekspor XLSX.
+ *
+ * Ini sumber UTAMA sekarang, menggantikan CSV, karena dua kelemahan CSV yang
+ * terbukti memakan data diam-diam:
+ *
+ *   gviz MEMOTONG isi. Untuk berkas sebesar ini ia hanya menyajikan beberapa
+ *   ratus baris pertama — pernah terbaca 318 dari 6.859 — dan jawabannya tetap
+ *   HTTP 200 dengan header kolom yang benar, jadi tidak ada satu pun tanda
+ *   bahwa yang datang cuma sepotong.
+ *
+ *   gviz juga MENGABAIKAN gid. Meminta tab mana pun, bahkan gid yang tidak
+ *   ada, menghasilkan tabel yang sama. Jadi "ganti gid" bukan jalan keluar,
+ *   dan gid yang tertulis di berkas ini tidak bisa diandalkan.
+ *
+ * Ekspor XLSX tidak punya dua sifat itu: ia mengirim seluruh tab apa adanya.
+ *
+ * Kolom dipetakan dari JUDULNYA, bukan dari nomor lajur, supaya kolom yang
+ * digeser atau disisipi di spreadsheet tidak membuat seluruh DB bergeser satu
+ * lajur — kesalahan yang hasilnya bukan error melainkan kode yang salah.
+ */
+const XLSX_URL = process.env.MATERIAL_DB_XLSX_URL ||
+  `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=xlsx`;
+
+const JUDUL_KOLOM: Record<keyof KodeRow, RegExp> = {
+  m: /^material$/i,
+  d: /^material\s*description$/i,
+  p: /^old\s*material\s*number$/i,
+  g: /^material\s*group$/i,
+  po: /^purchase\s*order\s*text$/i,
+};
+
+async function tarikXlsx(): Promise<{ ok: true; rows: KodeRow[] } | { ok: false; alasan: string }> {
+  const res = await fetch(XLSX_URL, { cache: "no-store", redirect: "follow" });
+  if (!res.ok) return { ok: false, alasan: `XLSX HTTP ${res.status}` };
+  const buf = Buffer.from(await res.arrayBuffer());
+  // berkas xlsx selalu diawali tanda zip "PK"; kalau bukan, yang datang halaman
+  // izin akses atau login — jangan diurai, nanti jadi nol baris tanpa sebab
+  if (buf.length < 4 || buf[0] !== 0x50 || buf[1] !== 0x4b) {
+    return { ok: false, alasan: "XLSX: balasan bukan berkas Excel (butuh izin akses?)" };
+  }
+  const ExcelJS = (await import("exceljs")).default;
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buf as unknown as ArrayBuffer);
+
+  let terbaik: KodeRow[] = [];
+  const alasan = "XLSX: tidak ada tab dengan kolom Material + Material description";
+  wb.eachSheet((ws) => {
+    const judul: string[] = [];
+    ws.getRow(1).eachCell({ includeEmpty: true }, (c, i) => { judul[i - 1] = String(c.value ?? "").trim(); });
+    const idx = {} as Record<keyof KodeRow, number>;
+    (Object.keys(JUDUL_KOLOM) as (keyof KodeRow)[]).forEach((k) => {
+      idx[k] = judul.findIndex((h) => JUDUL_KOLOM[k].test(h));
+    });
+    if (idx.m < 0 || idx.d < 0) return;                     // bukan tab DB kode material
+
+    const sel = (r: { getCell(i: number): { value: unknown } }, i: number) => {
+      if (i < 0) return "";
+      const v = r.getCell(i + 1).value as unknown;
+      if (v === null || v === undefined) return "";
+      // sel bisa berupa rumus, hyperlink, atau teks kaya — ambil hasil terbacanya
+      if (typeof v === "object") {
+        const o = v as { result?: unknown; text?: unknown; richText?: { text: string }[] };
+        if (o.richText) return o.richText.map((x) => x.text).join("").trim();
+        if (o.text !== undefined) return String(o.text).trim();
+        if (o.result !== undefined) return String(o.result).trim();
+        return "";
+      }
+      return String(v).trim();
+    };
+
+    const out: KodeRow[] = [];
+    ws.eachRow((row, n) => {
+      if (n === 1) return;
+      const m = sel(row, idx.m);
+      if (!m) return;
+      out.push({ m, d: sel(row, idx.d), p: sel(row, idx.p), g: sel(row, idx.g), po: sel(row, idx.po) });
+    });
+    if (out.length > terbaik.length) terbaik = out;
+  });
+
+  if (!terbaik.length) return { ok: false, alasan };
+  // penjagaan yang sama dengan CSV: kode Material di sheet ini angka >= 6 digit
+  const cek = terbaik.slice(0, 200);
+  const rapi = cek.filter((r) => /^\d{6,}$/.test(r.m)).length;
+  if (rapi / cek.length < 0.8) return { ok: false, alasan: "XLSX: kolom Material tak berisi kode angka" };
+  return { ok: true, rows: terbaik };
+}
+
 // Sumber CSV: dicoba berurutan, yang pertama LOLOS VALIDASI dipakai.
 // Dua endpoint berbeda supaya kalau satu diblokir/berubah, yang lain masih jalan.
 function daftarUrl(): string[] {
@@ -143,6 +234,17 @@ async function tulisCache(data: KodeRow[]) {
 }
 
 let lastError: string | null = null; // sebab kegagalan terakhir (ditampilkan di UI)
+/*
+ * Berapa baris yang BERHASIL ditarik dari Google pada percobaan terakhir,
+ * termasuk ketika hasilnya ditolak karena terlalu sedikit.
+ *
+ * Tanpa angka ini, kegagalan yang paling sering terjadi — spreadsheet terbaca
+ * tapi isinya cuma sepotong — tidak bisa dibedakan dari Google yang tak
+ * terjangkau sama sekali. Keduanya sama-sama berakhir "pakai salinan
+ * cadangan", padahal yang pertama artinya tab atau hak aksesnya berubah dan
+ * harus dibetulkan orang, sedangkan yang kedua cukup ditunggu.
+ */
+let liveCount: number | null = null;
 
 async function refresh(force = false) {
   const now = Date.now();
@@ -151,6 +253,14 @@ async function refresh(force = false) {
   loading = (async () => {
     const sebab: string[] = [];
     let terbaik: KodeRow[] | null = null;
+    // XLSX lebih dulu: hanya ini yang mengirim seluruh isi tab (lihat tarikXlsx)
+    try {
+      const x = await tarikXlsx();
+      if (x.ok) terbaik = x.rows;
+      else sebab.push(x.alasan);
+    } catch (e: any) {
+      sebab.push("XLSX: " + (e?.message || String(e)));
+    }
     for (const url of daftarUrl()) {
       try {
         const res = await fetch(url, { cache: "no-store", redirect: "follow" });
@@ -165,6 +275,7 @@ async function refresh(force = false) {
     }
     // Guard terakhir: jangan ganti DB dengan data yang jauh lebih sedikit dari bekal bawaan.
     const minimal = Math.floor((seed as KodeRow[]).length * 0.5);
+    liveCount = terbaik ? terbaik.length : null;
     if (terbaik && terbaik.length >= minimal) {
       rows = terbaik; built = false; lastOk = Date.now(); lastError = null;
       simpanCacheSupabase(terbaik); // simpan salinan sehat (tak ditunggu)
@@ -242,10 +353,26 @@ async function ensureDb(force = false) {
   if (!built) buildIndexes();
 }
 
-export interface DbMeta { count: number; source: "live" | "cadangan" | "seed"; lastSync: number | null; error?: string | null }
+export interface DbMeta {
+  count: number;
+  source: "live" | "cadangan" | "seed";
+  lastSync: number | null;
+  error?: string | null;
+  /** baris yang terbaca dari Google pada percobaan terakhir (null = tak terjangkau sama sekali) */
+  liveCount?: number | null;
+  /** ambang minimal agar hasil live diterima — supaya layar bisa menjelaskan angkanya */
+  minimal?: number;
+}
 export function dbMeta(): DbMeta {
   const source: DbMeta["source"] = lastOk ? "live" : cacheTsTerakhir ? "cadangan" : "seed";
-  return { count: rows.length, source, lastSync: lastOk || cacheTsTerakhir || null, error: lastError };
+  return {
+    count: rows.length,
+    source,
+    lastSync: lastOk || cacheTsTerakhir || null,
+    error: lastError,
+    liveCount,
+    minimal: Math.floor((seed as KodeRow[]).length * 0.5),
+  };
 }
 
 // ---------- skor fuzzy (barang umum) ----------
@@ -406,6 +533,14 @@ export async function cekKode(items: CekInput[], opts?: { refresh?: boolean }): 
 
 // refresh manual (tombol Sinkron) -> kembalikan meta terbaru
 export async function syncDb(): Promise<DbMeta> {
+  /*
+   * Tombol Sinkron DB artinya "coba lagi dari awal", jadi penanda sekali-coba
+   * untuk salinan cadangan dilepas dulu. Tanpa ini, satu kegagalan membaca
+   * cadangan pada awal umur server membuat seluruh sinkron berikutnya mundur
+   * ke data bawaan — dan tombolnya jadi tidak ada gunanya sampai server
+   * dijalankan ulang.
+   */
+  cacheDicoba = false;
   await ensureDb(true);
   // tombol Sinkron DB: tunggu salinan cadangan benar-benar tersimpan
   if (lastOk) await simpanCacheSupabase(rows);

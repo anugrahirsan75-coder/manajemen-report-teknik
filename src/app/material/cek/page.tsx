@@ -23,6 +23,46 @@ interface Row {
 const uid = () => globalThis.crypto?.randomUUID?.() ?? String(Math.random());
 const emptyRow = (): Row => ({ id: uid(), nama: "", partNumber: "", kode: "" });
 
+interface MetaDb {
+  count: number;
+  source: string;
+  lastSync: number | null;
+  error?: string | null;
+  liveCount?: number | null;
+  minimal?: number;
+}
+
+/**
+ * Sebut sumber data apa adanya.
+ *
+ * Sebelumnya layar ini cuma membedakan "live" dan selainnya, lalu selainnya
+ * disebut "fallback bundled" — termasuk ketika yang dipakai sebenarnya salinan
+ * cadangan yang JAUH lebih baru dan lebih lengkap daripada data bawaan.
+ * Akibatnya pesan yang muncul justru menakut-nakuti pada kasus yang baik, dan
+ * menyamarkan bedanya dengan kasus yang benar-benar buruk.
+ */
+function sebutSumber(m: MetaDb): string {
+  if (m.source === "live") return "live dari spreadsheet";
+  if (m.source === "cadangan") return "salinan cadangan tersimpan";
+  return "data bawaan aplikasi (offline)";
+}
+
+/**
+ * Kenapa bukan live? Dibedakan dua hal yang penanganannya berbeda jauh:
+ * spreadsheet yang tak terjangkau (tunggu / periksa jaringan) dan spreadsheet
+ * yang terbaca tapi isinya sepotong (tab atau hak aksesnya berubah — harus
+ * dibetulkan orang, ditunggu sampai kapan pun tidak akan membaik).
+ */
+function sebabBukanLive(m: MetaDb): string | null {
+  if (m.source === "live") return null;
+  if (typeof m.liveCount === "number") {
+    return `spreadsheet terbaca tapi hanya ${m.liveCount.toLocaleString("id-ID")} baris` +
+      (m.minimal ? ` (minimal ${m.minimal.toLocaleString("id-ID")})` : "") +
+      " — periksa tab dan hak akses spreadsheet-nya";
+  }
+  return "spreadsheet tidak terjangkau";
+}
+
 export default function CekKodeMaterial() {
   const [rows, setRows] = useState<Row[]>([emptyRow(), emptyRow(), emptyRow()]);
   const [res, setRes] = useState<Record<string, CekResult>>({});
@@ -31,14 +71,33 @@ export default function CekKodeMaterial() {
   const [busy, setBusy] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [exporting, setExporting] = useState(false);
-  const [meta, setMeta] = useState<{ count: number; source: string; lastSync: number | null; error?: string | null } | null>(null);
+  const [meta, setMeta] = useState<MetaDb | null>(null);
   const [tersalin, setTersalin] = useState<string>(""); // nama kolom yg baru disalin (utk umpan balik)
 
   /** Nilai 1 kolom untuk SEMUA baris terisi — dipakai tombol salin di kepala kolom. */
+  /**
+   * Nilai satu kolom untuk DISALIN, satu entri per baris layar.
+   *
+   * Baris kosong TIDAK dibuang, dan itu disengaja. Daftar ini hampir selalu
+   * berasal dari lembar Excel dan akan ditempel kembali ke lembar yang sama.
+   * Kalau baris kosong dibuang, seluruh baris di bawahnya naik satu, dan hasil
+   * tempelnya bergeser: kode milik baris 6 mendarat di baris 5. Pergeseran
+   * seperti itu tidak memunculkan error apa pun - yang terjadi hanyalah barang
+   * yang salah membawa kode yang salah.
+   *
+   * Yang dipangkas hanya baris kosong di EKOR daftar, karena tiga baris kosong
+   * bawaan di bawah tabel bukan bagian dari data dan hanya menambah baris
+   * kosong di lembar tujuan.
+   */
   const nilaiKolom = (kolom: string): string[] => {
+    const terisi = (r: Row) => !!(r.nama.trim() || r.partNumber.trim() || r.kode.trim());
+    let akhir = -1;
+    rows.forEach((r, i) => { if (terisi(r)) akhir = i; });
+    if (akhir < 0) return [];
     return rows
-      .filter((r) => r.nama.trim() || r.partNumber.trim() || r.kode.trim())
+      .slice(0, akhir + 1)
       .map((r, i) => {
+        if (!terisi(r)) return "";        // baris kosong tetap kosong, posisinya dijaga
         const x = res[r.id];
         const cand = x?.candidates;
         const sel = cand?.length ? cand[Math.min(pick[r.id] ?? 0, cand.length - 1)] : undefined;
@@ -162,7 +221,11 @@ export default function CekKodeMaterial() {
       const j = await r.json();
       if (!r.ok) throw new Error(j.error || "Gagal sinkron");
       setMeta(j.meta);
-      void beritahu(`DB tersinkron: ${j.meta.count} kode (${j.meta.source === "live" ? "live dari spreadsheet" : "fallback bundled"}).`);
+      const m = j.meta as MetaDb;
+      const sebab = sebabBukanLive(m);
+      void beritahu(
+        `DB tersinkron: ${m.count.toLocaleString("id-ID")} kode — ${sebutSumber(m)}.` +
+        (sebab ? `\n\nBelum live: ${sebab}.` : ""));
     } catch (e: any) {
       void beritahu("Gagal sinkron: " + (e?.message ?? e));
     } finally {
@@ -171,10 +234,22 @@ export default function CekKodeMaterial() {
   };
 
   const syncLabel = meta
-    ? `DB: ${meta.count.toLocaleString("id-ID")} kode · ${meta.source === "live" ? "live spreadsheet" : meta.source === "cadangan" ? "salinan cadangan (Google tak terjangkau)" : "bundled (offline)"}${meta.lastSync ? " · sync " + new Date(meta.lastSync).toLocaleTimeString("id-ID") : ""}`
+    ? `DB: ${meta.count.toLocaleString("id-ID")} kode · ${sebutSumber(meta)}${meta.lastSync ? " · sync " + new Date(meta.lastSync).toLocaleTimeString("id-ID") : ""}`
     : "DB: DATABASE KODE MATERIAL (auto-sync dari spreadsheet tiap 30 menit)";
-  // DB dianggap tak sehat bila jauh lebih sedikit dari isi spreadsheet -> hasil "tidak ada" bisa menyesatkan
-  const dbBermasalah = !!meta && (meta.count < 3000 || !!meta.error);
+  /*
+   * Dua keadaan berbeda, dua peringatan berbeda.
+   *
+   * MERAH: isinya sendiri terlalu sedikit -> hasil "tidak ada" jelas tidak bisa
+   * dipercaya sama sekali.
+   *
+   * KUNING: isinya lengkap, tapi bukan dari spreadsheet langsung. Hasilnya
+   * masih layak dipakai, hanya saja kode yang baru ditambahkan di spreadsheet
+   * belum tentu ada. Sebelumnya keadaan ini tidak dilaporkan sama sekali
+   * (ambangnya 3.000, sedangkan salinan cadangan berisi ribuan), jadi
+   * spreadsheet yang sudah berhari-hari tidak terbaca pun tampak normal.
+   */
+  const dbBermasalah = !!meta && (meta.count < 3000 || (!!meta.error && meta.source === "seed"));
+  const dbTidakLive = !!meta && !dbBermasalah && meta.source !== "live";
 
   const isi = rows.filter((r) => r.nama.trim() || r.partNumber.trim() || r.kode.trim());
   const hasil = isi.map((r) => res[r.id]).filter(Boolean) as CekResult[];
@@ -331,6 +406,20 @@ export default function CekKodeMaterial() {
             <b>⚠ Database kode material belum lengkap terbaca</b> — baru {meta?.count.toLocaleString("id-ID")} kode.
             Hasil &quot;tidak ada&quot; belum tentu benar. Klik <b>Sinkron DB</b> untuk menarik ulang.
             {meta?.error && <span className="block mt-0.5 text-red-700/80">Sebab: {meta.error}</span>}
+          </div>
+        )}
+        {dbTidakLive && meta && (
+          <div className="mt-3 rounded-xl bg-amber-50 ring-1 ring-amber-300 px-3 py-2 text-xs text-amber-900">
+            <b>Memakai {sebutSumber(meta)}</b> — {meta.count.toLocaleString("id-ID")} kode.
+            Isinya lengkap, tapi kode yang baru ditambahkan di spreadsheet belum tentu ada di sini.
+            <span className="block mt-0.5 text-amber-800/90">Sebab: {sebabBukanLive(meta)}.</span>
+            {typeof meta.liveCount === "number" && (
+              <span className="block mt-0.5 text-amber-800/90">
+                Yang perlu diperiksa: tab <b>DATABASE KODE MATERIAL</b> pada spreadsheet masih ada dan
+                dibagikan ke <b>siapa saja yang memiliki link</b>. Kalau tab atau berkasnya sudah pindah,
+                setel alamat CSV-nya lewat env <code>MATERIAL_DB_CSV_URL</code>.
+              </span>
+            )}
           </div>
         )}
         <p className="text-xs text-slate-400 mt-3">{syncLabel}. <b>Barang umum</b> fuzzy → status <b>cek</b> = ada kandidat mirip, pilih di tombol rincian. <b>Suku cadang</b> cocok part number (abaikan pemisah); &gt;1 kode → kolom <i>Lainnya</i> / tombol rincian. Update spreadsheet → server auto-refresh; klik <b>Sinkron DB</b> untuk tarik langsung.</p>
