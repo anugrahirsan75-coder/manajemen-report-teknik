@@ -107,16 +107,36 @@ export default function RekapDokumentasi() {
   const setBaris = (folder: string, p: UbahanDokumentasi) =>
     simpan({ ...ubahan, [folder]: { ...(ubahan[folder] || {}), ...p } });
 
+  /**
+   * Buka folder arsip di Windows Explorer.
+   *
+   * Hanya mungkin bila aplikasinya dibuka dari laptop yang menyimpan arsip:
+   * fotonya ada di E:\ASDP, dan peladen awan tidak punya jalur itu maupun cara
+   * menyentuh laptop siapa pun. Dulu keadaan itu berakhir sebagai pesan galat
+   * dan jalan buntu — pemakainya tahu tombolnya tidak jalan, tapi tidak tahu
+   * harus apa.
+   *
+   * Sekarang kegagalan itu dialihkan ke jalan yang tetap sampai ke tujuan:
+   * jalur foldernya disalin ke papan klip, tinggal ditempel di Explorer.
+   */
   const bukaFolder = async (folder: string) => {
+    const jalur = `${AKAR_ARSIP}\\${folder}`;
     try {
       const r = await fetch("/api/dokumentasi/buka", {
         method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ folder }),
       });
-      if (!r.ok) {
-        const j = await r.json().catch(() => ({}));
-        await beritahu("Tak bisa membuka folder: " + (j?.galat || r.status));
-      }
+      if (r.ok) return;
+
+      const j = await r.json().catch(() => ({}));
+      let tersalin = false;
+      try { await navigator.clipboard.writeText(jalur); tersalin = true; } catch { /* papan klip ditolak */ }
+      await beritahu(
+        `${j?.galat || "Tak bisa membuka folder (" + r.status + ")."}\n\n`
+        + (tersalin
+            ? `Jalurnya sudah disalin — tempel di Windows Explorer:\n${jalur}`
+            : `Jalur foldernya:\n${jalur}`)
+        + "\n\nAtau buka halaman ini dari aplikasi di laptop: http://localhost:3001/dokumentasi");
     } catch (e: any) {
       await beritahu("Tak bisa membuka folder: " + (e?.message ?? e));
     }
