@@ -127,6 +127,32 @@ export function bacaAngka(teks: string): number {
   return negatif ? -angka : angka;
 }
 
+/**
+ * Kembalikan kuantitas asli bila yang tersalin cuma versi bulatnya.
+ *
+ * Kolom kuantitas repair list lazim berformat #,##0.0 — satu angka di
+ * belakang koma. Excel menyalin yang TAMPAK, jadi luas 113,04 M² tiba sebagai
+ * "113,0" dan 20,49 M² sebagai "20,5". Kuantitas itu lalu dikalikan harga
+ * satuan dan hasilnya meleset dari kolom Jumlah di lembar yang sama.
+ *
+ * Pemulihan hanya dilakukan bila hasil bagi total ÷ harga, dibulatkan ke
+ * jumlah desimal yang tampak, kembali PERSIS ke angka yang tersalin. Syarat
+ * itu yang memisahkan pembulatan tampilan dari lembar yang memang salah
+ * hitung — dan lembar yang salah hitung harus tetap ketahuan, bukan dirapikan
+ * diam-diam.
+ */
+function pulihkanKuantitas(teks: string, jumlah: number, harga: number, total: number): number {
+  if (Math.abs(jumlah * harga - total) <= 1) return jumlah;
+  const ekor = (teks || "").trim().match(/[.,](\d+)\s*$/);
+  const desimal = ekor ? ekor[1].length : 0;
+  if (desimal > 4) return jumlah;
+  const calon = total / harga;
+  if (!isFinite(calon) || calon <= 0) return jumlah;
+  const faktor = Math.pow(10, desimal);
+  if (Math.round(calon * faktor) / faktor !== jumlah) return jumlah;
+  return calon;
+}
+
 /** apakah sel ini berisi angka dan bukan sekadar teks yang kebetulan ada angkanya */
 const selAngka = (s: string) => /^[\s(]*(Rp\.?\s*)?-?[\d.,]+\)?\s*$/.test((s || "").trim()) && bacaAngka(s) !== 0;
 
@@ -146,13 +172,93 @@ const RX_PENUTUP = /^(jumlah|sub\s*total|total|ppn|ppn\s*11|pajak)\b/i;
  */
 const RX_JUDUL_KOLOM = /^(no|jumlah|jml|vol|volume|satuan|nama|nama\s*barang|nama\s*barang\s*\/\s*jasa|nama\s*barang\s*\/\s*pekerjaan|barang\s*\/\s*jasa|pekerjaan|spesifikasi|harga|harga\s*satuan|harga\s*spbj|harga\s*po|estimasi|keterangan|uraian|kapal|qty|sat)\.?$/i;
 
-/** buang baris kosong di ujung + pecah jadi sel */
+/**
+ * Buang baris kosong + pecah jadi sel, menghormati sel berkutip.
+ *
+ * Excel menyalin sel yang isinya beberapa baris — teks bersusun (wrap) yang
+ * dipatahkan dengan Alt+Enter — sebagai satu sel yang DIKUTIP, dengan pindah
+ * barisnya dibiarkan apa adanya di dalam kutipan. Memotong papan klip pada
+ * setiap "\n" memecah satu baris barang menjadi beberapa baris: potongan
+ * pertama membawa nomor dan kuantitas tetapi harganya tertinggal di potongan
+ * terakhir, sehingga barangnya tetap terbaca namun berharga nol.
+ *
+ * Itulah yang terjadi pada repair list KMP. Kerapu II: satu baris jangkar
+ * senilai Rp 10.000.000 hilang dari jumlah tanpa pesan galat apa pun, karena
+ * barisnya tetap ada dan tetap terhitung - hanya nilainya yang kosong.
+ *
+ * Kutip ganda di dalam sel berkutip ditulis Excel sebagai dua kutip berturut.
+ */
 export function pecah(teks: string): string[][] {
-  return (teks || "")
-    .replace(/\r/g, "")
-    .split("\n")
-    .map((b) => b.split("\t").map((s) => s.trim()))
-    .filter((sel) => sel.some((s) => s !== ""));
+  const bersih = (teks || "").replace(/\r\n?/g, "\n");
+  const baris: string[][] = [];
+  let sel: string[] = [];
+  let isi = "";
+  let dalamKutip = false;
+
+  for (let i = 0; i < bersih.length; i++) {
+    const c = bersih[i];
+    if (dalamKutip) {
+      if (c === '"') {
+        if (bersih[i + 1] === '"') { isi += '"'; i++; } else dalamKutip = false;
+      } else isi += c;
+      continue;
+    }
+    if (c === '"' && isi === "") { dalamKutip = true; continue; }
+    if (c === "\t") { sel.push(isi.trim()); isi = ""; continue; }
+    if (c === "\n") { sel.push(isi.trim()); baris.push(sel); sel = []; isi = ""; continue; }
+    isi += c;
+  }
+  if (isi !== "" || sel.length) { sel.push(isi.trim()); baris.push(sel); }
+
+  /*
+   * Pindah baris DI DALAM sel diratakan jadi spasi. Yang dipertahankan cuma
+   * batas barisnya; isinya sendiri masuk ke satu nama barang, sebagaimana
+   * terbaca di lembar aslinya.
+   */
+  const rapi = baris.map((b) => b.map((s) => s.replace(/\s*\n\s*/g, " ").trim()));
+  return sambungBarisTerpotong(rapi).filter((b) => b.some((s) => s !== ""));
+}
+
+/**
+ * Sambung kembali baris yang terpotong di tengah sel.
+ *
+ * Tidak semua Excel mengutip sel yang isinya beberapa baris saat menyalin;
+ * ada yang melepas pindah barisnya begitu saja. Pembacaan kutip tidak menolong
+ * untuk kasus itu, dan hasilnya sama buruknya - satu baris barang terbelah,
+ * harganya tertinggal di potongan terakhir.
+ *
+ * Yang bisa dipegang: menyalin satu blok Excel selalu menghasilkan baris
+ * selebar bloknya, lengkap dengan tab-tab kosong di kanan. Jadi baris yang
+ * LEBIH PENDEK dari lebar yang lazim pasti potongan, bukan baris utuh, dan
+ * disambungkan ke baris sebelumnya. Sel di titik sambungan digabung - di sana
+ * pindah barisnya dulu berada, di tengah satu sel yang sama.
+ */
+function sambungBarisTerpotong(baris: string[][]): string[][] {
+  if (baris.length < 2) return baris;
+  const hitung: Record<number, number> = {};
+  for (const b of baris) hitung[b.length] = (hitung[b.length] || 0) + 1;
+  let lebar = 0;
+  let terbanyak = 0;
+  Object.keys(hitung).forEach((k) => {
+    const l = Number(k);
+    const n = hitung[l];
+    if (n > terbanyak || (n === terbanyak && l > lebar)) { lebar = l; terbanyak = n; }
+  });
+  // lebar lazim harus benar-benar lazim; kalau tidak, jangan utak-atik apa pun
+  if (lebar < 2 || terbanyak < baris.length / 2) return baris;
+
+  const keluar: string[][] = [];
+  for (const b of baris) {
+    const kurang = keluar.length > 0 && keluar[keluar.length - 1].length < lebar;
+    if (kurang && b.length < lebar) {
+      const atas = keluar[keluar.length - 1];
+      const sambung = [atas[atas.length - 1], b[0]].filter(Boolean).join(" ").trim();
+      keluar[keluar.length - 1] = [...atas.slice(0, -1), sambung, ...b.slice(1)];
+      continue;
+    }
+    keluar.push([...b]);
+  }
+  return keluar;
 }
 
 /**
@@ -447,11 +553,14 @@ export function uraikan(teks: string, kolom?: Peran[], kapalAwal = ""): HasilTem
 
     // baris item: ada nama DAN (jumlah atau harga)
     if (nama && (selAngka(jumlahTeks) || selAngka(hargaTeks) || selAngka(totalTeks))) {
-      const jumlah = bacaAngka(jumlahTeks) || 1;
+      let jumlah = bacaAngka(jumlahTeks) || 1;
       let harga = bacaAngka(hargaTeks);
       const totalLembar = bacaAngka(totalTeks) || undefined;
       // harga satuan kosong tapi total ada -> turunkan dari total
       if (!harga && totalLembar && jumlah) harga = Math.round(totalLembar / jumlah);
+      const jumlahDibulatkan = harga && totalLembar
+        ? pulihkanKuantitas(jumlahTeks, jumlah, harga, totalLembar) : jumlah;
+      if (jumlahDibulatkan !== jumlah) jumlah = jumlahDibulatkan;
 
       const ket = ambil(sel, peran, "keterangan");
       const b: BarisTempel = {
