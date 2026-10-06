@@ -26,6 +26,8 @@ import { jointSurvey } from "./templates/jointSurvey";
 import { exemptionStability } from "./templates/exemptionStability";
 import { pelimpahanWewenang } from "./templates/pelimpahanWewenang";
 import { pelimpahanPenunjukan } from "./templates/pelimpahanPenunjukan";
+import { seaTrialCompasseren } from "./templates/seaTrialCompasseren";
+import { exhibitumJurnal } from "./templates/exhibitumJurnal";
 import { pengantarKodeMaterial } from "./templates/pengantarKodeMaterial";
 import { suratKustom } from "./templates/suratKustom";
 
@@ -47,6 +49,8 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   realisasiRutin,
   classMatter,
   surveyStatutori,
+  seaTrialCompasseren,
+  exhibitumJurnal,
   perpanjanganSertifikat,
   permohonanIO,
   pengantarKodeMaterial,
