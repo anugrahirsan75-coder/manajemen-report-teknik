@@ -26,6 +26,7 @@ import { jointSurvey } from "./templates/jointSurvey";
 import { exemptionStability } from "./templates/exemptionStability";
 import { pelimpahanWewenang } from "./templates/pelimpahanWewenang";
 import { pelimpahanPenunjukan } from "./templates/pelimpahanPenunjukan";
+import { persetujuanRegional } from "./templates/persetujuanRegional";
 import { seaTrialCompasseren } from "./templates/seaTrialCompasseren";
 import { exhibitumJurnal } from "./templates/exhibitumJurnal";
 import { pengantarKodeMaterial } from "./templates/pengantarKodeMaterial";
@@ -43,6 +44,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   penunjukanGabungan,
   pelimpahanWewenang,
   pelimpahanPenunjukan,
+  persetujuanRegional,
   tambahanHariDock,
   dendaDocking,
   laporanBerangkatDock,
