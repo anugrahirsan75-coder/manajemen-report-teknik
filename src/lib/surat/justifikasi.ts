@@ -38,6 +38,11 @@ export interface IsiJustifikasi {
   tglDockspace: string;
   /** target hari docking, menentukan kalimat "keterbatasan waktu" */
   targetHari: string;
+  /** BBM mobilisasi: liter dan nilainya — alinea tambahan, boleh kosong */
+  bbmLiter: string;
+  bbmNilai: number;
+  /** galangan tujuan, dipakai kalimat BBM mobilisasi */
+  galangan: string;
   dasar: BarisDasarJustifikasi[];
   cabang: string;
   tanggalSurat: string;
@@ -108,7 +113,41 @@ export function kalimatJustifikasi(d: IsiJustifikasi): string[] {
     + `sesuai target yang telah ditetapkan.`;
 
   const empat = "Demikian justifikasi ini kami sampaikan untuk menjadi bahan proses lebih lanjut, terima kasih.";
-  return [satu, dua, tiga, empat];
+
+  /*
+   * Alinea BBM mobilisasi hanya muncul bila liter atau nilainya diisi.
+   *
+   * BBM ini bukan bagian pekerjaan galangan, melainkan bahan bakar pelayaran
+   * kapal dari lintasan ke galangan - dan harus sudah ada di kapal SEBELUM
+   * berangkat. Justru di situ letak desakannya: pengadaannya tidak bisa
+   * menunggu, karena yang ditunggu bukan pekerjaannya melainkan
+   * keberangkatannya. Kalau tidak disebut, justifikasi ini hanya menerangkan
+   * percepatan pekerjaan docking dan tidak menerangkan kenapa BBM-nya ikut.
+   */
+  const bbm = kalimatBbm(d);
+  return bbm ? [satu, dua, bbm, tiga, empat] : [satu, dua, tiga, empat];
+}
+
+export function kalimatBbm(d: IsiJustifikasi): string {
+  const liter = String(d.bbmLiter || "").trim();
+  const nilai = d.bbmNilai || 0;
+  if (!liter && !nilai) return "";
+  const kapal = d.kapal || ISIAN;
+  const tujuan = String(d.galangan || "").trim();
+  // "28000 liter" terbaca sebagai angka mentah; dokumen resmi menulis 28.000
+  const angkaLiter = keAngka(liter);
+  const literRapi = angkaLiter ? angkaLiter.toLocaleString("id-ID") : liter;
+  const banyak = liter ? `sebanyak ${literRapi} liter` : "";
+  const harga = nilai ? `senilai ${rupiahSurat(nilai)} (${terbilangRupiah(nilai)})` : "";
+  const rincian = [banyak, harga].filter(Boolean).join(" ");
+
+  return `Termasuk di dalamnya pengadaan BBM mobilisasi docking${rincian ? " " + rincian : ""}, `
+    + `yaitu bahan bakar untuk pelayaran ${kapal} dari lintasan menuju galangan`
+    + (tujuan ? ` ${tujuan}` : "")
+    + `. BBM tersebut harus sudah tersedia di kapal sebelum keberangkatan, sehingga `
+    + `pengadaannya tidak dapat menunggu selesainya proses di tingkat atas — `
+    + `keterlambatan penyediaannya langsung menunda hari naik dok, bukan sekadar `
+    + `menunda pekerjaannya.`;
 }
 
 export function judulJustifikasi(d: IsiJustifikasi): string {
@@ -212,6 +251,9 @@ export function isiDariSurat(d: DataSurat, kop: {
     nilai: keAngka(d.nilai),
     tglDockspace: String(d.tglDockspace || ""),
     targetHari: String(d.targetHari || ""),
+    bbmLiter: String(d.bbmLiter || ""),
+    bbmNilai: keAngka(d.bbmNilai),
+    galangan: String(d.galangan || ""),
     dasar: (d.dasar as BarisDasarJustifikasi[]) || [],
     cabang: "Cabang Ternate",
     tanggalSurat: kop.tanggal,

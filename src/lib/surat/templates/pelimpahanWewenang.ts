@@ -13,7 +13,7 @@
  * persetujuan docking dan justifikasi percepatannya.
  */
 import { DataSurat, TemplateSurat } from "../types";
-import { KAPAL_SURAT, keAngka, namaKapalSurat, rupiahSurat, tanggalSurat } from "../format";
+import { GALANGAN, KAPAL_SURAT, keAngka, namaKapalSurat, rupiahSurat, tanggalSurat } from "../format";
 import { terbilangRupiah } from "../terbilang";
 import { ButirSurat, PENUTUP_PERSETUJUAN, b, bungkus, esc, i, suratBernomor } from "../htmlHelpers";
 
@@ -99,6 +99,18 @@ export const pelimpahanWewenang: TemplateSurat = {
     {
       id: "targetHari", label: "Target hari docking (untuk Lampiran 2)", jenis: "angka", awal: "14", kolomBorang: 2,
       petunjuk: "Menentukan kalimat “keterbatasan waktu hari docking (target … hari)”.",
+    },
+    {
+      id: "bbmLiter", label: "BBM mobilisasi — liter (untuk Lampiran 2)", jenis: "angka", kolomBorang: 2,
+      petunjuk: "Diisi bila pengadaan BBM mobilisasi ikut dimohonkan. Kosongkan bila tidak ada.",
+    },
+    {
+      id: "bbmNilai", label: "BBM mobilisasi — nilai (untuk Lampiran 2)", jenis: "rupiah", kolomBorang: 2,
+    },
+    {
+      id: "galangan", label: "Galangan tujuan (untuk Lampiran 2)", jenis: "pilih",
+      pilihan: GALANGAN, bebas: true, kolomBorang: 2,
+      petunjuk: "Disebut pada kalimat BBM mobilisasi: “pelayaran kapal dari lintasan menuju galangan …”.",
     },
     {
       id: "alasan", label: "Alasan pelimpahan", jenis: "textarea", wajib: true,
