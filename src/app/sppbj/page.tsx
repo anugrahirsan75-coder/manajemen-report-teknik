@@ -368,8 +368,15 @@ export default function SppbjList() {
                 const adaFinal = adaHargaSpbj(item);
                 const nFinal = adaFinal ? totalSpbj(item) : 0;
                 const selisih = adaFinal ? nUsulan - nFinal : 0;
+                /*
+                 * Barisnya sengaja TIDAK bisa diklik. Nama pengadaan di sini
+                 * sering disalin untuk ditempel ke SAP atau ke surat, dan
+                 * menyeret kursor untuk memblok teks terbaca sebagai klik —
+                 * halamannya berpindah ke detail sebelum teksnya sempat
+                 * tersalin. Membukanya lewat tombol Buka di ujung baris.
+                 */
                 return (
-                  <tr key={r.id} className="border-b border-slate-200 last:border-0 row-hover cursor-pointer align-middle even:bg-slate-50/50" onClick={() => buka(r)}>
+                  <tr key={r.id} className="border-b border-slate-200 last:border-0 row-hover align-middle even:bg-slate-50/50">
                     <td className="px-2 py-2.5 text-center text-xs text-slate-400 tabular-nums">{i + 1}</td>
                     <td className="px-2 py-2.5">
                       <div className="flex items-start gap-2">
@@ -379,14 +386,14 @@ export default function SppbjList() {
                     </td>
                     <td className="px-2 py-2.5"><KapalCell items={r.payload?.items || []} /></td>
                     <td className="px-2 py-2.5 text-slate-600 tabular-nums break-words">{nomor}</td>
-                    <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-2 py-2.5 whitespace-nowrap">
                       {po ? (
                         <button onClick={() => setSapEdit(r)} className="tabular-nums text-slate-700 hover:text-[#1ca3dd] hover:underline" title="Ubah No. PO SAP">{po}</button>
                       ) : (
                         <button onClick={() => setSapEdit(r)} className="text-[11px] text-slate-400 hover:text-[#1ca3dd]" title="Belum ada No. PO SAP — klik untuk isi">— isi</button>
                       )}
                     </td>
-                    <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-2 py-2.5 whitespace-nowrap">
                       <button onClick={() => setSapEdit(r)}
                         title={gr.length ? gr.map((g) => `${g.termin ? `Termin ${"I".repeat(g.termin)} · ` : ""}${g.nomor}`).join("\n") : "Belum ada No. GR/SES — klik untuk isi"}
                         className={`text-[11px] font-semibold px-2 py-1 rounded-lg ring-1 ${
@@ -428,7 +435,7 @@ export default function SppbjList() {
                       })()}
                     </td>
                     <td className="px-2 py-2.5"><span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded-full whitespace-nowrap ${STATUS_COLOR[st] ?? STATUS_COLOR.menunggu_spbj}`}>{STATUS_LABEL[st] ?? r.status}</span></td>
-                    <td className="px-2 py-2.5 whitespace-nowrap" onClick={(e) => e.stopPropagation()}>
+                    <td className="px-2 py-2.5 whitespace-nowrap">
                       <div className="flex items-center justify-center gap-1">
                         {r.payload?.keScm ? (
                           <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-bold text-emerald-700 ring-1 ring-emerald-200"
