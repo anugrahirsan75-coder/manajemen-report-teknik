@@ -20,6 +20,7 @@ import EditorSurat from "@/components/surat/EditorSurat";
 import DataKopSurat, { DataKop, kopAwal } from "@/components/surat/DataKopSurat";
 import { jabatanCetak, perihalBawaan, pisahTujuan, susunNomor, tanggalKop, tujuanBawaan } from "@/lib/surat/kop";
 import { unduhPdfEoffice } from "@/lib/surat/pdfEoffice";
+import { isiDariSurat, unduhJustifikasi } from "@/lib/surat/justifikasi";
 import { useKapalDb } from "@/lib/kapal/store";
 
 const KUNCI_DRAF = "surat_eoffice_draf";
@@ -76,6 +77,7 @@ export default function BuatSuratEOffice() {
   const [semuaKop, setSemuaKop] = useState<Record<string, DataKop>>({});
   const [bukaKop, setBukaKop] = useState(false);
   const [sedangPdf, setSedangPdf] = useState(false);
+  const [sedangDocx, setSedangDocx] = useState(false);
 
   /*
    * Tonase kotor diambil dari BASIS DATA KAPAL, bukan dari daftar tetap.
@@ -246,6 +248,32 @@ export default function BuatSuratEOffice() {
   const bawaanTujuan = useMemo(() => pisahTujuan(tujuanBawaan(templat, data)), [templat, data]);
   const bawaanPerihal = useMemo(() => perihalBawaan(templat, data), [templat, data]);
 
+  /*
+   * LAMPIRAN 2 hanya menempel pada surat yang memang melampirkannya. Tombolnya
+   * disembunyikan di surat lain supaya tidak lahir justifikasi percepatan untuk
+   * permohonan yang tidak mempercepat apa pun.
+   */
+  const PUNYA_JUSTIFIKASI = ["pelimpahan-wewenang", "pelimpahan-penunjukan", "persetujuan-regional"];
+  const bisaJustifikasi = PUNYA_JUSTIFIKASI.indexOf(templat.id) >= 0;
+
+  const unduhDocxJustifikasi = async () => {
+    setSedangDocx(true);
+    try {
+      const isi = isiDariSurat(data, {
+        tanggal: kop.tanggal,
+        namaPenanda: kop.namaPenanda,
+        jabatanPenanda: jabatanCetak(kop.namaPenanda, kop.jabatanPenanda, kop.tanggal),
+      });
+      const tgl = kop.tanggal || new Date().toISOString().slice(0, 10);
+      await unduhJustifikasi(isi, `Justifikasi - ${isi.kapal || templat.id} ${isi.tahun} - ${tgl}.docx`);
+      beritahu("Justifikasi (Lampiran 2) terunduh sebagai Word — silakan disunting lalu dicetak.");
+    } catch (e: any) {
+      beritahu(`Gagal membuat justifikasi: ${e?.message || e}`);
+    } finally {
+      setSedangDocx(false);
+    }
+  };
+
   const unduhPdf = async () => {
     setSedangPdf(true);
     try {
@@ -299,6 +327,13 @@ export default function BuatSuratEOffice() {
               className="btn btn-ghost text-xs disabled:opacity-40" title="Konsep surat lengkap berkop ASDP, siap dicetak">
               {sedangPdf ? "⏳ Menyusun…" : "📄 Unduh PDF"}
             </button>
+            {bisaJustifikasi && (
+              <button onClick={unduhDocxJustifikasi} disabled={sedangDocx}
+                className="btn btn-ghost text-xs disabled:opacity-40"
+                title="LAMPIRAN 2 — justifikasi percepatan, keluar sebagai Word supaya masih bisa disunting">
+                {sedangDocx ? "⏳ Menyusun…" : "📝 Justifikasi (.docx)"}
+              </button>
+            )}
             <button onClick={salinKaya} disabled={!lengkap} className="btn btn-success text-xs disabled:opacity-40">📋 Salin Rich Text</button>
             <button onClick={salinKode} disabled={!lengkap} className="btn btn-primary text-xs disabled:opacity-40">⧉ Salin HTML</button>
           </div>

@@ -86,6 +86,20 @@ export const pelimpahanWewenang: TemplateSurat = {
         { id: "perihal", label: "Tentang / perihal", jenis: "teks" },
       ],
     },
+    /*
+     * Dua isian berikut tidak dipakai badan suratnya sama sekali — hanya oleh
+     * LAMPIRAN 2 (justifikasi percepatan) yang selalu menyertainya. Ditaruh di
+     * sini supaya lampirannya ikut terisi sendiri; dikosongkan pun surat
+     * induknya tetap utuh, lampirannya saja yang menyisakan titik-titik.
+     */
+    {
+      id: "tglDockspace", label: "Rencana dockspace (untuk Lampiran 2)", jenis: "tanggal", kolomBorang: 2,
+      petunjuk: "Tanggal kapal dijadwalkan masuk dock. Dipakai di justifikasi percepatan.",
+    },
+    {
+      id: "targetHari", label: "Target hari docking (untuk Lampiran 2)", jenis: "angka", awal: "14", kolomBorang: 2,
+      petunjuk: "Menentukan kalimat “keterbatasan waktu hari docking (target … hari)”.",
+    },
     {
       id: "alasan", label: "Alasan pelimpahan", jenis: "textarea", wajib: true,
       awal: "pekerjaan tersebut bersifat mendesak dan membutuhkan koordinasi teknis secara langsung "
