@@ -6,6 +6,7 @@ import { DEPT_HEAD, STAF_TEKNIK } from "./db";
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { catatBackup } from "@/lib/backup/local";
 import { beritahu } from "@/components/Konfirmasi";
+import { coba2x, pesanGagal, siapkanPayload, ukuranRapi } from "@/lib/kirimAman";
 
 const LS_KEY = "sppbj_request";
 
@@ -68,17 +69,37 @@ export function SppbjProvider({ children }: { children: React.ReactNode }) {
   const saveRemote = async () => {
     if (!supabase) { persist(req); setLastSaved("Lokal " + new Date().toLocaleTimeString("id-ID")); return; }
     setSaving(true);
+    /**
+     * Ukuran kiriman disiapkan DULU, baru dikirim.
+     *
+     * Foto dokumentasi yang terlanjur tersimpan sebagai base64 ikut masuk ke
+     * dalam payload, dan badan permintaan di atas 4,5 MB ditolak Vercel sebelum
+     * fungsi kita sempat berjalan - peramban hanya bisa melaporkan "Failed to
+     * fetch", tanpa menyebut ukuran maupun foto. Di sini fotonya dicoba
+     * dinaikkan ke Storage lebih dulu; kalau masih kebesaran, yang tersisa
+     * dikeluarkan dari kiriman dan pemakainya diberi tahu.
+     */
+    let bita = 0;
     try {
-      const payload = { ...req, kind: "sppbj" };
-      const { data: row, error } = await supabase.from("projects")
-        .upsert({ id: req.id ?? undefined, nama_kapal: req.namaPengadaan, tahun: parseInt(req.tanggal.slice(0, 4)) || null, payload })
-        .select().single();
-      if (error) throw error;
+      const siap = await siapkanPayload({ ...req, kind: "sppbj" });
+      bita = siap.bita;
+      const payload = siap.payload;
+      const row = await coba2x(async () => {
+        const r = await supabase!.from("projects")
+          .upsert({ id: req.id ?? undefined, nama_kapal: req.namaPengadaan, tahun: parseInt(req.tanggal.slice(0, 4)) || null, payload })
+          .select().single();
+        if (r.error) throw r.error;
+        return r.data;
+      });
       if (row?.id) update({ id: row.id });
+      // foto yang berhasil dinaikkan ikut ditulis balik ke draft, supaya base64-nya
+      // tidak terkirim lagi pada penyimpanan berikutnya
+      if (siap.naik) update({ fotoDokumentasi: payload.fotoDokumentasi });
       catatBackup("sppbj", row?.id ?? req.id, payload, req.namaPengadaan);
-      setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
+      setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID") + " · " + ukuranRapi(bita));
+      if (siap.catatan) void beritahu("Tersimpan, tetapi: " + siap.catatan);
     } catch (e: any) {
-      void beritahu("Gagal simpan: " + e.message + "\nData tersimpan lokal.");
+      void beritahu("Gagal simpan: " + pesanGagal(e, bita) + "\nData tersimpan lokal.");
       persist(req);
     } finally { setSaving(false); }
   };

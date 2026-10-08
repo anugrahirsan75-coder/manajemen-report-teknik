@@ -5,6 +5,7 @@ import { NonprRequest, NonprItem, emptyNonprItem, newNonprDraft } from "./types"
 import { supabase, isSupabaseReady } from "@/lib/supabase";
 import { catatBackup } from "@/lib/backup/local";
 import { beritahu } from "@/components/Konfirmasi";
+import { coba2x, pesanGagal, siapkanPayload, ukuranRapi } from "@/lib/kirimAman";
 
 const LS_KEY = "nonpr_request";
 
@@ -45,17 +46,27 @@ export function NonprProvider({ children }: { children: React.ReactNode }) {
   const saveRemote = async () => {
     if (!supabase) { persist(req); setLastSaved("Lokal " + new Date().toLocaleTimeString("id-ID")); return; }
     setSaving(true);
+    // alasan lengkapnya lihat lib/kirimAman.ts — foto base64 membuat badan
+    // permintaan menembus batas Vercel, dan gagalnya tidak menyebut sebab
+    let bita = 0;
     try {
-      const payload = { ...req, kind: "nonpr" };
-      const { data: row, error } = await supabase.from("projects")
-        .upsert({ id: req.id ?? undefined, nama_kapal: req.namaPengadaan, tahun: parseInt(req.tanggal.slice(0, 4)) || null, payload })
-        .select().single();
-      if (error) throw error;
+      const siap = await siapkanPayload({ ...req, kind: "nonpr" });
+      bita = siap.bita;
+      const payload = siap.payload;
+      const row = await coba2x(async () => {
+        const r = await supabase!.from("projects")
+          .upsert({ id: req.id ?? undefined, nama_kapal: req.namaPengadaan, tahun: parseInt(req.tanggal.slice(0, 4)) || null, payload })
+          .select().single();
+        if (r.error) throw r.error;
+        return r.data;
+      });
       if (row?.id) update({ id: row.id });
+      if (siap.naik) update({ fotoDokumentasi: payload.fotoDokumentasi });
       catatBackup("nonpr", row?.id ?? req.id, payload, req.namaPengadaan);
-      setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID"));
+      setLastSaved("Supabase " + new Date().toLocaleTimeString("id-ID") + " · " + ukuranRapi(bita));
+      if (siap.catatan) void beritahu("Tersimpan, tetapi: " + siap.catatan);
     } catch (e: any) {
-      void beritahu("Gagal simpan: " + e.message + "\nData tersimpan lokal.");
+      void beritahu("Gagal simpan: " + pesanGagal(e, bita) + "\nData tersimpan lokal.");
       persist(req);
     } finally { setSaving(false); }
   };
