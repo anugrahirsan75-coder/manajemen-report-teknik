@@ -123,6 +123,47 @@ export const tambahanHariDock: TemplateSurat = {
     { id: "pasalBayar", label: "Pasal tata cara pembayaran", jenis: "teks", awal: "6", kolomBorang: 2 },
     { id: "terminPotong", label: "Termin pemotongan denda", jenis: "teks", awal: "ke-3 (pelunasan)", kolomBorang: 2 },
     { id: "terminBayar", label: "Termin dibayarkan 100%", jenis: "teks", awal: "ke-II (dua)", kolomBorang: 2 },
+    /*
+     * LAMPIRAN — Berita Acara Kesepakatan Bersama.
+     *
+     * Isian di bawah ini tidak masuk ke badan surat sama sekali; seluruhnya
+     * hanya mengisi lampirannya. Surat ini menutup dengan janji bahwa
+     * penambahan waktunya "akan dituangkan dalam sebuah Kesepakatan Bersama",
+     * dan berita acara itulah lampirannya — menempel pada surat ini saja,
+     * bukan dokumen yang berdiri sendiri.
+     *
+     * Lampirannya dibuat dari borang yang sama supaya kedua dokumen tidak
+     * mungkin menyebut tanggal atau nomor yang berbeda. Tidak satu pun wajib:
+     * suratnya tetap bisa diterbitkan tanpa lampiran ini.
+     */
+    {
+      id: "nilaiTermin", label: "Lampiran BA — nilai termin dibayar 100% (Rp, termasuk PPN)",
+      jenis: "angka", kolomBorang: 2,
+      petunjuk: "Tidak masuk badan surat; mengisi butir 6 lampiran Berita Acara Kesepakatan.",
+    },
+    {
+      id: "tglBki", label: "Lampiran BA — tanggal rekomendasi BKI", jenis: "tanggal", kolomBorang: 2,
+      petunjuk: "Tidak masuk badan surat; kosongkan bila tidak ada.",
+    },
+    {
+      id: "noBa", label: "Lampiran BA — nomor Berita Acara", jenis: "teks", kolomBorang: 2,
+      contoh: "BA.09/HK.204/ASDP-KIR/VII/2026",
+      petunjuk: "Kosongkan bila belum terbit — nomornya ditulis sebagai pola siap isi.",
+    },
+    {
+      id: "tglBa", label: "Lampiran BA — tanggal Berita Acara", jenis: "tanggal", kolomBorang: 2,
+      petunjuk: "Kosong berarti ikut tanggal surat induknya.",
+    },
+    {
+      id: "namaKedua", label: "Lampiran BA — penanda tangan galangan (PIHAK KEDUA)",
+      jenis: "teks", kolomBorang: 2,
+      petunjuk: "Nama orangnya tidak disimpan di aplikasi — pejabat galangan berganti, dan nama yang "
+        + "tertanam di kode diam-diam tetap lama. Jabatan dan alamat perusahaannya sudah terisi sendiri.",
+    },
+    {
+      id: "jabatanKedua", label: "Lampiran BA — jabatan penanda tangan galangan",
+      jenis: "teks", kolomBorang: 2,
+    },
     {
       id: "catatan", label: "Catatan yang menyertai persetujuan", jenis: "daftar-centang",
       pilihan: CATATAN_TAMBAH_HARI, awal: CATATAN_TAMBAH_HARI,

@@ -21,6 +21,7 @@ import DataKopSurat, { DataKop, kopAwal } from "@/components/surat/DataKopSurat"
 import { jabatanCetak, perihalBawaan, pisahTujuan, susunNomor, tanggalKop, tujuanBawaan } from "@/lib/surat/kop";
 import { unduhPdfEoffice } from "@/lib/surat/pdfEoffice";
 import { isiDariSurat, unduhJustifikasi } from "@/lib/surat/justifikasi";
+import { isiBaDariSurat, unduhBaKesepakatan } from "@/lib/surat/baKesepakatan";
 import { useKapalDb } from "@/lib/kapal/store";
 
 const KUNCI_DRAF = "surat_eoffice_draf";
@@ -274,6 +275,34 @@ export default function BuatSuratEOffice() {
     }
   };
 
+  /*
+   * Berita Acara Kesepakatan Bersama adalah LAMPIRAN surat persetujuan
+   * tambahan hari, bukan dokumen tersendiri. Surat itu sendiri yang
+   * menjanjikannya pada catatan terakhir, jadi tombolnya hanya muncul di sana
+   * — di surat lain tidak ada kesepakatan apa pun untuk dilampirkan.
+   */
+  const bisaBaKesepakatan = templat.id === "tambahan-hari-dock";
+
+  const unduhDocxBa = async () => {
+    setSedangDocx(true);
+    try {
+      const isi = isiBaDariSurat(data, {
+        nomor: susunNomor(kop.kode, kop.urut, kop.tanggal),
+        tanggal: kop.tanggal,
+        namaPenanda: kop.namaPenanda,
+        jabatanPenanda: jabatanCetak(kop.namaPenanda, kop.jabatanPenanda, kop.tanggal),
+      });
+      const tgl = isi.tglBa || new Date().toISOString().slice(0, 10);
+      await unduhBaKesepakatan(isi,
+        `Lampiran - BA Kesepakatan Bersama ${isi.kapal || templat.id} ${isi.tahun} - ${tgl}.docx`);
+      beritahu("Lampiran Berita Acara Kesepakatan terunduh sebagai Word — tanda tangan, stempel, dan meterai sengaja kosong.");
+    } catch (e: any) {
+      beritahu(`Gagal membuat berita acara: ${e?.message || e}`);
+    } finally {
+      setSedangDocx(false);
+    }
+  };
+
   const unduhPdf = async () => {
     setSedangPdf(true);
     try {
@@ -332,6 +361,13 @@ export default function BuatSuratEOffice() {
                 className="btn btn-ghost text-xs disabled:opacity-40"
                 title="LAMPIRAN 2 — justifikasi percepatan, keluar sebagai Word supaya masih bisa disunting">
                 {sedangDocx ? "⏳ Menyusun…" : "📝 Justifikasi (.docx)"}
+              </button>
+            )}
+            {bisaBaKesepakatan && (
+              <button onClick={unduhDocxBa} disabled={sedangDocx}
+                className="btn btn-ghost text-xs disabled:opacity-40"
+                title="LAMPIRAN surat ini — Berita Acara Kesepakatan Bersama dengan galangan, berkop dua logo, keluar sebagai Word">
+                {sedangDocx ? "⏳ Menyusun…" : "🤝 Lampiran BA Kesepakatan (.docx)"}
               </button>
             )}
             <button onClick={salinKaya} disabled={!lengkap} className="btn btn-success text-xs disabled:opacity-40">📋 Salin Rich Text</button>
