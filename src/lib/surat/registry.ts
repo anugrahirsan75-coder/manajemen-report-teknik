@@ -31,6 +31,7 @@ import { seaTrialCompasseren } from "./templates/seaTrialCompasseren";
 import { exhibitumJurnal } from "./templates/exhibitumJurnal";
 import { pengantarKodeMaterial } from "./templates/pengantarKodeMaterial";
 import { permintaanRl } from "./templates/permintaanRl";
+import { rampdoorDidahulukan } from "./templates/rampdoorDidahulukan";
 import { suratKustom } from "./templates/suratKustom";
 
 export const TEMPLATE_SURAT: TemplateSurat[] = [
@@ -43,6 +44,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   penunjukanLangsung,
   penunjukanPengadaan,
   penunjukanRampdoor,
+  rampdoorDidahulukan,
   penunjukanGabungan,
   pelimpahanWewenang,
   pelimpahanPenunjukan,

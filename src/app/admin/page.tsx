@@ -18,12 +18,42 @@ const KUOTA_STORAGE = 1024 * 1024 * 1024; // 1 GB storage
 
 const ukuran = (b: number) => b >= 1048576 ? `${(b / 1048576).toFixed(1)} MB` : b >= 1024 ? `${(b / 1024).toFixed(0)} KB` : `${b} B`;
 
+/**
+ * Drive diukur dalam gigabita, bukan megabita.
+ *
+ * Kuota Drive bawaan 15 GB; dengan satuan MB angkanya jadi lima digit dan
+ * pembacanya harus membagi sendiri untuk tahu masih sisa berapa.
+ */
+const ukuranGb = (b: number) => b >= 1073741824 ? `${(b / 1073741824).toFixed(2)} GB` : ukuran(b);
+
+interface KuotaDrive {
+  tersambung: boolean; sebab?: string; email?: string; nama?: string;
+  batas: number | null; pakai: number; pakaiDrive: number; pakaiSampah: number;
+}
+
 export default function AdminPage() {
   const [rows, setRows] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [galat, setGalat] = useState("");
   const [berkas, setBerkas] = useState<{ jumlah: number; bytes: number; gagal: number } | null>(null);
   const [cekBerkas, setCekBerkas] = useState(false);
+  const [drive, setDrive] = useState<KuotaDrive | null>(null);
+  const [cekDrive, setCekDrive] = useState(false);
+
+  /*
+   * Kuota Drive diambil lewat rute server, bukan langsung dari peramban:
+   * panggilan ke Drive perlu token, dan token tidak boleh melewati halaman.
+   */
+  const muatDrive = useCallback(async () => {
+    setCekDrive(true);
+    try {
+      const r = await fetch("/api/drive/kuota", { cache: "no-store" });
+      setDrive(await r.json());
+    } catch (e: any) {
+      setDrive({ tersambung: false, sebab: String(e?.message || e), batas: null, pakai: 0, pakaiDrive: 0, pakaiSampah: 0 });
+    } finally { setCekDrive(false); }
+  }, []);
+  useEffect(() => { muatDrive(); }, [muatDrive]);
 
   const muat = useCallback(async () => {
     if (!supabase) return;
@@ -131,6 +161,63 @@ export default function AdminPage() {
             <div className="h-3" />
             <Bar label="Storage (foto & lampiran)" pakai={berkas ? ukuran(berkas.bytes) : "belum dihitung"} dari="1 GB" pct={pctSt} warna="bg-gradient-to-r from-violet-500 to-violet-800" />
             {berkas && berkas.gagal > 0 && <p className="text-[11px] text-amber-700 mt-2">{berkas.gagal} berkas tak terbaca (mungkin sudah terhapus di Storage tapi tautannya masih tersimpan).</p>}
+          </section>
+
+          {/* Google Drive — dokumen kapal disimpan sebagai tautan Drive, ruangnya
+              tidak terlihat di Supabase dan baru ketahuan saat unggahan ditolak */}
+          <section className="mt-5 bg-white rounded-2xl elev-md ring-line p-5">
+            <div className="flex items-center gap-2 mb-3">
+              <h2 className="font-bold text-slate-800">Google Drive</h2>
+              <span className="text-[11px] text-slate-500">
+                {drive?.tersambung ? (drive.email || "akun tersambung") : "penyimpanan dokumen kapal"}
+              </span>
+              <button onClick={muatDrive} disabled={cekDrive} className="btn btn-ghost text-xs ml-auto disabled:opacity-50">
+                {cekDrive ? "memeriksa…" : "↻ Periksa"}
+              </button>
+            </div>
+
+            {!drive && <p className="text-sm text-slate-500">memeriksa…</p>}
+
+            {drive && drive.tersambung && (
+              <>
+                <Bar
+                  label="Ruang terpakai"
+                  pakai={ukuranGb(drive.pakai)}
+                  dari={drive.batas === null ? "tanpa batas" : ukuranGb(drive.batas)}
+                  pct={drive.batas ? (drive.pakai / drive.batas) * 100 : 0}
+                  warna="bg-gradient-to-r from-amber-500 to-orange-700"
+                />
+                <div className="mt-3 grid gap-2 sm:grid-cols-3 text-[11px] text-slate-600">
+                  <p>Berkas Drive: <b className="text-slate-900 tabular-nums">{ukuranGb(drive.pakaiDrive)}</b></p>
+                  <p>Sampah: <b className="text-slate-900 tabular-nums">{ukuranGb(drive.pakaiSampah)}</b></p>
+                  <p>Lain (Gmail, Foto): <b className="text-slate-900 tabular-nums">
+                    {ukuranGb(Math.max(0, drive.pakai - drive.pakaiDrive))}</b></p>
+                </div>
+                {drive.pakaiSampah > 0 && (
+                  <p className="text-[11px] text-amber-700 mt-2">
+                    Sampah masih menghitung kuota — kosongkan Tempat Sampah Drive untuk membebaskan {ukuranGb(drive.pakaiSampah)}.
+                  </p>
+                )}
+              </>
+            )}
+
+            {drive && !drive.tersambung && (
+              <div className="rounded-xl bg-slate-50 ring-1 ring-slate-200 p-3">
+                <p className="text-sm font-semibold text-slate-800">Belum tersambung ke Google Drive</p>
+                <p className="text-[11px] text-slate-600 mt-1">{drive.sebab}</p>
+                <p className="text-[11px] text-slate-600 mt-2">
+                  Isi tiga variabel ini di Vercel (Settings → Environment Variables), lalu deploy ulang:
+                </p>
+                <pre className="mt-1 text-[10px] bg-white rounded-lg ring-1 ring-slate-200 p-2 overflow-x-auto">
+GOOGLE_OAUTH_CLIENT_ID
+GOOGLE_OAUTH_CLIENT_SECRET
+GOOGLE_OAUTH_REFRESH_TOKEN   (cakupan: drive.metadata.readonly)</pre>
+                <p className="text-[11px] text-slate-500 mt-2">
+                  Cakupan <b>metadata.readonly</b> hanya boleh membaca ukuran dan nama berkas — tidak bisa
+                  membuka isinya, mengubah, apalagi menghapus.
+                </p>
+              </div>
+            )}
           </section>
 
           {/* per jenis */}
