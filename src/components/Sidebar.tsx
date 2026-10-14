@@ -154,6 +154,9 @@ const KELOMPOK: Kelompok[] = [
         ],
       },
       {
+        href: "/temuan", icon: "perisai", label: "Temuan Kapal", desc: "Temuan pemeriksa & pemenuhannya", tepat: true,
+      },
+      {
         href: "/servis", icon: "obeng", label: "Servis Bengkel", desc: "Monitoring barang servis", tepat: true,
         sub: [
           { href: "/servis", label: "Monitoring", icon: "rumah", tepat: true },

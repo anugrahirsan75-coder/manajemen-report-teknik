@@ -6,6 +6,7 @@ import { MaterialProvider } from "@/lib/material/store";
 import { SppbjProvider } from "@/lib/sppbj/store";
 import { NonprProvider } from "@/lib/nonpr/store";
 import { ServisProvider } from "@/lib/servis/store";
+import { TemuanProvider } from "@/lib/temuan/store";
 import Sidebar from "@/components/Sidebar";
 import RangkaAplikasi from "@/components/RangkaAplikasi";
 import { PenyediaDialog } from "@/components/Konfirmasi";
@@ -34,11 +35,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <SppbjProvider>
               <NonprProvider>
                 <ServisProvider>
+                  <TemuanProvider>
                   <RangkaAplikasi sidebar={<Sidebar />} loneng={<LonengPengingat />}>
                     {children}
                   </RangkaAplikasi>
                   {/* satu dialog untuk seluruh aplikasi — dipakai konfirmasi() & beritahu() */}
                   <PenyediaDialog />
+                  </TemuanProvider>
                 </ServisProvider>
               </NonprProvider>
             </SppbjProvider>
