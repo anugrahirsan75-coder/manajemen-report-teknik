@@ -62,7 +62,34 @@ export default function HalamanTemuan() {
       if (!gabung.toLowerCase().includes(q.toLowerCase())) return false;
     }
     return true;
+  }).sort((a, b) => {
+    /*
+     * Urutan daftar menentukan apa yang dikerjakan lebih dulu, jadi tidak
+     * dibiarkan mengikuti urutan masuk. Yang belum selesai naik ke atas,
+     * lalu yang jatuh temponya paling dekat — temuan tanpa tanggal jatuh
+     * paling bawah, bukan hilang.
+     */
+    const belum = (t: TemuanItem) => (t.status === "closed" ? 1 : 0);
+    if (belum(a) !== belum(b)) return belum(a) - belum(b);
+    const ta = a.jatuhTempo || "9999-12-31";
+    const tb = b.jatuhTempo || "9999-12-31";
+    return ta < tb ? -1 : ta > tb ? 1 : 0;
   }), [items, q, fKapal, fStatus, fPrioritas]);
+
+  /** rekap per kapal — yang dilihat lebih dulu saat memantau keseluruhan */
+  const perKapal = useMemo(() => {
+    const peta = new Map<string, { total: number; buka: number; telat: number; tutup: number }>();
+    items.forEach((t) => {
+      const k = t.kapal || "(tanpa kapal)";
+      const d = peta.get(k) || { total: 0, buka: 0, telat: 0, tutup: 0 };
+      d.total += 1;
+      if (t.status === "closed") d.tutup += 1; else d.buka += 1;
+      const sisa = sisaHari(t.jatuhTempo);
+      if (t.status !== "closed" && sisa !== null && sisa < 0) d.telat += 1;
+      peta.set(k, d);
+    });
+    return Array.from(peta.entries()).sort((a, b) => b[1].telat - a[1].telat || b[1].buka - a[1].buka);
+  }, [items]);
 
   const hitung = useMemo(() => {
     const n = { open: 0, proses: 0, closed: 0, telat: 0, tanpaBukti: 0 };
@@ -128,7 +155,28 @@ export default function HalamanTemuan() {
           sub={hitung.tanpaBukti ? "tidak bisa diperiksa" : "bersih"} />
       </section>
 
-      <section className="mt-4 flex flex-wrap gap-2">
+      {perKapal.length > 1 && (
+        <section className="mt-3 flex flex-wrap gap-2">
+          {perKapal.map(([nama, d]) => (
+            <button key={nama} onClick={() => setFKapal(fKapal === nama ? "" : nama)}
+              className={`rounded-xl px-3 py-1.5 text-[11px] ring-1 transition ${
+                fKapal === nama
+                  ? "bg-slate-900 text-white ring-slate-900"
+                  : "bg-white text-slate-700 ring-slate-200 hover:ring-slate-400"}`}>
+              <b>{nama.replace(/^KMP\.?\s*/i, "")}</b>
+              <span className="ml-1.5 tabular-nums opacity-80">{d.buka}/{d.total} terbuka</span>
+              {d.telat > 0 && (
+                <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                  fKapal === nama ? "bg-white/20" : "bg-red-100 text-red-700"}`}>
+                  {d.telat} telat
+                </span>
+              )}
+            </button>
+          ))}
+        </section>
+      )}
+
+      <section className="mt-3 flex flex-wrap gap-2">
         <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="🔍 cari temuan…"
           className="inp flex-1 min-w-[14rem]" />
         <select value={fKapal} onChange={(e) => setFKapal(e.target.value)} className="inp w-auto">
@@ -155,11 +203,32 @@ export default function HalamanTemuan() {
         </div>
       )}
 
-      <div className="mt-4 grid gap-3">
-        {tersaring.map((t) => (
-          <Kartu key={t.id} t={t} onSunting={() => setSunting(t)} onHapus={() => hapusTemuan(t)} />
-        ))}
-      </div>
+      {!!tersaring.length && (
+        <div className="mt-3 overflow-x-auto rounded-2xl bg-white ring-line elev-md">
+          <table className="w-full min-w-[68rem] text-xs">
+            <thead className="sticky top-0 z-10 bg-slate-100 text-[10px] font-bold uppercase tracking-wide text-slate-600">
+              <tr className="border-b-2 border-slate-200">
+                <th className="w-10 p-2 text-center">#</th>
+                <th className="w-28 p-2 text-left">Kapal</th>
+                <th className="p-2 text-left">Temuan</th>
+                <th className="w-20 p-2 text-center">Kategori</th>
+                <th className="w-24 p-2 text-center">Jatuh tempo</th>
+                <th className="w-20 p-2 text-center">Sisa</th>
+                <th className="w-28 p-2 text-left">Penanggung jawab</th>
+                <th className="w-16 p-2 text-center">Bukti</th>
+                <th className="w-24 p-2 text-center">Status</th>
+                <th className="w-24 p-2"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {tersaring.map((t, i) => (
+                <Baris key={t.id} t={t} n={i + 1}
+                  onSunting={() => setSunting(t)} onHapus={() => hapusTemuan(t)} />
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
       {sunting && (
         <Borang
@@ -183,61 +252,74 @@ function Angka({ label, nilai, bar, sub }: { label: string; nilai: number; bar: 
   );
 }
 
-function Kartu({ t, onSunting, onHapus }:
-  { t: TemuanItem; onSunting: () => void; onHapus: () => void }) {
+function Baris({ t, n, onSunting, onHapus }:
+  { t: TemuanItem; n: number; onSunting: () => void; onHapus: () => void }) {
   const sisa = sisaHari(t.jatuhTempo);
   const telat = t.status !== "closed" && sisa !== null && sisa < 0;
   const janggal = t.status === "closed" && !bolehDitutup(t);
 
+  /*
+   * Baris telat diberi warna pada seluruh barisnya, bukan hanya pada angka
+   * sisanya. Pada tabel sepanjang ini mata menelusuri baris, bukan kolom -
+   * penanda yang hanya menempel di satu sel akan terlewat.
+   */
+  const warnaBaris = telat
+    ? "bg-red-50/70 hover:bg-red-50"
+    : janggal ? "bg-fuchsia-50/60 hover:bg-fuchsia-50" : "hover:bg-slate-50";
+
   return (
-    <article className="rounded-2xl bg-white ring-line elev-sm p-4 card-hover">
-      <div className="flex flex-wrap items-start gap-2">
+    <tr className={`border-b border-slate-100 align-top ${warnaBaris}`}>
+      <td className="p-2 text-center tabular-nums text-slate-400">{n}</td>
+      <td className="p-2 font-semibold text-slate-800">{(t.kapal || "—").replace(/^KMP\.?\s*/i, "")}</td>
+      <td className="p-2">
+        <p className="font-medium leading-snug text-slate-800">{t.deskripsi || "(tanpa deskripsi)"}</p>
+        {t.prosesSaatIni && (
+          <p className="mt-0.5 text-[10px] text-slate-500">⟳ {t.prosesSaatIni}</p>
+        )}
+        {janggal && (
+          <p className="mt-0.5 text-[10px] font-semibold text-fuchsia-700">
+            ditutup tanpa dokumen bukti
+          </p>
+        )}
+      </td>
+      <td className="p-2 text-center">
+        <span className="rounded-full bg-sky-50 px-1.5 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200">
+          {t.kategori || "—"}
+        </span>
+        <span className="mt-0.5 block text-[10px] text-violet-700">{t.prioritas}</span>
+      </td>
+      <td className={`p-2 text-center tabular-nums ${telat ? "font-bold text-red-700" : "text-slate-700"}`}>
+        {t.jatuhTempo ? tanggalIndo(t.jatuhTempo) : "—"}
+      </td>
+      <td className="p-2 text-center">
+        {t.status === "closed" || sisa === null ? (
+          <span className="text-slate-400">—</span>
+        ) : (
+          <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+            sisa < 0 ? "bg-red-100 text-red-700"
+              : sisa <= 7 ? "bg-amber-100 text-amber-800" : "bg-slate-100 text-slate-600"}`}>
+            {sisa < 0 ? `telat ${-sisa}h` : `${sisa}h`}
+          </span>
+        )}
+      </td>
+      <td className="p-2 text-slate-700">
+        {t.penanggungJawab || <span className="text-slate-400">belum ditunjuk</span>}
+      </td>
+      <td className="p-2 text-center">
+        <span className={`tabular-nums font-bold ${t.bukti?.length ? "text-emerald-700" : "text-slate-400"}`}>
+          {t.bukti?.length || 0}
+        </span>
+      </td>
+      <td className="p-2 text-center">
         <span className={`rounded-full px-2 py-0.5 text-[10px] font-bold ring-1 ${STATUS_WARNA[t.status]}`}>
           {STATUS_LABEL[t.status]}
         </span>
-        <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[10px] font-bold text-slate-700">{t.kapal || "—"}</span>
-        {t.kategori && (
-          <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-bold text-sky-700 ring-1 ring-sky-200">
-            {t.kategori}
-          </span>
-        )}
-        {t.prioritas && (
-          <span className="rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-bold text-violet-700 ring-1 ring-violet-200">
-            Prioritas {t.prioritas}
-          </span>
-        )}
-        <span className="ml-auto flex gap-1">
-          <button onClick={onSunting} className="btn btn-primary px-2.5 py-1 text-[11px]">Buka</button>
-          <button onClick={onHapus} className="btn btn-danger-soft px-2.5 py-1 text-[11px]">Hapus</button>
-        </span>
-      </div>
-
-      <p className="mt-2 text-sm font-semibold leading-snug text-slate-800">{t.deskripsi || "(tanpa deskripsi)"}</p>
-
-      <div className="mt-2 grid gap-x-6 gap-y-1 text-[11px] text-slate-600 sm:grid-cols-2 lg:grid-cols-4">
-        <p>Diterbitkan: <b className="text-slate-800">{t.penerbit || "—"}</b></p>
-        <p>Jatuh tempo: <b className={telat ? "text-red-700" : "text-slate-800"}>
-          {t.jatuhTempo ? tanggalIndo(t.jatuhTempo) : "—"}
-          {sisa !== null && t.status !== "closed" && (
-            <span className="font-normal"> ({sisa < 0 ? `telat ${-sisa} hari` : `${sisa} hari lagi`})</span>
-          )}
-        </b></p>
-        <p>Penanggung jawab: <b className="text-slate-800">{t.penanggungJawab || "belum ditunjuk"}</b></p>
-        <p>Bukti: <b className={t.bukti?.length ? "text-emerald-700" : "text-slate-800"}>
-          {t.bukti?.length || 0} dokumen</b></p>
-      </div>
-
-      {t.prosesSaatIni && (
-        <p className="mt-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-[11px] text-slate-700">
-          Proses saat ini: {t.prosesSaatIni}
-        </p>
-      )}
-      {janggal && (
-        <p className="mt-2 rounded-lg bg-fuchsia-50 px-2.5 py-1.5 text-[11px] font-semibold text-fuchsia-800 ring-1 ring-fuchsia-200">
-          Ditutup tanpa dokumen bukti — tidak bisa diperiksa kembali oleh siapa pun.
-        </p>
-      )}
-    </article>
+      </td>
+      <td className="whitespace-nowrap p-2 text-right">
+        <button onClick={onSunting} className="btn btn-primary mr-1 px-2 py-0.5 text-[10px]">Buka</button>
+        <button onClick={onHapus} className="btn btn-danger-soft px-2 py-0.5 text-[10px]">Hapus</button>
+      </td>
+    </tr>
   );
 }
 
