@@ -1,4 +1,17 @@
-// Database kapal: nama -> kode storage (kolom O, file1) + cost center (file2 D10)
+/**
+ * Database kapal: nama -> kode storage (sloc) + cost center.
+ *
+ * Diselaraskan dengan daftar resmi "COST CENTER CABANG TERNATE". Tiga cost
+ * center sebelumnya keliru, dan dua di antaranya menunjuk KAPAL LAIN:
+ *
+ *     KMP. LOMPA    5201100021 -> 5201100018
+ *     KMP. NGAFI    5201100023 -> 5201100013   (5201100023 = KMP. MADANI)
+ *     KMP. KOLORAI  5201100024 -> 5201100026   (5201100024 = KMP. DALENTE WOBA)
+ *
+ * Biaya yang dibukukan ke cost center keliru tidak pernah muncul sebagai
+ * galat; ia hanya pindah ke kapal lain, dan baru ketahuan waktu ada yang
+ * bertanya kenapa anggaran kapal yang tidak pernah didocking ikut terpakai.
+ */
 export interface KapalInfo { nama: string; kode: string; costCenter: string }
 
 export const KAPAL_DB: KapalInfo[] = [
@@ -8,19 +21,61 @@ export const KAPAL_DB: KapalInfo[] = [
   { nama: "KMP. GORANGO", kode: "5205", costCenter: "5201100017" },
   { nama: "KMP. BOBARA", kode: "5206", costCenter: "5201100010" },
   { nama: "KMP. KERAPU II", kode: "5207", costCenter: "5201100011" },
-  { nama: "KMP. LOMPA", kode: "5208", costCenter: "5201100021" },
-  { nama: "KMP. ARIWANGANI", kode: "5209", costCenter: "5201100022" },
+  { nama: "KMP. LOMPA", kode: "5208", costCenter: "5201100018" },
+  { nama: "KMP. ARIWANGAN", kode: "5209", costCenter: "5201100022" },
   { nama: "KMP. PULAU SAGORI", kode: "5210", costCenter: "5201100012" },
-  { nama: "KMP. NGAFI", kode: "5211", costCenter: "5201100023" },
+  { nama: "KMP. NGAFI", kode: "5211", costCenter: "5201100013" },
   { nama: "KMP. MAMING", kode: "5212", costCenter: "5201100009" },
   { nama: "KMP. TUNA", kode: "5213", costCenter: "5201100025" },
-  { nama: "KMP. KOLORAI", kode: "5214", costCenter: "5201100024" },
+  { nama: "KMP. KOLORAI", kode: "5214", costCenter: "5201100026" },
   { nama: "KMP. LEMA", kode: "5215", costCenter: "5201100029" },
 ];
 
-export const kapalByNama = (nama: string) => KAPAL_DB.find((k) => k.nama === nama);
+/**
+ * Cost center unit darat Cabang Ternate.
+ *
+ * Tidak punya sloc karena bukan kapal; dipakai untuk memeriksa apakah sebuah
+ * cost center menunjuk unit lain, bukan untuk mengisi borang kapal.
+ */
+export const COST_CENTER_UNIT: { kode: string; unit: string }[] = [
+  { kode: "5201100000", unit: "GM Cabang Ternate" },
+  { kode: "5201100001", unit: "Divisi Usaha" },
+  { kode: "5201100002", unit: "Divisi Teknik" },
+  { kode: "5201100003", unit: "Divisi SDM & Umum" },
+  { kode: "5201100004", unit: "Divisi Keuangan" },
+  { kode: "5201100005", unit: "Pelb. Bastiong" },
+  { kode: "5201100006", unit: "Pelb. Sidangoli" },
+  { kode: "5201100008", unit: "Pelb. Rum" },
+  { kode: "5201100023", unit: "KMP. Madani" },
+  { kode: "5201100024", unit: "KMP. Dalente Woba" },
+];
+
+/** NPWP cabang; sama untuk seluruh kapal Ternate, bukan nomor per kapal */
+export const NPWP_CABANG = "01.061.041.8-942.001";
+
+/**
+ * Samakan penulisan nama kapal sebelum dicocokkan.
+ *
+ * Data lama menulis "KMP LOMPA" tanpa titik, borang lain "KMP. Lompa", dan
+ * sebagian memakai spasi ganda. Pencocokan mentah gagal pada ketiganya, dan
+ * gagalnya diam - kolom cost center sekadar tetap kosong seolah kapalnya
+ * memang tidak terdaftar.
+ */
+const kunci = (nama: string) =>
+  String(nama || "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim();
+
+export const kapalByNama = (nama: string) =>
+  KAPAL_DB.find((k) => kunci(k.nama) === kunci(nama));
 export const kapalKode = (nama: string) => kapalByNama(nama)?.kode ?? "5205";
 export const kapalCostCenter = (nama: string) => kapalByNama(nama)?.costCenter ?? "";
+
+/** Pemilik sebuah cost center — kapal atau unit darat; "" bila tak dikenal. */
+export const pemilikCostCenter = (kode: string) => {
+  const t = String(kode || "").trim();
+  return KAPAL_DB.find((k) => k.costCenter === t)?.nama
+    || COST_CENTER_UNIT.find((u) => u.kode === t)?.unit
+    || "";
+};
 
 // Database Reference: kode material (mat group) -> deskripsi + kelompok + tipe
 export interface RefMaterial { kode: string; short: string; kelompok: string; tipe: string }

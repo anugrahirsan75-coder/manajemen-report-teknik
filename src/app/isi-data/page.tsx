@@ -5,9 +5,32 @@ import { useStore } from "@/lib/store";
 import { Field, Input, Select, Section } from "@/components/Field";
 import { CrewMember, formatNomorSpk, penerimaanBersih } from "@/lib/types";
 import { rupiah } from "@/lib/format";
+import { KAPAL_DB, NPWP_CABANG, kapalByNama, pemilikCostCenter } from "@/lib/material/db";
 
 export default function IsiData() {
   const { data, update, saveRemote, loadRemote, saving, supabaseReady, lastSaved } = useStore();
+
+  /**
+   * Pilih kapal -> cost center dan NPWP langsung mengikuti.
+   *
+   * Nilai lama selalu ditimpa, termasuk yang diketik tangan. Itu disengaja:
+   * yang paling butuh diperbaiki justru nilai lama yang keliru. Pada SPK.008,
+   * "KMP LOMPA" tersimpan dengan cost center 5201100022 - nomor milik KMP.
+   * Ariwangan - dan penjagaan "jangan timpa isian orang" akan membuatnya
+   * bertahan selamanya.
+   *
+   * Kolomnya tetap bisa diketik sesudahnya untuk pekerjaan lintas unit, dan
+   * keterangan di bawahnya menyebutkan nomor itu milik siapa.
+   */
+  const pilihKapal = (nama: string) => {
+    const kapal = kapalByNama(nama);
+    update({
+      namaKapal: nama,
+      ...(kapal ? { costCenter: kapal.costCenter, npwpKapal: data.npwpKapal || NPWP_CABANG } : {}),
+    } as any);
+  };
+
+  const pemilikCc = pemilikCostCenter(data.costCenter);
 
   const setCrew = (i: number, patch: Partial<CrewMember>) => {
     const crew = data.crew.map((c, idx) => (idx === i ? { ...c, ...patch } : c));
@@ -83,13 +106,26 @@ export default function IsiData() {
             <Input value={formatNomorSpk(data)} readOnly className="bg-slate-50 text-slate-500" />
           </Field>
           <Field label="Nama Kapal">
-            <Input value={data.namaKapal} onChange={(e) => update({ namaKapal: e.target.value })} />
+            <Input list="daftar-kapal" value={data.namaKapal}
+              onChange={(e) => pilihKapal(e.target.value)}
+              placeholder="pilih atau ketik…" />
+            <datalist id="daftar-kapal">
+              {KAPAL_DB.filter((k) => k.nama !== "SEMUA KAPAL")
+                .map((k) => <option key={k.nama} value={k.nama} />)}
+            </datalist>
           </Field>
           <Field label="NPWP Kapal">
             <Input value={data.npwpKapal} onChange={(e) => update({ npwpKapal: e.target.value })} />
           </Field>
           <Field label="Cost Center">
             <Input value={data.costCenter} onChange={(e) => update({ costCenter: e.target.value })} />
+            {data.costCenter && (
+              <p className={`mt-1 text-[11px] ${pemilikCc ? "text-slate-500" : "text-amber-700"}`}>
+                {pemilikCc
+                  ? `Cost center milik ${pemilikCc}`
+                  : "Cost center ini tidak ada di daftar Cabang Ternate — periksa lagi"}
+              </p>
+            )}
           </Field>
         </div>
       </Section>
