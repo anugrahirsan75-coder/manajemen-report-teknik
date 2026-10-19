@@ -27,6 +27,7 @@ export const TAHUN_NOMENKLATUR = 2026;
 export const PENANDA_TANGAN: PenandaTangan[] = [
   { nama: "Mushar Usman", jabatan: "General Manager Ternate" },
   { nama: "Muchlis Burhanuddin", jabatan: "PGS. General Manager Ternate" },
+  { nama: "Juda Imanuel Osvaldo Panggabean", jabatan: "PLT. General Manager Ternate" },
   {
     nama: "Eryanto Sidabalok",
     jabatan: "Department Head Operasional dan Teknik Ternate",

@@ -18,6 +18,7 @@ import { terbilangRupiah } from "@/lib/surat/terbilang";
 import UnggahTabel from "@/components/surat/UnggahTabel";
 import EditorSurat from "@/components/surat/EditorSurat";
 import DataKopSurat, { DataKop, kopAwal } from "@/components/surat/DataKopSurat";
+import PratinjauSunting from "@/components/surat/PratinjauSunting";
 import { jabatanCetak, perihalBawaan, pisahTujuan, susunNomor, tanggalKop, tujuanBawaan } from "@/lib/surat/kop";
 import { unduhPdfEoffice } from "@/lib/surat/pdfEoffice";
 import { isiDariSurat, unduhJustifikasi } from "@/lib/surat/justifikasi";
@@ -73,6 +74,15 @@ export default function BuatSuratEOffice() {
   const [pesan, setPesan] = useState("");
   const [sudahMuat, setSudahMuat] = useState(false);
   const kodeRef = useRef<HTMLTextAreaElement>(null);
+
+  /*
+   * Suntingan tangan atas badan surat, disimpan per jenis surat.
+   *
+   * Ada isinya = surat itu sudah dilepas dari borang: yang dipakai untuk PDF,
+   * salinan, dan unduhan adalah HTML ini, bukan hasil templat.generate(). Satu
+   * jenis surat yang disunting tidak mengunci jenis surat lain.
+   */
+  const [suntingan, setSuntingan] = useState<Record<string, string>>({});
 
   /* kepala surat disimpan per jenis surat: tembusan dan tujuan berbeda-beda */
   const [semuaKop, setSemuaKop] = useState<Record<string, DataKop>>({});
@@ -136,6 +146,10 @@ export default function BuatSuratEOffice() {
             .filter(([id]) => cariTemplate(id))
             .map(([id, k]) => [id, { ...kopAwal(), ...k }])));
         }
+        if (isi?.suntingan) {
+          setSuntingan(Object.fromEntries(Object.entries(isi.suntingan as Record<string, string>)
+            .filter(([id, v]) => cariTemplate(id) && typeof v === "string" && v)));
+        }
         if (isi?.template && cariTemplate(isi.template)) setIdTemplate(isi.template);
       }
     } catch { /* draf rusak: abaikan, pakai isian kosong */ }
@@ -156,9 +170,13 @@ export default function BuatSuratEOffice() {
 
   useEffect(() => {
     if (!sudahMuat) return;
-    try { localStorage.setItem(KUNCI_DRAF, JSON.stringify({ template: idTemplate, data: semuaData, kop: semuaKop })); }
+    try {
+      localStorage.setItem(KUNCI_DRAF, JSON.stringify({
+        template: idTemplate, data: semuaData, kop: semuaKop, suntingan,
+      }));
+    }
     catch { /* penyimpanan penuh: biarkan, bukan hal yang boleh menghentikan pekerjaan */ }
-  }, [semuaData, semuaKop, idTemplate, sudahMuat]);
+  }, [semuaData, semuaKop, suntingan, idTemplate, sudahMuat]);
 
   /**
    * Nilai boleh berupa fungsi (lamaNilai) => baru. Ini bukan kemewahan: tabel
@@ -188,11 +206,19 @@ export default function BuatSuratEOffice() {
   const peringatan = useMemo(() => (templat.periksa ? templat.periksa(data) : []), [templat, data]);
   const lengkap = kurang.length === 0;
 
-  const html = useMemo(() => {
+  const htmlOtomatis = useMemo(() => {
     if (!lengkap) return "";
     try { return templat.generate(data); }
     catch (e: any) { return `<p>Gagal menyusun surat: ${e?.message || e}</p>`; }
   }, [templat, data, lengkap]);
+
+  /*
+   * Yang dipakai SEMUA keluaran — pratinjau, Salin HTML, Salin berformat,
+   * unduh .html, dan PDF konsep. Suntingan tangan menang atas susunan borang,
+   * supaya tidak pernah ada dua versi surat yang berbeda isi beredar.
+   */
+  const suntinganIni = suntingan[idTemplate] || "";
+  const html = suntinganIni || htmlOtomatis;
 
   const ringkas = useMemo(
     () => (templat.ringkasNilai ? templat.ringkasNilai(data) : null), [templat, data]);
@@ -330,6 +356,13 @@ export default function BuatSuratEOffice() {
   const reset = () => {
     if (!confirm("Kosongkan seluruh isian template ini?")) return;
     setSemuaData((lama) => ({ ...lama, [idTemplate]: dataAwal(templat) }));
+    // suntingan tangan ikut dibuang: mengosongkan borang tetapi meninggalkan
+    // badan surat lama akan menghasilkan surat yang isinya tak ada sumbernya
+    setSuntingan((lama) => {
+      const sisa = { ...lama };
+      delete sisa[idTemplate];
+      return sisa;
+    });
     beritahu("Isian dikosongkan.");
   };
 
@@ -519,12 +552,24 @@ export default function BuatSuratEOffice() {
               <p className="text-xs text-slate-400">Surat disusun otomatis begitu isian wajib terisi.</p>
             </div>
           ) : tab === "pratinjau" ? (
-            <div className="max-h-[70vh] overflow-auto rounded-2xl bg-slate-100 p-4 dark:bg-slate-800">
-              <div className="mx-auto w-full max-w-[800px] bg-white p-8 shadow-md"
-                // Isi berasal dari template kita sendiri, bukan dari luar; nilai
-                // yang diketik pengguna sudah dilewatkan esc() di pembangun HTML.
-                dangerouslySetInnerHTML={{ __html: html }} />
-            </div>
+            /*
+             * Isi berasal dari template kita sendiri atau dari ketikan pemakai
+             * di peramban ini juga — bukan dari luar; nilai yang diketik di
+             * borang sudah dilewatkan esc() di pembangun HTML.
+             */
+            <PratinjauSunting
+              html={html}
+              disunting={!!suntinganIni}
+              ubah={(baru) => setSuntingan((lama) => ({ ...lama, [idTemplate]: baru }))}
+              kembalikan={() => {
+                setSuntingan((lama) => {
+                  const sisa = { ...lama };
+                  delete sisa[idTemplate];
+                  return sisa;
+                });
+                beritahu("Suntingan dibuang — surat disusun ulang dari isian borang.");
+              }}
+            />
           ) : (
             <textarea ref={kodeRef} readOnly value={html}
               className="h-[70vh] w-full rounded-2xl border border-slate-300 bg-slate-50 p-3 font-mono text-[11px] leading-relaxed text-slate-700 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-300" />
