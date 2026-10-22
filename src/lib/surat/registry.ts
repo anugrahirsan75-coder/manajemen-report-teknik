@@ -13,6 +13,7 @@ import { surveyStatutori } from "./templates/surveyStatutori";
 import { perpanjanganSertifikat } from "./templates/perpanjanganSertifikat";
 import { permohonanIO } from "./templates/permohonanIO";
 import { pekerjaanTambahan } from "./templates/pekerjaanTambahan";
+import { sukuCadangKapal } from "./templates/sukuCadangKapal";
 import { penunjukanLangsung } from "./templates/penunjukanLangsung";
 import { penunjukanPengadaan } from "./templates/penunjukanPengadaan";
 import { penunjukanRampdoor } from "./templates/penunjukanRampdoor";
@@ -41,6 +42,7 @@ export const TEMPLATE_SURAT: TemplateSurat[] = [
   permintaanRl,
   dockingInvestasi,
   pekerjaanTambahan,
+  sukuCadangKapal,
   penunjukanLangsung,
   penunjukanPengadaan,
   penunjukanRampdoor,
