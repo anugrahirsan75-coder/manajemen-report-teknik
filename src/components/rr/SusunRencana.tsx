@@ -15,6 +15,7 @@ import { rupiah } from "@/lib/format";
 import { labelMA } from "@/lib/anggaran/types";
 import { KELOMPOK_RR, kunciKelompok, namaBulan } from "@/lib/rr/types";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
+import { bolehDiusulkan } from "@/lib/rr/kelayakan";
 import {
   BarisKendali, Kandidat, isiOtomatis, nilaiKandidat, susunKendali,
 } from "@/lib/rr/usulanRiwayat";
@@ -161,6 +162,13 @@ export default function SusunRencana({
         const serap = (kode: string, hasil: any[]) => hasil.forEach((h: any) => {
           const harga = Math.round(h.h2026 || h.h2025 || h.median || 0);
           if (!harga || sudah.has(`db-${h.kode}`)) return;
+          /*
+           * Kategori database "Bahan Bakar & Pelumas" memuat keduanya, jadi
+           * tanpa saringan ini biosolar ikut terusul sebagai kebutuhan
+           * pelumas. Saringannya sama persis dengan yang dipakai kandidat
+           * riwayat — satu aturan, dua pintu.
+           */
+          if (!bolehDiusulkan(kode, h.uraian || "", h.spek || "").boleh) return;
           sudah.add(`db-${h.kode}`);
           const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "");
           kumpul.push({
@@ -216,12 +224,20 @@ export default function SusunRencana({
       try {
         const r = await fetch(`/api/harga/cari?q=${encodeURIComponent(cariDb)}&batas=25`, { cache: "no-store" });
         const d = await r.json();
-        setHasilDb(d?.hasil || []);
+        /*
+         * Hasil pencarian ikut disaring, bukan hanya usulan otomatis. Pintu
+         * ini yang paling mudah dipakai menyelundupkan BBM ke dalam rencana —
+         * tinggal mengetik "biosolar" lalu menekan tambah.
+         */
+        setHasilDb((d?.hasil || []).filter((h: any) => {
+          const kode = (h.kategori && maDariKategori[h.kategori]) || maSaring || "";
+          return bolehDiusulkan(kode, h.uraian || "", h.spek || "").boleh;
+        }));
       } catch { setHasilDb([]); }
       finally { setSibukDb(false); }
     }, 300);
     return () => window.clearTimeout(t);
-  }, [cariDb, bukaDb]);
+  }, [cariDb, bukaDb, maDariKategori, maSaring]);
 
   const pembagi = modeJatah === "rata" ? Math.max(1, kapalBelum) : 1;
   /** jatah satu Mata Anggaran untuk kapal ini = sisa pagunya dibagi kapal yang belum menyusun */

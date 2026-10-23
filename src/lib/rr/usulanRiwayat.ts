@@ -26,6 +26,7 @@ import { pecahKapal } from "@/lib/kapal/nama";
 import { namaKapalPenuh } from "@/lib/anggaran/types";
 import { bersihNamaItem } from "@/lib/harga/bersihNama";
 import { tentukanKelompok } from "./penempatan";
+import { bolehDiusulkan } from "./kelayakan";
 import { RrDoc, bulanKe, totalPerMA } from "./types";
 
 export interface Kandidat {
@@ -116,6 +117,17 @@ export function kandidatDariRiwayat(
        * barang sama yang ditulis berbeda-beda tiap bulan tetap terkumpul jadi satu.
        */
       const nama = bersihNamaItem(it.nama || "") || (it.nama || "").trim();
+
+      /*
+       * Riwayat mengulang apa yang PERNAH terjadi, termasuk yang salah kode.
+       * MA Pelumas pernah menampung air coolant, literan oli, sensor tekanan
+       * oli, sampai biosolar — dan karena MA itu cuma punya satu judul, tak
+       * ada tahap mana pun yang menyaringnya. Disaring di sini, di pintu
+       * masuknya, bukan di layar: yang tidak pernah jadi kandidat tidak bisa
+       * ikut terpilih oleh pengisian otomatis.
+       */
+      if (!bolehDiusulkan(kode, nama, it.spesifikasi || "").boleh) continue;
+
       const id = [kode, rapi(nama), rapi(it.spesifikasi), rapi(it.satuan)].join("|");
       const ada = peta.get(id);
       if (ada) {
