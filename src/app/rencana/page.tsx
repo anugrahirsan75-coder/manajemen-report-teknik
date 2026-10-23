@@ -99,8 +99,32 @@ export default function RencanaPage() {
     const dataBaruTiba = !gantiDokumen && !berubah && tersimpan && tersimpan.diubahPada !== kerja?.diubahPada;
     if (!gantiDokumen && !dataBaruTiba) return;
     kunciRef.current = kunciBuka;
-    setKerja(tersimpan ? JSON.parse(JSON.stringify(tersimpan)) : docBaru(tipe, bulan, kapal));
-    setBerubah(false);
+    if (!tersimpan) {
+      setKerja(docBaru(tipe, bulan, kapal));
+      setBerubah(false);
+      return;
+    }
+    /*
+     * Dokumen tersimpan DIBERSIHKAN saat dibuka, bukan menunggu tombol.
+     *
+     * Draf yang dibuat sebelum aturan kelayakan ada masih memuat BBM,
+     * mobilisasi, dan isi MA Pelumas yang bukan oli — dan menyerahkan
+     * pembersihannya ke tombol berarti tiga belas kapal dibersihkan satu per
+     * satu, lalu satu yang terlewat ikut terkirim ke pusat. Dokumen yang
+     * sudah DIKUNCI tidak disentuh: yang sudah dikirim adalah arsip, bukan
+     * draf, dan mengubahnya diam-diam membuat arsip berbeda dari yang
+     * benar-benar dikirim.
+     */
+    const asli: RrDoc = JSON.parse(JSON.stringify(tersimpan));
+    if (asli.status === "terkirim") { setKerja(asli); setBerubah(false); return; }
+    const { doc, dibuang } = bersihkanDoc(asli);
+    setKerja(doc);
+    setBerubah(dibuang.length > 0);
+    if (dibuang.length) {
+      const contoh = dibuang.slice(0, 2).map((x) => x.nama).join(" · ");
+      setPesan(`${dibuang.length} baris tidak layak dibuang otomatis (${contoh}${dibuang.length > 2 ? " …" : ""}). Tekan Simpan untuk menetapkan.`);
+      setTimeout(() => setPesan(""), 9000);
+    }
   }, [kunciBuka, tersimpan, bulan, tipe, kapal, kerja, berubah]);
   const [sibuk, setSibuk] = useState(false);
   const [pesan, setPesan] = useState("");
@@ -845,6 +869,39 @@ export default function RencanaPage() {
     setTimeout(() => setPesan(""), 9000);
   };
 
+  /**
+   * Bersihkan usulan SELURUH kapal bulan ini sekaligus, lalu simpan.
+   *
+   * Tiga belas kapal dibersihkan satu per satu adalah tiga belas kesempatan
+   * untuk terlewat, dan yang terlewat ikut terkirim ke pusat. Dokumen yang
+   * sudah dikunci dilewati — arsip tidak diubah.
+   */
+  const bersihkanSemuaKapal = async () => {
+    if (!bulan) return;
+    const sasaran = dok.filter((d) => d.tipe === tipe && d.bulan === bulan && d.status !== "terkirim");
+    setIsiSemuaSibuk("membersihkan…");
+    let kapalBerubah = 0;
+    let barisDibuang = 0;
+    try {
+      for (const d of sasaran) {
+        const { doc, dibuang } = bersihkanDoc(JSON.parse(JSON.stringify(d)) as RrDoc);
+        if (!dibuang.length) continue;
+        kapalBerubah++;
+        barisDibuang += dibuang.length;
+        await simpan({ ...doc, diubahPada: new Date().toISOString() });
+      }
+      await reload();
+      setPesan(barisDibuang
+        ? `${barisDibuang} baris dibuang dari ${kapalBerubah} kapal.`
+        : "Seluruh kapal sudah bersih.");
+    } catch (e: any) {
+      setPesan(`Gagal membersihkan: ${e?.message || e}`);
+    } finally {
+      setIsiSemuaSibuk("");
+      setTimeout(() => setPesan(""), 9000);
+    }
+  };
+
   const salinDari = (sumber?: RrDoc) => {
     if (!sumber) { setPesan("Sumber salinan belum ada isinya."); setTimeout(() => setPesan(""), 3000); return; }
     ubah((d) => {
@@ -1066,12 +1123,20 @@ export default function RencanaPage() {
                 Sisa <b className={`tabular-nums ${rekapKapal.sisa < 0 ? "text-rose-700" : "text-emerald-700"}`}>{rupiah(rekapKapal.sisa)}</b>
               </span>
               {!terkunci && (
-                <button onClick={() => { void isiSemuaKapal({ armada: true, db: true }); }}
-                  disabled={!!isiSemuaSibuk || !rekapKapal.belum}
-                  title="Isi usulan semua kapal yang masih kosong, lalu simpan"
-                  className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-40">
-                  {isiSemuaSibuk || "🚢 Isi semua kapal"}
-                </button>
+                <>
+                  <button onClick={() => { void bersihkanSemuaKapal(); }}
+                    disabled={!!isiSemuaSibuk}
+                    title="Buang baris yang tidak boleh ada dari usulan SELURUH kapal bulan ini, lalu simpan — BBM, mobilisasi, dan isi MA Pelumas selain SAE 40 / SAE 10"
+                    className="rounded-lg bg-amber-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-amber-700 disabled:opacity-40">
+                    🧹 Bersihkan semua kapal
+                  </button>
+                  <button onClick={() => { void isiSemuaKapal({ armada: true, db: true }); }}
+                    disabled={!!isiSemuaSibuk || !rekapKapal.belum}
+                    title="Isi usulan semua kapal yang masih kosong, lalu simpan"
+                    className="rounded-lg bg-emerald-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-emerald-700 disabled:opacity-40">
+                    {isiSemuaSibuk || "🚢 Isi semua kapal"}
+                  </button>
+                </>
               )}
             </div>
           </div>

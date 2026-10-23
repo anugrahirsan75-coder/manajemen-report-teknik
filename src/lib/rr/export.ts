@@ -3,6 +3,7 @@
 import { saveAs } from "file-saver";
 import { SINGKATAN_KAPAL, KAPAL_ANGGARAN, PlafonRutin, RKA, maKey, paguTotal } from "@/lib/anggaran/types";
 import { KELOMPOK_RR, MA_RR, kunciKelompok, RrDoc, bulanKe, namaBulan } from "./types";
+import { bolehDiusulkan } from "./kelayakan";
 
 /** nama penuh -> singkatan yang dipakai pusat (ARWNG, PL 8, ...) */
 const singkatKapal = (penuh: string) => {
@@ -21,9 +22,20 @@ const lembar = (dok: RrDoc[], tipe: "rencana" | "realisasi", bulan: string) =>
       catatan: d?.catatan,
       kelompok: KELOMPOK_RR.map((k) => ({
         ma: k.ma, kode: k.kode, judul: k.judul,
-        items: (d?.kelompok.find((x) => x.kunci === kunciKelompok(k))?.items || []).map((i) => ({
-          deskripsi: i.deskripsi, spesifikasi: i.spesifikasi, jumlah: i.jumlah, satuan: i.satuan, harga: i.harga,
-        })),
+        items: (d?.kelompok.find((x) => x.kunci === kunciKelompok(k))?.items || [])
+          /*
+           * SARINGAN TERAKHIR, dan yang paling penting dari semuanya.
+           *
+           * Saringan saat menyusun hanya mengurus dokumen yang dibuat SESUDAH
+           * aturannya ada; draf yang terlanjur tersimpan tetap memuat BBM,
+           * mobilisasi, dan isi MA Pelumas yang bukan oli. Berkas inilah yang
+           * dikirim ke pusat, jadi di sinilah jaminannya harus dipasang —
+           * bukan pada tombol yang bisa lupa ditekan.
+           */
+          .filter((i) => bolehDiusulkan(k.kode, i.deskripsi, i.spesifikasi, kapal).boleh)
+          .map((i) => ({
+            deskripsi: i.deskripsi, spesifikasi: i.spesifikasi, jumlah: i.jumlah, satuan: i.satuan, harga: i.harga,
+          })),
       })),
     };
   });
