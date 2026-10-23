@@ -26,7 +26,7 @@ import { pecahKapal } from "@/lib/kapal/nama";
 import { namaKapalPenuh } from "@/lib/anggaran/types";
 import { bersihNamaItem } from "@/lib/harga/bersihNama";
 import { tentukanKelompok } from "./penempatan";
-import { bolehDiusulkan } from "./kelayakan";
+import { bolehDiusulkan, MA_PELUMAS } from "./kelayakan";
 import { RrDoc, bulanKe, totalPerMA } from "./types";
 
 export interface Kandidat {
@@ -559,7 +559,24 @@ export function isiOtomatis(
       // baris yang sudah masuk dari tahap sebelumnya ikut dihitung
       jumlahBaris.set(kunci, isiKel.filter((k) => pilih.has(k.id)).length);
     });
-    const batasKelompok = (kunci: string) => (/suku cadang/i.test(kunci) ? 18 : 8);
+    /*
+     * Batas JENIS barang tiap kelompok, diambil dari rencana yang sudah
+     * terbit, bukan dikira-kira. Pada RENCANA Oktober 2026:
+     *
+     *   USL MMG   · Cleaning Akomodasi          32 jenis
+     *   USL KLRAI · Cleaning Akomodasi          31 jenis
+     *   USL MMG   · Cleaning Peralatan Mesin    37 jenis
+     *
+     * Batas lama 8 jenis karena itu memotong daftar kebersihan sampai
+     * seperempatnya — persis yang terlihat pada rencana November, yang cuma
+     * memuat dua baris. Kebersihan memang banyak jenisnya dan tiap jenis
+     * sedikit: deterjen, majun, bayclin, sapu, keset, masing-masing beberapa.
+     */
+    const batasKelompok = (kunci: string) => {
+      if (/suku cadang/i.test(kunci)) return 18;
+      if (/cleaning|peralatan kerja/i.test(kunci)) return 36;
+      return 12;
+    };
 
     const bergilir = (pakaiBatas: boolean) => {
       let putaran = 0;
@@ -623,10 +640,30 @@ export function isiOtomatis(
      * Menambah jenis di luar batas baru dilakukan bila menambah jumlah pun tak
      * cukup menutup jatah.
      */
-    bergilir(true);
-    naikkanJumlah();
-    if ((terpakai[kode] || 0) < target * 0.95) {
-      bergilir(false);
+    const kurangDariJatah = () => (terpakai[kode] || 0) < target * 0.95;
+
+    if (kode === MA_PELUMAS) {
+      /*
+       * PELUMAS: jumlah dulu, baru jenis. Satu kapal tidak membeli delapan
+       * belas macam pelumas sebulan — ia membeli satu macam, beberapa drum.
+       * Pada rencana Oktober yang terbit, Kebutuhan Pelumas tiap kapal cuma
+       * SATU baris.
+       */
+      bergilir(true);
+      naikkanJumlah();
+      if (kurangDariJatah()) { bergilir(false); naikkanJumlah(); }
+    } else {
+      /*
+       * AKOMODASI & PERMESINAN: jenis dulu, baru jumlah.
+       *
+       * Menambah jumlah lebih dulu memakai habis jatah dengan menggandakan
+       * barang yang sudah terpilih — jadilah delapan baris berjumlah besar,
+       * padahal daftar kebersihan yang sebenarnya berisi tiga puluhan jenis
+       * dengan jumlah kecil-kecil masing-masing. Urutan inilah yang membuat
+       * rencana November cuma memuat dua baris kebersihan.
+       */
+      bergilir(true);
+      if (kurangDariJatah()) bergilir(false);
       naikkanJumlah();
     }
   });
