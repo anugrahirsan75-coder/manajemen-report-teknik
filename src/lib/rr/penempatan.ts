@@ -64,15 +64,27 @@ const ATURAN: Record<string, Aturan[]> = {
       dok: /kebersihan.*mesin|mesin.*kebersihan|cleaning.*mesin|alat kerja.*mesin|peralatan kerja.*mesin/i,
       item: /contak cleaner|kontak cleaner|contact cleaner|brake cleaner|degreaser|carbon remover|solar cleaner|majun|deterjen mesin|kuas\b|mata gerinda|amplas|gerinda potong|isolasi listrik|kabel ?ties|kabelties|klem\b|sarung tangan|kacamata las|apron las|masker las/i,
     },
-    {
-      judul: "Suku Cadang Permesinan",
-      dok: /suku cadang|sparepart|spare ?part|\bsc\b|kelistrikan|modul listrik|pelistrikan/i,
-      item: /piston|ring set|liner|cylinder|silinder|bearing|metal (jalan|duduk|conrod)|conrod|crank|camshaft|noken|klep|valve|injector|nozzle|\bfip\b|fuel pump|governor|turbo|impeller|water pump|radiator|heat exchanger|cooler|gasket|packing|seal|o.?ring|oring|filter|element|belt|\bv.?belt\b|pulley|bushing|bosh|pin\b|baut|bolt|mur\b|washer|selenoid|solenoid|sensor|sender|alternator|dinamo|starter|stater|aki\b|accu|batter[ai]|kabel|lampu|mcb\b|saklar|stop kontak|fitting|ballast|trafo|kontaktor|relay|breaker|busbar|panel listrik|inverter|charger/i,
-    },
+    /*
+     * JASA DIPERIKSA SEBELUM SUKU CADANG, dan urutannya memang itu yang
+     * menentukan hasilnya.
+     *
+     * Hampir setiap pekerjaan jasa menyebut benda yang dikerjakannya —
+     * "Rekondisi rumah filter bbm ME", "Service dinamo starter", "Perbaikan
+     * pompa pendingin". Selama Suku Cadang diperiksa lebih dulu, kata
+     * "filter", "dinamo", dan "pompa" menangkapnya duluan, dan kelompok
+     * Service berakhir NOL di setiap rencana yang terbit — persis seperti
+     * pada RENCANA Oktober 2026, yang seluruh isinya menumpuk di Cleaning
+     * dan dua kelompok lainnya kosong.
+     */
     {
       judul: "Service / Perbaikan Peralatan Permesinan",
       dok: JASA,
       item: JASA,
+    },
+    {
+      judul: "Suku Cadang Permesinan",
+      dok: /suku cadang|sparepart|spare ?part|\bsc\b|kelistrikan|modul listrik|pelistrikan/i,
+      item: /piston|ring set|liner|cylinder|silinder|bearing|metal (jalan|duduk|conrod)|conrod|crank|camshaft|noken|klep|valve|injector|nozzle|\bfip\b|fuel pump|governor|turbo|impeller|water pump|radiator|heat exchanger|cooler|gasket|packing|seal|o.?ring|oring|filter|element|belt|\bv.?belt\b|pulley|bushing|bosh|pin\b|baut|bolt|mur\b|washer|selenoid|solenoid|sensor|sender|alternator|dinamo|starter|stater|aki\b|accu|batter[ai]|kabel|lampu|mcb\b|saklar|stop kontak|fitting|ballast|trafo|kontaktor|relay|breaker|busbar|panel listrik|inverter|charger/i,
     },
     { judul: "Lain - Lain" },
   ],

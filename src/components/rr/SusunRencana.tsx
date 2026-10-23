@@ -120,8 +120,9 @@ export default function SusunRencana({
       "Perawatan Rutin & Kebersihan Kapal (Jasa)"],
     "5010403100": ["Suku Cadang Mesin", "Permesinan & Kelistrikan", "Kelistrikan & Penerangan",
       "Perpipaan & Katup", "Alat Kerja & Consumable"],
-    "5010403003": ["Konstruksi, Replating & Fabrikasi", "Cat, Thinner & Material Coating",
-      "Zinc Anode & Proteksi Katodik", "Blasting & Persiapan Permukaan"],
+    // MA Kapal Ro-Ro sengaja TIDAK ada di sini: rencana bulanan hanya mengisi
+    // Pelumas, Akomodasi, dan Permesinan — pada rencana yang sudah terbit, MA
+    // itu selalu nol
   }), []);
 
   /**
@@ -168,7 +169,7 @@ export default function SusunRencana({
            * pelumas. Saringannya sama persis dengan yang dipakai kandidat
            * riwayat — satu aturan, dua pintu.
            */
-          if (!bolehDiusulkan(kode, h.uraian || "", h.spek || "").boleh) return;
+          if (!bolehDiusulkan(kode, h.uraian || "", h.spek || "", kapal).boleh) return;
           sudah.add(`db-${h.kode}`);
           const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "");
           kumpul.push({
@@ -231,13 +232,13 @@ export default function SusunRencana({
          */
         setHasilDb((d?.hasil || []).filter((h: any) => {
           const kode = (h.kategori && maDariKategori[h.kategori]) || maSaring || "";
-          return bolehDiusulkan(kode, h.uraian || "", h.spek || "").boleh;
+          return bolehDiusulkan(kode, h.uraian || "", h.spek || "", kapal).boleh;
         }));
       } catch { setHasilDb([]); }
       finally { setSibukDb(false); }
     }, 300);
     return () => window.clearTimeout(t);
-  }, [cariDb, bukaDb, maDariKategori, maSaring]);
+  }, [cariDb, bukaDb, maDariKategori, maSaring, kapal]);
 
   const pembagi = modeJatah === "rata" ? Math.max(1, kapalBelum) : 1;
   /** jatah satu Mata Anggaran untuk kapal ini = sisa pagunya dibagi kapal yang belum menyusun */

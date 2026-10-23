@@ -25,6 +25,7 @@ import {
 import { rupiah } from "@/lib/format";
 import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
+import { bersihkanDoc } from "@/lib/rr/kelayakan";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
   Kandidat, isiOtomatis, kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, susunKendali,
@@ -820,6 +821,30 @@ export default function RencanaPage() {
     })();
   };
 
+  /**
+   * Buang baris yang tidak boleh ada dari dokumen yang sedang dibuka.
+   *
+   * Aturan kelayakan bekerja saat MENYUSUN, jadi draf yang terlanjur dibuat
+   * sebelumnya tetap memuat air coolant, sensor tekanan oli, dan biosolar di
+   * MA Pelumas. Membersihkannya baris demi baris berarti belasan kapal
+   * dikerjakan tangan — ini tombolnya. Tidak menyimpan sendiri: hasilnya
+   * ditinjau dulu, lalu disimpan seperti perubahan biasa.
+   */
+  const bersihkan = () => {
+    if (!kerja || terkunci) return;
+    const { doc, dibuang } = bersihkanDoc(kerja);
+    if (!dibuang.length) {
+      setPesan("Tidak ada baris yang perlu dibuang.");
+      setTimeout(() => setPesan(""), 3000);
+      return;
+    }
+    setKerja(doc);
+    setBerubah(true);
+    const contoh = dibuang.slice(0, 3).map((x) => `${x.nama} (${x.alasan})`).join(" · ");
+    setPesan(`${dibuang.length} baris dibuang: ${contoh}${dibuang.length > 3 ? " …" : ""}. Simpan untuk menetapkan.`);
+    setTimeout(() => setPesan(""), 9000);
+  };
+
   const salinDari = (sumber?: RrDoc) => {
     if (!sumber) { setPesan("Sumber salinan belum ada isinya."); setTimeout(() => setPesan(""), 3000); return; }
     ubah((d) => {
@@ -1106,10 +1131,16 @@ export default function RencanaPage() {
                     ⧉ Salin bulan lalu
                   </button>
                   {tipe === "rencana" && (
-                    <button onClick={() => setBukaSusun(true)} className="btn btn-ghost text-xs"
-                      title="Pilih barang dari riwayat SPPBJ kapal ini, dengan kendali pagu RKA bulan ini">
-                      🧩 Susun dari riwayat
-                    </button>
+                    <>
+                      <button onClick={() => setBukaSusun(true)} className="btn btn-ghost text-xs"
+                        title="Pilih barang dari riwayat SPPBJ kapal ini, dengan kendali pagu RKA bulan ini">
+                        🧩 Susun dari riwayat
+                      </button>
+                      <button onClick={bersihkan} className="btn btn-ghost text-xs"
+                        title="Buang baris yang tidak boleh ada di rencana: BBM, mobilisasi, dan isi MA Pelumas selain SAE 40 / SAE 10">
+                        🧹 Bersihkan
+                      </button>
+                    </>
                   )}
                   {tipe === "realisasi" && (
                     <>

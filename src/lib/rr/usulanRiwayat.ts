@@ -126,7 +126,7 @@ export function kandidatDariRiwayat(
        * masuknya, bukan di layar: yang tidak pernah jadi kandidat tidak bisa
        * ikut terpilih oleh pengisian otomatis.
        */
-      if (!bolehDiusulkan(kode, nama, it.spesifikasi || "").boleh) continue;
+      if (!bolehDiusulkan(kode, nama, it.spesifikasi || "", kapal).boleh) continue;
 
       const id = [kode, rapi(nama), rapi(it.spesifikasi), rapi(it.satuan)].join("|");
       const ada = peta.get(id);
