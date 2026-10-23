@@ -9,6 +9,7 @@
  */
 import fs from "fs";
 import path from "path";
+import { terapkanHargaResmi } from "./hargaResmi";
 
 export interface IndeksHarga {
   sumber: string;
@@ -41,9 +42,18 @@ export interface HasilHarga {
   kode: string; jenis: string; kategori: string; uraian: string; spek: string;
   satuan: string; n: number; lo: number; hi: number; median: number;
   h2024: number; h2025: number; h2026: number; tren: string; kapal: string;
+  /** terisi bila harganya ditetapkan resmi, bukan hasil pemindaian berkas */
+  resmi?: { nama: string; berlaku: string; sumber: string };
 }
 
-export const keHasil = (db: IndeksHarga, b: any[]): HasilHarga => ({
+/**
+ * Satu baris indeks menjadi hasil siap pakai.
+ *
+ * Harga resmi diterapkan DI SINI, bukan di tiap route, supaya pencarian,
+ * pencocokan borongan, dan daftar per kategori tidak mungkin memakai angka
+ * yang berbeda-beda untuk barang yang sama.
+ */
+export const keHasil = (db: IndeksHarga, b: any[]): HasilHarga => terapkanHargaResmi({
   kode: b[0], jenis: b[1], kategori: db.kamus.kategori[b[2]] || "",
   uraian: b[3], spek: b[4], satuan: db.kamus.satuan[b[5]] || "",
   n: b[6], lo: b[7], hi: b[8], median: b[9],
@@ -72,6 +82,20 @@ export function kataKunci(teks: string): string[] {
 export interface Kecocokan { hasil: HasilHarga; skor: number; kena: number; dari: number }
 
 /**
+ * Angka kekentalan pelumas pada sebuah teks, mis. "SAE 40" -> "40".
+ *
+ * kataKunci() membuang token yang seluruhnya angka, jadi bagi pencocok
+ * "Meditrans SAE 40" dan "Meditrans SAE 10" adalah teks yang sama persis —
+ * dan yang terpilih adalah mana saja yang kebetulan berskor lebih tinggi.
+ * Selisihnya nyata: SAE 40 Rp 8.581.540 per drum, SAE 10 Rp 8.412.250, dan
+ * untuk pelumas justru angka itulah nama barangnya.
+ */
+const kekentalan = (teks: string): string => {
+  const m = /\bsae\s*-?\s*(\d{1,3})\b/i.exec(teks || "");
+  return m ? m[1] : "";
+};
+
+/**
  * Cari satu pasangan terbaik untuk sebuah uraian bebas (baris RL / permintaan
  * kapal). Berbeda dengan pencarian interaktif, di sini TIDAK semua kata wajib
  * ada — uraian kapal panjang dan berbunga. Kecocokan dinilai dari berapa kata
@@ -83,14 +107,20 @@ export function cocokkanSatu(uraian: string): Kecocokan | null {
   const kunci = kataKunci(uraian);
   if (kunci.length < 2) return null;
   const wajib = Math.max(2, Math.ceil(kunci.length * 0.5));
+  const saeMinta = kekentalan(uraian);
   let terbaik: { i: number; skor: number; kena: number } | null = null;
   for (let i = 0; i < m.teks.length; i++) {
     const t = m.teks[i];
     let kena = 0;
     for (const k of kunci) if (t.includes(k)) kena++;
     if (kena < wajib) continue;
+    // kekentalan yang berbeda berarti barang yang berbeda — bukan sekadar
+    // kurang cocok, jadi dibuang, bukan dikurangi skornya
+    const saeBaris = saeMinta ? kekentalan(t) : "";
+    if (saeMinta && saeBaris && saeBaris !== saeMinta) continue;
     const b = m.db.baris[i];
     let skor = kena * 10;
+    if (saeMinta && saeBaris === saeMinta) skor += 12;   // sebut kekentalannya, dan cocok
     skor += Math.min(b[6] || 0, 8) * 2;                 // makin sering diadakan makin dipercaya
     if (b[12]) skor += 8; else if (b[11]) skor += 4;    // punya harga terbaru
     skor -= Math.min(t.length / 60, 5);                 // teks kelewat panjang biasanya beda barang
