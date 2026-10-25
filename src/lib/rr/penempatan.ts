@@ -125,45 +125,50 @@ export const BATAS_SUKU_CADANG = 10_000_000;
  * Pas 17" bukan nomor part, melainkan ukuran sehari-hari.
  */
 /**
- * Angka yang menyebut UKURAN SEHARI-HARI, bukan nomor part.
+ * NOMOR PART = kode pabrikan, bukan ukuran barang.
  *
- * Dibuang lebih dulu sebelum nomor part dicari. Tanpa ini "Lampu Led 18 Watt",
- * "Baut 14", "MCB 15 A", dan "Scun Kabel Cas 200 A" semuanya terbaca sebagai
- * suku cadang bernomor — padahal 18 itu daya lampunya, 14 ukuran kunci, dan
- * 200 arusnya. Satuan panjang (mm, cm, inch) SENGAJA tidak ikut dibuang:
- * "Packing Karet 2 mm" memang menunjuk barang tertentu.
+ * Bentuk yang benar-benar dipakai, terbaca dari kolom Spesifikasi pada
+ * rencana yang sudah terbit dan dari 416 baris bernomor part di database
+ * pengadaan:
+ *
+ *     129150-49360      Gasket
+ *     124465-44950      Gasket , 16
+ *     24316-000140      Oring 4DP14.0
+ *     119005-35170      Filter LO
+ *     PN : 3926723      Bearing, crankshaft thrust
+ *     DLLA155P277       Nozzle Bosch
+ *     DJ51297           Ring Piston
+ *     USME0003          Crank Pin Bearing
+ *
+ * YANG BUKAN NOMOR PART, dan inilah yang selama ini salah tertangkap:
+ * "V-Belt B-51", "Van-belt A-34", "Bearing 6309", "Packing Karet 2 mm".
+ * Semua itu UKURAN — panjang sabuk, diameter laher, tebal paking. Barangnya
+ * nyata, tetapi ia tidak menunjuk satu kode pabrikan, jadi tempatnya bukan
+ * Suku Cadang.
+ *
+ * Aturannya: angka harus PANJANG (enam digit ke atas, atau dua gugus dipisah
+ * tanda hubung), atau menempel pada huruf kapital berderet seperti kode
+ * katalog. Angka pendek — 51, 34, 6309, 2 mm — tidak pernah cukup.
  */
-const UKURAN_BIASA = new RegExp(
-  "\\b\\d+[.,]?\\d*\\s*(?:watt|watts|w|volt|volts|v|ampere|amp|ah|a|kg|gram|gr|"
-  + "ltr|liter|lt|pcs|bh|buah|unit|set|pack|pak|dos|doos|btl|botol|roll|lbr|"
-  + "kaleng|sak|bks|bungkus|gln|galon)\\b", "gi");
+const NOMOR_PART = [
+  /\b(?:p\s*\/?\s*n|part\s*(?:no|number)|kode)\b\s*:?\s*[a-z0-9-]{4,}/i,
+  /\b\d{4,}\s*-\s*\d{3,}\b/,              // 129150-49360, 24316-000140
+  /\b\d{6,}\b/,                            // 3926723
+  /\b[a-z]{2,}\d{3,}[a-z0-9.-]*\b/i,       // DLLA155P277, DJ51297, USME0003
+  /\b\d{2,}[a-z]{2,}\d{3,}\b/i,            // 19001-901 gaya lain
+];
 
 /**
  * Punya nomor part?
  *
- * Suku cadang sungguhan dikenali dari nomornya — bearing 6206, V-belt B-51,
- * packing klingrit 3 mm, accu N200. Yang disebut tanpa nomor ("filter oli",
- * "seal pompa", "indian gasket") belum menunjuk barang tertentu: itu kategori,
- * bukan barang yang bisa dipesan.
- *
- * Hurufnya harus MENEMPEL pada angkanya, langsung atau lewat tanda hubung —
- * "B-51" dan "RB26" nomor part, "Led 18" dan "Baut 14" bukan. Spasi di antara
- * keduanya hampir selalu berarti ukuran, bukan kode.
+ * Spesifikasi diperiksa LEBIH DULU dan lebih dipercaya: di sanalah nomor part
+ * ditulis pada rencana yang terbit, sedangkan kolom Deskripsi memuat nama
+ * barangnya. Keduanya tetap diperiksa — sebagian dokumen menulis nomornya
+ * menyatu dengan nama.
  */
-const NOMOR_PART = [
-  /\b(?:p\s*\/?\s*n|part\s*(?:no|number)|kode)\b/i,   // disebut terang-terangan
-  /\b[a-z]{1,4}-?\d{2,}[a-z0-9-]*\b/i,                  // B-51, RB26, N200
-  /\b\d{1,2}[a-z]{2,}\d*\b/i,                           // 6SD1, 4JB1
-  /\b\d+[.,]?\d*\s*(?:mm|cm|inch|inc|dim)\b/i,          // 3 MM, 2,6 mm, 1 inch
-  /\b\d{3,}\b/,                                          // 6206
-];
+export const punyaNomorPart = (teks: string): boolean =>
+  !!teks && NOMOR_PART.some((re) => re.test(teks));
 
-export const punyaNomorPart = (teks: string): boolean => {
-  if (!teks) return false;
-  // ukuran sehari-hari dibuang dulu supaya tidak disalahartikan sebagai kode
-  const sisa = teks.replace(UKURAN_BIASA, " ");
-  return NOMOR_PART.some((re) => re.test(sisa));
-};
 
 export interface HasilPenempatan {
   kunci: string;                       // `${kode}|${judul}` — kosong bila MA di luar Lampiran 3

@@ -16,6 +16,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { muatIndeks, galatIndeks, keHasil } from "@/lib/harga/indeks";
+import { punyaNomorPart } from "@/lib/rr/penempatan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -41,6 +42,34 @@ export async function GET(req: NextRequest) {
    * namanya tak pernah naik ke dua ratus teratas meski jumlahnya ribuan.
    */
   const hanyaMesin = sp.get("mesin") === "1";
+  /**
+   * part=1 menyisakan HANYA barang yang punya nomor part pabrikan.
+   *
+   * Kelompok Suku Cadang pada Lampiran 3 memang diisi barang bernomor: tanpa
+   * nomor, yang tertulis baru kategori ("v-belt", "packing karet"), bukan
+   * barang yang bisa dipesan. Dari enam puluh ribu baris indeks, yang lolos
+   * saringan ini sekitar empat ratus — dan justru empat ratus itulah yang
+   * pantas diusulkan sebagai suku cadang.
+   */
+  const hanyaBerpart = sp.get("part") === "1";
+  /**
+   * Baris yang namanya bukan nama barang.
+   *
+   * Indeks dipanen dari berkas pengadaan, dan sebagian barisnya terbawa
+   * kepala dokumennya: "1020005105 DIESEL TEKNIK KHARISMA , PT",
+   * "Inv. Permesinan dan Kelistrikan Kapal", "AKOMODASI DAN PERALATAN KAPAL
+   * ( (MA : 501403009)". Barisnya punya harga dan kadang punya nomor part,
+   * jadi saringan nomor part saja meloloskannya — dan yang tercetak di
+   * Lampiran 3 menjadi nama vendor, bukan nama barang.
+   */
+  const BUKAN_NAMA_BARANG = new RegExp([
+    String.raw`^\s*\d{7,}`,                 // kode vendor di depan
+    String.raw`\b(?:pt|cv)\b\s*$`,          // "... , PT"
+    String.raw`\bm\.?\s?a\b\s*[:.]`,      // "(MA : 5010403009)"
+    String.raw`\basdp-\d{4}\b`,             // nomor surat
+    String.raw`\btn\.\d`,                   // TN.101/...
+    String.raw`^\s*inv\.`,                   // "Inv. Permesinan ..."
+  ].join("|"), "i");
   const POLA_MESIN = new RegExp(String.raw`\b(m\s*\/?\s*e|a\s*\/?\s*e|main\s*engine`
     + String.raw`|aux(?:iliary)?|mesin\s*induk|mesin\s*bantu|gen\s*?set)\b`, "i");
 
@@ -55,6 +84,10 @@ export async function GET(req: NextRequest) {
     if (!harga) continue;
     if (hargaMaks && harga > hargaMaks) continue;          // tak mungkin muat di jatah
     if (hanyaMesin && !POLA_MESIN.test(`${b[3] || ""} ${b[4] || ""}`)) continue;
+    if (hanyaBerpart) {
+      if (!punyaNomorPart(`${b[4] || ""} ${b[3] || ""}`)) continue;
+      if (BUKAN_NAMA_BARANG.test(String(b[3] || ""))) continue;
+    }
     pilih.push({ b, skor: Math.min(n, 30) * (b[12] ? 2 : 1) });
   }
   pilih.sort((x, y) => y.skor - x.skor);

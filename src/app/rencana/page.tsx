@@ -25,7 +25,8 @@ import {
 import { rupiah } from "@/lib/format";
 import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
-import { bersihkanDoc } from "@/lib/rr/kelayakan";
+import { bersihkanDoc, MA_PERMESINAN } from "@/lib/rr/kelayakan";
+import { BATAS_SUKU_CADANG } from "@/lib/rr/penempatan";
 import { kandidatKatalog } from "@/lib/rr/katalogRutin";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
@@ -767,6 +768,43 @@ export default function RencanaPage() {
           }).filter((x: Kandidat) => x.harga > 0);
         } catch { dbPerMA[kode] = []; }
       }
+
+      /*
+       * SUKU CADANG ditarik TERPISAH, dengan saringan nomor part.
+       *
+       * Permintaan biasa ke /api/harga/daftar mengurut barang menurut
+       * seberapa sering ia muncul di berkas, dan yang menang selalu barang
+       * umum — lampu, baut, packing. Suku cadang bernomor part justru jarang
+       * berulang: tiap kapal beda merek mesin, jadi namanya tak pernah naik
+       * ke dua ratus teratas meski di indeks jumlahnya ratusan.
+       *
+       * Diminta sendiri dengan part=1, dan kelompoknya DIPATOK ke Suku Cadang
+       * Permesinan — barang yang sudah lolos saringan nomor part memang
+       * itulah tempatnya.
+       */
+      const kodeSc = MA_PERMESINAN;
+      const jatahSc = Math.max(0, ((paguRka[kodeSc] || 0) - (terpakai[kodeSc] || 0))
+        / Math.max(1, belum.length));
+      try {
+        setIsiSemuaSibuk("Memuat suku cadang bernomor part…");
+        const r = await fetch("/api/harga/daftar?kategori=" + encodeURIComponent("Suku Cadang Mesin")
+          + `&part=1&minData=1&batas=400&hargaMaks=${Math.round(Math.min(jatahSc, BATAS_SUKU_CADANG))}`,
+          { cache: "no-store" });
+        const d = await r.json();
+        const kunciSc = `${kodeSc}|Suku Cadang Permesinan`;
+        const tambahan: Kandidat[] = (d?.hasil || []).map((h: any) => ({
+          id: `db-sc-${h.kode}`,
+          kunci: kunciSc, kode: kodeSc, judul: "Suku Cadang Permesinan",
+          deskripsi: h.uraian || "", spesifikasi: h.spek || "", satuan: h.satuan || "Pcs",
+          jumlah: 1,
+          harga: Math.round(h.h2026 || h.h2025 || h.median || 0),
+          hargaRata: Math.round(h.median || 0),
+          kali: 0, bulanTerakhir: "", bulanMuncul: [],
+          contohDokumen: `Database pengadaan · nomor part · ${h.n || 0} data`,
+          asal: "db" as const,
+        })).filter((x: Kandidat) => x.harga > 0);
+        dbPerMA[kodeSc] = [...(dbPerMA[kodeSc] || []), ...tambahan];
+      } catch { /* suku cadang gagal dimuat: kelompoknya kosong, bukan gagal total */ }
     }
 
     for (let i = 0; i < belum.length; i++) {
