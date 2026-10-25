@@ -26,7 +26,7 @@ import { rupiah } from "@/lib/format";
 import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
 import { bersihkanDoc, MA_PERMESINAN } from "@/lib/rr/kelayakan";
-import { BATAS_SUKU_CADANG } from "@/lib/rr/penempatan";
+import { BATAS_SUKU_CADANG, punyaNomorPart, stokMati } from "@/lib/rr/penempatan";
 import { kandidatKatalog } from "@/lib/rr/katalogRutin";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
@@ -802,7 +802,19 @@ export default function RencanaPage() {
           kali: 0, bulanTerakhir: "", bulanMuncul: [],
           contohDokumen: `Database pengadaan · nomor part · ${h.n || 0} data`,
           asal: "db" as const,
-        })).filter((x: Kandidat) => x.harga > 0);
+        })).filter((x: Kandidat) => x.harga > 0
+          /*
+           * Diperiksa ULANG di sisi klien, walau route sudah menyaring.
+           *
+           * Kelompoknya dipatok langsung ke Suku Cadang, jadi aliran ini
+           * melewati tentukanKelompok() — satu-satunya tempat gerbang nomor
+           * part biasanya ditegakkan. Tanpa pemeriksaan kedua di sini, satu
+           * perubahan di route cukup untuk membuat barang tanpa nomor part
+           * masuk lagi, dan tak ada yang menahannya.
+           */
+          && punyaNomorPart(x.spesifikasi || "")
+          && !stokMati(`${x.spesifikasi || ""} ${x.deskripsi || ""}`)
+          && x.harga <= BATAS_SUKU_CADANG);
         dbPerMA[kodeSc] = [...(dbPerMA[kodeSc] || []), ...tambahan];
       } catch { /* suku cadang gagal dimuat: kelompoknya kosong, bukan gagal total */ }
     }

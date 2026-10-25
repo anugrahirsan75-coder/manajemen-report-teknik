@@ -16,7 +16,7 @@
  */
 import { NextRequest, NextResponse } from "next/server";
 import { muatIndeks, galatIndeks, keHasil } from "@/lib/harga/indeks";
-import { punyaNomorPart } from "@/lib/rr/penempatan";
+import { punyaNomorPart, stokMati } from "@/lib/rr/penempatan";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -87,6 +87,8 @@ export async function GET(req: NextRequest) {
     if (hanyaBerpart) {
       // nomor part harus ada di kolom SPESIFIKASI, bukan menumpang di nama
       if (!punyaNomorPart(String(b[4] || ""))) continue;
+      // barang death/dead/non moving: stok mati, tidak diusulkan lagi
+      if (stokMati(`${b[4] || ""} ${b[3] || ""}`)) continue;
       if (BUKAN_NAMA_BARANG.test(String(b[3] || ""))) continue;
     }
     pilih.push({ b, skor: Math.min(n, 30) * (b[12] ? 2 : 1) });

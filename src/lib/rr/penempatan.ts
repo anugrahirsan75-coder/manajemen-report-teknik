@@ -166,8 +166,42 @@ const NOMOR_PART = [
  * barangnya. Keduanya tetap diperiksa — sebagian dokumen menulis nomornya
  * menyatu dengan nama.
  */
-export const punyaNomorPart = (teks: string): boolean =>
-  !!teks && NOMOR_PART.some((re) => re.test(teks));
+/**
+ * Keterangan yang bukan nomor part, sekalipun ditulis di kolom Spesifikasi.
+ *
+ * Kolom itu kerap dipakai mencatat STATUS PERSEDIAAN, bukan kode barang:
+ * "D : Death Moving", "Slow Moving", "Stok Suku Cadang". Keterangan begitu
+ * tidak menunjuk barang apa pun — ia menerangkan perputarannya — dan barang
+ * yang death moving justru barang yang TIDAK perlu diusulkan lagi.
+ */
+const STATUS_STOK = /death\s*moving|dead\s*moving|slow\s*moving|fast\s*moving|non\s*moving|\bstok\b|\bstock\b/i;
+
+/**
+ * STOK MATI — barang yang ditandai death / dead / non moving.
+ *
+ * Ditolak SELURUHNYA, walau nomor partnya lengkap. Tanda itu berarti barangnya
+ * mengendap di gudang dan tidak terpakai; mengusulkannya lagi justru menambah
+ * tumpukan yang sudah ada. Berbeda dari keterangan status biasa yang cukup
+ * diabaikan, yang ini membatalkan barisnya.
+ *
+ * "Slow moving" sengaja TIDAK ikut: perputarannya memang lambat, tetapi
+ * barangnya masih terpakai.
+ */
+export const stokMati = (teks: string): boolean =>
+  /\b(?:death|dead|non)\s*moving\b/i.test(teks || "");
+
+/**
+ * Punya nomor part?
+ *
+ * Harus mengandung ANGKA — kode pabrikan selalu berangka. Keterangan status
+ * persediaan dibuang lebih dulu supaya sisa katanya tidak ikut dinilai.
+ */
+export const punyaNomorPart = (teks: string): boolean => {
+  if (!teks) return false;
+  const sisa = teks.replace(STATUS_STOK, " ");
+  if (!/\d/.test(sisa)) return false;
+  return NOMOR_PART.some((re) => re.test(sisa));
+};
 
 
 export interface HasilPenempatan {
@@ -235,7 +269,9 @@ export function tentukanKelompok(
      * kodenya pada tempatnya, jadi belum siap diusulkan sebagai suku cadang.
      */
     if (/suku cadang/i.test(judul)
-      && (!punyaNomorPart(spesifikasi || "") || (harga > 0 && harga > BATAS_SUKU_CADANG))) {
+      && (!punyaNomorPart(spesifikasi || "")
+        || stokMati(`${spesifikasi || ""} ${namaItem || ""}`)
+        || (harga > 0 && harga > BATAS_SUKU_CADANG))) {
       return turunKeCleaning();
     }
     const k = sub.find((x) => x.judul === judul) || sub[sub.length - 1];
