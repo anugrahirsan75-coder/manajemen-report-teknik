@@ -85,7 +85,8 @@ export async function GET(req: NextRequest) {
     if (hargaMaks && harga > hargaMaks) continue;          // tak mungkin muat di jatah
     if (hanyaMesin && !POLA_MESIN.test(`${b[3] || ""} ${b[4] || ""}`)) continue;
     if (hanyaBerpart) {
-      if (!punyaNomorPart(`${b[4] || ""} ${b[3] || ""}`)) continue;
+      // nomor part harus ada di kolom SPESIFIKASI, bukan menumpang di nama
+      if (!punyaNomorPart(String(b[4] || ""))) continue;
       if (BUKAN_NAMA_BARANG.test(String(b[3] || ""))) continue;
     }
     pilih.push({ b, skor: Math.min(n, 30) * (b[12] ? 2 : 1) });

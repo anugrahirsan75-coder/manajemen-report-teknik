@@ -225,8 +225,17 @@ export function tentukanKelompok(
      * Anggaran yang sama. Membuangnya berarti kebutuhan nyata kapal hilang
      * dari rencana hanya karena namanya ditulis kurang lengkap.
      */
+    /*
+     * Nomor partnya dicari di KOLOM SPESIFIKASI saja, bukan di nama barang.
+     *
+     * Begitulah Lampiran 3 menuliskannya: Deskripsi memuat nama barang
+     * ("Gasket", "Oring 4DP14.0"), Spesifikasi memuat kodenya
+     * ("124465-44950", "24316-000140"). Baris yang Spesifikasinya kosong —
+     * "TP. Main Engine - Filter LO 148634-35400J" — belum menyebutkan
+     * kodenya pada tempatnya, jadi belum siap diusulkan sebagai suku cadang.
+     */
     if (/suku cadang/i.test(judul)
-      && (!punyaNomorPart(barangLengkap) || (harga > 0 && harga > BATAS_SUKU_CADANG))) {
+      && (!punyaNomorPart(spesifikasi || "") || (harga > 0 && harga > BATAS_SUKU_CADANG))) {
       return turunKeCleaning();
     }
     const k = sub.find((x) => x.judul === judul) || sub[sub.length - 1];
