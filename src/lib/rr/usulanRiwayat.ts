@@ -106,7 +106,7 @@ export function kandidatDariRiwayat(
        * jatuh ke Cleaning — bearing pun tercatat alat kebersihan, dan kelompok
        * Service serta Suku Cadang selalu kosong di Lampiran 3.
        */
-      const tempat = tentukanKelompok(kode, "", it.nama || "", it.spesifikasi || "");
+      const tempat = tentukanKelompok(kode, "", it.nama || "", it.spesifikasi || "", harga);
       if (!tempat.kunci) continue;
 
       /**

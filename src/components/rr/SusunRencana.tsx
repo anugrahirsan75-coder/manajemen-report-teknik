@@ -171,7 +171,7 @@ export default function SusunRencana({
            */
           if (!bolehDiusulkan(kode, h.uraian || "", h.spek || "", kapal).boleh) return;
           sudah.add(`db-${h.kode}`);
-          const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "");
+          const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "", harga);
           kumpul.push({
             id: `db-${h.kode}`,
             kunci: tempat.kunci || kunciKelompok(KELOMPOK_RR.find((k) => k.kode === kode) || KELOMPOK_RR[0]),

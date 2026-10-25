@@ -24,7 +24,7 @@
  * sekali pun tetap kebutuhan nyata kapal itu.
  */
 import mentah from "./katalogRutin.json";
-import { tentukanKelompok } from "./penempatan";
+
 import { bolehDiusulkan, MA_AKOMODASI, MA_PERMESINAN } from "./kelayakan";
 import type { Kandidat } from "./usulanRiwayat";
 
@@ -44,8 +44,25 @@ const KATALOG = (mentah as { item: ItemKatalog[] }).item || [];
 const kunciKapal = (v: string) =>
   String(v || "").toUpperCase().replace(/^KMP\.?\s*/, "").replace(/\s+/g, " ").trim();
 
-/** Mata Anggaran satu entri katalog */
-const kodeMa = (jenis: string) => (jenis === "mesin" ? MA_PERMESINAN : MA_AKOMODASI);
+/**
+ * KELOMPOKNYA DIPATOK, bukan ditebak dari nama barangnya.
+ *
+ * Berkas evaluasi rutin memang berisi kebutuhan kebersihan dan peralatan
+ * kerja — lembar deck untuk Akomodasi, lembar mesin untuk Permesinan. Begitu
+ * nama barangnya diserahkan ke aturan penempatan, sebagian berpencar: "Klem
+ * Slang" dan "V-Belt" terbaca sebagai suku cadang, "Lampu Downlight" sebagai
+ * kelistrikan, dan daftar kebersihan yang semestinya utuh jadi tersebar ke
+ * empat judul.
+ *
+ * Asal berkasnya sudah menjawab pertanyaan itu, dan jawabannya lebih bisa
+ * dipercaya daripada tebakan atas namanya.
+ */
+const TEMPAT: Record<string, { kode: string; judul: string }> = {
+  deck: { kode: MA_AKOMODASI, judul: "Cleaning dan Peralatan kerja" },
+  mesin: { kode: MA_PERMESINAN, judul: "Cleaning dan Peralatan Kerja Mesin" },
+};
+
+const tempatKatalog = (jenis: string) => TEMPAT[jenis] || TEMPAT.deck;
 
 /** daftar kapal yang punya entri — dipakai layar untuk memberi tahu cakupannya */
 export const KAPAL_KATALOG: string[] = Array.from(new Set(KATALOG.map((x) => x.kapal)));
@@ -66,10 +83,9 @@ export function kandidatKatalog(kapal: string): Kandidat[] {
   const out: Kandidat[] = [];
   const sudah = new Set<string>();
   for (const it of sumber) {
-    const kode = kodeMa(it.jenis);
+    const { kode, judul } = tempatKatalog(it.jenis);
     if (!bolehDiusulkan(kode, it.nama, "", kapal).boleh) continue;
-    const tempat = tentukanKelompok(kode, "", it.nama, "");
-    if (!tempat.kunci) continue;
+    const tempat = { kunci: `${kode}|${judul}`, judul };
     const id = `kat-${kode}-${it.nama.toLowerCase().replace(/\s+/g, " ").trim()}`;
     if (sudah.has(id)) continue;
     sudah.add(id);

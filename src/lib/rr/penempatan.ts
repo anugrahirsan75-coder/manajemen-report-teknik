@@ -25,7 +25,15 @@ interface Aturan {
 }
 
 /** kata yang menandai jasa/pekerjaan (bukan barang) — dipakai beberapa MA */
-const JASA = /jasa|servis|service|perbaikan|perbengkelan|bengkel|kalibrasi|overhaul|pengelasan|las\b|bubut|balancing|setting|pemasangan|instal|install|pengujian|tes\s|test\s|rekondisi|penggantian/i;
+/*
+ * "las\\b" sengaja DIBUANG, yang dipakai hanya "pengelasan".
+ *
+ * Kata "las" jauh lebih sering menyebut BAHAN daripada pekerjaannya —
+ * kawat las, travo las, kaca mata las, apron las, masker las. Dengan pola
+ * selonggar itu, sekardus kawat las tercatat sebagai jasa pengelasan dan
+ * kelompok Service terisi barang habis pakai.
+ */
+const JASA = /jasa|servis|service|perbaikan|perbengkelan|bengkel|kalibrasi|overhaul|pengelasan|bubut|balancing|setting|pemasangan|instal|install|pengujian|tes\s|test\s|rekondisi|penggantian/i;
 
 /**
  * Aturan per kode Mata Anggaran. URUTAN PENTING: yang lebih khusus di atas.
@@ -62,7 +70,7 @@ const ATURAN: Record<string, Aturan[]> = {
     {
       judul: "Cleaning dan Peralatan Kerja Mesin",
       dok: /kebersihan.*mesin|mesin.*kebersihan|cleaning.*mesin|alat kerja.*mesin|peralatan kerja.*mesin/i,
-      item: /contak cleaner|kontak cleaner|contact cleaner|brake cleaner|degreaser|carbon remover|solar cleaner|majun|deterjen mesin|kuas\b|mata gerinda|amplas|gerinda potong|isolasi listrik|kabel ?ties|kabelties|klem\b|sarung tangan|kacamata las|apron las|masker las/i,
+      item: /contak cleaner|kontak cleaner|contact cleaner|brake cleaner|degreaser|carbon remover|solar cleaner|majun|deterjen mesin|kuas\b|mata gerinda|amplas|gerinda potong|isolasi listrik|kabel ?ties|kabelties|klem\b|sarung tangan|kacamata las|apron las|masker las|kawat las|elektroda|travo las|mesin las|mata gergaji|kunci pas|kunci ring|tang\b|obeng|palu\b|tespen|wd.?40|\blem\b|sealtip|silicon|asbes/i,
     },
     /*
      * JASA DIPERIKSA SEBELUM SUKU CADANG, dan urutannya memang itu yang
@@ -92,6 +100,40 @@ const ATURAN: Record<string, Aturan[]> = {
 
 const cocok = (re: RegExp | undefined, teks: string) => !!re && !!teks && re.test(teks);
 
+/**
+ * Batas atas satu baris suku cadang pada rencana RUTIN.
+ *
+ * Di atas sepuluh juta barangnya masuk INVESTASI, mata anggaran yang berbeda
+ * dan jalur persetujuannya sendiri. Barang semahal itu yang nyasar ke rencana
+ * rutin membuat pagu rutin terpakai untuk sesuatu yang semestinya tidak
+ * dibebankan ke sana.
+ */
+export const BATAS_SUKU_CADANG = 10_000_000;
+
+/**
+ * Punya nomor part?
+ *
+ * Suku cadang yang sungguhan selalu dikenali oleh nomornya — bearing 6206,
+ * V-belt A-53, kawat las RB26 2,6 mm, packing klingrit 3 mm. Yang disebut
+ * tanpa nomor ("filter oli", "seal pompa") belum menunjuk barang tertentu:
+ * itu kategori, bukan barang, dan tidak bisa dipesan apa adanya.
+ *
+ * Yang dihitung sebagai nomor: nomor part yang ditulis terang-terangan
+ * (P/N, Part No), angka berdempetan huruf (A-53, RB26, 6SD1), ukuran
+ * bernomor (3 MM, 2,6 mm, 1 inch), atau angka tiga digit ke atas (6206).
+ * Angka satu-dua digit sengaja TIDAK dihitung — "Lampu 10 Watt" dan "Kunci
+ * Pas 17" bukan nomor part, melainkan ukuran sehari-hari.
+ */
+const NOMOR_PART = [
+  /\b(?:p\s*\/?\s*n|part\s*(?:no|number)|kode)\b/i,   // disebut terang-terangan
+  /\b[a-z]{1,4}[-\s]?\d{2,}[a-z0-9-]*\b/i,            // A-53, RB26, 6SD1
+  /\b\d+[.,]?\d*\s*(?:mm|cm|inch|inc|"|''|dim)\b/i,   // 3 MM, 2,6 mm, 1 inch
+  /\b\d{3,}\b/,                                       // 6206, 1000
+];
+
+export const punyaNomorPart = (teks: string): boolean =>
+  !!teks && NOMOR_PART.some((re) => re.test(teks));
+
 export interface HasilPenempatan {
   kunci: string;                       // `${kode}|${judul}` — kosong bila MA di luar Lampiran 3
   judul: string;
@@ -105,7 +147,9 @@ export interface HasilPenempatan {
  * @param namaItem    nama barang/jasa
  * @param spesifikasi spesifikasi item (ikut dibaca sebagai petunjuk)
  */
-export function tentukanKelompok(kode: string, namaDok: string, namaItem: string, spesifikasi = ""): HasilPenempatan {
+export function tentukanKelompok(
+  kode: string, namaDok: string, namaItem: string, spesifikasi = "", harga = 0,
+): HasilPenempatan {
   const sub = KELOMPOK_RR.filter((k) => k.kode === kode);
   if (!sub.length) return { kunci: "", judul: "", dasar: "sisa" };
 
@@ -113,14 +157,34 @@ export function tentukanKelompok(kode: string, namaDok: string, namaItem: string
   if (sub.length === 1) return { kunci: kunciKelompok(sub[0]), judul: sub[0].judul, dasar: "tunggal" };
 
   const aturan = ATURAN[kode];
+  const barangLengkap = `${namaItem || ""} ${spesifikasi || ""}`.trim();
+
   const pakai = (judul: string, dasar: HasilPenempatan["dasar"]): HasilPenempatan => {
+    /*
+     * SUKU CADANG punya dua syarat yang tidak dimiliki kelompok lain.
+     *
+     * Harus punya NOMOR PART: tanpa nomor, yang tertulis baru kategori
+     * ("filter oli", "seal pompa"), bukan barang yang bisa dipesan.
+     *
+     * Harus di bawah SEPULUH JUTA: di atas itu barangnya investasi, mata
+     * anggaran lain dengan jalur persetujuan sendiri.
+     *
+     * Yang tak memenuhi tidak dibuang — ia turun ke Lain-Lain, tetap di Mata
+     * Anggaran yang sama. Membuangnya berarti kebutuhan nyata kapal hilang
+     * dari rencana hanya karena namanya ditulis kurang lengkap.
+     */
+    if (/suku cadang/i.test(judul)
+      && (!punyaNomorPart(barangLengkap) || (harga > 0 && harga > BATAS_SUKU_CADANG))) {
+      const lain = sub[sub.length - 1];
+      return { kunci: kunciKelompok(lain), judul: lain.judul, dasar: "sisa" };
+    }
     const k = sub.find((x) => x.judul === judul) || sub[sub.length - 1];
     return { kunci: kunciKelompok(k), judul: k.judul, dasar };
   };
 
   if (aturan) {
     const dok = namaDok || "";
-    const barang = `${namaItem || ""} ${spesifikasi || ""}`.trim();
+    const barang = barangLengkap;
 
     // 1. maksud PAKET dulu — satu pengadaan biasanya satu tujuan
     for (const a of aturan) if (cocok(a.dok, dok)) return pakai(a.judul, "dokumen");

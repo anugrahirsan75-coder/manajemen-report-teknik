@@ -358,7 +358,7 @@ export default function RencanaPage() {
         const harga = (adaFinal ? (it.hargaSpbj || it.harga || 0) : (it.harga || 0)) / bagi;
         if (!harga) continue;
         const kode = maKey((it.mataAnggaran || "").trim() || maDefault);
-        const tempat = tentukanKelompok(kode, p.nama || "", it.nama || "", it.spesifikasi || "");
+        const tempat = tentukanKelompok(kode, p.nama || "", it.nama || "", it.spesifikasi || "", Number(it.harga) || 0);
         const kunci = tempat.kunci;
         if (!kunci) { diabaikan++; continue; }
         sebaran[tempat.judul] = (sebaran[tempat.judul] || 0) + 1;
@@ -752,7 +752,8 @@ export default function RencanaPage() {
             // judul kelompok ditentukan barangnya: jasa service jatuh ke
             // Service / Perbaikan, suku cadang ke Suku Cadang — bukan semua
             // menumpuk di kelompok pertama Mata Anggaran itu
-            const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "");
+            const hargaDb = Math.round(h.h2026 || h.h2025 || h.median || 0);
+            const tempat = tentukanKelompok(kode, "", h.uraian || "", h.spek || "", hargaDb);
             const cadangan = KELOMPOK_RR.find((x) => x.kode === kode) || KELOMPOK_RR[0];
             return {
             id: `db-${h.kode}`,
