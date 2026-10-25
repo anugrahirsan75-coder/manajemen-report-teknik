@@ -910,6 +910,57 @@ export default function RencanaPage() {
     }
   };
 
+  /**
+   * Hapus usulan SELURUH kapal pada satu bulan, untuk menyusun ulang dari nol.
+   *
+   * Dokumen yang sudah DIKUNCI dilewati, bukan ikut dihapus. Yang sudah
+   * ditandai terkirim adalah catatan apa yang benar-benar dikirim ke pusat;
+   * membuangnya bersama draf berarti menghapus arsip hanya karena ingin
+   * mengulang susunan. Kalau memang perlu dibuang, kuncinya dibuka dulu —
+   * tombolnya ada di sebelah, dan membukanya adalah keputusan tersendiri.
+   */
+  const hapusSemuaKapal = async () => {
+    if (!bulan) return;
+    const semua = dok.filter((d) => d.tipe === tipe && d.bulan === bulan);
+    const bisa = semua.filter((d) => d.status !== "terkirim");
+    const terkunciJml = semua.length - bisa.length;
+    if (!bisa.length) {
+      setPesan(terkunciJml
+        ? `Seluruh ${terkunciJml} dokumen ${namaBulan(bulan)} sudah terkirim — buka kuncinya dulu.`
+        : `Belum ada ${tipe} ${namaBulan(bulan)} untuk dihapus.`);
+      setTimeout(() => setPesan(""), 6000);
+      return;
+    }
+    const nilai = bisa.reduce((s, d) => s + totalDoc(d).total, 0);
+    const item = bisa.reduce((n, d) => n + d.kelompok.reduce((m, g) => m + (g.items || []).length, 0), 0);
+    if (!(await konfirmasi({
+      nada: "bahaya", ikon: "🗑️",
+      judul: `Hapus ${tipe} ${namaBulan(bulan)} SELURUH kapal?`,
+      pesan: `${bisa.length} dokumen akan dibuang dari Supabase, supaya bulan ini bisa disusun ulang dari nol.`,
+      rincian: [
+        `${bisa.map((d) => ringkasKapal(d.kapal)).join(", ")}`,
+        `${item} item · nilai ${rupiah(nilai)}`,
+        terkunciJml ? `${terkunciJml} dokumen terkirim DILEWATI (masih terkunci)` : "Tidak ada dokumen terkunci",
+      ],
+      tegasan: "Tidak bisa dikembalikan.",
+      tombolYa: `Ya, hapus ${bisa.length} dokumen`,
+    }))) return;
+
+    setIsiSemuaSibuk("menghapus…");
+    try {
+      for (const d of bisa) await hapus(d.id);
+      await reload();
+      setKerja(docBaru(tipe, bulan, kapal));
+      setBerubah(false);
+      setPesan(`${bisa.length} dokumen ${namaBulan(bulan)} dihapus.${terkunciJml ? ` ${terkunciJml} yang terkirim dibiarkan.` : ""}`);
+    } catch (e: any) {
+      setPesan(`Gagal menghapus: ${e?.message || e}`);
+    } finally {
+      setIsiSemuaSibuk("");
+      setTimeout(() => setPesan(""), 9000);
+    }
+  };
+
   const salinDari = (sumber?: RrDoc) => {
     if (!sumber) { setPesan("Sumber salinan belum ada isinya."); setTimeout(() => setPesan(""), 3000); return; }
     ubah((d) => {
@@ -1132,6 +1183,12 @@ export default function RencanaPage() {
               </span>
               {!terkunci && (
                 <>
+                  <button onClick={() => { void hapusSemuaKapal(); }}
+                    disabled={!!isiSemuaSibuk}
+                    title={`Hapus ${tipe} ${namaBulan(bulan)} seluruh kapal, untuk disusun ulang dari nol — dokumen yang sudah terkirim dilewati`}
+                    className="rounded-lg bg-rose-600 px-3 py-1.5 text-[11px] font-bold text-white hover:bg-rose-700 disabled:opacity-40">
+                    🗑️ Hapus rencana bulan ini
+                  </button>
                   <button onClick={() => { void bersihkanSemuaKapal(); }}
                     disabled={!!isiSemuaSibuk}
                     title="Buang baris yang tidak boleh ada dari usulan SELURUH kapal bulan ini, lalu simpan — BBM, mobilisasi, dan isi MA Pelumas selain SAE 40 / SAE 10"
