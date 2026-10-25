@@ -339,7 +339,10 @@ export default function SusunRencana({
     const h = isiOtomatis(denganUbahan, sisa, {
       sudahDipilih: pilih, acak: variasi, benih, variasiJumlah: variasi, hindari: dipakaiBulanLalu,
       // perawatan rutin mesin sebagian besar suku cadang — beri jatahnya lebih dulu
-      porsiSukuCadang: 0.45,
+      // cleaning & peralatan kerja diisi lebih dulu; suku cadang mengambil
+        // 30% dari SISA jatah sesudahnya, bukan dari seluruh jatah
+        porsiCleaning: 0.6,
+        porsiSukuCadang: 0.3,
     });
     setPilih(h.pilih);
     // jumlah hasil variasi ikut dipasang, bukan cuma dipakai menghitung —

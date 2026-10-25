@@ -281,6 +281,16 @@ export interface OpsiOtomatis {
    * jatah Permesinan dan suku cadangnya tinggal dua tiga baris.
    */
   porsiSukuCadang?: number;
+  /**
+   * Bagian jatah yang diisi lebih dulu untuk CLEANING & PERALATAN KERJA (0–1).
+   *
+   * Dibaca SEBELUM kuota suku cadang, dan itulah maksudnya. Perawatan rutin
+   * bulanan sebagian besar memang barang kebersihan dan alat kerja — pada
+   * RENCANA Oktober 2026, seluruh isi Permesinan ada di Cleaning dan Peralatan
+   * Kerja Mesin dan Suku Cadang justru nol. Tanpa dijatah lebih dulu, kuota
+   * suku cadang yang diambil di awal membuat kelompok inti itu kebagian sisa.
+   */
+  porsiCleaning?: number;
   /** perkiraan berapa BARIS suku cadang yang diinginkan di dalam kuotanya */
   barisSukuCadang?: number;
   /**
@@ -505,17 +515,56 @@ export function isiOtomatis(
      * Diisi sampai porsinya tercapai atau antreannya habis, bukan sampai jatah
      * Mata Anggaran penuh — sisanya tetap milik kelompok lain.
      */
+    /*
+     * Tahap 0a — CLEANING & PERALATAN KERJA lebih dulu.
+     *
+     * Urutan pengisian menentukan bentuk usulan, dan kelompok yang diisi
+     * belakangan selalu kebagian sisa. Suku cadang bernomor part harganya
+     * ratusan ribu sampai jutaan sebaris, jadi kuotanya yang diambil di awal
+     * menghabiskan jatah Permesinan sebelum barang kebersihan dan alat kerja
+     * sempat masuk — padahal justru itu isi pokok perawatan rutin bulanan.
+     */
+    const porsiB = Math.min(0.9, Math.max(0, opsi.porsiCleaning ?? 0));
+    if (porsiB > 0) {
+      const kunciB = Array.from(antrean.keys()).filter((k) => /cleaning|peralatan kerja/i.test(k));
+      const batasB = (terpakai[kode] || 0) + target * porsiB;
+      for (const kunci of kunciB) {
+        const daftar = antrean.get(kunci) || [];
+        let aman = 0;
+        while (aman++ < 500 && daftar.length) {
+          const dipakai = terpakai[kode] || 0;
+          const ruang = Math.min(batasB, target) - dipakai;
+          if (ruang <= 0) break;
+          const idx = daftar.findIndex((k) => !pilih.has(k.id) && k.harga > 0 && k.harga <= ruang);
+          if (idx < 0) break;
+          const k = daftar[idx];
+          daftar.splice(0, idx + 1);
+          const jml = Math.min(jumlahAwal(k), Math.floor(ruang / k.harga));
+          if (jml < 1) continue;
+          pilih.add(k.id);
+          if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
+          terpakai[kode] = dipakai + jml * k.harga;
+        }
+      }
+    }
+
     const porsi = Math.min(0.8, Math.max(0, opsi.porsiSukuCadang ?? 0));
     if (porsi > 0) {
       const kunciSc = Array.from(antrean.keys()).filter((k) => /suku cadang/i.test(k));
-      const batasSc = (terpakai[kode] || 0) + target * porsi;
+      /*
+       * Kuotanya dihitung dari SISA jatah sesudah cleaning, bukan dari
+       * seluruh jatah Mata Anggaran. Dihitung dari seluruh jatah, 45% itu
+       * terasa dua kali lipat karena cleaning sudah memakai bagiannya.
+       */
+      const sisaSesudahCleaning = Math.max(0, target - (terpakai[kode] || 0));
+      const batasSc = (terpakai[kode] || 0) + sisaSesudahCleaning * porsi;
       /**
        * Batas nilai TIAP BARIS di dalam kuota ini. Tanpa batas, satu servis
        * pompa seharga empat juta menghabiskan kuota suku cadang sendirian dan
        * yang tercatat cuma tiga baris — padahal maksud kuota ini justru
        * memperbanyak jenis barangnya: filter, gasket, seal, belt, impeller.
        */
-      const maksBaris = (target * porsi) / Math.max(3, opsi.barisSukuCadang ?? 12);
+      const maksBaris = (sisaSesudahCleaning * porsi) / Math.max(3, opsi.barisSukuCadang ?? 12);
       /*
        * Dua giliran. Giliran pertama HANYA barang yang jelas melayani mesin
        * induk atau mesin bantu; giliran kedua baru boleh barang mesin umum.
