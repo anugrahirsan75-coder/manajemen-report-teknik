@@ -30,7 +30,7 @@ import { BATAS_SUKU_CADANG, punyaNomorPart, stokMati } from "@/lib/rr/penempatan
 import { kandidatKatalog } from "@/lib/rr/katalogRutin";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
-  Kandidat, gabungKandidat, isiOtomatis, kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, susunKendali,
+  Kandidat, gabungKandidat, isiOtomatis, kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, sidikNama, susunKendali,
 } from "@/lib/rr/usulanRiwayat";
 import { labelMA } from "@/lib/anggaran/types";
 
@@ -608,6 +608,27 @@ export default function RencanaPage() {
   const paguRka = pembanding.nilai;
 
   /** barang yang sudah dipakai rencana bulan lalu kapal ini — bahan penalti variasi */
+  /**
+   * Pekerjaan bengkel yang sudah diusulkan KAPAL LAIN pada bulan ini.
+   *
+   * Kapal ini sendiri tidak dihitung: kalau ikut, menyusun ulang kapal yang
+   * sama akan menghindari pekerjaannya sendiri dan daftarnya berubah-ubah
+   * tanpa alasan.
+   */
+  const jasaKapalLain = useMemo(() => {
+    const out = new Set<string>();
+    if (!bulan) return out;
+    dok.filter((d) => d.tipe === "rencana" && d.bulan === bulan && d.kapal !== kapal)
+      .forEach((d) => (d.kelompok || []).forEach((g) => {
+        if (!/service|perbaikan|bengkel/i.test(g.kunci)) return;
+        (g.items || []).forEach((i) => {
+          const sn = sidikNama(i.deskripsi || "");
+          if (sn) out.add(sn);
+        });
+      }));
+    return out;
+  }, [dok, bulan, kapal]);
+
   const dipakaiBulanLalu = useMemo(
     () => (bulan ? namaDipakai(dok, bulanKe(bulan, -1), kapal) : new Set<string>()),
     [dok, bulan, kapal]);
@@ -737,6 +758,23 @@ export default function RencanaPage() {
     /** rencana yang sudah tersimpan bulan ini, ditambah hasil putaran ini */
     const terpakai: Record<string, number> = { ...rencanaTersimpan(dok, bulan) };
 
+    /**
+     * Pekerjaan bengkel yang sudah terpakai bulan ini, lintas kapal.
+     *
+     * Diisi lebih dulu dari rencana kapal yang SUDAH tersimpan, bukan hanya
+     * dari putaran ini — kalau tidak, kapal yang disusun hari ini akan
+     * mengulang pekerjaan kapal yang sudah disusun kemarin.
+     */
+    const jasaArmada = new Set<string>();
+    dok.filter((d) => d.tipe === "rencana" && d.bulan === bulan)
+      .forEach((d) => (d.kelompok || []).forEach((g) => {
+        if (!/service|perbaikan|bengkel/i.test(g.kunci)) return;
+        (g.items || []).forEach((i) => {
+          const sn = sidikNama(i.deskripsi || "");
+          if (sn) jasaArmada.add(sn);
+        });
+      }));
+
     /** barang database harga per Mata Anggaran — diambil sekali, dipakai semua kapal */
     const dbPerMA: Record<string, Kandidat[]> = {};
     if (opsi.db) {
@@ -836,6 +874,16 @@ export default function RencanaPage() {
       const h = isiOtomatis(kand, jatah, {
         acak: true, benih, variasiJumlah: true,
         hindari: namaDipakai(dok, bulanKe(bulan, -1), k),
+        /*
+         * Pekerjaan bengkel yang sudah diusulkan kapal lain bulan ini.
+         *
+         * Barang kebersihan boleh sama antar kapal — semua kapal memakai majun
+         * dan deterjen yang sama. Pekerjaan bengkel tidak: ia menggambarkan
+         * kerusakan tertentu di kapal tertentu, dan tiga belas kapal dengan
+         * daftar perbaikan yang sama persis terbaca sebagai satu daftar yang
+         * disalin tiga belas kali.
+         */
+        hindariJasa: jasaArmada,
         // cleaning & peralatan kerja diisi lebih dulu; suku cadang mengambil
         // 30% dari SISA jatah sesudahnya, bukan dari seluruh jatah
         porsiCleaning: 0.6,
@@ -847,6 +895,8 @@ export default function RencanaPage() {
       });
       const terpilih = kand.filter((x) => h.pilih.has(x.id));
       if (!terpilih.length) continue;
+      // kapal berikutnya tidak boleh mengusulkan pekerjaan bengkel yang sama
+      h.jasaDipakai.forEach((x) => jasaArmada.add(x));
 
       const lama = dok.find((x) => x.tipe === "rencana" && x.bulan === bulan && x.kapal === k);
       const doc: RrDoc = lama ? JSON.parse(JSON.stringify(lama)) : docBaru("rencana", bulan, k);
@@ -1472,6 +1522,7 @@ export default function RencanaPage() {
         kapalIni={rencanaKapalIni}
         kapalBelum={kapalBelumSusun}
         dipakaiBulanLalu={dipakaiBulanLalu}
+        jasaKapalLain={jasaKapalLain}
         kapalOpsi={opsiKapalSusun}
         gantiKapal={(k) => { void pindahKapalSusun(k); }}
         isiSemua={(o) => { void isiSemuaKapal(o); }}

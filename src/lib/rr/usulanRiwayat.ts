@@ -260,6 +260,14 @@ export interface HasilOtomatis {
   jumlahSaran: Record<string, number>;
   /** berapa persen jatah tiap Mata Anggaran akhirnya terisi */
   capai: Record<string, number>;
+  /**
+   * Sidik nama PEKERJAAN BENGKEL yang terpilih.
+   *
+   * Dikembalikan supaya pemanggil bisa menumpuknya dan menyodorkannya sebagai
+   * `hindariJasa` untuk kapal berikutnya — tanpa itu, tiap kapal menyusun
+   * seolah ia satu-satunya kapal yang disusun bulan ini.
+   */
+  jasaDipakai: Set<string>;
 }
 
 export interface OpsiOtomatis {
@@ -271,6 +279,18 @@ export interface OpsiOtomatis {
   benih?: number;
   /** sidik nama barang yang dipakai rencana bulan sebelumnya (dari bersihNamaItem) */
   hindari?: Set<string>;
+  /**
+   * Sidik nama PEKERJAAN BENGKEL yang sudah dipakai KAPAL LAIN pada bulan
+   * yang sama. Dihindari keras, bukan sekadar diturunkan peringkatnya.
+   *
+   * Barang kebersihan memang wajar sama antar kapal — semua kapal memakai
+   * majun dan deterjen yang sama. Pekerjaan bengkel tidak: ia menggambarkan
+   * kerusakan tertentu di kapal tertentu. Tiga belas kapal yang mengusulkan
+   * "Service Dinamo Starter" dengan jumlah dan harga sama persis terbaca
+   * sebagai satu daftar yang disalin tiga belas kali, dan itulah hal pertama
+   * yang ditanyakan pemeriksa.
+   */
+  hindariJasa?: Set<string>;
   /** jumlah ikut divariasikan ±20% supaya angkanya tak persis sama tiap bulan */
   variasiJumlah?: boolean;
   /**
@@ -430,6 +450,10 @@ export function isiOtomatis(
     return Math.max(1, Math.round((k.jumlah || 1) * (0.8 + acak() * 0.4)));   // 80%–120%
   };
 
+  /** sidik nama pekerjaan bengkel yang akhirnya terpilih — dipakai pemanggil
+   *  supaya kapal berikutnya tidak mengusulkan pekerjaan yang sama */
+  const jasaTerpilih = new Set<string>();
+
   /** urutan pemilihan: sering & baru dibeli didahulukan, diacak bila variasi menyala */
   /** riwayat kapal sendiri paling dipercaya, lalu armada, terakhir database harga */
   /*
@@ -479,11 +503,15 @@ export function isiOtomatis(
     perKelompok.forEach((isiKel) => {
       if (isiKel.some((k) => pilih.has(k.id))) return;     // kelompok ini sudah terwakili
       const k = urutkan(isiKel).find((x) => x.harga > 0
-        && x.harga <= target - (terpakai[kode] || 0));
+        && x.harga <= target - (terpakai[kode] || 0)
+        // pekerjaan bengkel milik kapal lain tidak dipakai sebagai pembuka
+        && !(/service|perbaikan|bengkel/i.test(x.kunci)
+          && opsi.hindariJasa?.has(sidikNama(x.deskripsi))));
       if (!k) return;
       const jml = Math.min(jumlahAwal(k), Math.floor((target - (terpakai[kode] || 0)) / k.harga));
       if (jml < 1) return;
       pilih.add(k.id);
+      if (/service|perbaikan|bengkel/i.test(k.kunci)) jasaTerpilih.add(sidikNama(k.deskripsi));
       if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
       terpakai[kode] = (terpakai[kode] || 0) + jml * k.harga;
     });
@@ -505,7 +533,21 @@ export function isiOtomatis(
      */
     const antrean = new Map<string, Kandidat[]>();
     perKelompok.forEach((isiKel, kunci) => {
-      const urut = urutkan(isiKel).filter((k) => !pilih.has(k.id) && k.harga > 0);
+      let urut = urutkan(isiKel).filter((k) => !pilih.has(k.id) && k.harga > 0);
+      /*
+       * Pekerjaan bengkel yang sudah dipakai kapal lain bulan ini dibuang
+       * dari antrean, bukan sekadar diturunkan peringkatnya. Diturunkan
+       * peringkatnya saja tidak cukup: antrean jasa biasanya pendek, jadi
+       * barang yang sama tetap terpilih begitu yang lain habis.
+       *
+       * Kalau membuangnya justru mengosongkan antrean, daftar aslinya
+       * dipakai lagi — lebih baik ada pekerjaan bengkel yang berulang
+       * daripada kelompoknya kosong sama sekali.
+       */
+      if (/service|perbaikan|bengkel/i.test(kunci) && opsi.hindariJasa?.size) {
+        const beda = urut.filter((k) => !opsi.hindariJasa!.has(sidikNama(k.deskripsi)));
+        if (beda.length) urut = beda;
+      }
       antrean.set(kunci, /suku cadang/i.test(kunci) ? selangSelingMesin(urut) : urut);
     });
 
@@ -657,6 +699,17 @@ export function isiOtomatis(
     const batasKelompok = (kunci: string) => {
       if (/suku cadang/i.test(kunci)) return 18;
       if (/cleaning|peralatan kerja/i.test(kunci)) return 36;
+      /*
+       * PEKERJAAN BENGKEL dibatasi sedikit, dan batasnya tidak pernah
+       * dilonggarkan.
+       *
+       * Kolam pekerjaan bengkel pendek — belasan nama untuk tiga belas kapal.
+       * Kalau satu kapal boleh memborong seisinya, kapal berikutnya hanya
+       * punya pilihan yang sama, dan tiga belas daftar jadi serupa. Dengan
+       * batas empat baris, kolamnya berputar: tiap kapal kebagian potongan
+       * yang berbeda.
+       */
+      if (/service|perbaikan|bengkel/i.test(kunci)) return 4;
       return 12;
     };
 
@@ -665,7 +718,11 @@ export function isiOtomatis(
       while (putaran++ < 500) {
         let ada = false;
         for (const kunci of kunciKel) {
-          if (pakaiBatas && (jumlahBaris.get(kunci) || 0) >= batasKelompok(kunci)) continue;
+          // batas pekerjaan bengkel berlaku juga pada putaran tanpa batas:
+          // di sinilah satu kapal tadinya memborong seisi kolam jasa
+          const batasKeras = /service|perbaikan|bengkel/i.test(kunci);
+          if ((pakaiBatas || batasKeras)
+            && (jumlahBaris.get(kunci) || 0) >= batasKelompok(kunci)) continue;
           const daftar = antrean.get(kunci) || [];
           const dipakai = terpakai[kode] || 0;
           const ruang = target - dipakai;
@@ -681,6 +738,7 @@ export function isiOtomatis(
           if (jml < 1) jml = lebihDekat(dipakai, k.harga, target, langitLuar) ? 1 : 0;
           if (jml < 1) continue;
           pilih.add(k.id);
+          if (/service|perbaikan|bengkel/i.test(kunci)) jasaTerpilih.add(sidikNama(k.deskripsi));
           jumlahBaris.set(kunci, (jumlahBaris.get(kunci) || 0) + 1);
           if (jml !== k.jumlah) jumlahSaran[k.id] = jml;
           terpakai[kode] = dipakai + jml * k.harga;
@@ -758,7 +816,7 @@ export function isiOtomatis(
     .map(([kode, sisa]) => ({ kode, sisa: sisa - (terpakai[kode] || 0) }))
     .filter((x) => x.sisa > 0 && (capai[x.kode] || 0) < 80);
 
-  return { pilih, terpakai, kurang, jumlahSaran, capai };
+  return { pilih, terpakai, kurang, jumlahSaran, capai, jasaDipakai: jasaTerpilih };
 }
 
 /** sidik nama barang yang dipakai rencana bulan tertentu — bahan penalti variasi */

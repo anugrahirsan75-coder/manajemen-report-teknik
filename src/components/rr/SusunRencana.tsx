@@ -28,6 +28,7 @@ export interface PilihanUsulan {
 
 export default function SusunRencana({
   buka, tutup, bulan, kapal, kandidat, pagu, kapalLain, kapalIni, kapalBelum, dipakaiBulanLalu,
+  jasaKapalLain,
   kapalOpsi, gantiKapal, isiSemua, tambah,
 }: {
   buka: boolean;
@@ -42,6 +43,8 @@ export default function SusunRencana({
   kapalBelum: number;
   /** nama barang yang dipakai rencana bulan lalu — diberi penalti supaya usulan tak jadi salinan */
   dipakaiBulanLalu?: Set<string>;
+  /** pekerjaan bengkel yang sudah diusulkan KAPAL LAIN pada bulan yang sama */
+  jasaKapalLain?: Set<string>;
   /** seluruh kapal beserta keadaan usulannya bulan ini — untuk berpindah tanpa menutup layar */
   kapalOpsi?: { nama: string; status: "kosong" | "draf" | "terkirim"; nilai: number }[];
   gantiKapal?: (kapal: string) => void;
@@ -338,6 +341,8 @@ export default function SusunRencana({
     kendali.forEach((b) => { sisa[b.kode] = Math.max(0, (b.pagu - b.kapalLain - b.kapalIni) / pembagi); });
     const h = isiOtomatis(denganUbahan, sisa, {
       sudahDipilih: pilih, acak: variasi, benih, variasiJumlah: variasi, hindari: dipakaiBulanLalu,
+      // pekerjaan bengkel kapal lain bulan ini tidak diulang di kapal ini
+      hindariJasa: jasaKapalLain,
       // perawatan rutin mesin sebagian besar suku cadang — beri jatahnya lebih dulu
       // cleaning & peralatan kerja diisi lebih dulu; suku cadang mengambil
         // 30% dari SISA jatah sesudahnya, bukan dari seluruh jatah
