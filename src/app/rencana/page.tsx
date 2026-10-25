@@ -26,9 +26,10 @@ import { rupiah } from "@/lib/format";
 import { useKonfirmasi } from "@/components/Konfirmasi";
 import { tentukanKelompok } from "@/lib/rr/penempatan";
 import { bersihkanDoc } from "@/lib/rr/kelayakan";
+import { kandidatKatalog } from "@/lib/rr/katalogRutin";
 import SusunRencana, { PilihanUsulan } from "@/components/rr/SusunRencana";
 import {
-  Kandidat, isiOtomatis, kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, susunKendali,
+  Kandidat, gabungKandidat, isiOtomatis, kandidatDariRiwayat, namaDipakai, paguPembanding, rencanaTersimpan, susunKendali,
 } from "@/lib/rr/usulanRiwayat";
 import { labelMA } from "@/lib/anggaran/types";
 
@@ -592,8 +593,14 @@ export default function RencanaPage() {
    * sendiri, bukan kebiasaan.
    */
   const kandidatRiwayat = useMemo(
-    // riwayat 12 bulan, kapal ini DAN kapal lain (asalnya ditandai di layar susun)
-    () => (tipe === "rencana" && bulan ? kandidatDariRiwayat(pengadaan, kapal, bulan, 12, true) : []),
+    // riwayat 12 bulan, kapal ini DAN kapal lain (asalnya ditandai di layar susun),
+    // DITAMBAH katalog kebutuhan rutin dari berkas evaluasi deck & mesin —
+    // riwayat satu kapal sering tipis, dan daftar kebersihan yang keluar cuma
+    // dua baris bukan karena kapalnya tidak butuh, melainkan karena tidak ada
+    // yang bisa dipilih
+    () => (tipe === "rencana" && bulan
+      ? gabungKandidat(kandidatDariRiwayat(pengadaan, kapal, bulan, 12, true), kandidatKatalog(kapal))
+      : []),
     [tipe, bulan, kapal, pengadaan]);
 
   const pembanding = useMemo(() => paguPembanding(plafon, rka, bulan), [plafon, rka, bulan]);
@@ -765,10 +772,11 @@ export default function RencanaPage() {
       const k = belum[i];
       setIsiSemuaSibuk(`Menyusun ${ringkasKapal(k)} — ${i + 1}/${belum.length}…`);
       const sisaKapal = belum.length - i;              // termasuk kapal ini
-      const kand: Kandidat[] = [
-        ...kandidatDariRiwayat(pengadaan, k, bulan, 12, opsi.armada),
-        ...(opsi.db ? Object.values(dbPerMA).flat() : []),
-      ];
+      const kand: Kandidat[] = gabungKandidat(
+        kandidatDariRiwayat(pengadaan, k, bulan, 12, opsi.armada),
+        kandidatKatalog(k),
+        opsi.db ? Object.values(dbPerMA).flat() : [],
+      );
       const jatah: Record<string, number> = {};
       Object.keys(paguRka).forEach((kode) => {
         jatah[kode] = Math.max(0, ((paguRka[kode] || 0) - (terpakai[kode] || 0)) / sisaKapal);

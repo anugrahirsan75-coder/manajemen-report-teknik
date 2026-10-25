@@ -48,7 +48,7 @@ export interface Kandidat {
   bulanMuncul: string[];
   contohDokumen: string;
   /** dari mana barang ini datang — menentukan urutan dan lencana di layar */
-  asal: "kapal" | "armada" | "db";
+  asal: "kapal" | "armada" | "db" | "katalog";
 }
 
 const rapi = (s: string) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
@@ -330,6 +330,32 @@ export function mesinDari(k: { deskripsi?: string; spesifikasi?: string }): Mesi
 export const sidikNama = (s: string) => bersihNamaItem(s).toLowerCase().replace(/\s+/g, " ").trim();
 
 /**
+ * Gabungkan beberapa sumber kandidat, barang kembar dibuang.
+ *
+ * Sumbernya tumpang tindih: "Majun" ada di riwayat kapal, ada di katalog
+ * evaluasi, dan ada pula di database harga. Tanpa penggabungan ini satu barang
+ * yang sama bisa terpilih tiga kali dengan harga berbeda-beda, dan usulannya
+ * terbaca seperti disusun tanpa dibaca ulang.
+ *
+ * Yang MENANG adalah sumber yang disebut lebih dulu — pemanggilnya menaruh
+ * riwayat kapal di depan, karena harga terakhir yang benar-benar dibayar lebih
+ * bisa dipertanggungjawabkan daripada harga perkiraan.
+ */
+export function gabungKandidat(...sumber: Kandidat[][]): Kandidat[] {
+  const out: Kandidat[] = [];
+  const sudah = new Set<string>();
+  for (const daftar of sumber) {
+    for (const k of daftar) {
+      const id = `${k.kode}|${sidikNama(k.deskripsi)}`;
+      if (!id.endsWith("|") && sudah.has(id)) continue;
+      sudah.add(id);
+      out.push(k);
+    }
+  }
+  return out;
+}
+
+/**
  * Pilih kandidat sampai mendekati sisa pagu tiap Mata Anggaran.
  *
  * Urutannya bukan asal muat: barang yang paling sering dan paling baru dibeli
@@ -396,7 +422,14 @@ export function isiOtomatis(
 
   /** urutan pemilihan: sering & baru dibeli didahulukan, diacak bila variasi menyala */
   /** riwayat kapal sendiri paling dipercaya, lalu armada, terakhir database harga */
-  const bobotAsal = (k: Kandidat) => (k.asal === "kapal" ? 1 : k.asal === "armada" ? 0.6 : 0.35);
+  /*
+   * Katalog kebutuhan rutin diperlakukan hampir setara riwayat kapal sendiri.
+   * Isinya memang penilaian cabang sendiri tentang apa yang dibutuhkan kapal
+   * ini tiap bulan — lebih dekat ke kenyataan daripada database harga, yang
+   * cuma tahu barang itu pernah dibeli seseorang.
+   */
+  const bobotAsal = (k: Kandidat) => (k.asal === "kapal" ? 1
+    : k.asal === "katalog" ? 0.9 : k.asal === "armada" ? 0.6 : 0.35);
 
   const urutkan = (isi: Kandidat[]) => (opsi.acak
     ? isi.map((k) => ({

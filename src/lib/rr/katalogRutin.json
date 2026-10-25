@@ -1,0 +1,11031 @@
+{
+"sumber": "EVALUASI RUTIN DECK & MESIN 2026.xlsx",
+"dibuat": "2026-10-25",
+"item": [
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 10,
+"kali": 3
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 10,
+"kali": 3
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 3,
+"kali": 3
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 4,
+"kali": 3
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 6,
+"kali": 3
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 8,
+"kali": 3
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 32000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bnks",
+"harga": 35000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Keset",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Bh",
+"harga": 20000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 32000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Alat Pel Lantai",
+"satuan": "PCS",
+"harga": 32000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "Btl",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Bayclyn",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Bayfresh Semprot",
+"satuan": "Klg",
+"harga": 42000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Baygon Seprot",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Braso",
+"satuan": "Btl",
+"harga": 66000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Cling Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Ember plastik Hitam 5L",
+"satuan": "pcs",
+"harga": 50000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Gagang Sapu Lantai",
+"satuan": "PCS",
+"harga": 36000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Gunting Packing",
+"satuan": "Pcs",
+"harga": 66000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kamfer Bulat Besar",
+"satuan": "Bnks",
+"harga": 30000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kamfer Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kamper Bulat Besar",
+"satuan": "Bks",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kamper Bulat Kecil",
+"satuan": "Bks",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kamper Gantung",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kanebo",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kemoceng",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kuas 2 Inch",
+"satuan": "Pcs",
+"harga": 12000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Kuas 4 Inch",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Lakban Kertas",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Plastik Sampah Uk. 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Shock (Soda Api)",
+"satuan": "Btl",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Sikat Kloset Lengkung",
+"satuan": "Bh",
+"harga": 35000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Sikat Lewa Besar",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Sikat Lewa Karet",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Sikat Lewa Kecil",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Spon Cuci Piring",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Spon Pencuci Piring",
+"satuan": "Pcs",
+"harga": 7000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Stela Elecktrik",
+"satuan": "PCS",
+"harga": 110000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Tong Sampah Besar",
+"satuan": "Bh",
+"harga": 350000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "Tong Sampah Kecil",
+"satuan": "Bh",
+"harga": 200000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "deck",
+"nama": "bendera merah putih",
+"satuan": "Lbr",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Mata Gergaji",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Silicon Red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Accu 12 Volt 200 Ah",
+"satuan": "Unit",
+"harga": 4600000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Air Accu Tambah",
+"satuan": "Doos",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Air Coolent",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Amplas Halus",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Amplas Kasar",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 1000",
+"satuan": "LBR",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "Mtr",
+"harga": 750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Baut Stenlis + Ring Uk. 17",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Baut Stenlis + Ring Uk. 19",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Bearing 6203",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Contack Cleaner",
+"satuan": "Bh",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Injector Cleaner",
+"satuan": "Klg",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Isi Kuas Roll",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Isolasi Listrik",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kabei Ties 30 Cm",
+"satuan": "Pack",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kabel Serabut 2x2 mm",
+"satuan": "Roll",
+"harga": 950000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Karet Ban Dalam Motor",
+"satuan": "Bh",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kepala Accu",
+"satuan": "Bh",
+"harga": 47000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Klem 2 Inch",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Klem 2,5 Inch",
+"satuan": "Pcs",
+"harga": 17000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Klem 3 Inch",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Klem Slang 1,5 ''",
+"satuan": "Pcs",
+"harga": 12000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Klem Slang 2,5''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Klem Slang 3''",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Klem Slang 3,5\"",
+"satuan": "Bh",
+"harga": 25000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kran Air uk. 1/2\"",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kuas Tangan 2 ''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 10",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 8",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kunci Sock 39",
+"satuan": "BH",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Kunci Sock 41",
+"satuan": "BH",
+"harga": 55000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lampu Led 9 Watt",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lem Castol",
+"satuan": "Bh",
+"harga": 20000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lem Devcon 5 Menit",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lem Epoxy",
+"satuan": "Set",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lem Kastol",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "Bh",
+"harga": 18000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lem Treebon",
+"satuan": "Bh",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Lem Treebond",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "Kg",
+"harga": 70000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Mata Bros Kuningan",
+"satuan": "Bh",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Mata Gerinda Batu",
+"satuan": "Pcs",
+"harga": 23000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Mata Gerinda Potong",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Packing Tombo Biru",
+"satuan": "M",
+"harga": 300000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Palu Ketok uk. 300",
+"satuan": "Pcs",
+"harga": 80000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Pompa celup",
+"satuan": "Unit",
+"harga": 2376000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Porstex",
+"satuan": "Bh",
+"harga": 36000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Seal O-ring Service Kit Set (Biru)",
+"satuan": "Set",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "PCS",
+"harga": 15000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Sikat Kawat Kuningan",
+"satuan": "Bh",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Silicone Red",
+"satuan": "Bh",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Tang Snabring Buka",
+"satuan": "PCS",
+"harga": 130000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Tang Snabring Tutup",
+"satuan": "PCS",
+"harga": 130000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Vanbelt A-47",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "Vanbelt B-52",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "WD 40",
+"satuan": "Bh",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. ARIWANGAN",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Accu 12 Volt 150 Ah",
+"satuan": "Kg",
+"harga": 4100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 57000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Alat Pel Lantai",
+"satuan": "PCS",
+"harga": 32000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "Btl",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 67000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Braso",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Deterjen Cair",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Gress(Kobra)",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Isi Kuas Roll Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Isi Stela Electrik 225 ml",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "KamPer Bulat Besar",
+"satuan": "Bks",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Kamper Bulat Kecil",
+"satuan": "Bks",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Kamper Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bks",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Kemper Gantung",
+"satuan": "PCS",
+"harga": 24000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Lem Epoxy",
+"satuan": "Set",
+"harga": 400000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Sikat Lewa Besar",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Sikat Lewa Karet",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Tempat Sampah Roda",
+"satuan": "Pcs",
+"harga": 450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "deck",
+"nama": "Vixal",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Silicon Red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Air Accu Tambah",
+"satuan": "Doos",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "KG",
+"harga": 750000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Barometer Air",
+"satuan": "Pcs",
+"harga": 170000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Baut/Mur uk. 24mm",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 12,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Honing Liner",
+"satuan": "UNIT",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Indian Gasket",
+"satuan": "BTL",
+"harga": 70000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Isolasi Listrik",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Kabelties 30 Cm",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Klem selang uk. 2\"",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 19",
+"satuan": "BH",
+"harga": 80000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Lampu Led 9 Watt",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Lampu TL 18 Watt",
+"satuan": "Pcs",
+"harga": 85000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Lem Devcon 5 Menit",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Lem Epoxy",
+"satuan": "Set",
+"harga": 400000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Lem epoxi",
+"satuan": "PCS",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Mata Gergaji",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Mata Gerinda Potong",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Nepel",
+"satuan": "Pcs",
+"harga": 165000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Obeng (+)",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Obeng (-)",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Sarung Tangan Kerja",
+"satuan": "Pack",
+"harga": 70000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Sealtip",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "PCS",
+"harga": 15000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Senter Chas",
+"satuan": "PCS",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Skun Kabel Accu 200 A",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Tang Kupas Kabel",
+"satuan": "PCS",
+"harga": 190000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Vanbelt A 51",
+"satuan": "PCS",
+"harga": 65000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Vanbelt A 52",
+"satuan": "PCS",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Vanbelt A 53",
+"satuan": "PCS",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Vanbelt A-47",
+"satuan": "Pcs",
+"harga": 80000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "Vanbelt B-50",
+"satuan": "Pcs",
+"harga": 85000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BARONANG",
+"jenis": "mesin",
+"nama": "stop Kontak 4 Lubang",
+"satuan": "PCS",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 3
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 3,
+"kali": 3
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 7,
+"kali": 3
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "BTL",
+"harga": 22000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 42000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Deterjen Cair",
+"satuan": "Bks",
+"harga": 45000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "PCS",
+"harga": 17000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Isi Kuas Roll Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bnks",
+"harga": 35000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Keset",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Aganol",
+"satuan": "Btl",
+"harga": 70000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 57000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Astonis Stainliss Steel",
+"satuan": "Btl",
+"harga": 105000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Bak sampah",
+"satuan": "Unit",
+"harga": 450000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Ban Daprah",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Baut Manhole Uk. 24 mm",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 30,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Baut manhole Uk. 30 mm",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 30,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Bayclin Uk. 5 Liter",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Bayclyn",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Bayclyn 1000 Ml",
+"satuan": "Btl",
+"harga": 80000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 67000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Baygon Seprot",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Connector Lampu Aldis",
+"satuan": "Pcs",
+"harga": 155000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Ember Uk. 10 Ltr",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Fiber Glass + Resin",
+"satuan": "Kg",
+"harga": 175000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Isi Stela Electrik",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Isi Stela Electrik 225 ml",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kamfer Bulat Besar",
+"satuan": "Bnks",
+"harga": 37000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kamper Bulat Besar",
+"satuan": "Bks",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kamper Bulat Kecil",
+"satuan": "Bks",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kamper Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kemoceng",
+"satuan": "Pcs",
+"harga": 42000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kemper Gantung",
+"satuan": "PCS",
+"harga": 24000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Keranjang Sampah",
+"satuan": "BH",
+"harga": 80000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Kran Kuningan 1/2 Inch",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Lakban Kertas",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Masker dan Regulator Oksigen",
+"satuan": "Set",
+"harga": 450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Packing Karet Manhole Uk. 5 mm",
+"satuan": "Mtr",
+"harga": 550000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Plastik Sampah Kecil",
+"satuan": "Pack",
+"harga": 80000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Rice Cooker 5L",
+"satuan": "Unit",
+"harga": 2000000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Segel Uk. 24 mm",
+"satuan": "Pcs",
+"harga": 175000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Sikat Lewa Besar",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Sikat Lewa Karet",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Sikat WC Model Lengkung",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Stick Roll Cat",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Tissue Kamar Mandi",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Tong Sampah Besar",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "deck",
+"nama": "Vixal",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 3
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "btl",
+"harga": 150000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Isolasi Listrik",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Sorot LED 100 Watt",
+"satuan": "Pcs",
+"harga": 700000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "KG",
+"harga": 70000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mata Bros Kasar",
+"satuan": "PCS",
+"harga": 35000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mata Gergaji",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Porstex",
+"satuan": "BTL",
+"harga": 36000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Sarung Tangan Kerja",
+"satuan": "Pack",
+"harga": 70000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Silicon Red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Accu 12 Volt 200 Ah",
+"satuan": "Unit",
+"harga": 4600000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Amplas 1000",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 1000",
+"satuan": "lbr",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 400",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "m",
+"harga": 750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Asbes Tali",
+"satuan": "Roll",
+"harga": 540000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Baut,Mur Ring Stenlist 14",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 12,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Baut,Mur Ring Stenlist 17",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 12,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Baut,Mur Ring Stenlist 19",
+"satuan": "Pcs",
+"harga": 38000,
+"jumlah": 12,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Baut,Mur Ring Stenlist 22",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 12,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Bor Impack",
+"satuan": "Unit",
+"harga": 900000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Ear Muff",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Ember Uk. 100 Ltr",
+"satuan": "Pcs",
+"harga": 180000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Fiting Lampu Segi Empat",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Honing Liner",
+"satuan": "Unit",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Injector Cleaner",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Isi Kuas Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kabel 2X1,5( NYYHY)",
+"satuan": "Roll",
+"harga": 688000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kabel 3 X 2,5 (NYY)",
+"satuan": "M",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kabel Accu",
+"satuan": "M",
+"harga": 100000,
+"jumlah": 15,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kabelties 20 Cm",
+"satuan": "Pack",
+"harga": 50000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kabelties 25 Cm",
+"satuan": "Pack",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kabelties 30 cm",
+"satuan": "Pack",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kain Kasa Turbo",
+"satuan": "M",
+"harga": 200000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kap Lampu TL 18 Watt Watter Proof",
+"satuan": "Set",
+"harga": 300000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Karet Ban Motor",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kawat Ikat Galpanis 1 MM",
+"satuan": "Kg",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kawat Las RB 2,5 mm",
+"satuan": "Dus",
+"harga": 250000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Klem 3/4''",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Klem Kabel 10 MM",
+"satuan": "Pack",
+"harga": 25000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Klem Selang 1 ''",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Klem Slang 3''",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Klem Slang 3,5''",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Klem selang uk. 2\"",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Konci Set",
+"satuan": "Set",
+"harga": 750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Inggris 24 Inch",
+"satuan": "Bh",
+"harga": 230000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Inggris 6 Ich",
+"satuan": "Bh",
+"harga": 115000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 10",
+"satuan": "pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 12",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 14",
+"satuan": "pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 6",
+"satuan": "PCS",
+"harga": 20000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 7",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 8",
+"satuan": "PCS",
+"harga": 55000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci Ring Pas Uk. 9 mm",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci T 14",
+"satuan": "Bh",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Kunci T8",
+"satuan": "Pcs",
+"harga": 27000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Downlight 13 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Kerja",
+"satuan": "Bh",
+"harga": 195000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Led 20 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Led 50 Watt",
+"satuan": "Pcs",
+"harga": 220000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Led 9 Watt",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Pijar DC 24 Volt 25 Watt (Chiyoda)",
+"satuan": "Pcs",
+"harga": 68000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu TL 18 Watt",
+"satuan": "Pcs",
+"harga": 66000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lampu Ulir 20 Watt",
+"satuan": "PCS",
+"harga": 65000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lem Devcon 5 Menit",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lem Dextone 5 menit",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lem Epoxi",
+"satuan": "Set",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lem Kastol",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "MCB 1 Phasse 16 Ampere",
+"satuan": "Pcs",
+"harga": 105000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mata Bros Halus",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mata Gerinda Potong",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mata Gurinda Kasar",
+"satuan": "pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mata Gurinda Potong",
+"satuan": "Pack",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Mesin Gerinda Tangan",
+"satuan": "Pcs",
+"harga": 950000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Obeng Min( - ) Besar",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Obeng Ples (+ ) Besar",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Fireply 2 mm",
+"satuan": "m",
+"harga": 385000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Fryply Uk. 1 mm",
+"satuan": "Mtr",
+"harga": 110000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Karet 1 mm",
+"satuan": "M",
+"harga": 170000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Karet 5 mm",
+"satuan": "M",
+"harga": 550000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Lingrit 1 mm",
+"satuan": "M",
+"harga": 200000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Tombo 0,5 mm",
+"satuan": "m",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Tombo 1,5 mm",
+"satuan": "m",
+"harga": 315000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Packing Tombo Uk. 1 mm",
+"satuan": "Mtr",
+"harga": 450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Palu Karet Besar",
+"satuan": "PCS",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Pipa 6\"",
+"satuan": "mtr",
+"harga": 200000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Sealtip",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Selang Serat Benang 3/2''",
+"satuan": "m",
+"harga": 65000,
+"jumlah": 50,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Selang bbm",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Senter Charger",
+"satuan": "Pcs",
+"harga": 450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Sikring Bling 10 A",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Skun Kabel 200 A",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Slkat Kawat Baja",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Slkat Kawat Kunimgan",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Stop kontak 4 Lubang",
+"satuan": "PCS",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Tang Kombinasi",
+"satuan": "Pcs",
+"harga": 90000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Tang Potong",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Tang Snabring",
+"satuan": "Pcs",
+"harga": 130000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Thermometer Gun",
+"satuan": "Pcs",
+"harga": 1700000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Vanbel B-66",
+"satuan": "Pcs",
+"harga": 140000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Vanbelt A-40",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "Vanbelt B-54",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. BOBARA",
+"jenis": "mesin",
+"nama": "WD Potong",
+"satuan": "Dus",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 12,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "PCS",
+"harga": 20000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "PCS",
+"harga": 36000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "PCS",
+"harga": 35000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "PCS",
+"harga": 32000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Bayclin 1lt",
+"satuan": "PCS",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Baygon Seprot",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "KG",
+"harga": 42000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Deterjen Cair",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "PCS",
+"harga": 17000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Greess Kobra",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Isi Kuas Roll Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Kamfer Bulat Besar",
+"satuan": "Bnks",
+"harga": 30000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Kamfer Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Kamper Bulat Besar",
+"satuan": "PCS",
+"harga": 37000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Kemper Bulat Besar",
+"satuan": "BKS",
+"harga": 35000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bnks",
+"harga": 35000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Kemper Gantung",
+"satuan": "PCS",
+"harga": 24000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Keset",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Lewa Karet Kaca",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Palu 3 kg",
+"satuan": "Pcs",
+"harga": 200000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Palu Ketok",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 100/120",
+"satuan": "PACK",
+"harga": 100000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "PCS",
+"harga": 35000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Sikat WC Model Lengkung",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Tali Buangan Korea",
+"satuan": "Roll",
+"harga": 825000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Tong Sampah Besar",
+"satuan": "PCS",
+"harga": 260000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Tong Sampah Kecil",
+"satuan": "PCS",
+"harga": 200000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "BKS",
+"harga": 27000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "BTL",
+"harga": 150000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Lem Kastol",
+"satuan": "BH",
+"harga": 25000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "PCS",
+"harga": 18000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "m",
+"harga": 750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Auto Sol",
+"satuan": "pcs",
+"harga": 55000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Ban Dalam Motor",
+"satuan": "BH",
+"harga": 75000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Bohlam Lampu 12W (biasa)",
+"satuan": "DOS",
+"harga": 910000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Bohlam Lampu LED Tabung 50Watt",
+"satuan": "PCS",
+"harga": 270000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Gagang gergaji",
+"satuan": "Unit",
+"harga": 175000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Isolasi listrik",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Kabel NYM 2x1,5mm",
+"satuan": "ROLL",
+"harga": 1080000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Kabel Ties Putih Besar",
+"satuan": "PACK",
+"harga": 75000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Kap Lampu TL 18 Watt Watter Proof(Ganda)",
+"satuan": "Set",
+"harga": 300000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Karet Ban Dalam Motor",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Karet Skir UK Sedang",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 12000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Klem Slang 3,5''",
+"satuan": "PCS",
+"harga": 17000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Klem Slang 4''",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 17",
+"satuan": "pcs",
+"harga": 75000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Lampu LED Tube T8 9W 900im (neon)",
+"satuan": "PCS",
+"harga": 45000,
+"jumlah": 24,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Lampu TL 18Watt",
+"satuan": "PCS",
+"harga": 55000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Lem Dextone 5 menit",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Lem Treebond",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "KG",
+"harga": 70000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Mata Gergaji",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Multitester Analog",
+"satuan": "PCS",
+"harga": 205000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Packing Karet 0.5 mm",
+"satuan": "M",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Packing Karet 5mm",
+"satuan": "M",
+"harga": 550000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Pompa NS80",
+"satuan": "Unit",
+"harga": 3500000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Rumah Lampu TL LED 2x18 WP",
+"satuan": "SET",
+"harga": 300000,
+"jumlah": 12,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Saringan Turbo",
+"satuan": "Pack",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Sikat Kawat Kuningan",
+"satuan": "PCS",
+"harga": 32000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Silicon red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. GORANGO",
+"jenis": "mesin",
+"nama": "Water jet 150 Bar ( Lakoni)",
+"satuan": "Unit",
+"harga": 2750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "Btl",
+"harga": 25000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 57000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Bayclin Uk. 5 Liter",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 67000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Isi Kuas Roll Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Isi Stela Electrik 225 ml",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Kamper Bulat Besar",
+"satuan": "Bks",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Kamper Bulat Kecil",
+"satuan": "Bks",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Kamper Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Kemper Bulat Besar",
+"satuan": "BKS",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Keset Kaki Bahan Handuk",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Mesin Cuci",
+"satuan": "Unit",
+"harga": 2450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Mistar Jajar Peta",
+"satuan": "PCS",
+"harga": 300000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Oil Spil Dispersen",
+"satuan": "Ltr",
+"harga": 95000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Sapu Lidi",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Serbuk Kayu",
+"satuan": "Sak",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Tali Uk. 6 mm",
+"satuan": "Roll",
+"harga": 675000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Tempat Sampah Uk. 80 Ltr",
+"satuan": "Pcs",
+"harga": 170000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Sarung Tangan Kerja",
+"satuan": "Pack",
+"harga": 70000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "KG",
+"harga": 750000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Ballast/travo TL Electronic 18 Watt",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Ballast/travo TL Electronic 36 Watt",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Bearing 6203 ZZ",
+"satuan": "BH",
+"harga": 75000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Bearing 6205 ZZ",
+"satuan": "BH",
+"harga": 75000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Fulley Pompa",
+"satuan": "Pcs",
+"harga": 285000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Gasket Indian",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Hose AE 2\"",
+"satuan": "Set",
+"harga": 350000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Isolasi Listrik",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Kabel Nyhy Serabut",
+"satuan": "roll",
+"harga": 950000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Kabelties 20 cm",
+"satuan": "PACK",
+"harga": 50000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Klem Slang 3''",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Klem selang uk. 2\"",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Klem selang uk.1\"",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 18",
+"satuan": "BH",
+"harga": 75000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu 18 Watt",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu 23 Watt",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu Jari 24 Watt",
+"satuan": "PCS",
+"harga": 95000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu TL 18 Watt",
+"satuan": "Pcs",
+"harga": 85000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu TL 36 Watt",
+"satuan": "Pcs",
+"harga": 90000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lampu TL Led 10 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lem Epoxy",
+"satuan": "Set",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "MCB 1 Phasse 63 Ampere",
+"satuan": "Pcs",
+"harga": 180000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "MCB 3 Phase 40 Ampere",
+"satuan": "Pcs",
+"harga": 950000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Obeng Min Plest (-,+)",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Packing Fireply 2 mm",
+"satuan": "M",
+"harga": 200000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Packing Fryply Uk. 3 mm",
+"satuan": "Mtr",
+"harga": 375000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Packing Karet 2 mm",
+"satuan": "M",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Packing Karet Uk. 1 mm",
+"satuan": "Mtr",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Packing Klingrit Uk. 1 mm",
+"satuan": "Mtr",
+"harga": 380000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Packing Tombo Uk. 1 mm",
+"satuan": "Mtr",
+"harga": 450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Packing Tombo Uk. 3 mm",
+"satuan": "Mtr",
+"harga": 950000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Pompa NS 100",
+"satuan": "set",
+"harga": 3000000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Rumah Lampu TL 2 x 18 Watt(Water Proof)",
+"satuan": "PCS",
+"harga": 300000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Sealtip",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Selang Hose Uk. 3\"",
+"satuan": "Mtr",
+"harga": 325000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Senter Kepala",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Silicon Red",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Slang hose Pendigin Model L Uk. 1\"",
+"satuan": "Pcs",
+"harga": 220000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Slang hose bbm ME",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Steker",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Swing Valve Uk. 2\"",
+"satuan": "Pcs",
+"harga": 550000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Tali Asbest",
+"satuan": "Roll",
+"harga": 450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Tang Kombinasi",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Termal Overlood 16 A",
+"satuan": "Pcs",
+"harga": 235000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Treebond",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Vanbelt A 37",
+"satuan": "PCS",
+"harga": 65000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "Vanbelt B 47",
+"satuan": "PCS",
+"harga": 85000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. KERAPU II",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KOLORAI",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "btl",
+"harga": 150000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. KOLORAI",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. KOLORAI",
+"jenis": "mesin",
+"nama": "CHARGER ACCU MASCRON CB 50 A",
+"satuan": "Pcs",
+"harga": 2750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. KOLORAI",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KOLORAI",
+"jenis": "mesin",
+"nama": "Kepala Accu 200 A",
+"satuan": "Set",
+"harga": 47000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. KOLORAI",
+"jenis": "mesin",
+"nama": "Klem Selang 1 ''",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. KOLORAI",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "PCS",
+"harga": 17000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Keset",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "PCS",
+"harga": 36000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "PCS",
+"harga": 14000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 32000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Alat Pel Lantai",
+"satuan": "PCS",
+"harga": 32000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Alat Tembak Silicon",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Batry R20",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Braso",
+"satuan": "Btl",
+"harga": 66000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Ember Sedang Uk 30 Liter",
+"satuan": "Pcs",
+"harga": 160000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Kamfer Bulat Besar",
+"satuan": "Bnks",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Kamfer Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Kanebo",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Kemper Bulat Besar",
+"satuan": "BKS",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bnks",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Lem Kaca Silikon Bening",
+"satuan": "Pcs",
+"harga": 66000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Mal We Bridge The Nation",
+"satuan": "Set",
+"harga": 1475000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sabun Pencuci Tangan",
+"satuan": "Btl",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sapu Lidi",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sarung tangan kerja",
+"satuan": "Pack",
+"harga": 70000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Selang air Serabut Benang 2 Inch",
+"satuan": "M",
+"harga": 85000,
+"jumlah": 25,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sikat Lewa Karet",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Sikat Lewa Kecil",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Slkat Kawat Baja",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Stela electrik",
+"satuan": "Pcs",
+"harga": 130000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Tong Sampah Besar",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 32000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Accu 12 Volt 200 Ah",
+"satuan": "Unit",
+"harga": 4600000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Air Accu Tambah",
+"satuan": "Doos",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Alimunium poil",
+"satuan": "Roll",
+"harga": 100000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Amplas 1000",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "m",
+"harga": 750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Avometer Digital",
+"satuan": "UNIT",
+"harga": 280000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Bearing 6203 ZZ",
+"satuan": "BH",
+"harga": 75000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Besi siku UK. 50 X 50 x 6000mm",
+"satuan": "Pcs",
+"harga": 380000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Gembok Besar",
+"satuan": "PCS",
+"harga": 110000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Isolasi Listrik",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kabelties 30 Cm",
+"satuan": "Pack",
+"harga": 55000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kawat Las RB-26, 2,6 mm",
+"satuan": "Pack",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Klem Selang 1 ''",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Klem Slang 1,5''",
+"satuan": "PCS",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Klem Slang 2,5''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Klem Slang 3''",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Klem selang uk. 2\"",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Klem selang uk. 2,5\"",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kuas 1,5''",
+"satuan": "PCS",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kuas Roll Kecil",
+"satuan": "pcs",
+"harga": 35000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring Uk. 36 mm",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kunci Ring Pas Uk. 34 mm",
+"satuan": "Pcs",
+"harga": 275000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kunci Ring Pas Uk. 36 mm",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kunci Ring Pas Uk. 8 mm",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Kunci T 14mm",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lakban Kertas",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu Downligh 21 Watt",
+"satuan": "Pcs",
+"harga": 105000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu Led 75 Watt",
+"satuan": "Pcs",
+"harga": 220000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu Led 9 Watt",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu Sorot LED 100 Watt",
+"satuan": "Pcs",
+"harga": 230000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu TL 18 Watt",
+"satuan": "Pcs",
+"harga": 85000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu TL 18Watt",
+"satuan": "PCS",
+"harga": 55000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu TL Led 10 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lampu Ulir 20 Watt",
+"satuan": "PCS",
+"harga": 65000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lem Devcon 5 Menit",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lem Epoxy",
+"satuan": "Set",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lem dextone 5 Menit",
+"satuan": "SET",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Lem epoxi",
+"satuan": "PCS",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "MCB 25 A",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "Kg",
+"harga": 70000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Mata Bross Halus",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Mata Gergaji",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Mata Gerinda Batu",
+"satuan": "Pcs",
+"harga": 23000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Mata Gerinda Potong",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Mata Gurinda Potong",
+"satuan": "pcs",
+"harga": 35000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Obeng Min Plest Set",
+"satuan": "Set",
+"harga": 230000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Packing Fireply 3 mm",
+"satuan": "m",
+"harga": 385000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Packing Klingrit 4 mm",
+"satuan": "m",
+"harga": 600000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Piting Lampu Gantung",
+"satuan": "PCS",
+"harga": 18000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Pompa Celup Uk. 2\"",
+"satuan": "Pcs",
+"harga": 2700000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Pompa Oil Fluid",
+"satuan": "Pcs",
+"harga": 1950000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Sarung Tangan Kerja",
+"satuan": "Pack",
+"harga": 70000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Sealtip",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "PCS",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Selang Hose Uk. 1\"",
+"satuan": "Mtr",
+"harga": 200000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Selang Hose Uk. 3\"",
+"satuan": "Mtr",
+"harga": 325000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Senter Chas",
+"satuan": "Pcs",
+"harga": 400000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Silicon Red",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Steker",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Tang Grip",
+"satuan": "PCS",
+"harga": 140000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Tang Kombinasi",
+"satuan": "Pcs",
+"harga": 85000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Travo Balas 18 Wtt",
+"satuan": "PCS",
+"harga": 95000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Travo Balas 36 Wtt",
+"satuan": "PCS",
+"harga": 95000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Vanbelt B-42",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. LOMPA",
+"jenis": "mesin",
+"nama": "Vanbelt B-57",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 57000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "Btl",
+"harga": 25000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 67000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Deterjen Cair",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Ember Sedang 10 Liter",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Isi Kuas Roll Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Isi Stela Electrik 225 ml",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kamper Bulat Besar",
+"satuan": "Bks",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kamper Bulat Kecil",
+"satuan": "Bks",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kamper Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kemoceng",
+"satuan": "Pcs",
+"harga": 42000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bks",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Keset Kaki",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kuas Tangan 2 ''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kuas Tangan 3''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Kuas Tangan 4",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Lakban Kertas",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Mesin Cuci",
+"satuan": "Unit",
+"harga": 2450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "btl",
+"harga": 150000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Isolasi Listrik",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kabelties 30 Cm",
+"satuan": "Pack",
+"harga": 55000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 10",
+"satuan": "pcs",
+"harga": 60000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 14",
+"satuan": "pcs",
+"harga": 70000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu TL 18 Watt",
+"satuan": "Pcs",
+"harga": 66000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lem Kastol",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Sarung tangan kerja",
+"satuan": "pack",
+"harga": 60000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Silicon Red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Tang Kombinasi",
+"satuan": "PCS",
+"harga": 90000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Accu 12 Volt 200 Ah",
+"satuan": "Unit",
+"harga": 4400000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Air accu Tambah",
+"satuan": "DOOS",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Amplas 1000",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 1000",
+"satuan": "lbr",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 400",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 600",
+"satuan": "lbr",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "m",
+"harga": 750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Asbes Tali",
+"satuan": "Roll",
+"harga": 540000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Busa Turbo",
+"satuan": "M",
+"harga": 175000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Charger Accu merk Aldo 60 A",
+"satuan": "Unit",
+"harga": 1765000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Ember Plastik 10 liter",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Grees Cobra",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Indian Gasket",
+"satuan": "Btl",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Injector Cleaner",
+"satuan": "Btl",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Isi Kuas Kecil",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kabel Accu",
+"satuan": "M",
+"harga": 100000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kap Lampu TL 18 Watt Watter Proof",
+"satuan": "Set",
+"harga": 300000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kap Lampu TL 36 x 1 Water Proof",
+"satuan": "Set",
+"harga": 450000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kap lampu TL 18 x 2 Water Proof",
+"satuan": "Set",
+"harga": 300000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Karet Ban Motor",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kawat Las RB-26, 2,6 mm",
+"satuan": "Pack",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kepala Accu 200 A (min, plest)",
+"satuan": "Set",
+"harga": 47000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Klem 1 ''",
+"satuan": "PCS",
+"harga": 15000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Klem 1 1/2 ''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Klem Slang 3,5''",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Klem Slang 4''",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Klep Isap Pompa 1 Inch Kuningan",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kuas 1''",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kunci Filter",
+"satuan": "Pcs",
+"harga": 140000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kunci Inggris 12 inch",
+"satuan": "Pcs",
+"harga": 115000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 17",
+"satuan": "Pcs",
+"harga": 68000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Downligh 10 Watt",
+"satuan": "Pcs",
+"harga": 105000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Downlight 13 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Downlight 7 Watt",
+"satuan": "Pcs",
+"harga": 80000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Led 20 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Led 9 Watt",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Led Emergency",
+"satuan": "Pcs",
+"harga": 250000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Sorot Led 100 Watt",
+"satuan": "Pcs",
+"harga": 700000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Sorot Led 75 Watt",
+"satuan": "Pcs",
+"harga": 600000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu TL 36 Watt",
+"satuan": "Pcs",
+"harga": 170000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu TL Led 8 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lampu Ulir 11 Watt",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lem Devcon 5 Menit",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lem Dextone 5 menit",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lem Epoxi",
+"satuan": "Set",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Lem Threebone",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "MCB C63 1 Pase",
+"satuan": "Pcs",
+"harga": 290000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "KG",
+"harga": 70000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Mama Lemon",
+"satuan": "Bks",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Masker Medis",
+"satuan": "Pack",
+"harga": 50000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Mata Bros Halus",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Mata Bros Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Mata Gergaji",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Mata Gurinda Kasar",
+"satuan": "pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Mata Gurinda Potong",
+"satuan": "pcs",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Obeng (+)",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Obeng (-)",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Obeng Ketok",
+"satuan": "Set",
+"harga": 145000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Oring Set",
+"satuan": "Set",
+"harga": 385000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Packing Fireply 1 mm",
+"satuan": "m",
+"harga": 200000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Packing Fireply 2 mm",
+"satuan": "m",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Packing Gabus3 Mm",
+"satuan": "m",
+"harga": 280000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Packing Karet 3 MM",
+"satuan": "m",
+"harga": 385000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Packing Tombo 3 mm",
+"satuan": "m",
+"harga": 1280000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Pompa Celup 1 1/2 Inch",
+"satuan": "Unit",
+"harga": 2250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Porstex",
+"satuan": "Btl",
+"harga": 38000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Remover Penghilang Karat",
+"satuan": "Ltr",
+"harga": 105000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Sealtip",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "PCS",
+"harga": 20000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Selang Hose 2 1/2 Inch",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Senter Kepala Chas",
+"satuan": "Unit",
+"harga": 280000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Sigmat Digital",
+"satuan": "PCS",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Sikat Kawat Kuningan",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Slkat Kawat Baja",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Slkat Kawat Kuningan",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Steker",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Stop Kontak 4 lubang",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Tang Potong",
+"satuan": "Pcs",
+"harga": 80000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Topeng Las",
+"satuan": "Pcs",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Travo Balas 18 Wtt",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Travo Balas 36 Wtt",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "V-Belt A-37",
+"satuan": "PCS",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "V-Belt A-51",
+"satuan": "PCS",
+"harga": 65000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "V-Belt A-52",
+"satuan": "PCS",
+"harga": 65000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "V-Belt A-53",
+"satuan": "PCS",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "V-Belt B 42",
+"satuan": "PCS",
+"harga": 70000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "V-Belt B 50",
+"satuan": "PCS",
+"harga": 85000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. MAMING",
+"jenis": "mesin",
+"nama": "Water Jet",
+"satuan": "Unit",
+"harga": 2750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 4,
+"kali": 3
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 3,
+"kali": 3
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 3
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Kamfer Bulat Besar",
+"satuan": "Bnks",
+"harga": 30000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bnks",
+"harga": 45000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Keset",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 57000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "Btl",
+"harga": 25000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Bayclyn",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 67000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Baygon Seprot",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "KG",
+"harga": 42000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Ember Sedang 30 Liter",
+"satuan": "pcs",
+"harga": 160000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Isi Kuas Roll Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Kamfer Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Lakban Kertas",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Lewa Karet",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Rumah Lampu TL 18 Watt",
+"satuan": "Pcs",
+"harga": 187000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Sikat Lewa Besar",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Stik Kain Pel",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "deck",
+"nama": "Tong Sampah Kecil",
+"satuan": "Pcs",
+"harga": 200000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lem Epoxi",
+"satuan": "PCS",
+"harga": 350000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Air Accu Surr (Air Accu Ganti)",
+"satuan": "DOS",
+"harga": 180000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Air accu tambah",
+"satuan": "DOS",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 1000",
+"satuan": "lbr",
+"harga": 10000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 1500",
+"satuan": "lbr",
+"harga": 15000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 600",
+"satuan": "lbr",
+"harga": 10000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "m",
+"harga": 750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "btl",
+"harga": 150000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Gagang Gergaji",
+"satuan": "Pcs",
+"harga": 175000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Gunting Packing",
+"satuan": "Pcs",
+"harga": 66000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Indian Gasket",
+"satuan": "Btl",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Injector Cleaner",
+"satuan": "Btl",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Isi Kuas Kecil",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Isolasi listrik",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kabelties 30 cm",
+"satuan": "Pack",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kap Lampu TL 18 Watt Watter Proof",
+"satuan": "Set",
+"harga": 300000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Karet Ban Motor",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kawat Ikat Galpanis",
+"satuan": "Kg",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kawat Las RB-26, 2,6 mm",
+"satuan": "Pack",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kawat Saringan Stenlish",
+"satuan": "M",
+"harga": 36000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Klem 1 1/2 ''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Klem Slang 3''",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Klem Slang 3,5''",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Klep Pompa Kuningan 1''",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 23",
+"satuan": "Bh",
+"harga": 145000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 24",
+"satuan": "Bh",
+"harga": 145000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 25",
+"satuan": "BH",
+"harga": 85000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 26",
+"satuan": "BH",
+"harga": 85000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 28",
+"satuan": "BH",
+"harga": 90000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Racet 3/4 inch",
+"satuan": "Bh",
+"harga": 1056000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Sock 24",
+"satuan": "Bh",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci Sock 27",
+"satuan": "Bh",
+"harga": 60000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci T10",
+"satuan": "Bh",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci T12",
+"satuan": "Bh",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci T13",
+"satuan": "Bh",
+"harga": 50000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Kunci T8",
+"satuan": "Bh",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu Downlight 13 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu Kerja",
+"satuan": "Bh",
+"harga": 195000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu Led 20 Watt",
+"satuan": "Pcs",
+"harga": 120000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu Led 50 Watt",
+"satuan": "Pcs",
+"harga": 205000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu TL 18Watt",
+"satuan": "PCS",
+"harga": 55000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lampu TL Led 8 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 20,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lem Dextone 5 menit",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Lem Threebone",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "KG",
+"harga": 70000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Mata Bor",
+"satuan": "Set",
+"harga": 390000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Mata Bros Halus",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Mata Gergaji",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Obeng Ketok",
+"satuan": "Set",
+"harga": 145000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Obeng set",
+"satuan": "SET",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Oring Set",
+"satuan": "Set",
+"harga": 385000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Packing Tombo 0,5 mm",
+"satuan": "m",
+"harga": 200000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Packing Tombo 1 mm",
+"satuan": "m",
+"harga": 300000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Pipa Minyak Baut Nevel 17 mm (1 m)",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Porstex",
+"satuan": "Btl",
+"harga": 36000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Rames Packing 10 mm",
+"satuan": "M",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Rames Packing 8 mm",
+"satuan": "M",
+"harga": 55000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Ring Tembaga Uk Nevel 17",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 20,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Sarung tangan kerja",
+"satuan": "pack",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Scrap 3 Inch",
+"satuan": "Pcs",
+"harga": 12000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "PCS",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Silicon red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Slkat Kawat Baja",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Slkat Kawat Kuningan",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Stop kontak 4 Lubang",
+"satuan": "PCS",
+"harga": 80000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "V-Belt A 40",
+"satuan": "PCS",
+"harga": 65000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "V-Belt B 47",
+"satuan": "PCS",
+"harga": 85000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "V-Belt B 57",
+"satuan": "PCS",
+"harga": 96000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "carger Accu macsron cb 50 A",
+"satuan": "Unit",
+"harga": 2750000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. NGAFI",
+"jenis": "mesin",
+"nama": "sengsor pendingin",
+"satuan": "Bh",
+"harga": 450000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Alat Pel Lantai",
+"satuan": "PCS",
+"harga": 32000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Baygon Seprot",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 15,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Braso",
+"satuan": "BTL",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Kemper Bulat Besar",
+"satuan": "BKS",
+"harga": 35000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "BKS",
+"harga": 37000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Kemper Gantung",
+"satuan": "PCS",
+"harga": 24000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Lampu Downlight 10 Watt",
+"satuan": "PCS",
+"harga": 90000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Rice Cooker Uk. 5 L",
+"satuan": "Unit",
+"harga": 2000000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "PCS",
+"harga": 36000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "PCS",
+"harga": 16000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "PCS",
+"harga": 27000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "PCS",
+"harga": 14000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "PCS",
+"harga": 27000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "KG",
+"harga": 750000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Asbes Pita",
+"satuan": "ROLL",
+"harga": 370000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "BTL",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Isolasi listrik",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Kabelties 20 cm",
+"satuan": "PACK",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 10",
+"satuan": "BH",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Lampu DC 24 Volt 10 Watt",
+"satuan": "PCS",
+"harga": 72000,
+"jumlah": 12,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Lampu DC 24 Volt 25 Watt",
+"satuan": "PCS",
+"harga": 90000,
+"jumlah": 24,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Lampu Downlith 10 Watt",
+"satuan": "PCS",
+"harga": 90000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Lampu Jari 18 Watt",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Lampu Jari 24 Watt",
+"satuan": "PCS",
+"harga": 95000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Lampu Sorot Osram 1000 Watt(Osram)",
+"satuan": "PCS",
+"harga": 300000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "MCCB 40 A",
+"satuan": "PCS",
+"harga": 850000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Obeng Min (Listrik)",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Obeng Ples (listrik)",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Paku Ripet",
+"satuan": "PACK",
+"harga": 200000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Pompa Celup Portable",
+"satuan": "UNIT",
+"harga": 3250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Sealtip Besar",
+"satuan": "PCS",
+"harga": 15000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Senter Led Charger 20 Watt",
+"satuan": "PCS",
+"harga": 205000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Sikat Baja",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Silicon red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Tang Ripet",
+"satuan": "PCS",
+"harga": 190000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Travo Balas 36 Wtt",
+"satuan": "PCS",
+"harga": 95000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "Yur Portstek Kliset 3,7 L",
+"satuan": "BTL",
+"harga": 120000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PORTLINK VIII",
+"jenis": "mesin",
+"nama": "stop Kontak 4 Lubang",
+"satuan": "PCS",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 2,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "PACK",
+"harga": 100000,
+"jumlah": 8,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Pcs",
+"harga": 16000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Kamfer Bulat Besar",
+"satuan": "Bnks",
+"harga": 30000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "Pcs",
+"harga": 32000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Aganol",
+"satuan": "Pcs",
+"harga": 68000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Pcs",
+"harga": 32000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "Btl",
+"harga": 25000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Bayclyn",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Baygon Seprot",
+"satuan": "Pcs",
+"harga": 67000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Deterjen cair",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Gagang Sapu Lantai",
+"satuan": "pcs",
+"harga": 36000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Kamfer Gantung",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Kanebo",
+"satuan": "Pcs",
+"harga": 40000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Kemper Bulat Kecil",
+"satuan": "Bnks",
+"harga": 45000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Lewa Karet",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 40x40",
+"satuan": "PACK",
+"harga": 60000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Regen Pembasmi Kecoak",
+"satuan": "Btl",
+"harga": 45000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Sikat WC Model Lengkung",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Stela Elecktrik",
+"satuan": "PCS",
+"harga": 110000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Tali buangan 6mm",
+"satuan": "roll",
+"harga": 75000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "deck",
+"nama": "Tong Sampah Besar",
+"satuan": "Pcs",
+"harga": 350000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "KG",
+"harga": 30000,
+"jumlah": 10,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 2,
+"kali": 3
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Isolasi listrik",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Lampu Led 9 Watt",
+"satuan": "PCS",
+"harga": 45000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "KG",
+"harga": 70000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Packing Karet 1 mm",
+"satuan": "M",
+"harga": 200000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Sarung tangan kerja",
+"satuan": "PACK",
+"harga": 100000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Silicon red",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Air Accu Surr (Air Accu Ganti)",
+"satuan": "DOS",
+"harga": 180000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 1000",
+"satuan": "lbr",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Amplas/kertas Gosok 600",
+"satuan": "lbr",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Asbes Karung",
+"satuan": "m",
+"harga": 750000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Asbes Tali",
+"satuan": "Roll",
+"harga": 540000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Avometer Digital",
+"satuan": "UNIT",
+"harga": 280000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Charger Accu 24 Volt",
+"satuan": "Unit",
+"harga": 2160000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "KG",
+"harga": 46000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Gagang gergaji",
+"satuan": "Unit",
+"harga": 175000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Gunting Packing",
+"satuan": "Pcs",
+"harga": 66000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Kabelties 25 cm",
+"satuan": "Pack",
+"harga": 30000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Karet Ban Dalam Motor",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Kawat Las RB26, 3.2 MM",
+"satuan": "Pack",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Klem Slang 1''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Klem Slang 1,5''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Klem Slang 3''",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 7,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 14",
+"satuan": "Bh",
+"harga": 60000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 18",
+"satuan": "BH",
+"harga": 75000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 24",
+"satuan": "Bh",
+"harga": 68000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "PCS",
+"harga": 75000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Lem Epoxi",
+"satuan": "Set",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Lem Kastol",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "PCS",
+"harga": 18000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Mata Bor Besi",
+"satuan": "Set",
+"harga": 300000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Mata Bros Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Mata Gurinda Poles",
+"satuan": "pcs",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Molycote Grease",
+"satuan": "KLG",
+"harga": 450000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Obeng Ketok",
+"satuan": "SET",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Packing Fireply 1 MM",
+"satuan": "M",
+"harga": 100000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Packing Karet 5 mm",
+"satuan": "M",
+"harga": 550000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Porstex",
+"satuan": "Btl",
+"harga": 36000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Selang Kawat 1 1/4 inch''",
+"satuan": "m",
+"harga": 96000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Senter Chas",
+"satuan": "PCS",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. PULAU SAGORI",
+"jenis": "mesin",
+"nama": "Slkat Kawat Kunimgan Gagang Besi",
+"satuan": "PCS",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 10,
+"kali": 3
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Sapu Lantai",
+"satuan": "Bh",
+"harga": 36000,
+"jumlah": 6,
+"kali": 3
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Stela Gantung",
+"satuan": "Bh",
+"harga": 20000,
+"jumlah": 6,
+"kali": 3
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Super Pel",
+"satuan": "Pcs",
+"harga": 27000,
+"jumlah": 5,
+"kali": 3
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Alat Pel",
+"satuan": "Bh",
+"harga": 32000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Bayfress Semprot",
+"satuan": "PCS",
+"harga": 42000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Deterjen",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Gayung",
+"satuan": "PCS",
+"harga": 17000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Kamper Bulat Kecil",
+"satuan": "Bks",
+"harga": 35000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Kamper Gantung",
+"satuan": "Bh",
+"harga": 20000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Keset",
+"satuan": "PCS",
+"harga": 25000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Mama Lemon",
+"satuan": "Bh",
+"harga": 30000,
+"jumlah": 5,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Plastik Sampah uk 80x100",
+"satuan": "PCS",
+"harga": 100000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Porstex",
+"satuan": "LTR",
+"harga": 36000,
+"jumlah": 6,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Prostex",
+"satuan": "Bh",
+"harga": 36000,
+"jumlah": 7,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Sikat Kloset",
+"satuan": "Bh",
+"harga": 35000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Sikat Lewa",
+"satuan": "Bh",
+"harga": 30000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Tissue",
+"satuan": "Bh",
+"harga": 20000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Wipol",
+"satuan": "PCS",
+"harga": 27000,
+"jumlah": 8,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Alat Pel Lantai",
+"satuan": "PCS",
+"harga": 32000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Bayclin",
+"satuan": "Btl",
+"harga": 25000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Bayfresh Semprot",
+"satuan": "Bh",
+"harga": 42000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Baygon Semprot",
+"satuan": "Bh",
+"harga": 60000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Baygon Seprot",
+"satuan": "PCS",
+"harga": 60000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Braso",
+"satuan": "BTL",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Brasso",
+"satuan": "Btl",
+"harga": 66000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Cling Pembersih Kaca",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Ember Kecil",
+"satuan": "Bh",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Grease Cobra",
+"satuan": "Bh",
+"harga": 65000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Isi Stela Electrik 225 ml",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Kamper Bulat Besar",
+"satuan": "Bks",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Kemper Gantung",
+"satuan": "PCS",
+"harga": 24000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Keset Handuk",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Pembersih Kaca",
+"satuan": "PCS",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Plastik Sampah Uk. 80x100",
+"satuan": "Pack",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Regent Pembasmi Hama",
+"satuan": "Bh",
+"harga": 80000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Sapu Lidi",
+"satuan": "PCS",
+"harga": 31000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Senter Charger",
+"satuan": "Pcs",
+"harga": 480000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Serok Sampah",
+"satuan": "Bh",
+"harga": 35000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Spon Cuci Piring",
+"satuan": "Bh",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Supel Pel",
+"satuan": "Bh",
+"harga": 30000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "deck",
+"nama": "Tong Sampah Sedang",
+"satuan": "Bh",
+"harga": 250000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Isolasi Listrik",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 3,
+"kali": 3
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Majun",
+"satuan": "Kg",
+"harga": 30000,
+"jumlah": 10,
+"kali": 3
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Contak Cleaner",
+"satuan": "Btl",
+"harga": 150000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Deterjen",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 10,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 12",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 14",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lem Korea",
+"satuan": "Bh",
+"harga": 18000,
+"jumlah": 3,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Packing Klingrit 3 MM",
+"satuan": "Mtr",
+"harga": 950000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Sarung Tangan Kerja",
+"satuan": "Pack",
+"harga": 70000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Silicon Red",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Tespen",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 1,
+"kali": 2
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Accu N200 Ah",
+"satuan": "Unit",
+"harga": 4920000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Air Collant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Air Coolant",
+"satuan": "Gln",
+"harga": 90000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Air accu Tambah",
+"satuan": "Doos",
+"harga": 150000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Amplas 1000",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Amplas 400",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Amplas Halus",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Amplas Kasar",
+"satuan": "Lbr",
+"harga": 10000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Asbes Tali",
+"satuan": "Roll",
+"harga": 540000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Autosol",
+"satuan": "Bh",
+"harga": 30000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Avometer",
+"satuan": "Pcs",
+"harga": 310000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Braso",
+"satuan": "Bh",
+"harga": 66000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Charger Accu 24 Volt 60 A",
+"satuan": "Unit",
+"harga": 3100000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Contack Cleaner",
+"satuan": "Klg",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Deterjen Bubuk",
+"satuan": "Kg",
+"harga": 46000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Deterjen Cair",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Indian Gasket",
+"satuan": "Pcs",
+"harga": 70000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Isi Kuas Roll",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Isi Kuas Roll Kecil",
+"satuan": "Pack",
+"harga": 120000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kabel Accu",
+"satuan": "Mtr",
+"harga": 100000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kabelties 20 cm",
+"satuan": "PACK",
+"harga": 50000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kabelties 30 Cm",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kepala Accu",
+"satuan": "Pcs",
+"harga": 47000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Pipa 1\"",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Pipa 2\"",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Pipa 3\"",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Selang 1 ''",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Selang 1\"",
+"satuan": "Bh",
+"harga": 12000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Selang 2\"",
+"satuan": "Bh",
+"harga": 15000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Selang 3\"",
+"satuan": "Bh",
+"harga": 20000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Slang 2''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Slang 2,5''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klem Slang 3''",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klep Isap 1\" Kuningan",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Klep Isap Pompa 1 Inch Kuningan",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kran Air",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kuas Tangan 1''",
+"satuan": "Pcs",
+"harga": 10000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kuas Tangan 2''",
+"satuan": "Pcs",
+"harga": 15000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kuas Tangan 3''",
+"satuan": "Pcs",
+"harga": 18000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Filter",
+"satuan": "Pcs",
+"harga": 140000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Inggris Kecil",
+"satuan": "Pcs",
+"harga": 50000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Inggris Sedang",
+"satuan": "Pcs",
+"harga": 75000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 10",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 13 MM",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas Ring 22",
+"satuan": "Pcs",
+"harga": 80000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 13",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 15",
+"satuan": "Pcs",
+"harga": 62000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 16",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci Pas ring 24",
+"satuan": "BH",
+"harga": 85000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci T 10",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci T 13",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci T 17",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci T 8",
+"satuan": "Pcs",
+"harga": 25000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Kunci T 8\"",
+"satuan": "Pcs",
+"harga": 28000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lakban Kertas",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu Downligh 10 Watt",
+"satuan": "Pcs",
+"harga": 105000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu Kerja",
+"satuan": "Set",
+"harga": 180000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu LED 10 Watt",
+"satuan": "Bh",
+"harga": 50000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu Led 11 Watt",
+"satuan": "Pcs",
+"harga": 65000,
+"jumlah": 8,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu Led 18 Watt",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu Led 45Watt",
+"satuan": "Bh",
+"harga": 100000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu Led 9 Watt",
+"satuan": "Pcs",
+"harga": 60000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu Sorot Led 100 Watt",
+"satuan": "Pcs",
+"harga": 785000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu TL 18 Watt",
+"satuan": "Pcs",
+"harga": 85000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lampu TL 18Watt",
+"satuan": "Pcs",
+"harga": 37000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lem Devcon 5 Menit",
+"satuan": "Pcs",
+"harga": 22000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lem Dextone 5 Menit",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lem Epoxy",
+"satuan": "Set",
+"harga": 350000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Lem Threebone",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Literan Oli Uk 5 liter",
+"satuan": "PCS",
+"harga": 180000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "MCB 15 A",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "MCB 40A Schneider",
+"satuan": "Pcs",
+"harga": 150000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "MCB 60A Schneider",
+"satuan": "Pcs",
+"harga": 280000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "MCB C63",
+"satuan": "Pcs",
+"harga": 160000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "MCB C63 Schenider",
+"satuan": "Bh",
+"harga": 215000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "MCB C63 Schenider 3 Phase",
+"satuan": "Bh",
+"harga": 215000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Majun Putih",
+"satuan": "Kg",
+"harga": 70000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mama Lemon",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mata Bross Halus",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mata Bross Kasar",
+"satuan": "Pcs",
+"harga": 35000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mata Gerinda Batu",
+"satuan": "Pcs",
+"harga": 23000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mata Gerinda Potong",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mata Gurinda Batu",
+"satuan": "Bh",
+"harga": 50000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mata Gurinda Bros Kuningan",
+"satuan": "Bh",
+"harga": 50000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Mata Pisau Carter",
+"satuan": "PACK",
+"harga": 25000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Obeng (+)",
+"satuan": "Pcs",
+"harga": 55000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Packing Firefly 2 MM",
+"satuan": "Mtr",
+"harga": 160000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Packing Firefly 2mm",
+"satuan": "M",
+"harga": 200000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Packing Karet 2 mm",
+"satuan": "M",
+"harga": 250000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Packing Karet 3 mm",
+"satuan": "M",
+"harga": 300000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Packing Tombo 2 MM",
+"satuan": "Mtr",
+"harga": 900000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Prostex",
+"satuan": "Pcs",
+"harga": 36000,
+"jumlah": 6,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Rumah Lampu TL 2 x 18 Watt(Water Proof)",
+"satuan": "PCS",
+"harga": 300000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Scun Kabel Cas 200 A",
+"satuan": "Pcs",
+"harga": 30000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Sealtape",
+"satuan": "Bh",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Sealtape Besar",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 5,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Sealtip",
+"satuan": "Pcs",
+"harga": 20000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Sealtip Kecil",
+"satuan": "PCS",
+"harga": 10000,
+"jumlah": 4,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Senter Charger Krisbow 7 Watt",
+"satuan": "Pcs",
+"harga": 480000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Senter Kepala Charger",
+"satuan": "Pcs",
+"harga": 260000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Silicone Red",
+"satuan": "Bh",
+"harga": 30000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Tang Jepit",
+"satuan": "Pcs",
+"harga": 90000,
+"jumlah": 1,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "Travo Ballast 18watt",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 10,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "V-Belt A-47",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "V-Belt A-53",
+"satuan": "Pcs",
+"harga": 45000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "V-Belt B-52",
+"satuan": "Pcs",
+"harga": 85000,
+"jumlah": 3,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "V-Belt B-67",
+"satuan": "Pcs",
+"harga": 95000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "V-Belt B-72",
+"satuan": "Pcs",
+"harga": 105000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "WD 40",
+"satuan": "Klg",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+},
+{
+"kapal": "KMP. TUNA",
+"jenis": "mesin",
+"nama": "WD-40",
+"satuan": "Pcs",
+"harga": 100000,
+"jumlah": 2,
+"kali": 1
+}
+]
+}
