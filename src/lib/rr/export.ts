@@ -3,13 +3,49 @@
 import { saveAs } from "file-saver";
 import { SINGKATAN_KAPAL, KAPAL_ANGGARAN, PlafonRutin, RKA, maKey, paguTotal } from "@/lib/anggaran/types";
 import { KELOMPOK_RR, MA_RR, kunciKelompok, RrDoc, bulanKe, namaBulan } from "./types";
-import { bolehDiusulkan } from "./kelayakan";
+import { bolehDiusulkan, kunciTempatBaru } from "./kelayakan";
 
 /** nama penuh -> singkatan yang dipakai pusat (ARWNG, PL 8, ...) */
 const singkatKapal = (penuh: string) => {
   const hit = Object.entries(SINGKATAN_KAPAL).find(([, v]) => v === penuh);
   return hit ? hit[0] : penuh.replace("KMP. ", "").slice(0, 8);
 };
+
+
+/**
+ * Isi tiap kelompok Lampiran 3 untuk satu kapal — DISARING dan DITEMPATKAN
+ * ULANG menurut aturan yang berlaku sekarang.
+ *
+ * Inilah tempat jaminannya, bukan tombol di layar. Dokumen rencana menyimpan
+ * kelompoknya sendiri, jadi aturan penempatan yang sudah diperbaiki tidak
+ * menyentuh draf yang terlanjur tersimpan: berkasnya tetap mencetak lampu LED
+ * dan baut di bawah Suku Cadang karena di situlah mereka ditaruh waktu
+ * disusun. Berkas inilah yang dikirim ke pusat, jadi di sinilah aturannya
+ * harus ditegakkan.
+ *
+ * Dua tahap, dan urutannya penting: buang dulu yang tidak layak (BBM,
+ * mobilisasi, isi MA Pelumas yang bukan oli), baru sisanya ditempatkan ke
+ * judul yang benar. Menempatkan lebih dulu berarti barang yang akan dibuang
+ * sempat ikut memindahkan barang lain.
+ */
+function susunKelompok(d: RrDoc | undefined, kapal: string) {
+  const simpanan = new Map<string, any[]>();
+  (d?.kelompok || []).forEach((g) => {
+    const kode = (g.kunci || "").split("|")[0];
+    (g.items || []).forEach((i) => {
+      if (!bolehDiusulkan(kode, i.deskripsi, i.spesifikasi, kapal).boleh) return;
+      const tujuan = kunciTempatBaru(g.kunci, i.deskripsi, i.spesifikasi, i.harga || 0);
+      simpanan.set(tujuan, [...(simpanan.get(tujuan) || []), i]);
+    });
+  });
+  return KELOMPOK_RR.map((k) => ({
+    ma: k.ma, kode: k.kode, judul: k.judul,
+    items: (simpanan.get(kunciKelompok(k)) || []).map((i) => ({
+      deskripsi: i.deskripsi, spesifikasi: i.spesifikasi,
+      jumlah: i.jumlah, satuan: i.satuan, harga: i.harga,
+    })),
+  }));
+}
 
 const lembar = (dok: RrDoc[], tipe: "rencana" | "realisasi", bulan: string) =>
   KAPAL_ANGGARAN.map((kapal) => {
@@ -20,23 +56,7 @@ const lembar = (dok: RrDoc[], tipe: "rencana" | "realisasi", bulan: string) =>
       status: d?.status || "draf",
       dikirimPada: d?.dikirimPada,
       catatan: d?.catatan,
-      kelompok: KELOMPOK_RR.map((k) => ({
-        ma: k.ma, kode: k.kode, judul: k.judul,
-        items: (d?.kelompok.find((x) => x.kunci === kunciKelompok(k))?.items || [])
-          /*
-           * SARINGAN TERAKHIR, dan yang paling penting dari semuanya.
-           *
-           * Saringan saat menyusun hanya mengurus dokumen yang dibuat SESUDAH
-           * aturannya ada; draf yang terlanjur tersimpan tetap memuat BBM,
-           * mobilisasi, dan isi MA Pelumas yang bukan oli. Berkas inilah yang
-           * dikirim ke pusat, jadi di sinilah jaminannya harus dipasang —
-           * bukan pada tombol yang bisa lupa ditekan.
-           */
-          .filter((i) => bolehDiusulkan(k.kode, i.deskripsi, i.spesifikasi, kapal).boleh)
-          .map((i) => ({
-            deskripsi: i.deskripsi, spesifikasi: i.spesifikasi, jumlah: i.jumlah, satuan: i.satuan, harga: i.harga,
-          })),
-      })),
+      kelompok: susunKelompok(d, kapal),
     };
   });
 

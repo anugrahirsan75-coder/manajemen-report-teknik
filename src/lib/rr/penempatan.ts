@@ -124,15 +124,46 @@ export const BATAS_SUKU_CADANG = 10_000_000;
  * Angka satu-dua digit sengaja TIDAK dihitung — "Lampu 10 Watt" dan "Kunci
  * Pas 17" bukan nomor part, melainkan ukuran sehari-hari.
  */
+/**
+ * Angka yang menyebut UKURAN SEHARI-HARI, bukan nomor part.
+ *
+ * Dibuang lebih dulu sebelum nomor part dicari. Tanpa ini "Lampu Led 18 Watt",
+ * "Baut 14", "MCB 15 A", dan "Scun Kabel Cas 200 A" semuanya terbaca sebagai
+ * suku cadang bernomor — padahal 18 itu daya lampunya, 14 ukuran kunci, dan
+ * 200 arusnya. Satuan panjang (mm, cm, inch) SENGAJA tidak ikut dibuang:
+ * "Packing Karet 2 mm" memang menunjuk barang tertentu.
+ */
+const UKURAN_BIASA = new RegExp(
+  "\\b\\d+[.,]?\\d*\\s*(?:watt|watts|w|volt|volts|v|ampere|amp|ah|a|kg|gram|gr|"
+  + "ltr|liter|lt|pcs|bh|buah|unit|set|pack|pak|dos|doos|btl|botol|roll|lbr|"
+  + "kaleng|sak|bks|bungkus|gln|galon)\\b", "gi");
+
+/**
+ * Punya nomor part?
+ *
+ * Suku cadang sungguhan dikenali dari nomornya — bearing 6206, V-belt B-51,
+ * packing klingrit 3 mm, accu N200. Yang disebut tanpa nomor ("filter oli",
+ * "seal pompa", "indian gasket") belum menunjuk barang tertentu: itu kategori,
+ * bukan barang yang bisa dipesan.
+ *
+ * Hurufnya harus MENEMPEL pada angkanya, langsung atau lewat tanda hubung —
+ * "B-51" dan "RB26" nomor part, "Led 18" dan "Baut 14" bukan. Spasi di antara
+ * keduanya hampir selalu berarti ukuran, bukan kode.
+ */
 const NOMOR_PART = [
   /\b(?:p\s*\/?\s*n|part\s*(?:no|number)|kode)\b/i,   // disebut terang-terangan
-  /\b[a-z]{1,4}[-\s]?\d{2,}[a-z0-9-]*\b/i,            // A-53, RB26, 6SD1
-  /\b\d+[.,]?\d*\s*(?:mm|cm|inch|inc|"|''|dim)\b/i,   // 3 MM, 2,6 mm, 1 inch
-  /\b\d{3,}\b/,                                       // 6206, 1000
+  /\b[a-z]{1,4}-?\d{2,}[a-z0-9-]*\b/i,                  // B-51, RB26, N200
+  /\b\d{1,2}[a-z]{2,}\d*\b/i,                           // 6SD1, 4JB1
+  /\b\d+[.,]?\d*\s*(?:mm|cm|inch|inc|dim)\b/i,          // 3 MM, 2,6 mm, 1 inch
+  /\b\d{3,}\b/,                                          // 6206
 ];
 
-export const punyaNomorPart = (teks: string): boolean =>
-  !!teks && NOMOR_PART.some((re) => re.test(teks));
+export const punyaNomorPart = (teks: string): boolean => {
+  if (!teks) return false;
+  // ukuran sehari-hari dibuang dulu supaya tidak disalahartikan sebagai kode
+  const sisa = teks.replace(UKURAN_BIASA, " ");
+  return NOMOR_PART.some((re) => re.test(sisa));
+};
 
 export interface HasilPenempatan {
   kunci: string;                       // `${kode}|${judul}` — kosong bila MA di luar Lampiran 3
@@ -159,6 +190,22 @@ export function tentukanKelompok(
   const aturan = ATURAN[kode];
   const barangLengkap = `${namaItem || ""} ${spesifikasi || ""}`.trim();
 
+  /**
+   * Tempat jatuh barang yang bukan jasa dan bukan suku cadang bernomor.
+   *
+   * Bukan "Lain-Lain", melainkan kelompok CLEANING & PERALATAN KERJA milik
+   * Mata Anggaran itu. Begitulah rencana yang sudah terbit menyusunnya: pada
+   * RENCANA Oktober 2026, lampu LED, MCB, V-belt, gasket, kunci pas, dan
+   * travo las semuanya berada di Cleaning dan Peralatan Kerja Mesin, sedangkan
+   * Lain-Lain kosong. Lain-Lain yang terisi belasan baris adalah tanda
+   * penggolongan yang menyerah, bukan golongan yang sebenarnya.
+   */
+  const turunKeCleaning = (): HasilPenempatan => {
+    const bersih = sub.find((x) => /cleaning|peralatan kerja/i.test(x.judul));
+    const k = bersih || sub[sub.length - 1];
+    return { kunci: kunciKelompok(k), judul: k.judul, dasar: "sisa" };
+  };
+
   const pakai = (judul: string, dasar: HasilPenempatan["dasar"]): HasilPenempatan => {
     /*
      * SUKU CADANG punya dua syarat yang tidak dimiliki kelompok lain.
@@ -175,8 +222,7 @@ export function tentukanKelompok(
      */
     if (/suku cadang/i.test(judul)
       && (!punyaNomorPart(barangLengkap) || (harga > 0 && harga > BATAS_SUKU_CADANG))) {
-      const lain = sub[sub.length - 1];
-      return { kunci: kunciKelompok(lain), judul: lain.judul, dasar: "sisa" };
+      return turunKeCleaning();
     }
     const k = sub.find((x) => x.judul === judul) || sub[sub.length - 1];
     return { kunci: kunciKelompok(k), judul: k.judul, dasar };
@@ -192,7 +238,8 @@ export function tentukanKelompok(
     for (const a of aturan) if (cocok(a.item, barang)) return pakai(a.judul, "barang");
   }
 
-  // 3. menyerah -> judul terakhir (selalu "Lain-Lain" pada kedua MA di atas)
+  // 3. menyerah -> Cleaning & Peralatan Kerja, bukan Lain-Lain
+  if (aturan) return turunKeCleaning();
   const akhir = sub[sub.length - 1];
   return { kunci: kunciKelompok(akhir), judul: akhir.judul, dasar: "sisa" };
 }

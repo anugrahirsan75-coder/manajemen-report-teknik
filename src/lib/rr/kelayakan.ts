@@ -36,6 +36,8 @@
  */
 
 /** Mata Anggaran yang memang diisi rencana bulanan */
+import { tentukanKelompok } from "./penempatan";
+
 export const MA_PELUMAS = "5010303001";
 export const MA_AKOMODASI = "5010403009";
 export const MA_PERMESINAN = "5010403100";
@@ -170,6 +172,30 @@ export function bolehDiusulkan(kode: string, nama: string, spek = "", kapal = ""
 }
 
 /**
+ * Tempatkan ulang satu baris menurut aturan penempatan yang BERLAKU SEKARANG.
+ *
+ * Dokumen rencana menyimpan kelompoknya sendiri (`kunci`), jadi aturan
+ * penempatan yang diperbaiki tidak menyentuh dokumen yang sudah ada: berkas
+ * Excel-nya tetap mencetak lampu LED dan baut di bawah Suku Cadang, karena
+ * di situlah mereka ditempatkan waktu disusun. Itu bukan bug pada aturannya,
+ * melainkan pada tempat aturannya dipasang — dan berkas yang dikirim ke pusat
+ * dibangun dari dokumen tersimpan, bukan dari aturannya.
+ *
+ * Kelompoknya hanya diubah kalau Mata Anggarannya tetap sama. Baris yang
+ * dipindah tangan ke Mata Anggaran lain lewat tombol ⇄ adalah keputusan orang,
+ * dan keputusan orang tidak dibatalkan oleh aturan otomatis.
+ */
+export function kunciTempatBaru(
+  kunci: string, deskripsi: string, spesifikasi = "", harga = 0,
+): string {
+  const kode = (kunci || "").split("|")[0];
+  if (!kode) return kunci;
+  const tempat = tentukanKelompok(kode, "", deskripsi || "", spesifikasi || "", harga || 0);
+  if (!tempat.kunci || tempat.kunci.split("|")[0] !== kode) return kunci;
+  return tempat.kunci;
+}
+
+/**
  * Buang baris yang tidak layak dari dokumen yang SUDAH tersimpan.
  *
  * Saringan di atas bekerja saat menyusun, jadi draf yang terlanjur dibuat
@@ -181,23 +207,55 @@ export function bolehDiusulkan(kode: string, nama: string, spek = "", kapal = ""
  * kosong, karena berkas Lampiran 3 memang mencetak tiap judul berikut
  * totalnya, termasuk yang nol.
  */
+export interface BarisDoc {
+  deskripsi: string;
+  spesifikasi?: string;
+  harga?: number;
+}
+
 export function bersihkanDoc<
-  D extends {
-    kapal: string;
-    kelompok: { kunci: string; items: { deskripsi: string; spesifikasi?: string }[] }[];
-  },
->(doc: D): { doc: D; dibuang: { nama: string; alasan: string }[] } {
+  D extends { kapal: string; kelompok: { kunci: string; items: BarisDoc[] }[] },
+>(doc: D): { doc: D; dibuang: { nama: string; alasan: string }[]; dipindah: number } {
   const dibuang: { nama: string; alasan: string }[] = [];
-  const kelompok = (doc.kelompok || []).map((k) => {
+
+  // tahap 1 — buang yang tidak layak, kumpulkan sisanya berikut tempat barunya
+  const simpanan = new Map<string, BarisDoc[]>();
+  (doc.kelompok || []).forEach((k) => {
     const kode = (k.kunci || "").split("|")[0];
-    const items = (k.items || []).filter((it) => {
+    (k.items || []).forEach((it) => {
       const h = bolehDiusulkan(kode, it.deskripsi, it.spesifikasi || "", doc.kapal);
-      if (!h.boleh) dibuang.push({ nama: it.deskripsi, alasan: h.alasan });
-      return h.boleh;
+      if (!h.boleh) { dibuang.push({ nama: it.deskripsi, alasan: h.alasan }); return; }
+      const tujuan = kunciTempatBaru(k.kunci, it.deskripsi, it.spesifikasi || "", it.harga || 0);
+      simpanan.set(tujuan, [...(simpanan.get(tujuan) || []), it]);
     });
-    return { ...k, items };
   });
-  return { doc: { ...doc, kelompok } as D, dibuang };
+
+  /*
+   * Tahap 2 — rakit ulang memakai KERANGKA kelompok dokumen aslinya.
+   *
+   * Kelompok yang menjadi kosong tetap ada: berkas Lampiran 3 mencetak tiap
+   * judul berikut totalnya, termasuk yang nol, dan judul yang hilang membuat
+   * rekap Budget Control kehilangan baris penjumlahannya.
+   */
+  let dipindah = 0;
+  const kelompok = (doc.kelompok || []).map((k) => {
+    const isi = simpanan.get(k.kunci) || [];
+    simpanan.delete(k.kunci);
+    return { ...k, items: isi };
+  });
+  // baris yang tempat barunya belum ada di dokumen ini
+  simpanan.forEach((isi, kunci) => kelompok.push({ kunci, items: isi }));
+  // hitung berapa yang benar-benar berpindah judul
+  (doc.kelompok || []).forEach((k) => {
+    const sesudah = kelompok.find((x) => x.kunci === k.kunci)?.items || [];
+    const nama = new Set(sesudah.map((x) => x.deskripsi));
+    (k.items || []).forEach((it) => {
+      if (!nama.has(it.deskripsi)
+        && !dibuang.some((d) => d.nama === it.deskripsi)) dipindah++;
+    });
+  });
+
+  return { doc: { ...doc, kelompok } as D, dibuang, dipindah };
 }
 
 /** saring sekumpulan kandidat sekaligus */
