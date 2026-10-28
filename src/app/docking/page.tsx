@@ -19,6 +19,7 @@ import {
   TERMIN, TerminBayar, ringkasTermin, RingkasTermin, STATUS_TERMIN, MASA_PEMELIHARAAN_HARI,
   jatuhTempoPemeliharaan, AMBANG_TERLAMBAT,
   PersiapanItem, TEMPLATE_PERSIAPAN, persiapanBaru, ringkasPersiapan, STATUS_SIAP, StatusSiap,
+  TambahanItem, JenisTambahan, JENIS_TAMBAHAN, tambahanBaru, ringkasTambahan,
 } from "@/lib/docking/types";
 import { rupiah } from "@/lib/format";
 import { unggahBerkas, ukuranSingkat, BerkasError } from "@/lib/berkasStorage";
@@ -407,7 +408,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, tabAwal, onSimpan, onHapus
   onSimpan: () => void; onHapus: () => void; onTutup: () => void;
   onSimpanKelas: (k: KelasBki) => Promise<void>; onHapusKelas: (id: string) => Promise<void>;
 }) {
-  const [tab, setTab] = useState<"jadwal" | "siap" | "termin" | "ba" | "kelas">(tabAwal || "jadwal");
+  const [tab, setTab] = useState<"jadwal" | "siap" | "tambahan" | "termin" | "ba" | "kelas">(tabAwal || "jadwal");
   const r = ringkasDocking(nilai);
   const g = gayaDocking(r);
   const set = (p: Partial<DockingJadwal>) => setNilai({ ...nilai, ...p });
@@ -428,6 +429,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, tabAwal, onSimpan, onHapus
           <div className="px-6 pt-3 flex gap-1 border-b border-slate-200">
             {([["jadwal", "📅 Jadwal & lama"],
                ["siap", (() => { const r = ringkasPersiapan(nilai.persiapan); return `✅ Persiapan${r.ada ? ` (${r.selesai}/${r.total})` : ""}`; })()],
+               ["tambahan", (() => { const t = ringkasTambahan(nilai.tambahan); return `➕ Tambahan${t.ada ? ` (${t.selesai}/${t.total})` : ""}`; })()],
                ["termin", `💰 Termin (${ringkasTermin(nilai).filter((t) => t.status === "dibayar").length}/3 dibayar)`],
                ["ba", `📄 Berita Acara (${(nilai.berkas || []).length})`],
                ["kelas", `🏷️ Kelas BKI (${kelas.length})`]] as const).map(([v, t]) => (
@@ -439,6 +441,7 @@ function FormDocking({ nilai, setNilai, kelas, sibuk, tabAwal, onSimpan, onHapus
           <div className="p-6 max-h-[62vh] overflow-auto">
             {tab === "jadwal" && <TabJadwal nilai={nilai} set={set} r={r} />}
             {tab === "siap" && <TabPersiapan nilai={nilai} set={set} />}
+            {tab === "tambahan" && <TabTambahan nilai={nilai} set={set} />}
             {tab === "termin" && <TabTermin nilai={nilai} set={set} />}
             {tab === "ba" && <TabBA nilai={nilai} set={set} />}
             {tab === "kelas" && <TabKelas kapal={nilai.kapal} tahun={nilai.tahun} kelas={kelas} onSimpan={onSimpanKelas} onHapus={onHapusKelas} />}
@@ -628,6 +631,184 @@ function KesiapanPanel({ baris, onBuka }: {
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Pekerjaan & pengadaan TAMBAHAN satu kapal.
+ *
+ * Bentuknya tabel, bukan deretan kartu seperti checklist persiapan, karena
+ * yang dicari di sini perbandingan antarbaris — mana yang masih menggantung,
+ * berapa nilainya, dari siapa permintaannya datang. Kartu enak dibaca satu
+ * per satu; tabel enak dibaca sekaligus.
+ *
+ * Tidak ada templat. Pekerjaan tambahan justru yang tidak diketahui sebelum
+ * kapal dibuka — menyodorkan daftar bawaan hanya akan membuat orang mencentang
+ * pekerjaan yang tidak pernah ada.
+ */
+function TabTambahan({ nilai, set }: { nilai: DockingJadwal; set: (p: Partial<DockingJadwal>) => void }) {
+  const list = nilai.tambahan || [];
+  const r = ringkasTambahan(list);
+  const [saring, setSaring] = useState<"semua" | JenisTambahan>("semua");
+
+  const ubah = (id: string, p: Partial<TambahanItem>) =>
+    set({ tambahan: list.map((x) => (x.id === id ? { ...x, ...p } : x)) });
+  const tambah = (jenis: JenisTambahan) =>
+    set({ tambahan: [...list, tambahanBaru(jenis)] });
+  const buang = (id: string) => set({ tambahan: list.filter((x) => x.id !== id) });
+
+  // klik cepat pada lencana status: Belum → Proses → Selesai → Belum
+  const putar = (st: StatusSiap): StatusSiap =>
+    (st === "belum" ? "proses" : st === "proses" ? "selesai" : "belum");
+
+  const tampil = saring === "semua" ? list : list.filter((x) => x.jenis === saring);
+  const rupiah = (n: number) => "Rp" + (n || 0).toLocaleString("id-ID");
+
+  return (
+    <>
+      {r.ada && (
+        <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 p-3.5 mb-4">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mb-2">
+            <span className="text-sm font-extrabold text-slate-800">Tambahan selesai: {r.pct}%</span>
+            <span className="text-[11px] text-slate-600">
+              {r.selesai} selesai · {r.proses} proses · {r.belum} belum
+              {list.length - r.total ? ` · ${list.length - r.total} dibatalkan` : ""}
+              {" · "}{r.pekerjaan} pekerjaan · {r.pengadaan} pengadaan
+            </span>
+            {r.nilai > 0 && (
+              <span className="ml-auto text-[11px] font-bold text-slate-700">
+                Nilai tercatat {rupiah(r.nilai)}
+              </span>
+            )}
+          </div>
+          <div className="flex h-3 rounded-full overflow-hidden ring-1 ring-inset ring-slate-200 bg-white">
+            <div className="bg-emerald-500" style={{ width: `${r.total ? (r.selesai / r.total) * 100 : 0}%` }} />
+            <div className="bg-amber-400" style={{ width: `${r.total ? (r.proses / r.total) * 100 : 0}%` }} />
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-center gap-2 mb-3">
+        <div className="flex gap-1 rounded-lg bg-slate-100 p-1">
+          {([["semua", `Semua (${list.length})`],
+             ["pekerjaan", `Pekerjaan (${r.pekerjaan})`],
+             ["pengadaan", `Pengadaan (${r.pengadaan})`]] as const).map(([v, t]) => (
+            <button key={v} onClick={() => setSaring(v)}
+              className={`text-[11px] font-bold px-2.5 py-1 rounded-md transition ${
+                saring === v ? "bg-white text-slate-900 shadow-sm" : "text-slate-500"}`}>{t}</button>
+          ))}
+        </div>
+        <div className="ml-auto flex gap-2">
+          <button onClick={() => tambah("pekerjaan")} className="btn btn-primary text-xs">＋ Pekerjaan</button>
+          <button onClick={() => tambah("pengadaan")} className="btn btn-ghost text-xs">＋ Pengadaan</button>
+        </div>
+      </div>
+
+      {!tampil.length ? (
+        <div className="rounded-xl ring-1 ring-slate-200 bg-slate-50 p-6 text-center">
+          <p className="text-3xl mb-1">➕</p>
+          <p className="text-sm font-bold text-slate-700">
+            {list.length ? "Tidak ada baris pada saringan ini." : "Belum ada pekerjaan atau pengadaan tambahan."}
+          </p>
+          <p className="text-[11px] text-slate-500 mt-1">
+            Diisi saat muncul temuan baru — memorandum BKI, usulan Owner Surveyor, atau permintaan galangan.
+          </p>
+        </div>
+      ) : (
+        <div className="overflow-x-auto rounded-xl ring-1 ring-slate-200">
+          <table className="w-full min-w-[60rem] text-sm">
+            <thead className="bg-slate-50 text-[11px] text-slate-600">
+              <tr>
+                <th className="p-2 w-8 text-center">#</th>
+                <th className="p-2 w-28 text-left">Jenis</th>
+                <th className="p-2 text-left min-w-[18rem]">Uraian Pekerjaan / Barang</th>
+                <th className="p-2 w-32 text-left">Sumber</th>
+                <th className="p-2 w-28 text-left">No. Ref</th>
+                <th className="p-2 w-28 text-right">Nilai (Rp)</th>
+                <th className="p-2 w-32 text-center">Status</th>
+                <th className="p-2 w-32 text-center">Tanggal selesai</th>
+                <th className="p-2 w-8"></th>
+              </tr>
+            </thead>
+            <tbody>
+              {tampil.map((it, i) => {
+                const st = STATUS_SIAP[it.status];
+                const jn = JENIS_TAMBAHAN[it.jenis];
+                return (
+                  <tr key={it.id} className={`border-t border-slate-100 align-top ${
+                    it.status === "selesai" ? "bg-emerald-50/40"
+                      : it.status === "proses" ? "bg-amber-50/40"
+                      : it.status === "tidak_perlu" ? "bg-slate-50 opacity-70" : ""}`}>
+                    <td className="p-2 text-center text-[11px] text-slate-400">{i + 1}</td>
+                    <td className="p-2">
+                      <select value={it.jenis} onChange={(e) => ubah(it.id, { jenis: e.target.value as JenisTambahan })}
+                        className={`text-[11px] font-bold rounded-lg px-2 py-1 ring-1 border-0 ${jn.chip}`}>
+                        {(Object.keys(JENIS_TAMBAHAN) as JenisTambahan[]).map((j) => (
+                          <option key={j} value={j}>{JENIS_TAMBAHAN[j].label}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="p-2">
+                      <input className={`w-full bg-transparent text-sm font-semibold outline-none ${
+                        it.status === "tidak_perlu" ? "line-through text-slate-400" : "text-slate-800"}`}
+                        placeholder="mis. Ganti plat lambung area frame 12–15"
+                        value={it.uraian} onChange={(e) => ubah(it.id, { uraian: e.target.value })} />
+                      <input className="mt-0.5 w-full bg-transparent text-[11px] text-slate-500 outline-none placeholder:text-slate-300"
+                        placeholder="catatan (opsional)"
+                        value={it.catatan || ""} onChange={(e) => ubah(it.id, { catatan: e.target.value })} />
+                    </td>
+                    <td className="p-2">
+                      <input className="inp !text-[11px] !py-1" placeholder="Memorandum BKI / OS"
+                        value={it.sumber || ""} onChange={(e) => ubah(it.id, { sumber: e.target.value })} />
+                    </td>
+                    <td className="p-2">
+                      <input className="inp !text-[11px] !py-1" placeholder="No. SPPBJ / BA"
+                        value={it.noRef || ""} onChange={(e) => ubah(it.id, { noRef: e.target.value })} />
+                    </td>
+                    <td className="p-2">
+                      {/* disimpan sebagai angka; yang diketik dibersihkan dari titik pemisah */}
+                      <input className="inp !text-[11px] !py-1 text-right tabular-nums" placeholder="0" inputMode="numeric"
+                        value={it.nilai ? it.nilai.toLocaleString("id-ID") : ""}
+                        onChange={(e) => {
+                          const n = Number(String(e.target.value).replace(/[^\d]/g, ""));
+                          ubah(it.id, { nilai: n || undefined });
+                        }} />
+                    </td>
+                    <td className="p-2">
+                      <div className="flex items-center gap-1.5">
+                        <button onClick={() => ubah(it.id, {
+                          status: putar(it.status),
+                          tanggal: putar(it.status) === "selesai"
+                            ? (it.tanggal || new Date().toISOString().slice(0, 10)) : it.tanggal,
+                        })}
+                          title="Klik untuk ganti status: Belum → Sedang diproses → Selesai"
+                          className={`h-6 w-6 grid place-items-center rounded-md ring-1 text-xs shrink-0 ${st.chip}`}>
+                          {it.status === "selesai" ? "✓" : it.status === "proses" ? "…" : it.status === "tidak_perlu" ? "—" : "○"}
+                        </button>
+                        <select value={it.status} onChange={(e) => ubah(it.id, { status: e.target.value as StatusSiap })}
+                          className={`flex-1 text-[11px] font-bold rounded-lg px-1.5 py-1 ring-1 border-0 ${st.chip}`}>
+                          {(Object.keys(STATUS_SIAP) as StatusSiap[]).map((x) => (
+                            <option key={x} value={x}>{STATUS_SIAP[x].label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </td>
+                    <td className="p-2">
+                      <input type="date" className="inp !text-[11px] !py-1" value={it.tanggal || ""}
+                        onChange={(e) => ubah(it.id, { tanggal: e.target.value || undefined })} />
+                    </td>
+                    <td className="p-2 text-center">
+                      <button onClick={() => buang(it.id)} className="text-rose-600 hover:text-rose-800 text-sm"
+                        title="Buang baris ini">✕</button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
   );
 }
 

@@ -87,8 +87,91 @@ export interface DockingJadwal {
   berkas?: BerkasBA[];
   /** checklist persiapan docking (SPPBJ repair list, anode, cat, dst.) */
   persiapan?: PersiapanItem[];
+  /** pekerjaan & pengadaan tambahan yang muncul setelah kapal dibuka */
+  tambahan?: TambahanItem[];
   catatan?: string;
   diubahPada?: string;
+}
+
+
+// ====================== pekerjaan & pengadaan tambahan ======================
+
+/**
+ * PEKERJAAN DAN PENGADAAN TAMBAHAN selama docking berjalan.
+ *
+ * Berbeda dari checklist Persiapan, dan perbedaannya bukan soal tampilan.
+ * Persiapan adalah daftar yang sudah diketahui SEBELUM kapal naik dock —
+ * repair list, anode, cat, suku cadang — jadi daftarnya bisa dimulai dari
+ * template. Yang di sini justru yang TIDAK diketahui sebelumnya: muncul
+ * setelah kapal dibuka, dari memorandum BKI atau temuan Owner Surveyor, dan
+ * tiap kapal berbeda-beda. Karena itu tidak ada templatnya; barisnya ditulis
+ * sendiri satu per satu.
+ *
+ * Dicatat di sini, bukan di berkas terpisah, karena pekerjaan tambahanlah yang
+ * paling sering menjadi alasan docking molor dan pagu terlampaui — dan selama
+ * ia hanya ada di percakapan WhatsApp, tidak ada yang tahu berapa banyak yang
+ * masih menggantung sampai tagihannya datang.
+ */
+export type JenisTambahan = "pekerjaan" | "pengadaan";
+export const JENIS_TAMBAHAN: Record<JenisTambahan, { label: string; chip: string }> = {
+  pekerjaan: { label: "Pekerjaan", chip: "bg-indigo-100 text-indigo-800 ring-indigo-300" },
+  pengadaan: { label: "Pengadaan", chip: "bg-sky-100 text-sky-800 ring-sky-300" },
+};
+
+export interface TambahanItem {
+  id: string;
+  jenis: JenisTambahan;
+  uraian: string;
+  /** status memakai skala yang sama dengan checklist persiapan */
+  status: StatusSiap;
+  /** dari mana permintaannya datang — memorandum BKI, OS, galangan, nakhoda */
+  sumber?: string;
+  noRef?: string;        // No. SPPBJ / SPBJ / BA
+  nilai?: number;        // estimasi atau nilai kontraknya
+  tanggal?: string;      // ISO — kapan selesai
+  catatan?: string;
+}
+
+export const tambahanBaru = (jenis: JenisTambahan = "pekerjaan", uraian = ""): TambahanItem => ({
+  id: globalThis.crypto?.randomUUID?.() ?? String(Math.random()),
+  jenis, uraian, status: "belum",
+});
+
+export interface RingkasTambahan {
+  ada: boolean;
+  total: number;       // yang dihitung (tanpa "tidak perlu")
+  selesai: number;
+  proses: number;
+  belum: number;
+  pct: number;
+  pekerjaan: number;
+  pengadaan: number;
+  /** jumlah nilai seluruh baris yang diisi nilainya */
+  nilai: number;
+}
+
+/**
+ * Ringkasan pekerjaan tambahan.
+ *
+ * Baris "tidak perlu" dikeluarkan dari pembagi, sama seperti pada persiapan:
+ * kalau ikut dihitung, pekerjaan yang dibatalkan membuat progresnya mustahil
+ * mencapai seratus persen.
+ */
+export function ringkasTambahan(list: TambahanItem[] | undefined): RingkasTambahan {
+  const semua = list || [];
+  const dihitung = semua.filter((x) => x.status !== "tidak_perlu");
+  const selesai = dihitung.filter((x) => x.status === "selesai").length;
+  const proses = dihitung.filter((x) => x.status === "proses").length;
+  const belum = dihitung.length - selesai - proses;
+  return {
+    ada: semua.length > 0,
+    total: dihitung.length,
+    selesai, proses, belum,
+    pct: dihitung.length ? Math.round((selesai / dihitung.length) * 100) : 0,
+    pekerjaan: semua.filter((x) => x.jenis === "pekerjaan").length,
+    pengadaan: semua.filter((x) => x.jenis === "pengadaan").length,
+    nilai: semua.reduce((s, x) => s + (Number(x.nilai) || 0), 0),
+  };
 }
 
 // ====================== termin pembayaran ======================
