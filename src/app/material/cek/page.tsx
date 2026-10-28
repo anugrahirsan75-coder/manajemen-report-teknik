@@ -30,13 +30,13 @@ interface Row {
    * Disimpan sebagai teks, bukan angka, supaya yang diketik pemakai tidak
    * diam-diam dibulatkan atau diubah formatnya sebelum ia selesai mengetik.
    */
-  jumlah: string;
+  kuantiti: string;
   satuan: string;
   harga: string;
 }
 const uid = () => globalThis.crypto?.randomUUID?.() ?? String(Math.random());
 const emptyRow = (): Row =>
-  ({ id: uid(), nama: "", partNumber: "", kode: "", jumlah: "", satuan: "", harga: "" });
+  ({ id: uid(), nama: "", partNumber: "", kode: "", kuantiti: "", satuan: "", harga: "" });
 
 /** angka dari ketikan bebas: "1.500.000", "1500000", "2,5" */
 const keAngka = (v: string): number => {
@@ -44,7 +44,7 @@ const keAngka = (v: string): number => {
   const n = Number(t);
   return Number.isFinite(n) ? n : 0;
 };
-const rupiah = (n: number) => n ? "Rp" + n.toLocaleString("id-ID") : "";
+
 
 interface MetaDb {
   count: number;
@@ -128,13 +128,9 @@ export default function CekKodeMaterial() {
           case "no": return String(i + 1);
           case "nama": return r.nama;
           case "part": return r.partNumber;
-          case "jumlah": return r.jumlah;
+          case "kuantiti": return r.kuantiti;
           case "satuan": return r.satuan;
           case "harga": return r.harga;
-          case "total": {
-            const t = keAngka(r.jumlah) * keAngka(r.harga);
-            return t ? String(t) : "";
-          }
           case "kategori": return x?.kategori || (r.kode.trim() ? "KODE" : r.partNumber.trim() ? "SC" : "UMUM");
           case "kode": return sel ? sel.kode : x?.kode || "";
           case "desc": return sel ? sel.desc : x?.desc || "";
@@ -174,8 +170,7 @@ export default function CekKodeMaterial() {
         const sel = cand?.length ? cand[Math.min(pick[r.id] ?? 0, cand.length - 1)] : undefined;
         return {
           no: i + 1, nama: r.nama, part: r.partNumber,
-          jumlah: r.jumlah, satuan: r.satuan,
-          harga: keAngka(r.harga) || "", total: keAngka(r.jumlah) * keAngka(r.harga) || "",
+          kuantiti: r.kuantiti, satuan: r.satuan, harga: keAngka(r.harga) || "",
           kategori: x?.kategori || (r.kode.trim() ? "KODE" : r.partNumber.trim() ? "SC" : "UMUM"),
           kode: sel ? sel.kode : x?.kode || "", desc: sel ? sel.desc : x?.desc || "",
           po: sel ? sel.po : x?.po || "", status: x?.status || "-",
@@ -203,7 +198,7 @@ export default function CekKodeMaterial() {
     * sesudahnya.
     */
   const PASTE: (keyof Row)[] =
-    ["nama", "partNumber", "jumlah", "satuan", "harga", "kode"];
+    ["nama", "partNumber", "kuantiti", "satuan", "harga", "kode"];
   const handlePaste = (startRow: number, startCol: number, e: React.ClipboardEvent) => {
     const text = e.clipboardData.getData("text/plain");
     if (!text || (!text.includes("\t") && !text.includes("\n"))) return;
@@ -312,7 +307,7 @@ export default function CekKodeMaterial() {
             <li><b>Tanpa Part Number</b> → dianggap <b>barang umum</b>, dicocokkan ke <i>Material description</i>.</li>
             <li><b>Sudah punya kodenya?</b> Isi kolom <b>Kode Material</b> — dicari terbalik: keluar nama barang, part number, dan Purchase Order Text-nya. Nol di depan boleh beda; potongan kode (≥4 angka) memberi beberapa kandidat berstatus <i>cek</i>.</li>
           </ul>
-          <span className="text-xs">📋 Paste dari Excel (urutan <b>Nama · Part Number · Jumlah · Satuan · Harga Satuan · Kode Material</b>) → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>.</span>
+          <span className="text-xs">📋 Paste dari Excel (urutan <b>Nama · Part Number · Kuantiti · Satuan · Harga Satuan · Kode Material</b>) → klik sel → <kbd className="px-1.5 py-0.5 bg-white border rounded">Ctrl+V</kbd>.</span>
         </div>
 
         <div className="flex gap-2 mb-3">
@@ -336,10 +331,9 @@ export default function CekKodeMaterial() {
                 <th className="p-2 border w-8">#</th>
                 <Th judul="Nama Barang" kolom="nama" kiri onSalin={salinKolom} aktif={tersalin === "Nama Barang"} />
                 <Th judul="Part Number" kolom="part" onSalin={salinKolom} aktif={tersalin === "Part Number"} />
-                <Th judul="Jumlah" kolom="jumlah" onSalin={salinKolom} aktif={tersalin === "Jumlah"} />
+                <Th judul="Kuantiti" kolom="kuantiti" onSalin={salinKolom} aktif={tersalin === "Kuantiti"} />
                 <Th judul="Satuan" kolom="satuan" onSalin={salinKolom} aktif={tersalin === "Satuan"} />
                 <Th judul="Harga Satuan" kolom="harga" onSalin={salinKolom} aktif={tersalin === "Harga Satuan"} />
-                <Th judul="Total" kolom="total" onSalin={salinKolom} aktif={tersalin === "Total"} catatan="(hitung)" />
                 <th className="p-2 border">Kategori</th>
                 <Th judul="Kode Material" kolom="kode" onSalin={salinKolom} aktif={tersalin === "Kode Material"} catatan="(bisa diisi)" />
                 <Th judul="Material Description" kolom="desc" kiri onSalin={salinKolom} aktif={tersalin === "Material Description"} />
@@ -369,14 +363,9 @@ export default function CekKodeMaterial() {
                     <td className="border p-1 text-center text-xs text-slate-400">{ri + 1}</td>
                     <td className="border p-1"><input className="w-52 px-1" value={r.nama} placeholder="nama barang…" onChange={(e) => setRow(r.id, { nama: e.target.value })} onPaste={(e) => handlePaste(ri, 0, e)} /></td>
                     <td className="border p-1"><input className="w-32 px-1" value={r.partNumber} placeholder="part no…" onChange={(e) => setRow(r.id, { partNumber: e.target.value })} onPaste={(e) => handlePaste(ri, 1, e)} /></td>
-                    <td className="border p-1"><input className="w-16 px-1 text-center" value={r.jumlah} placeholder="jml" inputMode="decimal" onChange={(e) => setRow(r.id, { jumlah: e.target.value })} onPaste={(e) => handlePaste(ri, 2, e)} /></td>
+                    <td className="border p-1"><input className="w-16 px-1 text-center" value={r.kuantiti} placeholder="qty" inputMode="decimal" onChange={(e) => setRow(r.id, { kuantiti: e.target.value })} onPaste={(e) => handlePaste(ri, 2, e)} /></td>
                     <td className="border p-1"><input className="w-16 px-1 text-center" value={r.satuan} placeholder="sat" onChange={(e) => setRow(r.id, { satuan: e.target.value })} onPaste={(e) => handlePaste(ri, 3, e)} /></td>
                     <td className="border p-1"><input className="w-28 px-1 text-right tabular-nums" value={r.harga} placeholder="harga…" inputMode="numeric" onChange={(e) => setRow(r.id, { harga: e.target.value })} onPaste={(e) => handlePaste(ri, 4, e)} /></td>
-                    {/* Total dihitung, tidak diketik: angka yang diketik tangan
-                        adalah angka yang bisa berbeda dari perkaliannya sendiri. */}
-                    <td className="border p-1 text-right tabular-nums text-xs text-slate-600">
-                      {rupiah(keAngka(r.jumlah) * keAngka(r.harga)) || "—"}
-                    </td>
                     <td className="border p-1 text-center">
                       <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${kategori === "SC" ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700"}`}>{kategori}</span>
                     </td>
