@@ -1,0 +1,36 @@
+Option Explicit
+
+Public Pilihan As String
+
+' Huruf diatur di sini karena kendali yang dibuat lewat skrip perakit tidak
+' menyediakan objek Font.
+Private Sub UserForm_Initialize()
+    txtRingkas.Font.Name = "Consolas"
+    txtRingkas.Font.Size = 9
+    lblJenis.Font.Bold = True
+    btnRutin.Font.Bold = True
+    btnDocking.Font.Bold = True
+End Sub
+
+Private Sub btnRutin_Click()
+    Pilihan = "rutin"
+    Me.Hide
+End Sub
+
+Private Sub btnDocking_Click()
+    Pilihan = "docking"
+    Me.Hide
+End Sub
+
+Private Sub btnBatal_Click()
+    Pilihan = ""
+    Me.Hide
+End Sub
+
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+    If CloseMode = vbFormControlMenu Then
+        Cancel = True
+        Pilihan = ""
+        Me.Hide
+    End If
+End Sub

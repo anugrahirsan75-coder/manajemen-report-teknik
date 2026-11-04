@@ -12,9 +12,9 @@
  * huruf tebal. Papan klip tidak membawa keterangan itu, makro dan berkas .xlsx
  * membawanya.
  *
- * Yang DITEBAK (kategori rekap, MA per item) selalu dilaporkan sebagai catatan.
- * Tebakan kategori diuji ke 275 pengadaan tersimpan dan benar 85%, cukup untuk
- * jadi usulan, tidak cukup untuk masuk diam-diam.
+ * Rutin atau Docking dipilih orangnya saat mengirim. Tebakan kategori diuji ke
+ * 275 pengadaan tersimpan dan benar 85%: terlalu rendah untuk angka yang masuk
+ * Dashboard Anggaran, jadi hanya dipakai bila pengirimnya makro versi lama.
  */
 import { DEPT_HEAD, KAPAL_LIST, MATA_ANGGARAN, STAF_TEKNIK } from "./db";
 import { SppbjItem, SppbjRequest } from "./types";
@@ -36,6 +36,15 @@ export interface LembarExcel {
 }
 
 export interface PerMa { ma: string; item: number; nilai: number }
+
+export type JenisKirim = "rutin" | "docking";
+
+export interface OpsiBaca {
+  /** pilihan pengirim */
+  jenis?: JenisKirim;
+  /** pengirim akan memilih jenis sesudah ringkasan ini, jadi tak perlu ditebak */
+  akanDipilih?: boolean;
+}
 
 export interface HasilLembar {
   lembar: string;
@@ -152,6 +161,49 @@ const POLA_MA: { kode: string[]; rx: RegExp }[] = [
   { kode: ["5010403009", "1020604009"], rx: /\b(deck|dek|akomodasi|peralatan|perlengkapan|interior|kursi|keselamatan)\b/i },
 ];
 
+/*
+ * Lajur MA di kanan tabel. Templat memberi daftar pilihan berisi nama pendek,
+ * dan daftar yang sama harus tetap berlaku di lembar yang diketik tangan, jadi
+ * nama dicocokkan dengan toleransi salah ketik ("Permsinan"). Nama panjang
+ * dilewati supaya catatan bebas di lajur itu tidak terbaca sebagai pilihan.
+ *
+ * Urutan ini juga isi daftar pilihan di Excel (tools/excel-sppbj/pasang-tombol.ps1).
+ */
+export const PILIHAN_MA: { label: string; kode: string; investasi?: string; alias: string[] }[] = [
+  { label: "Permesinan", kode: "5010403100", investasi: "1020604010", alias: ["permesinan", "mesin", "kelistrikan", "listrik"] },
+  { label: "Akomodasi", kode: "5010403009", investasi: "1020604009", alias: ["akomodasi", "peralatan", "perlengkapan", "deck", "dek"] },
+  { label: "Ro-Ro", kode: "5010403003", investasi: "1020604003", alias: ["roro", "lambung", "konstruksi"] },
+  { label: "Pelumas", kode: "5010303001", alias: ["pelumas", "oli"] },
+  { label: "Sertifikasi Alat", kode: "5010317000", alias: ["sertifikasialat"] },
+  { label: "Sertifikasi Produksi", kode: "5010318000", alias: ["sertifikasiproduksi"] },
+  { label: "Fumigasi", kode: "5010302006", alias: ["fumigasi"] },
+  { label: "Mobilisasi", kode: "5010302004", alias: ["mobilisasi"] },
+];
+
+function jarakEjaan(a: string, b: string): number {
+  let lalu = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const kini = [i];
+    for (let j = 1; j <= b.length; j++) {
+      kini[j] = Math.min(lalu[j] + 1, kini[j - 1] + 1, lalu[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+    }
+    lalu = kini;
+  }
+  return lalu[b.length];
+}
+
+/** "Permesinan" di lembar yang seluruhnya investasi berarti pos investasinya */
+function kodeDariNama(t: string, ma: string[]): string {
+  const huruf = t.toLowerCase().replace(/[^a-z]/g, "");
+  if (!huruf || huruf.length > 24) return "";
+  const inv = /^inv(estasi)?/.exec(huruf)?.[0] || "";
+  const nama = huruf.slice(inv.length);
+  const p = PILIHAN_MA.find((x) => x.alias.some((a) => jarakEjaan(nama, a) <= Math.floor(a.length / 4)));
+  if (!p) return "";
+  const modal = ma.length > 0 && ma.every((m) => m.startsWith("10206"));
+  return p.investasi && (inv || modal) ? p.investasi : p.kode;
+}
+
 function tebakMaItem(teksGolongan: string, ma: string[]): string {
   const cocok = ma.filter((m) => POLA_MA.some((p) => p.kode.includes(m.slice(0, 10)) && p.rx.test(teksGolongan)));
   return cocok.length === 1 ? cocok[0] : "";
@@ -168,8 +220,15 @@ function tebakKategori(nama: string, dasar: string, ma: string[]): string {
   return "";
 }
 
+// "Lainnya" hanya untuk pengadaan yang tertaut surat persetujuan; aturan ini sama
+// dengan pilihan kategori di form aplikasi
 const jenisDariKategori = (k: string): SppbjRequest["jenisAnggaran"] =>
-  /^docking/i.test(k) ? "Docking" : /^rutin/i.test(k) ? "Rutin" : k ? "Lainnya" : undefined;
+  /docking/i.test(k) ? "Docking" : k ? "Rutin" : undefined;
+
+const kategoriPilihan = (jenis: JenisKirim, investasi: boolean) =>
+  jenis === "docking"
+    ? (investasi ? "DOCKING (INVESTASI)" : "DOCKING(BIAYA)")
+    : (investasi ? "INVESTASI DILUAR DOCKING" : "RUTIN");
 
 /* ── tabel ──────────────────────────────────────────────────────────────── */
 
@@ -202,7 +261,7 @@ export const adalahSppbj = (lembar: LembarExcel) =>
   lembar.baris.slice(0, 12).some((r) =>
     Object.values(r.s).some((v) => /permintaan\s+pengadaan\s+barang/i.test(teks(v))));
 
-export function bacaLembar(lembar: LembarExcel): HasilLembar {
+export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLembar {
   const masalah: string[] = [];
   const catatan: string[] = [];
   const baris = lembar.baris;
@@ -220,14 +279,14 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
 
   const namaPengadaan = nilaiLabel(kepala, /^nama\s*pengadaan\b/i);
   const dasarPelimpahan = nilaiLabel(kepala, /^dasar\s*pelimpahan\b/i);
-  const noSPPBJ = nilaiLabel(kepala, /^no\.?\s*sppb\s*\/?\s*j\b/i);
+  const teksNo = nilaiLabel(kepala, /^no\.?\s*sppb\s*\/?\s*j\b/i);
+  const noSPPBJ = /\d/.test(teksNo) ? teksNo : "";   // titik-titik di borang kosong bukan nomor
   const noDRP = nilaiLabel(kepala, /^no\.?\s*drp\b/i);
   const teksTanggal = nilaiLabel(kepala, /^tanggal(?!\s*dibutuhkan)\b/i);
   const teksMa = nilaiLabel(kepala, /^mata\s*anggaran\b/i);
 
   const { ma, asing } = bacaMa(teksMa);
   if (!namaPengadaan) masalah.push("Nama Pengadaan kosong.");
-  if (!ma.length) masalah.push(`Mata Anggaran tidak terbaca${teksMa ? ` ("${teksMa.slice(0, 40)}")` : ""}. Tulis kodenya, mis. 5010403100.`);
   if (asing.length) catatan.push(`Kode MA belum ada di daftar pilihan aplikasi: ${asing.join(", ")}.`);
 
   const tgl = bacaTanggal(teksTanggal);
@@ -239,17 +298,21 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
   let lembarJumlah: number | undefined;
   const kapalNama = kapalDalam(namaPengadaan);
   let tanpaKapal = 0;
+  let adaPilihanMa = false;
 
   const kolom = iJudul >= 0 ? petaKolom(baris, iJudul) : null;
   if (!kolom) masalah.push("Tabel item tidak ketemu (judul No / Jumlah / Nama Barang / Harga Satuan).");
 
   if (kolom) {
-    const kodeMaBaris = (r: BarisLembar) => {
+    const lajurMa = urutKolom(baris[iJudul].s).find((k) =>
+      noKol(k) > kolom.akhir && /^(pilih\s*)?ma\b/i.test(teks(baris[iJudul].s[k])));
+    const maPilihan = (r: BarisLembar) => {
       for (const k of urutKolom(r.s)) {
         if (noKol(k) <= kolom.akhir) continue;
-        const kode = /\b(501\d{7}|10206\d{5})\b/.exec(teks(r.s[k]))?.[1];
-        const baku = kode && ma.find((m) => m.startsWith(kode));
-        if (baku) return baku;
+        const t = teks(r.s[k]);
+        const kode = /\b(50\d{8}|10206\d{5})\b/.exec(t)?.[1] || kodeDariNama(t, ma);
+        if (kode) return MATA_ANGGARAN.find((m) => m.startsWith(kode)) || ma.find((m) => m.startsWith(kode)) || kode;
+        if (k === lajurMa) catatan.push(`Baris ${r.n}: MA "${t.slice(0, 24)}" tidak dikenali.`);
       }
       return "";
     };
@@ -307,9 +370,11 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
           harga: hargaSatuan,
         };
         if (judul.length) it.keterangan = judul.join("\n");
-        if (ma.length > 1) {
-          const dipilih = kodeMaBaris(r) || maJudul || tebakMaItem(judul.join(" ") || nama, ma);
-          if (dipilih) it.mataAnggaran = dipilih;
+        const dipilih = maPilihan(r) || maJudul;
+        if (dipilih) {
+          it.mataAnggaran = dipilih;
+          adaPilihanMa = true;
+          if (!ma.includes(dipilih)) ma.push(dipilih);
         }
         if (!hargaSatuan) catatan.push(`Baris ${r.n} (${nama.slice(0, 30)}): harga satuan kosong.`);
         if (total && Math.abs(it.jumlah * hargaSatuan - total) > 1) {
@@ -327,7 +392,7 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
       if (barisKapal) {
         kapal = kapalDalam(nama) || (kunciKapal(nama) ? nama : "");
         judul = [];
-        maJudul = "";
+        maJudul = maPilihan(r);
         sesudahItem = false;
         terakhir = null;
         tersambung = false;
@@ -339,13 +404,29 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
       }
       if (sesudahItem) { judul = []; maJudul = ""; sesudahItem = false; }
       judul.push(nama);
-      maJudul = kodeMaBaris(r) || maJudul;
+      maJudul = maPilihan(r) || maJudul;
       terakhir = null;
       tersambung = false;
     }
   }
 
   if (kolom && !items.length) masalah.push("Tidak ada baris item yang terbaca.");
+
+  // Item tanpa pilihan: tebak dari judul golongan, hanya di antara MA lembar ini.
+  if (ma.length > 1) {
+    for (const it of items) {
+      if (it.mataAnggaran) continue;
+      const tebakan = tebakMaItem(it.keterangan || it.nama, ma);
+      if (tebakan) it.mataAnggaran = tebakan;
+    }
+  }
+  // MA kepala yang tak dipakai item mana pun tidak ikut menjadi MA pengadaan.
+  if (adaPilihanMa) {
+    const dipakai = new Set(items.map((i) => i.mataAnggaran || ma[0]));
+    const terpakai = ma.filter((m) => dipakai.has(m));
+    ma.splice(0, ma.length, ...terpakai);
+  }
+  if (!ma.length) masalah.push(`Mata Anggaran tidak terbaca${teksMa ? ` ("${teksMa.slice(0, 40)}")` : ""}. Tulis kodenya, mis. 5010403100.`);
   if (tanpaKapal) catatan.push(`${tanpaKapal} item belum punya kapal; tulis baris nama kapal di atas item.`);
 
   const jumlah = items.reduce((s, i) => s + i.jumlah * i.harga, 0);
@@ -357,7 +438,7 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
   const perMa: PerMa[] = [];
   if (ma.length > 1) {
     const tanpa = items.filter((i) => !i.mataAnggaran).length;
-    if (tanpa) catatan.push(`${tanpa} item tak terbaca MA-nya, ikut MA pertama (${ma[0].slice(0, 10)}).`);
+    if (tanpa) catatan.push(`${tanpa} item belum punya MA, ikut MA pertama (${ma[0].slice(0, 10)}).`);
     for (const m of ma) {
       const isi = items.filter((i) => (i.mataAnggaran || ma[0]) === m);
       perMa.push({ ma: m, item: isi.length, nilai: isi.reduce((s, i) => s + i.jumlah * i.harga, 0) });
@@ -373,7 +454,7 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
     const kodeIni = ma[0].slice(0, 10);
     const famili = kodeIni.slice(0, 3);
     const posLain = new Set<string>();
-    for (const it of items) {
+    for (const it of adaPilihanMa ? [] : items) {
       const j = it.keterangan;
       if (!j || POLA_MA.some((p) => p.kode.includes(kodeIni) && p.rx.test(j))) continue;
       for (const p of POLA_MA) {
@@ -386,8 +467,11 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
     }
   }
 
-  const kategori = tebakKategori(namaPengadaan, dasarPelimpahan, ma);
-  if (!kategori) catatan.push("Kategori rekap tak bisa ditebak; pilih di aplikasi.");
+  const nilaiInvestasi = perMa.filter((m) => m.ma.startsWith("10206")).reduce((a, m) => a + m.nilai, 0);
+  const kategori = opsi.jenis
+    ? kategoriPilihan(opsi.jenis, nilaiInvestasi * 2 > jumlah)
+    : tebakKategori(namaPengadaan, dasarPelimpahan, ma);
+  if (!kategori && !opsi.akanDipilih) catatan.push("Kategori rekap tak bisa ditebak; pilih di aplikasi.");
 
   const kapalUnik: string[] = [];
   for (const it of items) if (it.kapal && !kapalUnik.includes(it.kapal)) kapalUnik.push(it.kapal);
@@ -411,41 +495,7 @@ export function bacaLembar(lembar: LembarExcel): HasilLembar {
     },
     masalah,
     catatan,
-    kategoriTebakan: !!kategori,
+    kategoriTebakan: !!kategori && !opsi.jenis,
     ringkas: { item: items.length, kapal: kapalUnik, perMa, jumlah, ppn, total: jumlah + ppn },
-  };
-}
-
-/**
- * Gabungkan hasil baca ke catatan yang sudah tersimpan.
- *
- * Excel memegang isi usulan: tanggal, nomor, nama, dasar, MA, dan item. Selain
- * itu milik aplikasi dan tidak disentuh - status, vendor, PO, GR/SES, foto,
- * tautan surat persetujuan. Kategori yang sudah dipilih orang juga tidak
- * ditimpa tebakan. Item yang sama dipertahankan identitas dan harga finalnya.
- */
-export function gabungKeTersimpan(lama: any, baru: HasilLembar["req"]): any {
-  const kunci = (i: any) => [i.kapal, i.nama, i.spesifikasi].map((v) => teks(v).toLowerCase()).join("|");
-  const sisa = new Map<string, any[]>();
-  for (const it of lama.items || []) {
-    const k = kunci(it);
-    sisa.set(k, [...(sisa.get(k) || []), it]);
-  }
-  const items = baru.items.map((it) => {
-    const c = sisa.get(kunci(it))?.shift();
-    return c ? { ...c, ...it, id: c.id } : it;
-  });
-  return {
-    ...lama,
-    tanggal: baru.tanggal,
-    noSPPBJ: baru.noSPPBJ || lama.noSPPBJ || "",
-    namaPengadaan: baru.namaPengadaan,
-    dasarPelimpahan: baru.dasarPelimpahan,
-    mataAnggaran: baru.mataAnggaran,
-    noDRP: baru.noDRP || lama.noDRP || "",
-    kategoriRekap: lama.kategoriRekap || baru.kategoriRekap,
-    jenisAnggaran: lama.jenisAnggaran || baru.jenisAnggaran,
-    jenisPengadaan: lama.jenisPengadaan || baru.jenisPengadaan,
-    items,
   };
 }

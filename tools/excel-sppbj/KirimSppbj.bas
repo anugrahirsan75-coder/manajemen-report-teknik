@@ -21,6 +21,9 @@ Private Const BAG As String = "ManajemenReportTeknik"
 Private Const JUDUL As String = "Kirim ke Aplikasi"
 Private Const BARIS_MAKS As Long = 400
 Private Const KOLOM_MAKS As Long = 16
+Private Const KOLOM_JUMLAH As Long = 3     ' C: baris item selalu punya kuantiti
+Private Const KOLOM_MA As Long = 11        ' K: pilihan MA per item
+Private Const VERSI As Long = 2
 
 ' Nama lembar yang berubah sejak berkas dibuka, dan tanda isi yang sudah
 ' ditanyakan: pengingat cukup sekali untuk satu isi lembar.
@@ -45,7 +48,7 @@ Public Sub LupakanAkun()
 End Sub
 
 Private Sub KirimLembar(ByVal ws As Worksheet)
-    Dim isi As String, jawab As String, kode As String
+    Dim isi As String, jawab As String, kode As String, jenis As String
 
     On Error GoTo Galat
     Application.StatusBar = "Membaca lembar..."
@@ -55,14 +58,17 @@ Private Sub KirimLembar(ByVal ws As Worksheet)
 
     kode = KodeJawab(jawab)
     If kode <> "SIAP" Then
+        ' lembar yang terkunci tidak perlu diingatkan lagi
+        If kode = "TERKUNCI" Then SaveSetting BAG, "Terkirim", KunciLembar(ws), Tanda(isi)
         MsgBox PesanJawab(jawab), IIf(kode = "GAGAL", vbExclamation, vbInformation), JUDUL
         GoTo Selesai
     End If
     Application.StatusBar = False
-    If MsgBox(PesanJawab(jawab), vbYesNo + vbQuestion, JUDUL) <> vbYes Then GoTo Selesai
+    jenis = PilihJenis(PesanJawab(jawab))
+    If Len(jenis) = 0 Then GoTo Selesai
 
     Application.StatusBar = "Mengirim..."
-    If Not Minta("kirim", isi, jawab) Then GoTo Selesai
+    If Not Minta("kirim", isi, jawab, jenis) Then GoTo Selesai
     If KodeJawab(jawab) = "TERKIRIM" Then
         SaveSetting BAG, "Terkirim", KunciLembar(ws), Tanda(isi)
         MsgBox PesanJawab(jawab), vbInformation, JUDUL
@@ -76,6 +82,42 @@ Selesai:
 Galat:
     Application.StatusBar = False
     MsgBox "Gagal mengirim: " & Err.Description, vbExclamation, JUDUL
+End Sub
+
+' Ringkasan dan dua tombol jenis. Mengembalikan "" bila dibatalkan.
+Private Function PilihJenis(ByVal pesan As String) As String
+    Dim f As FormKirim
+    Set f = New FormKirim
+    f.txtRingkas.Text = Replace(pesan, vbLf, vbCrLf)
+    f.txtRingkas.SelStart = 0
+    f.Show
+    PilihJenis = f.Pilihan
+    Unload f
+End Function
+
+' ---- pilihan MA per item -------------------------------------------------------
+
+' Daftar pilihan Excel hanya mengisi sel aktif. Supaya tidak memilih satu per
+' satu: blok banyak sel lajur MA lalu pilih sekali, baris item yang terblok ikut
+' terisi. Baris judul dan baris kosong dilewati.
+Public Sub SebarkanMa(ByVal sh As Object, ByVal Target As Range)
+    Dim sel As Range, blok As Range
+
+    On Error GoTo Selesai
+    If Target.Cells.Count <> 1 Or Target.Column <> KOLOM_MA Then Exit Sub
+    If IsEmpty(Target.Value2) Or TypeName(Selection) <> "Range" Then Exit Sub
+    Set blok = Selection
+    If blok.Parent.Name <> sh.Name Or blok.Cells.Count < 2 Then Exit Sub
+    If Intersect(blok, sh.Columns(KOLOM_MA)).Cells.Count <> blok.Cells.Count Then Exit Sub
+
+    Application.EnableEvents = False
+    For Each sel In blok.Cells
+        If sel.Row <> Target.Row And Not sel.EntireRow.Hidden Then
+            If Not IsEmpty(sh.Cells(sel.Row, KOLOM_JUMLAH).Value2) Then sel.Value2 = Target.Value2
+        End If
+    Next sel
+Selesai:
+    Application.EnableEvents = True
 End Sub
 
 ' ---- pengingat saat cetak dan tutup berkas ------------------------------------
@@ -161,7 +203,8 @@ Private Sub BilangTakTersambung(ByVal rinci As String)
 End Sub
 
 ' Kirim satu permintaan. Mengembalikan False bila sudah dijelaskan ke pemakai.
-Private Function Minta(ByVal aksi As String, ByVal isi As String, ByRef jawab As String) As Boolean
+Private Function Minta(ByVal aksi As String, ByVal isi As String, ByRef jawab As String, _
+                       Optional ByVal jenis As String = "") As Boolean
     Dim h As Object, coba As Long, status As Long, token As String
 
     For coba = 1 To 3
@@ -177,7 +220,7 @@ Private Function Minta(ByVal aksi As String, ByVal isi As String, ByRef jawab As
         h.SetRequestHeader "Content-Type", "application/json"
         h.SetRequestHeader "X-Klien", "excel"
         h.SetRequestHeader "Cookie", "mrt_session=" & token
-        h.Send "{""aksi"":""" & aksi & """,""lembar"":" & isi & "}"
+        h.Send "{""aksi"":""" & aksi & """,""versi"":" & VERSI & ",""jenis"":""" & jenis & """,""lembar"":" & isi & "}"
         status = h.Status
         On Error GoTo 0
 
@@ -378,7 +421,8 @@ Private Function KutipJson(ByVal s As String) As String
 End Function
 
 ' Pintu untuk skrip uji: tanpa kotak dialog. Mengembalikan jawaban mentah server.
-Public Function MintaLembar(ByVal aksi As String, ByVal namaLembar As String) As String
+Public Function MintaLembar(ByVal aksi As String, ByVal namaLembar As String, _
+                            Optional ByVal jenis As String = "") As String
     Dim jawab As String
-    If Minta(aksi, LembarJson(ThisWorkbook.Worksheets(namaLembar)), jawab) Then MintaLembar = jawab
+    If Minta(aksi, LembarJson(ThisWorkbook.Worksheets(namaLembar)), jawab, jenis) Then MintaLembar = jawab
 End Function

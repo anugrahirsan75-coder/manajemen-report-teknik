@@ -15,6 +15,7 @@
  * berkas — bukan seluruh isi basis data.
  */
 import { NextRequest, NextResponse } from "next/server";
+import { peranDariToken } from "@/lib/auth/peran";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -42,6 +43,15 @@ async function teruskan(req: NextRequest, jalur: string[]) {
   const alamat = jalur.join("/");
   if (!jalurBoleh(alamat)) {
     return NextResponse.json({ message: "Jalur tidak dilayani" }, { status: 403 });
+  }
+
+  // Sesi SCM ikut melewati gerbang ini untuk membaca pengadaan, tetapi data hanya
+  // boleh dihapus oleh akun Teknik.
+  if (req.method === "DELETE" && alamat === "rest/v1/projects") {
+    const peran = await peranDariToken(req.cookies.get("mrt_session")?.value, process.env.AUTH_TOKEN);
+    if (peran !== "teknik") {
+      return NextResponse.json({ message: "Akun ini tidak berhak menghapus data." }, { status: 403 });
+    }
   }
 
   const tujuan = `${URL_SB.replace(/\/$/, "")}/${alamat}${req.nextUrl.search}`;

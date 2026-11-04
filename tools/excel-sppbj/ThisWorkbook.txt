@@ -5,6 +5,7 @@ Option Explicit
 
 Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
     KirimSppbj.CatatBerubah Sh
+    KirimSppbj.SebarkanMa Sh, Target
 End Sub
 
 Private Sub Workbook_BeforePrint(Cancel As Boolean)
