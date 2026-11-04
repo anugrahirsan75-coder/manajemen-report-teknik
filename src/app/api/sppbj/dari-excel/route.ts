@@ -72,6 +72,8 @@ async function cariTersimpan(c: ReturnType<typeof dbServer>, req: HasilLembar["r
 
 function ringkasan(h: HasilLembar, tampilKategori: boolean): string[] {
   const r = h.req;
+  const lembar = h.ringkas.jumlahLembar;
+  const beda = lembar !== undefined && Math.abs(lembar - h.ringkas.jumlah) > 1;
   const baris = [
     `Nama     : ${r.namaPengadaan}`,
     `No       : ${r.noSPPBJ || "(kosong)"}    Tanggal: ${r.tanggal}`,
@@ -79,6 +81,7 @@ function ringkasan(h: HasilLembar, tampilKategori: boolean): string[] {
     ...(tampilKategori ? [`Kategori : ${r.kategoriRekap ? r.kategoriRekap + " (tebakan, periksa)" : "(kosong)"}`] : []),
     `Item     : ${h.ringkas.item} item, ${h.ringkas.kapal.join(", ") || "tanpa kapal"}`,
     `Nilai    : ${rupiah(h.ringkas.jumlah)} (belum PPN)`,
+    ...(beda ? [`           BEDA ${rupiah(Math.abs(lembar! - h.ringkas.jumlah))} dari Jumlah Rp di lembar (${rupiah(lembar!)})`] : []),
     "Mata Anggaran:",
     ...h.ringkas.perMa.map((m) => `  ${m.ma.slice(0, 44)}: ${m.item} item, ${rupiah(m.nilai)}`),
   ];

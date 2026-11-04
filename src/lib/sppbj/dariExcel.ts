@@ -54,7 +54,11 @@ export interface HasilLembar {
   /** perlu dilihat, tidak menghalangi */
   catatan: string[];
   kategoriTebakan: boolean;
-  ringkas: { item: number; kapal: string[]; perMa: PerMa[]; jumlah: number; ppn: number; total: number };
+  ringkas: {
+    item: number; kapal: string[]; perMa: PerMa[]; jumlah: number; ppn: number; total: number;
+    /** isi sel "Jumlah Rp" di lembar, kalau ada */
+    jumlahLembar?: number;
+  };
 }
 
 const noKol = (k: string) => k.split("").reduce((n, c) => n * 26 + c.charCodeAt(0) - 64, 0);
@@ -295,6 +299,7 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
   if (!noSPPBJ) catatan.push("No. SPPB/J kosong; belum bisa masuk rekap sampai nomornya ada.");
 
   const items: SppbjItem[] = [];
+  const barisItem = new Map<SppbjItem, number>();
   let lembarJumlah: number | undefined;
   const kapalNama = kapalDalam(namaPengadaan);
   let tanpaKapal = 0;
@@ -317,6 +322,23 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
       return "";
     };
 
+    /*
+     * Nama barang sering ditulis di baris uraian, dan baris angkanya dikosongkan
+     * atau hanya diberi "-":
+     *
+     *     a. Bottom + Bottop (BGA Area)
+     *     602  M²                        10.500   6.321.000
+     *     602  M²                        10.500   6.321.000
+     *
+     * Baris seperti itu tetap item; namanya diambil dari uraian di atasnya.
+     * Tanda pengenalnya kuantiti: tanpa kuantiti, angka di baris tak bernama
+     * adalah subtotal.
+     */
+    const tanpaNama = (t: string) => !/[a-z0-9]/i.test(t);
+    const namaBaris = (r: BarisLembar) => kolom.nama.map((k) => teks(r.s[k])).find(Boolean) || "";
+    const butuhNamaAtas = (r?: BarisLembar) =>
+      !!r && tanpaNama(namaBaris(r)) && angka(r.s[kolom.jumlah]) > 0;
+
     let kapal = "";
     let judul: string[] = [];
     let maJudul = "";
@@ -326,7 +348,9 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
 
     for (let i = iJudul + 1; i < baris.length; i++) {
       const r = baris[i];
-      const isiBaris = Object.values(r.s).map((v) => teks(v));
+      // hanya lajur tabel: catatan di sisi kanan lembar sering punya judul sendiri
+      // ("HARGA SATUAN") yang tidak boleh terbaca sebagai judul tabel
+      const isiBaris = urutKolom(r.s).filter((k) => noKol(k) <= kolom.akhir).map((k) => teks(r.s[k]));
 
       // baris penutup "Jumlah Rp": kolom totalnya berisi jumlah seluruh item
       if (kolom.total && r.s[kolom.total] !== undefined && isiBaris.some((t) => /^jumlah\s*(rp|:)/i.test(t))) {
@@ -336,17 +360,38 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
       if (isiBaris.some((t) => /^(catatan peminta|dibuat oleh|kerangka acuan)/i.test(t))) break;
       if (isiBaris.some((t) => /^harga\s*satuan/i.test(t))) continue;
 
-      const nama = kolom.nama.map((k) => teks(r.s[k])).find(Boolean) || "";
+      let nama = namaBaris(r);
       const qty = angka(r.s[kolom.jumlah]);
       const harga = angka(r.s[kolom.harga]);
       const total = kolom.total ? angka(r.s[kolom.total]) : 0;
       const tebal = kolom.nama.some((k) => (r.b || "").includes(k));
       if (r.n !== baris[i - 1].n + 1) tersambung = false;
 
-      if (!nama) {
-        if (qty > 0 || harga > 0 || total > 0) catatan.push(`Baris ${r.n} punya angka tapi tanpa nama barang; dilewati.`);
-        tersambung = false;
-        continue;
+      let judulItem = judul;
+      if (tanpaNama(nama)) {
+        const hargaUtuh = harga > 0 && Math.abs(harga - total) <= 1;
+        // harga yang tertulis satu baris di bawah itemnya
+        if (!qty && hargaUtuh && terakhir && !terakhir.harga) {
+          terakhir.harga = harga;
+          continue;
+        }
+        if (!qty && !hargaUtuh) {
+          if (harga > 0 || total > 0) catatan.push(`Baris ${r.n} punya angka tanpa nama dan tanpa kuantiti; dianggap subtotal.`);
+          tersambung = false;
+          continue;
+        }
+        if (terakhir && tersambung) {
+          // lanjutan item di atasnya, mis. ukuran lain dengan harga sendiri
+          nama = terakhir.nama;
+          judulItem = terakhir.keterangan ? terakhir.keterangan.split("\n") : [];
+        } else if (judul.length) {
+          nama = judul[judul.length - 1];
+          judulItem = judul.slice(0, -1);
+          judul = judulItem;   // uraian ini sudah menjadi nama, bukan judul item berikutnya
+        } else {
+          nama = `(tanpa nama, baris ${r.n})`;
+          catatan.push(`Baris ${r.n}: nama barang kosong; isi di aplikasi.`);
+        }
       }
 
       /*
@@ -363,20 +408,20 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
         const it: SppbjItem = {
           id: globalThis.crypto?.randomUUID?.() ?? String(Math.random()),
           kapal: kapal || kapalNama,
-          jumlah: qty || 1,
+          jumlah: Math.round((qty || 1) * 1e4) / 1e4,   // buang derau pecahan seperti 842,4000000000001
           satuan: teks(kolom.satuan ? r.s[kolom.satuan] : "") || "unit",
           nama,
           spesifikasi: teks(kolom.spek ? r.s[kolom.spek] : ""),
           harga: hargaSatuan,
         };
-        if (judul.length) it.keterangan = judul.join("\n");
+        if (judulItem.length) it.keterangan = judulItem.join("\n");
         const dipilih = maPilihan(r) || maJudul;
         if (dipilih) {
           it.mataAnggaran = dipilih;
           adaPilihanMa = true;
           if (!ma.includes(dipilih)) ma.push(dipilih);
         }
-        if (!hargaSatuan) catatan.push(`Baris ${r.n} (${nama.slice(0, 30)}): harga satuan kosong.`);
+        barisItem.set(it, r.n);
         if (total && Math.abs(it.jumlah * hargaSatuan - total) > 1) {
           catatan.push(`Baris ${r.n} (${nama.slice(0, 30)}): jumlah x harga tidak sama dengan kolom Jumlah.`);
         }
@@ -398,7 +443,8 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
         tersambung = false;
         continue;
       }
-      if (!tebal && terakhir && tersambung && nama !== nama.toUpperCase()) {
+      const namaUntukBawah = baris[i + 1]?.n === r.n + 1 && butuhNamaAtas(baris[i + 1]);
+      if (!tebal && terakhir && tersambung && nama !== nama.toUpperCase() && !namaUntukBawah) {
         terakhir.breakdown = [...(terakhir.breakdown || []), nama];
         continue;
       }
@@ -411,6 +457,9 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
   }
 
   if (kolom && !items.length) masalah.push("Tidak ada baris item yang terbaca.");
+  for (const it of items) {
+    if (!it.harga) catatan.push(`Baris ${barisItem.get(it)} (${it.nama.slice(0, 30)}): harga satuan kosong.`);
+  }
 
   // Item tanpa pilihan: tebak dari judul golongan, hanya di antara MA lembar ini.
   if (ma.length > 1) {
@@ -496,6 +545,6 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
     masalah,
     catatan,
     kategoriTebakan: !!kategori && !opsi.jenis,
-    ringkas: { item: items.length, kapal: kapalUnik, perMa, jumlah, ppn, total: jumlah + ppn },
+    ringkas: { item: items.length, kapal: kapalUnik, perMa, jumlah, ppn, total: jumlah + ppn, jumlahLembar: lembarJumlah },
   };
 }
