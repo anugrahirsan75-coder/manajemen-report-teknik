@@ -12,6 +12,7 @@ import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/reka
 import KapalCell, { kapalDariItems } from "@/components/KapalCell";
 import PreviewModal from "@/components/PreviewModal";
 import JenisBadge from "@/components/JenisBadge";
+import ImporExcelSppbj from "@/components/ImporExcelSppbj";
 import { useAnggaran } from "@/lib/anggaran/store";
 import { jenisAnggaranOf } from "@/lib/anggaran/types";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
@@ -29,6 +30,7 @@ export default function SppbjList() {
   const [query, setQuery] = useState("");
   const [preview, setPreview] = useState<any | null>(null); // baris yang sedang dilihat
   const [sapEdit, setSapEdit] = useState<any | null>(null); // baris yang sedang diisi No. PO / GR-SES
+  const [impor, setImpor] = useState(false); // jendela "Impor dari Excel"
   const { program, pengadaan } = useAnggaran(); // utk isi popover badge jenis anggaran
 
   // daftar bulan unik dari tanggal SPPBJ (desc)
@@ -139,6 +141,8 @@ export default function SppbjList() {
   const [bukaId, setBukaId] = useState<string | null>(null);
   const [bukaGagal, setBukaGagal] = useState("");
   useEffect(() => { setBukaId(new URLSearchParams(window.location.search).get("buka")); }, []);
+  // /sppbj?impor=1: tautan dari berkas Excel saat makronya diblokir
+  useEffect(() => { if (new URLSearchParams(window.location.search).get("impor")) setImpor(true); }, []);
   useEffect(() => {
     if (!bukaId || loading || !rows.length) return;
     const r = rows.find((x) => x.id === bukaId);
@@ -260,6 +264,7 @@ export default function SppbjList() {
             <h1 className="text-2xl font-extrabold asdp-text-gradient">SPPBJ Pengadaan</h1>
             <p className="text-slate-500 text-sm">Riwayat &amp; rekap pengadaan — klik untuk buka & generate dokumen</p>
           </div>
+          <button onClick={() => setImpor(true)} className="btn btn-ghost px-4 py-2.5 text-sm">⇪ Impor dari Excel</button>
           <button onClick={mulai} className="btn btn-primary px-5 py-2.5 text-sm">＋ Mulai Pengadaan</button>
         </div>
       </div>
@@ -485,6 +490,8 @@ export default function SppbjList() {
           </span>
         </div>
       )}
+      {impor && <ImporExcelSppbj tutup={() => setImpor(false)} selesai={refresh} />}
+
       {preview && (
         <PreviewModal jenis="SPPBJ" payload={preview.payload} onTutup={() => setPreview(null)}
           onBuka={() => { const r = preview; setPreview(null); buka(r); }} />

@@ -1,0 +1,16 @@
+Option Explicit
+
+' Lupa memasukkan ke aplikasi biasanya terjadi sesudah lembarnya selesai, jadi
+' pengingatnya dipasang di dua titik akhir itu: saat dicetak dan saat ditutup.
+
+Private Sub Workbook_SheetChange(ByVal Sh As Object, ByVal Target As Range)
+    KirimSppbj.CatatBerubah Sh
+End Sub
+
+Private Sub Workbook_BeforePrint(Cancel As Boolean)
+    KirimSppbj.IngatkanSebelumCetak
+End Sub
+
+Private Sub Workbook_BeforeClose(Cancel As Boolean)
+    KirimSppbj.IngatkanSebelumTutup
+End Sub

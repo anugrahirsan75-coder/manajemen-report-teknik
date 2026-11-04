@@ -1,0 +1,19 @@
+Option Explicit
+
+Public Ok As Boolean
+
+Private Sub btnMasuk_Click()
+    Ok = True
+    Me.Hide
+End Sub
+
+Private Sub btnBatal_Click()
+    Me.Hide
+End Sub
+
+Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
+    If CloseMode = vbFormControlMenu Then
+        Cancel = True
+        Me.Hide
+    End If
+End Sub
