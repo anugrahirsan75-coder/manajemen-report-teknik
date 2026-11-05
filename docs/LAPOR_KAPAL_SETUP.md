@@ -57,7 +57,9 @@ diganti:
 
 1. Buka <https://script.google.com> → proyek yang sudah ada.
 2. Tempel ulang **seluruh** isi [`lapor-apps-script.gs`](lapor-apps-script.gs)
-   (SECRET dan ID folder di dalamnya sudah terisi apa adanya — periksa sekali).
+   lalu isi `SECRET` dengan nilai yang sama seperti `LAPOR_GAS_SECRET`. Berkas di
+   repositori sengaja tidak memuat nilai aslinya karena repositori ini publik.
+   Kalau dibiarkan bernilai contoh, skrip menolak semua kiriman kapal.
 3. **Deploy → Kelola deployment → ikon pensil → Versi: Versi baru → Terapkan.**
 
 Kalau langkah 3 dilewatkan, Google akan terus melayani versi lama dan halaman

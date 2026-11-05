@@ -23,7 +23,7 @@
  * tanpa SECRET yang cocok, permintaan ditolak dan tidak ada berkas yang masuk.
  */
 
-var SECRET = "9hYKmF5iIAvauQmf3jpKJfEqYNne1K6g";     // harus sama dgn LAPOR_GAS_SECRET di app
+var SECRET = "GANTI_SECRET_INI_SAMA_DENGAN_ENV";     // harus sama dgn LAPOR_GAS_SECRET di app
 var ROOT_FOLDER_ID = "1EnJybY92LUhmMGg72uBztJlPJR2-OxQj"; // folder Drive tujuan (berkas dari kapal)
 var FOLDER_DOCKING = "1asHma-Ln4vYxcLg96MTevIKP2v9S7WGs"; // folder Laporan Docking
 
