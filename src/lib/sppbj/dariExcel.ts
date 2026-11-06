@@ -6,6 +6,8 @@
  * web (lib/sppbj/bacaBerkasExcel.ts membongkar .xlsx-nya). Keduanya berhenti di
  * bentuk BarisLembar, jadi aturan bacanya cukup ditulis sekali di server - dan
  * kalau aturan berubah, makro di berkas yang sudah tersebar tidak perlu diganti.
+ * Formulir lama dan formulir C.SCM.2.2.01.00.01-HR dua-duanya terbaca: letak
+ * kolom diambil dari judul tabel, bukan dari huruf kolom.
  *
  * Kenapa bukan uraikan() milik tempelTabel: lembar SPPB/J memakai sel gabungan
  * dan baris judul berlapis, dan satu-satunya pembeda judul dari rincian adalah
@@ -238,8 +240,11 @@ const kategoriPilihan = (jenis: JenisKirim, investasi: boolean) =>
 
 interface KolomTabel {
   jumlah: string; satuan: string; nama: string[]; spek: string;
-  harga: string; total: string; akhir: number;
+  harga: string; total: string; katalog: string; akhir: number;
 }
+
+/* Formulir lama menulis "Nama Barang", formulir C.SCM.2.2.01.00.01-HR "Uraian Barang dan/atau Jasa". */
+const RX_NAMA_BARANG = /^(nama|uraian)\s*barang/i;
 
 function petaKolom(baris: BarisLembar[], iJudul: number): KolomTabel | null {
   const r = baris[iJudul];
@@ -248,7 +253,7 @@ function petaKolom(baris: BarisLembar[], iJudul: number): KolomTabel | null {
     (b ? urutKolom(b.s).find((k) => rx.test(teks(b.s[k]))) : "") || "";
   const jumlah = cari(r, /^jumlah$/i);
   const satuan = cari(r, /^satuan$/i);
-  const kolNama = cari(r, /^nama\s*barang/i);
+  const kolNama = cari(r, RX_NAMA_BARANG);
   const spek = cari(r, /^spesifikasi/i);
   const harga = cari(bawah, /^harga\s*satuan/i) || cari(r, /harga\s*satuan|^estimasi\s*harga/i);
   const total = cari(bawah, /^jumlah$/i);
@@ -257,7 +262,8 @@ function petaKolom(baris: BarisLembar[], iJudul: number): KolomTabel | null {
   const batas = noKol(spek || harga);
   const nama: string[] = [];
   for (let i = noKol(kolNama); i < batas; i++) nama.push(String.fromCharCode(64 + i));
-  return { jumlah, satuan, nama, spek, harga, total, akhir: noKol(total || harga) };
+  const katalog = cari(r, /^kode\s*katalog/i);
+  return { jumlah, satuan, nama, spek, harga, total, katalog, akhir: noKol(total || harga) };
 }
 
 /** Berkas pengadaan juga memuat DKP, HPS, dan lampiran; hanya borang ini yang dibaca. */
@@ -277,16 +283,17 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
   const iJudul = baris.findIndex((r) => {
     const isi = Object.values(r.s).map((v) => teks(v));
     return isi.some((t) => /^no\.?$/i.test(t)) && isi.some((t) => /^jumlah$/i.test(t))
-      && isi.some((t) => /^nama\s*barang/i.test(t));
+      && isi.some((t) => RX_NAMA_BARANG.test(t));
   });
   const kepala = iJudul >= 0 ? baris.slice(0, iJudul) : baris;
 
-  const namaPengadaan = nilaiLabel(kepala, /^nama\s*pengadaan\b/i);
-  const dasarPelimpahan = nilaiLabel(kepala, /^dasar\s*pelimpahan\b/i);
-  const teksNo = nilaiLabel(kepala, /^no\.?\s*sppb\s*\/?\s*j\b/i);
+  const namaPengadaan = nilaiLabel(kepala, /^nama\s*(pengadaan|pekerjaan)\b/i);
+  // di formulir baru letaknya di bawah tabel, dengan label "Dasar Pekerjaan* / (*Jika ada)"
+  const dasarPelimpahan = nilaiLabel(baris, /^dasar\s*(pelimpahan|pekerjaan)\b[^:]*/i);
+  const teksNo = nilaiLabel(kepala, /^no\.?\s*(pr\s*(atau|\/)\s*)?sppb\s*\/?\s*j\b/i);
   const noSPPBJ = /\d/.test(teksNo) ? teksNo : "";   // titik-titik di borang kosong bukan nomor
   const noDRP = nilaiLabel(kepala, /^no\.?\s*drp\b/i);
-  const teksTanggal = nilaiLabel(kepala, /^tanggal(?!\s*dibutuhkan)\b/i);
+  const teksTanggal = nilaiLabel(kepala, /^tanggal(?!\s*dibutuhkan)(\s*pr\s*(atau|\/)\s*sppb\s*\/?\s*j)?\b/i);
   const teksMa = nilaiLabel(kepala, /^mata\s*anggaran\b/i);
 
   const { ma, asing } = bacaMa(teksMa);
@@ -415,6 +422,8 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
           harga: hargaSatuan,
         };
         if (judulItem.length) it.keterangan = judulItem.join("\n");
+        const kodeKatalog = kolom.katalog ? teks(r.s[kolom.katalog]) : "";
+        if (kodeKatalog) it.kodeKatalog = kodeKatalog;
         const dipilih = maPilihan(r) || maJudul;
         if (dipilih) {
           it.mataAnggaran = dipilih;

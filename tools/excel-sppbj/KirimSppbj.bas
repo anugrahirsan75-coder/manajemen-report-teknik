@@ -21,9 +21,8 @@ Private Const BAG As String = "ManajemenReportTeknik"
 Private Const JUDUL As String = "Kirim ke Aplikasi"
 Private Const BARIS_MAKS As Long = 400
 Private Const KOLOM_MAKS As Long = 16
-Private Const KOLOM_JUMLAH As Long = 3     ' C: baris item selalu punya kuantiti
-Private Const KOLOM_MA As Long = 11        ' K: pilihan MA per item
 Private Const VERSI As Long = 2
+Private Const LAJUR_BANTU As Long = 52     ' AZ sampai BB, di luar area cetak
 
 ' Nama lembar yang berubah sejak berkas dibuka, dan tanda isi yang sudah
 ' ditanyakan: pengingat cukup sekali untuk satu isi lembar.
@@ -99,25 +98,144 @@ End Function
 
 ' Daftar pilihan Excel hanya mengisi sel aktif. Supaya tidak memilih satu per
 ' satu: blok banyak sel lajur MA lalu pilih sekali, baris item yang terblok ikut
-' terisi. Baris judul dan baris kosong dilewati.
+' terisi. Baris judul dan baris kosong dilewati. Lajur MA dikenali dari judulnya,
+' karena letaknya beda antara formulir lama (K) dan formulir baru (L).
 Public Sub SebarkanMa(ByVal sh As Object, ByVal Target As Range)
-    Dim sel As Range, blok As Range
+    Dim sel As Range, blok As Range, r As Long, c As Long
+    Dim kolomMa As Long, kolomJumlah As Long
 
     On Error GoTo Selesai
-    If Target.Cells.Count <> 1 Or Target.Column <> KOLOM_MA Then Exit Sub
+    If Target.Cells.Count <> 1 Then Exit Sub
     If IsEmpty(Target.Value2) Or TypeName(Selection) <> "Range" Then Exit Sub
     Set blok = Selection
+    kolomMa = Target.Column
     If blok.Parent.Name <> sh.Name Or blok.Cells.Count < 2 Then Exit Sub
-    If Intersect(blok, sh.Columns(KOLOM_MA)).Cells.Count <> blok.Cells.Count Then Exit Sub
+    If Intersect(blok, sh.Columns(kolomMa)).Cells.Count <> blok.Cells.Count Then Exit Sub
+
+    For r = 1 To 40
+        If CStr(sh.Cells(r, kolomMa).Value2) = "MA" Then Exit For
+    Next r
+    If r > 40 Then Exit Sub
+    For c = 1 To kolomMa - 1
+        If CStr(sh.Cells(r, c).Value2) = "Jumlah" Then
+            kolomJumlah = c
+            Exit For
+        End If
+    Next c
+    If kolomJumlah = 0 Then Exit Sub
 
     Application.EnableEvents = False
     For Each sel In blok.Cells
         If sel.Row <> Target.Row And Not sel.EntireRow.Hidden Then
-            If Not IsEmpty(sh.Cells(sel.Row, KOLOM_JUMLAH).Value2) Then sel.Value2 = Target.Value2
+            If Not IsEmpty(sh.Cells(sel.Row, kolomJumlah).Value2) Then sel.Value2 = Target.Value2
         End If
     Next sel
 Selesai:
     Application.EnableEvents = True
+End Sub
+
+' ---- Kerangka Acuan Kerja ------------------------------------------------------
+
+' Tinggi baris KAK mengikuti panjang teks dan halaman tidak memotong satu bagian.
+' Sel gabungan tidak bisa AutoFit sendiri, jadi teksnya ditaruh sebentar di lajur
+' bantu yang selebar gabungan itu. Dijalankan tiap kali mencetak karena panjang
+' teks ikut berubah bersama nama pekerjaan.
+Public Sub RapikanKak(ByVal ws As Worksheet)
+    Dim cari As Range, awal As Long, akhir As Long, r As Long, s As Long
+    Dim sel As Range, kolom As Long, bantu As Range
+    Dim batas As Double, isi As Double, t As Double, acara As Boolean, skala As Double
+    Dim lebarKertas As Double, tinggiKertas As Double
+
+    Set cari = ws.Range("A1:K1000").Find("KERANGKA ACUAN KERJA", LookIn:=xlValues, LookAt:=xlWhole)
+    If cari Is Nothing Then Exit Sub
+    awal = cari.Row
+    akhir = ws.Cells(ws.Rows.Count, 9).End(xlUp).Row
+
+    acara = Application.EnableEvents
+    On Error GoTo Selesai
+    Application.EnableEvents = False
+    SetelLebar ws.Columns(LAJUR_BANTU), ws.Range("B1:K1").Width * 0.97
+    SetelLebar ws.Columns(LAJUR_BANTU + 1), ws.Range("C1:K1").Width * 0.97
+    SetelLebar ws.Columns(LAJUR_BANTU + 2), ws.Range("A1:K1").Width * 0.97
+
+    For r = awal To akhir
+        Set sel = Nothing
+        If ws.Cells(r, 1).MergeCells And ws.Cells(r, 1).MergeArea.Columns.Count = 11 Then
+            Set sel = ws.Cells(r, 1)
+            kolom = LAJUR_BANTU + 2
+        ElseIf ws.Cells(r, 2).MergeCells And ws.Cells(r, 2).MergeArea.Columns.Count = 10 Then
+            Set sel = ws.Cells(r, 2)
+            kolom = LAJUR_BANTU
+        ElseIf ws.Cells(r, 3).MergeCells And ws.Cells(r, 3).MergeArea.Columns.Count = 9 Then
+            Set sel = ws.Cells(r, 3)
+            kolom = LAJUR_BANTU + 1
+        End If
+        If Not sel Is Nothing Then
+            Set bantu = ws.Cells(r, kolom)
+            bantu.WrapText = True
+            bantu.Font.Name = sel.Font.Name
+            bantu.Font.Size = sel.Font.Size
+            bantu.Font.Bold = sel.Font.Bold
+            bantu.Value2 = CStr(sel.Value2)
+            ws.Rows(r).AutoFit
+            ws.Rows(r).RowHeight = ws.Rows(r).RowHeight + 3
+            bantu.Clear
+        End If
+    Next r
+
+    If ws.PageSetup.PaperSize = xlPaperA4 Then
+        lebarKertas = 595.28: tinggiKertas = 841.89
+    Else
+        lebarKertas = 612: tinggiKertas = 792
+    End If
+    skala = (lebarKertas - ws.PageSetup.LeftMargin - ws.PageSetup.RightMargin) / ws.Range("A1:K1").Width
+    If skala > 1 Then skala = 1
+    ' 45 pt untuk catatan kaki formulir di bagian bawah halaman
+    batas = (tinggiKertas - ws.PageSetup.TopMargin - 45) / skala
+
+    ws.ResetAllPageBreaks
+    ' ResetAllPageBreaks ikut mengubah skala cetak, dan skala tetap membuat kolom
+    ' kanan terpotong ke halaman lain di sebagian printer
+    With ws.PageSetup
+        .Zoom = False
+        .FitToPagesWide = 1
+        .FitToPagesTall = False
+    End With
+    ws.HPageBreaks.Add Before:=ws.Rows(awal)
+    r = awal
+    Do While r <= akhir
+        s = r + 1
+        Do While s <= akhir
+            If AwalBagianKak(ws, s) Then Exit Do
+            s = s + 1
+        Loop
+        t = ws.Range(ws.Rows(r), ws.Rows(s - 1)).Height
+        If isi > 0 And isi + t > batas Then
+            ws.HPageBreaks.Add Before:=ws.Rows(r)
+            isi = 0
+        End If
+        isi = isi + t
+        r = s
+    Loop
+Selesai:
+    Application.EnableEvents = acara
+End Sub
+
+Public Sub RapikanKakAktif()
+    On Error Resume Next
+    If TypeName(ActiveSheet) = "Worksheet" Then RapikanKak ActiveSheet
+End Sub
+
+Private Function AwalBagianKak(ByVal ws As Worksheet, ByVal r As Long) As Boolean
+    AwalBagianKak = CStr(ws.Cells(r, 1).Value2) Like "[A-Z]." _
+        Or InStr(CStr(ws.Cells(r, 9).Value2), "Dibuat di") = 1
+End Function
+
+Private Sub SetelLebar(ByVal kol As Range, ByVal lebar As Double)
+    Dim i As Long
+    For i = 1 To 3
+        kol.ColumnWidth = kol.ColumnWidth * lebar / kol.Width
+    Next i
 End Sub
 
 ' ---- pengingat saat cetak dan tutup berkas ------------------------------------
