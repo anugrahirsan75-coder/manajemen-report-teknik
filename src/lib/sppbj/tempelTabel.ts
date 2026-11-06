@@ -93,6 +93,12 @@ export interface HasilTempel {
  *                      selain itu titik desimal          7.5
  *   hanya ","        → koma desimal bila 1-2 angka
  *                      sesudahnya, selain itu ribuan     1.234,5 / 1,234,567
+ *
+ * Angka ribuan tidak pernah diawali nol, jadi 0,500 dan 0.500 selalu desimal.
+ *
+ * "10,362" tetap terbaca ribuan di sini karena sendirian bentuknya memang tidak
+ * bisa dipastikan. Kuantitas pada tabel dibaca lewat bacaKuantitas(), yang punya
+ * bukti dari lajur uang di lembar yang sama.
  */
 export function bacaAngka(teks: string): number {
   let s = (teks || "").replace(/\s| /g, "").replace(/^Rp\.?/i, "");
@@ -113,12 +119,12 @@ export function bacaAngka(teks: string): number {
     angka = parseFloat(s.split(ribuan).join("").replace(desimal, "."));
   } else if (adaTitik) {
     const bagian = s.split(".");
-    const ribuan = bagian.length > 1 && bagian.slice(1).every((b) => b.length === 3);
+    const ribuan = bagian.length > 1 && !bagian[0].startsWith("0") && bagian.slice(1).every((b) => b.length === 3);
     angka = ribuan ? parseFloat(bagian.join("")) : parseFloat(s);
   } else if (adaKoma) {
     const bagian = s.split(",");
     const ekor = bagian[bagian.length - 1];
-    const desimal = bagian.length === 2 && ekor.length > 0 && ekor.length <= 2;
+    const desimal = bagian.length === 2 && ekor.length > 0 && (ekor.length <= 2 || bagian[0].startsWith("0"));
     angka = desimal ? parseFloat(bagian.join(".")) : parseFloat(bagian.join(""));
   } else {
     angka = parseFloat(s);
@@ -140,18 +146,64 @@ export function bacaAngka(teks: string): number {
  * itu yang memisahkan pembulatan tampilan dari lembar yang memang salah
  * hitung — dan lembar yang salah hitung harus tetap ketahuan, bukan dirapikan
  * diam-diam.
+ *
+ * Tiga angka di belakang pemisah bisa berarti ribuan atau desimal. Bila salah
+ * satu pembacaan bertepatan dengan total baris, total itulah yang memutuskan.
  */
 function pulihkanKuantitas(teks: string, jumlah: number, harga: number, total: number): number {
   if (Math.abs(jumlah * harga - total) <= 1) return jumlah;
   const ekor = (teks || "").trim().match(/[.,](\d+)\s*$/);
   const desimal = ekor ? ekor[1].length : 0;
   if (desimal > 4) return jumlah;
+  if (desimal === 3) {
+    const tepat = [jumlah / 1000, jumlah * 1000].find((q) => Math.abs(q * harga - total) <= 1);
+    if (tepat !== undefined) return tepat;
+  }
   const calon = total / harga;
   if (!isFinite(calon) || calon <= 0) return jumlah;
   const faktor = Math.pow(10, desimal);
   if (Math.round(calon * faktor) / faktor !== jumlah) return jumlah;
   return calon;
 }
+
+/**
+ * Pemisah ribuan yang dipakai lembar ini, dibaca dari lajur uangnya.
+ *
+ * Kolom kuantitas repair list ada yang berformat tiga desimal: 7,000 hari,
+ * 10,362 kg, 0,500 Mtr. Sel seperti itu sendirian tidak bisa dibedakan dari
+ * ribuan. Pada Addendum Docking KMP Ariwangan seluruh 246 kuantitasnya terbaca
+ * seribu kali lipat, dan SPPB/J senilai Rp264 juta tercatat Rp264 miliar.
+ *
+ * Satu lembar Excel tampil dengan satu setelan wilayah, jadi jawabannya ada di
+ * lajur uang: kalau harga tertulis 45.500, titik adalah ribuan dan koma pada
+ * lajur kuantitas pasti desimal. Lajur uang yang memakai keduanya tidak ditebak.
+ */
+function pemisahRibuan(baris: string[][], peran: Peran[]): "." | "," | "" {
+  const lajur = peran.map((p, i) => (p === "harga" || p === "total" ? i : -1)).filter((i) => i >= 0);
+  let titik = 0;
+  let koma = 0;
+  for (const b of baris) {
+    for (const i of lajur) {
+      const s = (b[i] || "").replace(/\s/g, "").replace(/^Rp\.?/i, "");
+      if (/^[1-9]\d{0,2}(\.\d{3})+(,\d+)?$/.test(s)) titik++;
+      else if (/^[1-9]\d{0,2}(,\d{3})+(\.\d+)?$/.test(s)) koma++;
+    }
+  }
+  if (titik && !koma) return ".";
+  if (koma && !titik) return ",";
+  return "";
+}
+
+/** Baca kuantitas: pemisah yang bukan ribuan di lembar ini pasti pemisah desimal. */
+function bacaKuantitas(teks: string, ribuan: "." | "," | ""): number {
+  const s = (teks || "").replace(/\s/g, "");
+  const desimal = ribuan === "." ? "," : ribuan === "," ? "." : "";
+  if (desimal && /^-?\d+[.,]\d+$/.test(s) && s.includes(desimal)) return parseFloat(s.replace(",", "."));
+  return bacaAngka(teks);
+}
+
+/** "10,362" atau "2.000": tanpa bukti lain, bisa ribuan bisa desimal */
+const kuantitasMeragukan = (teks: string) => /^[1-9]\d{0,2}[.,]\d{3}$/.test((teks || "").trim());
 
 /** apakah sel ini berisi angka dan bukan sekadar teks yang kebetulan ada angkanya */
 const selAngka = (s: string) => /^[\s(]*(Rp\.?\s*)?-?[\d.,]+\)?\s*$/.test((s || "").trim()) && bacaAngka(s) !== 0;
@@ -488,6 +540,7 @@ const ambil = (sel: string[], peran: Peran[], p: Peran) => {
 export function uraikan(teks: string, kolom?: Peran[], kapalAwal = ""): HasilTempel {
   const baris = pecah(teks);
   const peran = kolom && kolom.length ? kolom : tebakKolom(baris);
+  const ribuan = pemisahRibuan(baris, peran);
   const out: BarisTempel[] = [];
   const lembar: HasilTempel["lembar"] = {};
   const masalah: string[] = [];
@@ -553,7 +606,7 @@ export function uraikan(teks: string, kolom?: Peran[], kapalAwal = ""): HasilTem
 
     // baris item: ada nama DAN (jumlah atau harga)
     if (nama && (selAngka(jumlahTeks) || selAngka(hargaTeks) || selAngka(totalTeks))) {
-      let jumlah = bacaAngka(jumlahTeks) || 1;
+      let jumlah = bacaKuantitas(jumlahTeks, ribuan) || 1;
       let harga = bacaAngka(hargaTeks);
       const totalLembar = bacaAngka(totalTeks) || undefined;
       // harga satuan kosong tapi total ada -> turunkan dari total
@@ -580,6 +633,10 @@ export function uraikan(teks: string, kolom?: Peran[], kapalAwal = ""): HasilTem
       if (!harga) catatan.push("harga satuan kosong");
       if (totalLembar && Math.abs(jumlah * harga - totalLembar) > 1) {
         catatan.push(`jumlah × harga = ${Math.round(jumlah * harga).toLocaleString("id-ID")}, di lembar ${totalLembar.toLocaleString("id-ID")}`);
+      }
+      // tanpa pemisah ribuan dan tanpa total, pembacaan ini tidak bisa dibuktikan
+      if (!ribuan && !totalLembar && kuantitasMeragukan(jumlahTeks)) {
+        catatan.push(`kuantitas "${jumlahTeks}" bisa berarti ${(jumlah / 1000).toLocaleString("id-ID")} atau ${jumlah.toLocaleString("id-ID")}`);
       }
       if (!kapal) catatan.push("kapal belum diketahui");
       if (catatan.length) b.catatan = catatan.join(" · ");
