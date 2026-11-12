@@ -278,6 +278,18 @@ export default function DockingPage() {
                   </button>
                 );
               })}
+            {rataTabel.nyata != null && (
+              <div className="flex items-center gap-2 border-t-2 border-slate-300 pt-2"
+                title={`rata-rata dari ${rataTabel.n} kapal yang sudah selesai docking — kapal yang masih docking tidak ikut dihitung`}>
+                <span className="w-28 sm:w-36 shrink-0 text-[11px] font-extrabold text-slate-900">Rata-rata</span>
+                <span className="flex-1 relative h-5 block">
+                  {rataTabel.target != null ? <span className="absolute inset-y-0 left-0 bg-slate-200 rounded block" style={{ width: `${(rataTabel.target / maksHari) * 100}%` }} /> : null}
+                  <span className="absolute top-1 bottom-1 left-0 rounded block bg-slate-700" style={{ width: `${Math.max(1, (rataTabel.nyata / maksHari) * 100)}%` }} />
+                </span>
+                <span className="w-16 shrink-0 text-right text-[11px] font-extrabold tabular-nums text-slate-900">{rataTabel.nyata} hr</span>
+                <span className="w-28 shrink-0 text-center text-[10px] font-bold text-slate-500">{rataTabel.n} kapal selesai</span>
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -417,7 +429,7 @@ export default function DockingPage() {
               <tfoot className="border-t-2 border-slate-300 bg-slate-50 text-slate-800">
                 <tr>
                   <td className="p-2 font-extrabold whitespace-nowrap" colSpan={3}>
-                    Rata-rata <span className="font-medium text-slate-500">({rataTabel.n} kapal selesai)</span>
+                    Rata-rata hari docking <span className="font-medium text-slate-500">({rataTabel.n} kapal selesai)</span>
                   </td>
                   <td className="p-2 text-right tabular-nums font-bold text-slate-600"
                     title={`rata-rata dari ${rataTabel.nTarget} kapal yang punya target`}>
