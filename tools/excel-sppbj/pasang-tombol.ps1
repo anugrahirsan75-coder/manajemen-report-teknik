@@ -6,6 +6,10 @@
 # formulir dengan tata letak cetak yang baru. Teks dan rumusnya dibaca dari berkas
 # tersebut, tidak ditulis di sini, jadi narasinya tetap persis sama.
 #
+# -Induk <berkas templat bersih> menaruh sheet pertama berkas itu sebagai sheet
+# induk tersembunyi, sumber tombol TAMBAH SHEET BARU. Berkas yang sudah berisi
+# bisa dirakit ulang dengan cara ini tanpa mengubah sheet-sheetnya.
+#
 # Sumber boleh .xlsx atau .xlsm hasil rakitan lama: isi lembar dipertahankan,
 # makronya diganti dengan versi terbaru. Hanya perlu dijalankan di satu laptop;
 # hasil .xlsm-nya yang dibagikan. Butuh "Trust access to the VBA project object
@@ -17,7 +21,8 @@ param(
   [Parameter(Mandatory = $true)][string]$Sumber,
   [Parameter(Mandatory = $true)][string]$Hasil,
   [string]$Url = "https://manajemen-report-teknik.vercel.app",
-  [string]$KakDari = ""
+  [string]$KakDari = "",
+  [string]$Induk = ""
 )
 $ErrorActionPreference = "Stop"
 
@@ -173,7 +178,7 @@ function Tulis($ws, $alamat, $nilai, $ukuran, $tebal, $rata) {
 }
 
 # Lembar dicetak pas selebar halaman (sekitar 68%), jadi 15 pt tercetak sekitar
-# 10 pt. Tinggi baris dan jeda halaman diatur makro RapikanKak.
+# 10 pt. Tinggi baris diatur makro RapikanKak, jeda halaman oleh AturHalamanKak.
 function Pasang-Kak($ws, $asal) {
   $RATA_TENGAH = -4108; $KIRI = -4131; $KANAN = -4152; $RATA_KIRI_KANAN = -4130
   foreach ($p in @(@("A11", "Nama Pekerjaan"), @("A9", "No. PR atau SPPB/J"), @("A10", "Tanggal PR atau SPPB/J"))) {
@@ -271,6 +276,7 @@ try {
   if ($null -eq $form) { Buat-FormKirim $vb } else { Ganti-Kode $form (Teks "FormKirim.txt") }
 
   foreach ($ws in $wb.Worksheets) {
+    if ($ws.Visible -ne -1) { continue }      # sheet induk tersembunyi tidak disentuh
     $tabel = Baca-Tabel $ws
     if ($null -eq $tabel) { continue }
     Pasang-LajurMa $ws $tabel
@@ -318,6 +324,37 @@ try {
       # Shape tidak punya PrintObject sendiri; DrawingObjects punya.
       $ws.DrawingObjects("TautanImporWeb").PrintObject = $false
     }
+
+    if (Ada-Bentuk $ws "TombolSheet") {
+      $ws.Buttons("TombolSheet").Left = $sel.Left + 6
+    }
+    else {
+      $b = $ws.Buttons().Add($sel.Left + 6, $sel.Top + 62, 190, 30)
+      $b.Name = "TombolSheet"
+      $b.Caption = "TAMBAH SHEET BARU"
+      $b.OnAction = "TambahSheet"
+      $b.Font.Bold = $true
+      $b.PrintObject = $false
+      $b.Placement = 3
+    }
+  }
+
+  if ($Induk) {
+    $ada = $false
+    foreach ($ws in $wb.Worksheets) { if ($ws.Name -eq "_TEMPLAT") { $ada = $true } }
+    if (-not $ada) {
+      $sumberInduk = Join-Path $env:TEMP "sppbj-induk-$kode.xlsm"
+      Copy-Item $Induk $sumberInduk
+      $wbInduk = $xl.Workbooks.Open($sumberInduk, 0, $true)
+      try { $wbInduk.Worksheets.Item(1).Copy([Type]::Missing, $wb.Worksheets.Item($wb.Worksheets.Count)) }
+      finally { $wbInduk.Close($false); Remove-Item $sumberInduk -ErrorAction SilentlyContinue }
+      $t = $wb.Worksheets.Item($wb.Worksheets.Count)
+      $t.Name = "_TEMPLAT"
+      # tombol salinan masih menunjuk berkas asalnya
+      $t.Buttons("TombolKirim").OnAction = "KirimKeAplikasi"
+      $t.Buttons("TombolSheet").OnAction = "TambahSheet"
+      $t.Visible = 2   # xlSheetVeryHidden
+    }
   }
   $wb.Worksheets.Item(1).Activate()
   if ($KakDari) {
@@ -330,6 +367,7 @@ try {
       $asli = @{}
       foreach ($a in "E9", "E10", "E11") { $asli[$a] = $ws.Range($a).Formula; $ws.Range($a).Value2 = $panjang }
       $xl.Run("KirimSppbj.RapikanKakAktif")
+      $xl.Run("KirimSppbj.AturHalamanKakAktif")
       foreach ($a in "E9", "E10", "E11") { $ws.Range($a).Formula = $asli[$a] }
     }
     $wb.Worksheets.Item(1).Activate()

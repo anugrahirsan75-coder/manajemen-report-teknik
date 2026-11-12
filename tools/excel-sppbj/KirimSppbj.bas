@@ -23,6 +23,7 @@ Private Const BARIS_MAKS As Long = 400
 Private Const KOLOM_MAKS As Long = 16
 Private Const VERSI As Long = 2
 Private Const LAJUR_BANTU As Long = 52     ' AZ sampai BB, di luar area cetak
+Private Const NAMA_INDUK As String = "_TEMPLAT"
 
 ' Nama lembar yang berubah sejak berkas dibuka, dan tanda isi yang sudah
 ' ditanyakan: pengingat cukup sekali untuk satu isi lembar.
@@ -94,6 +95,68 @@ Private Function PilihJenis(ByVal pesan As String) As String
     Unload f
 End Function
 
+' ---- sheet baru ----------------------------------------------------------------
+
+' SPPBJ docking terdiri dari beberapa pengadaan dalam satu berkas (Alat Kerja, ILR,
+' Cat, ...). Sheet baru disalin dari sheet induk yang tersembunyi, bukan dari sheet
+' yang sedang dibuka, supaya selalu kosong walau sheet yang aktif sudah terisi.
+Public Sub TambahSheet()
+    Dim nama As String, masalah As String
+
+    nama = Trim$(InputBox("Nama sheet baru, misalnya Alat Kerja, ILR, atau Cat:", JUDUL))
+    If Len(nama) = 0 Then Exit Sub
+    masalah = BuatSheet(nama)
+    If Len(masalah) > 0 Then MsgBox masalah, vbExclamation, JUDUL
+End Sub
+
+' Mengembalikan alasan gagal, atau teks kosong bila berhasil.
+Public Function BuatSheet(ByVal nama As String) As String
+    Dim induk As Worksheet, ws As Worksheet, i As Long, peringatan As Boolean
+
+    If Len(nama) > 31 Then
+        BuatSheet = "Nama sheet paling panjang 31 huruf."
+        Exit Function
+    End If
+    For i = 1 To Len(nama)
+        If InStr("\/?*[]:", Mid$(nama, i, 1)) > 0 Then
+            BuatSheet = "Nama sheet tidak boleh memuat tanda \ / ? * [ ] :"
+            Exit Function
+        End If
+    Next i
+    For Each ws In ThisWorkbook.Worksheets
+        If StrComp(ws.Name, nama, vbTextCompare) = 0 Then
+            BuatSheet = "Sheet """ & nama & """ sudah ada."
+            Exit Function
+        End If
+    Next ws
+
+    On Error Resume Next
+    Set induk = ThisWorkbook.Worksheets(NAMA_INDUK)
+    On Error GoTo Galat
+    If induk Is Nothing Then
+        BuatSheet = "Sheet induk tidak ada di berkas ini. Pakai templat terbaru."
+        Exit Function
+    End If
+
+    peringatan = Application.DisplayAlerts
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    induk.Visible = xlSheetVisible
+    induk.Copy After:=ThisWorkbook.ActiveSheet
+    ActiveSheet.Name = nama
+    induk.Visible = xlSheetVeryHidden
+    ThisWorkbook.Worksheets(nama).Activate
+Selesai:
+    Application.ScreenUpdating = True
+    Application.DisplayAlerts = peringatan
+    Exit Function
+
+Galat:
+    BuatSheet = "Gagal membuat sheet: " & Err.Description
+    If Not induk Is Nothing Then induk.Visible = xlSheetVeryHidden
+    Resume Selesai
+End Function
+
 ' ---- pilihan MA per item -------------------------------------------------------
 
 ' Daftar pilihan Excel hanya mengisi sel aktif. Supaya tidak memilih satu per
@@ -136,20 +199,25 @@ End Sub
 
 ' ---- Kerangka Acuan Kerja ------------------------------------------------------
 
-' Tinggi baris KAK mengikuti panjang teks dan halaman tidak memotong satu bagian.
-' Sel gabungan tidak bisa AutoFit sendiri, jadi teksnya ditaruh sebentar di lajur
-' bantu yang selebar gabungan itu. Dijalankan tiap kali mencetak karena panjang
-' teks ikut berubah bersama nama pekerjaan.
-Public Sub RapikanKak(ByVal ws As Worksheet)
-    Dim cari As Range, awal As Long, akhir As Long, r As Long, s As Long
-    Dim sel As Range, kolom As Long, bantu As Range
-    Dim batas As Double, isi As Double, t As Double, acara As Boolean, skala As Double
-    Dim lebarKertas As Double, tinggiKertas As Double
-
+Private Function CariKak(ByVal ws As Worksheet, ByRef awal As Long, ByRef akhir As Long) As Boolean
+    Dim cari As Range
     Set cari = ws.Range("A1:K1000").Find("KERANGKA ACUAN KERJA", LookIn:=xlValues, LookAt:=xlWhole)
-    If cari Is Nothing Then Exit Sub
+    If cari Is Nothing Then Exit Function
     awal = cari.Row
     akhir = ws.Cells(ws.Rows.Count, 9).End(xlUp).Row
+    CariKak = True
+End Function
+
+' Tinggi baris KAK mengikuti panjang teks, supaya tidak terpotong saat dicetak.
+' Sel gabungan tidak bisa AutoFit sendiri, jadi teksnya ditaruh sebentar di lajur
+' bantu yang selebar gabungan itu. Dijalankan tiap kali mencetak karena panjang
+' teks ikut berubah bersama nama pekerjaan. Area cetak, skala, dan jeda halaman
+' tidak disentuh: itu pengaturan pemakai.
+Public Sub RapikanKak(ByVal ws As Worksheet)
+    Dim awal As Long, akhir As Long, r As Long
+    Dim sel As Range, kolom As Long, bantu As Range, acara As Boolean
+
+    If Not CariKak(ws, awal, akhir) Then Exit Sub
 
     acara = Application.EnableEvents
     On Error GoTo Selesai
@@ -182,7 +250,18 @@ Public Sub RapikanKak(ByVal ws As Worksheet)
             bantu.Clear
         End If
     Next r
+Selesai:
+    Application.EnableEvents = acara
+End Sub
 
+' Pengaturan halaman awal: hanya dijalankan sekali saat templat dirakit, tidak
+' pernah saat mencetak, karena menghapus jeda halaman yang diatur pemakai.
+Public Sub AturHalamanKak(ByVal ws As Worksheet)
+    Dim awal As Long, akhir As Long, r As Long, s As Long
+    Dim batas As Double, isi As Double, t As Double, skala As Double
+    Dim lebarKertas As Double, tinggiKertas As Double
+
+    If Not CariKak(ws, awal, akhir) Then Exit Sub
     If ws.PageSetup.PaperSize = xlPaperA4 Then
         lebarKertas = 595.28: tinggiKertas = 841.89
     Else
@@ -217,13 +296,20 @@ Public Sub RapikanKak(ByVal ws As Worksheet)
         isi = isi + t
         r = s
     Loop
-Selesai:
-    Application.EnableEvents = acara
 End Sub
 
-Public Sub RapikanKakAktif()
+Public Sub AturHalamanKakAktif()
     On Error Resume Next
-    If TypeName(ActiveSheet) = "Worksheet" Then RapikanKak ActiveSheet
+    If TypeName(ActiveSheet) = "Worksheet" Then AturHalamanKak ActiveSheet
+End Sub
+
+' Beberapa sheet bisa dipilih sekaligus untuk dicetak bersama.
+Public Sub RapikanKakAktif()
+    Dim sh As Object
+    On Error Resume Next
+    For Each sh In ActiveWindow.SelectedSheets
+        If TypeName(sh) = "Worksheet" Then RapikanKak sh
+    Next sh
 End Sub
 
 Private Function AwalBagianKak(ByVal ws As Worksheet, ByVal r As Long) As Boolean
