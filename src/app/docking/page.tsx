@@ -17,7 +17,7 @@ import {
   DockingJadwal, KelasBki, TAHAP, JENIS_BA, JENIS_SURVEY, STATUS_SURVEY_LABEL, StatusSurvey,
   BerkasBA, dockingBaru, kelasBaru, ringkasDocking, gayaDocking, labelBA,
   TERMIN, TerminBayar, ringkasTermin, RingkasTermin, STATUS_TERMIN, MASA_PEMELIHARAAN_HARI,
-  jatuhTempoPemeliharaan, AMBANG_TERLAMBAT,
+  jatuhTempoPemeliharaan, AMBANG_TERLAMBAT, LABEL_DASAR,
   PersiapanItem, TEMPLATE_PERSIAPAN, persiapanBaru, ringkasPersiapan, STATUS_SIAP, StatusSiap,
   TambahanItem, JenisTambahan, JENIS_TAMBAHAN, tambahanBaru, ringkasTambahan,
 } from "@/lib/docking/types";
@@ -78,6 +78,30 @@ export default function DockingPage() {
   const telat = selesai.filter((b) => (b.r?.selisih ?? 0) > 0);
   const rata = selesai.length
     ? Math.round(selesai.reduce((s, b) => s + (b.r?.utama || 0), 0) / selesai.length) : 0;
+
+  /*
+   * Rata-rata untuk baris kaki tabel. Hanya kapal yang SELESAI: kapal yang
+   * masih docking angkanya terus bertambah tiap hari dan akan menarik rata-rata
+   * ke atas tanpa arti. Target & selisih dirata-rata dari kapal yang punya
+   * targetnya saja, supaya kapal tanpa target tidak dihitung sebagai target 0.
+   */
+  const rataTabel = useMemo(() => {
+    const rata1 = (xs: number[]) => (xs.length ? Math.round((xs.reduce((s, x) => s + x, 0) / xs.length) * 10) / 10 : null);
+    const nyata = selesai.map((b) => b.r?.utama).filter((x): x is number => x != null);
+    const bertarget = selesai.filter((b) => b.r?.target != null && b.r?.utama != null);
+    const perDasar = (["lintasan", "galangan", "dock"] as const).map((k) => {
+      const xs = selesai.filter((b) => b.r?.dasar === k).map((b) => b.r!.utama!);
+      return { k, n: xs.length, rata: rata1(xs) };
+    }).filter((x) => x.n);
+    return {
+      n: nyata.length,
+      nyata: rata1(nyata),
+      target: rata1(bertarget.map((b) => b.r!.target!)),
+      selisih: rata1(bertarget.map((b) => b.r!.selisih!)),
+      nTarget: bertarget.length,
+      perDasar,
+    };
+  }, [selesai]);
 
   const maksHari = Math.max(1, ...adaData.map((b) => Math.max(b.r?.target || 0, b.r?.utama || 0)));
 
@@ -163,7 +187,7 @@ export default function DockingPage() {
         <Kartu label="Sudah docking" nilai={`${selesai.length} kapal`} tint="text-emerald-700" bar="bg-emerald-500" />
         <Kartu label="Sedang docking" nilai={`${berjalan.length} kapal`} tint="text-sky-700" bar="bg-sky-500" />
         <Kartu label="Belum ada jadwal" nilai={`${KAPAL_ANGGARAN.length - adaData.length} kapal`} tint="text-slate-700" bar="bg-slate-400" />
-        <Kartu label="Rata-rata lama" nilai={rata ? `${rata} hari` : "—"} sub="keluar → tiba lintasan" tint="text-slate-900" bar="bg-slate-500" />
+        <Kartu label="Rata-rata lama" nilai={rata ? `${rata} hari` : "—"} sub={`${selesai.length} kapal selesai · rincian di kaki tabel`} tint="text-slate-900" bar="bg-slate-500" />
         <Kartu label="Lewat target" nilai={`${telat.length} kapal`} sub={telat.length ? telat.map((b) => ringkasKapal(b.kapal)).slice(0, 3).join(", ") : "tidak ada"}
           tint={telat.length ? "text-red-700" : "text-emerald-700"} bar={telat.length ? "bg-red-500" : "bg-emerald-500"} />
         <Kartu label="Termin bisa dibayar" nilai={`${nSiap} termin`}
@@ -323,7 +347,13 @@ export default function DockingPage() {
                       {b.dok?.keluarLintasan ? `${tanggalIndo(b.dok.keluarLintasan)} → ${b.dok.tibaLintasan ? tanggalIndo(b.dok.tibaLintasan) : "…"}` : "—"}
                     </td>
                     <td className="p-2 text-right tabular-nums text-slate-600">{r?.target ?? "—"}</td>
-                    <td className="p-2 text-right tabular-nums font-bold text-slate-900">{r?.utama ?? "—"}</td>
+                    <td className="p-2 text-right tabular-nums font-bold text-slate-900"
+                      title={r?.dasar ? `${LABEL_DASAR[r.dasar].panjang}: ${tanggalIndo(r.dariTanggal || "")} → ${tanggalIndo(r.sampaiTanggal || "")}` : undefined}>
+                      {r?.utama ?? "—"}
+                      {r?.dasar && (
+                        <span className="block whitespace-nowrap text-[9.5px] font-medium text-slate-400">{LABEL_DASAR[r.dasar].singkat}</span>
+                      )}
+                    </td>
                     <td className={`p-2 text-right tabular-nums font-bold ${r?.selisih == null ? "text-slate-300" : r.selisih > 0 ? "text-red-700" : "text-emerald-700"}`}>
                       {r?.selisih == null ? "—" : `${r.selisih > 0 ? "+" : ""}${r.selisih}`}
                     </td>
@@ -383,8 +413,33 @@ export default function DockingPage() {
                 );
               })}
             </tbody>
+            {rataTabel.n > 0 && (
+              <tfoot className="border-t-2 border-slate-300 bg-slate-50 text-slate-800">
+                <tr>
+                  <td className="p-2 font-extrabold whitespace-nowrap" colSpan={3}>
+                    Rata-rata <span className="font-medium text-slate-500">({rataTabel.n} kapal selesai)</span>
+                  </td>
+                  <td className="p-2 text-right tabular-nums font-bold text-slate-600"
+                    title={`rata-rata dari ${rataTabel.nTarget} kapal yang punya target`}>
+                    {rataTabel.target ?? "—"}
+                  </td>
+                  <td className="p-2 text-right tabular-nums font-extrabold text-slate-900">{rataTabel.nyata} hr</td>
+                  <td className={`p-2 text-right tabular-nums font-bold ${rataTabel.selisih == null ? "text-slate-300" : rataTabel.selisih > 0 ? "text-red-700" : "text-emerald-700"}`}>
+                    {rataTabel.selisih == null ? "—" : `${rataTabel.selisih > 0 ? "+" : ""}${rataTabel.selisih}`}
+                  </td>
+                  <td className="p-2 text-[10.5px] text-slate-500" colSpan={6}>
+                    {rataTabel.perDasar.map((x) => `${LABEL_DASAR[x.k].singkat}: ${x.rata} hr (${x.n} kapal)`).join(" · ")}
+                  </td>
+                </tr>
+              </tfoot>
+            )}
           </table>
         </div>
+        <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
+          <b>Nyata</b> dihitung dari keluar lintasan sampai tiba di lintasan bila kedua tanggal itu terisi; bila belum,
+          dari tiba di galangan (BA Serah Terima) sampai selesai pekerjaan (BA Selesai). Dasar tiap kapal tertulis di bawah angkanya.
+          Hari dihitung sebagai selisih tanggal (tanggal akhir dikurangi tanggal awal).
+        </p>
       </section>
 
       {edit && (

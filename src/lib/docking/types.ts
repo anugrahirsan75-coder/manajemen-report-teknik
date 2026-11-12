@@ -399,7 +399,26 @@ export interface RingkasDocking {
   tepat: boolean | null;
   mulai?: string;
   akhir?: string;
+  /**
+   * Dari mana angka `utama` dihitung. Kapal yang punya tanggal keluar & tiba
+   * lintasan dihitung dari situ; yang hanya punya tanggal BA dihitung dari
+   * BA Serah Terima → BA Selesai. Dua dasar itu bisa berbeda beberapa hari
+   * (perjalanan ke galangan), jadi dasarnya harus terbaca di samping angkanya.
+   */
+  dasar: DasarHari | null;
+  /** tanggal awal & akhir yang benar-benar dipakai menghitung `utama` */
+  dariTanggal?: string;
+  sampaiTanggal?: string;
 }
+
+export type DasarHari = "lintasan" | "galangan" | "dock" | "berjalan";
+
+export const LABEL_DASAR: Record<DasarHari, { singkat: string; panjang: string }> = {
+  lintasan: { singkat: "keluar → tiba lintasan", panjang: "Keluar lintasan → Tiba di lintasan" },
+  galangan: { singkat: "BA serah terima → BA selesai", panjang: "Tiba di galangan (BA Serah Terima) → Selesai pekerjaan (BA Selesai)" },
+  dock: { singkat: "naik → turun dock", panjang: "Naik dock (BA Naik Dok) → Turun dock (BA Turun Dok)" },
+  berjalan: { singkat: "berjalan s.d. hari ini", panjang: "Sejak tanggal mulai docking sampai hari ini" },
+};
 
 export function ringkasDocking(d: DockingJadwal, now = new Date()): RingkasDocking {
   const target = d.targetHari && d.targetHari > 0 ? d.targetHari : null;
@@ -419,11 +438,18 @@ export function ringkasDocking(d: DockingJadwal, now = new Date()): RingkasDocki
   // angka utama: off-lintasan bila lengkap, kalau tidak pakai lama di galangan / di atas dock
   const dipakai = offLintasan ?? diGalangan ?? diAtasDock ?? berjalan;
   const selisih = target != null && dipakai != null ? dipakai - target : null;
+  const [dasar, dariTanggal, sampaiTanggal]: [DasarHari | null, string?, string?] =
+    offLintasan != null ? ["lintasan", d.keluarLintasan, d.tibaLintasan]
+      : diGalangan != null ? ["galangan", d.tibaGalangan, d.selesaiPekerjaan]
+      : diAtasDock != null ? ["dock", d.naikDock, d.turunDock]
+      : berjalan != null ? ["berjalan", awal, hariIni]
+      : [null];
   return {
     status, offLintasan, diGalangan, diAtasDock, berjalan, target, selisih, utama: dipakai,
     tepat: selisih == null ? null : selisih <= 0,
     mulai: awal,
     akhir: d.tibaLintasan || d.kembaliLintasan || d.selesaiPekerjaan || d.turunDock,
+    dasar, dariTanggal, sampaiTanggal,
   };
 }
 
