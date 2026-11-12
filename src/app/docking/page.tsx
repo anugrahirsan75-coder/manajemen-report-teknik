@@ -89,7 +89,7 @@ export default function DockingPage() {
     const rata1 = (xs: number[]) => (xs.length ? Math.round((xs.reduce((s, x) => s + x, 0) / xs.length) * 10) / 10 : null);
     const nyata = selesai.map((b) => b.r?.utama).filter((x): x is number => x != null);
     const bertarget = selesai.filter((b) => b.r?.target != null && b.r?.utama != null);
-    const perDasar = (["lintasan", "galangan", "dock"] as const).map((k) => {
+    const perDasar = (["naik_kembali", "naik_selesai", "lintasan", "galangan"] as const).map((k) => {
       const xs = selesai.filter((b) => b.r?.dasar === k).map((b) => b.r!.utama!);
       return { k, n: xs.length, rata: rata1(xs) };
     }).filter((x) => x.n);
@@ -245,7 +245,7 @@ export default function DockingPage() {
       <section className="mt-4 bg-white rounded-2xl ring-line elev-md p-5">
         <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 mb-1">
           <h3 className="font-bold text-slate-800">Lama docking vs target — {tahun}</h3>
-          <span className="text-[11px] text-slate-500">batang abu = target hari · batang berwarna = kenyataan (keluar → tiba di lintasan)</span>
+          <span className="text-[11px] text-slate-500">batang abu = target hari · batang berwarna = hari docking (BA naik dok → kembali ke lintasan)</span>
           <div className="ml-auto flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px] text-slate-600">
             <Leg kelas="bg-emerald-500" teks="lebih cepat" /><Leg kelas="bg-amber-500" teks="pas target" />
             <Leg kelas="bg-red-500" teks="lewat target" /><Leg kelas="bg-sky-500" teks="masih berjalan" />
@@ -323,7 +323,7 @@ export default function DockingPage() {
               <tr>
                 <th className="p-2 text-left">Kapal</th>
                 <th className="p-2 text-left">Galangan</th>
-                <th className="p-2 text-left whitespace-nowrap">Keluar → Tiba lintasan</th>
+                <th className="p-2 text-left whitespace-nowrap">Naik dok → Kembali lintasan</th>
                 <th className="p-2 text-right">Target</th>
                 <th className="p-2 text-right">Nyata</th>
                 <th className="p-2 text-right">Selisih</th>
@@ -344,7 +344,7 @@ export default function DockingPage() {
                     <td className="p-2 font-semibold text-slate-800 whitespace-nowrap">{b.kapal}</td>
                     <td className="p-2 text-slate-600">{b.dok?.galangan || "—"}</td>
                     <td className="p-2 text-slate-600 whitespace-nowrap">
-                      {b.dok?.keluarLintasan ? `${tanggalIndo(b.dok.keluarLintasan)} → ${b.dok.tibaLintasan ? tanggalIndo(b.dok.tibaLintasan) : "…"}` : "—"}
+                      {r?.naik ? `${tanggalIndo(r.naik)} → ${r.kembali ? tanggalIndo(r.kembali) : "…"}` : "—"}
                     </td>
                     <td className="p-2 text-right tabular-nums text-slate-600">{r?.target ?? "—"}</td>
                     <td className="p-2 text-right tabular-nums font-bold text-slate-900"
@@ -436,9 +436,10 @@ export default function DockingPage() {
           </table>
         </div>
         <p className="mt-2 text-[11px] leading-relaxed text-slate-500">
-          <b>Nyata</b> dihitung dari keluar lintasan sampai tiba di lintasan bila kedua tanggal itu terisi; bila belum,
-          dari tiba di galangan (BA Serah Terima) sampai selesai pekerjaan (BA Selesai). Dasar tiap kapal tertulis di bawah angkanya.
-          Hari dihitung sebagai selisih tanggal (tanggal akhir dikurangi tanggal awal).
+          <b>Nyata</b> = hari docking, dihitung dari <b>BA Naik Dok</b> sampai <b>kembali ke lintasan</b> (isian tahap
+          &ldquo;Kembali ke Lintasan&rdquo;, atau tanggal BA Serah Terima Kembali bila tahapnya belum diisi). Bila tanggal kembali
+          ke lintasan belum ada, angkanya <i>sementara</i> dihitung sampai BA Selesai Pekerjaan. Dasar tiap kapal tertulis di bawah
+          angkanya. Hari dihitung sebagai selisih tanggal (tanggal akhir dikurangi tanggal awal).
         </p>
       </section>
 
@@ -543,8 +544,8 @@ function TabJadwal({ nilai, set, r }: { nilai: DockingJadwal; set: (p: Partial<D
       </div>
 
       <div className="mt-4 grid sm:grid-cols-4 gap-2">
-        <Hitung label="Off lintasan" nilai={r.offLintasan ?? r.berjalan} sat="hari" sub="keluar → tiba lintasan" tebal />
-        <Hitung label="Di galangan" nilai={r.diGalangan} sat="hari" sub="tiba → selesai kerja" />
+        <Hitung label="Hari docking" nilai={r.utama} sat="hari" sub={r.dasar ? LABEL_DASAR[r.dasar].singkat : "naik dok → kembali lintasan"} tebal />
+        <Hitung label="Off lintasan" nilai={r.offLintasan} sat="hari" sub="keluar → tiba lintasan" />
         <Hitung label="Di atas dock" nilai={r.diAtasDock} sat="hari" sub="naik → turun dock" />
         <Hitung label="Selisih target" nilai={r.selisih} sat="hari" sub={r.target ? `target ${r.target} hari` : "target belum diisi"} tanda />
       </div>

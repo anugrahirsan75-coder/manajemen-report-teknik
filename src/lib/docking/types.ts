@@ -392,18 +392,21 @@ export interface RingkasDocking {
   diAtasDock: number | null;
   /** berjalan berapa hari sampai hari ini (untuk yang belum selesai) */
   berjalan: number | null;
-  /** angka yang dipakai grafik & tabel (off-lintasan bila lengkap, else di galangan) */
+  /** HARI DOCKING: BA Naik Dok → Kembali ke lintasan (lihat `dasar` bila datanya belum lengkap) */
   utama: number | null;
+  /** tanggal naik dock & kembali ke lintasan yang dipakai (isian tahap, atau tanggal BA-nya) */
+  naik?: string;
+  kembali?: string;
   target: number | null;
   selisih: number | null;      // + = lewat target
   tepat: boolean | null;
   mulai?: string;
   akhir?: string;
   /**
-   * Dari mana angka `utama` dihitung. Kapal yang punya tanggal keluar & tiba
-   * lintasan dihitung dari situ; yang hanya punya tanggal BA dihitung dari
-   * BA Serah Terima → BA Selesai. Dua dasar itu bisa berbeda beberapa hari
-   * (perjalanan ke galangan), jadi dasarnya harus terbaca di samping angkanya.
+   * Dari mana angka `utama` dihitung. Ukuran bakunya BA Naik Dok → Kembali ke
+   * lintasan; bila tanggal kembali ke lintasan belum ada, angka sementara
+   * dihitung sampai BA Selesai Pekerjaan. Dasarnya harus terbaca di samping
+   * angkanya, supaya angka sementara tidak dibandingkan seolah-olah final.
    */
   dasar: DasarHari | null;
   /** tanggal awal & akhir yang benar-benar dipakai menghitung `utama` */
@@ -411,14 +414,19 @@ export interface RingkasDocking {
   sampaiTanggal?: string;
 }
 
-export type DasarHari = "lintasan" | "galangan" | "dock" | "berjalan";
+export type DasarHari = "naik_kembali" | "naik_selesai" | "lintasan" | "galangan" | "berjalan";
 
 export const LABEL_DASAR: Record<DasarHari, { singkat: string; panjang: string }> = {
-  lintasan: { singkat: "keluar → tiba lintasan", panjang: "Keluar lintasan → Tiba di lintasan" },
-  galangan: { singkat: "BA serah terima → BA selesai", panjang: "Tiba di galangan (BA Serah Terima) → Selesai pekerjaan (BA Selesai)" },
-  dock: { singkat: "naik → turun dock", panjang: "Naik dock (BA Naik Dok) → Turun dock (BA Turun Dok)" },
-  berjalan: { singkat: "berjalan s.d. hari ini", panjang: "Sejak tanggal mulai docking sampai hari ini" },
+  naik_kembali: { singkat: "naik dok → kembali lintasan", panjang: "BA Naik Dok → Kembali ke lintasan" },
+  naik_selesai: { singkat: "naik dok → BA selesai (sementara)", panjang: "BA Naik Dok → BA Selesai Pekerjaan — tanggal kembali ke lintasan belum ada" },
+  lintasan: { singkat: "keluar → tiba lintasan", panjang: "Keluar lintasan → Tiba di lintasan (tanggal naik dock belum ada)" },
+  galangan: { singkat: "tiba galangan → selesai", panjang: "Tiba di galangan → Selesai pekerjaan (tanggal naik dock belum ada)" },
+  berjalan: { singkat: "berjalan s.d. hari ini", panjang: "Sejak naik dock (atau mulai docking) sampai hari ini" },
 };
+
+/** tanggal sebuah BA dari daftar berkas, dipakai bila tanggal tahapnya belum diisi */
+const tanggalBA = (d: DockingJadwal, jenis: string) =>
+  (d.berkas || []).find((b) => b.jenis === jenis && /^\d{4}-\d{2}-\d{2}$/.test(b.tanggal || ""))?.tanggal;
 
 export function ringkasDocking(d: DockingJadwal, now = new Date()): RingkasDocking {
   const target = d.targetHari && d.targetHari > 0 ? d.targetHari : null;
@@ -426,29 +434,44 @@ export function ringkasDocking(d: DockingJadwal, now = new Date()): RingkasDocki
   const diGalangan = hariAntara(d.tibaGalangan, d.selesaiPekerjaan);
   const diAtasDock = hariAntara(d.naikDock, d.turunDock);
 
+  /*
+   * HARI DOCKING = BA Naik Dok → Kembali ke lintasan.
+   * Tanggal tahap yang diisi didahulukan; bila kosong, tanggal BA-nya dipakai
+   * (BA Naik Dok untuk naik, BA Serah Terima Kembali untuk kembali ke lintasan
+   * — keduanya memang penanda tahap itu di JENIS_BA).
+   */
+  const naik = d.naikDock || tanggalBA(d, "naik_dok");
+  const kembali = d.kembaliLintasan || tanggalBA(d, "serah_kembali");
+  const selesaiKerja = d.selesaiPekerjaan || tanggalBA(d, "selesai");
+  const naikKembali = hariAntara(naik, kembali);
+  const naikSelesai = hariAntara(naik, selesaiKerja);
+
   // Status tahan data separuh: berita acara sering hanya memuat sebagian tanggal.
-  const sudahSelesai = !!(d.tibaLintasan || d.kembaliLintasan || d.selesaiPekerjaan);
-  const sudahMulai = !!(d.keluarLintasan || d.berangkatGalangan || d.tibaGalangan || d.naikDock);
+  const sudahSelesai = !!(d.tibaLintasan || kembali || selesaiKerja);
+  const sudahMulai = !!(d.keluarLintasan || d.berangkatGalangan || d.tibaGalangan || naik);
   const status: StatusDocking = sudahSelesai ? "selesai" : sudahMulai ? "berjalan" : "rencana";
 
   const hariIni = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
-  const awal = d.keluarLintasan || d.berangkatGalangan || d.tibaGalangan || d.naikDock;
-  const berjalan = status === "berjalan" ? hariAntara(awal, hariIni) : null;
+  const awal = d.keluarLintasan || d.berangkatGalangan || d.tibaGalangan || naik;
+  // kapal yang masih docking dihitung dari naik dock bila sudah naik
+  const awalBerjalan = naik || awal;
+  const berjalan = status === "berjalan" ? hariAntara(awalBerjalan, hariIni) : null;
 
-  // angka utama: off-lintasan bila lengkap, kalau tidak pakai lama di galangan / di atas dock
-  const dipakai = offLintasan ?? diGalangan ?? diAtasDock ?? berjalan;
-  const selisih = target != null && dipakai != null ? dipakai - target : null;
-  const [dasar, dariTanggal, sampaiTanggal]: [DasarHari | null, string?, string?] =
-    offLintasan != null ? ["lintasan", d.keluarLintasan, d.tibaLintasan]
-      : diGalangan != null ? ["galangan", d.tibaGalangan, d.selesaiPekerjaan]
-      : diAtasDock != null ? ["dock", d.naikDock, d.turunDock]
-      : berjalan != null ? ["berjalan", awal, hariIni]
-      : [null];
+  const [dasar, dariTanggal, sampaiTanggal, dipakai]: [DasarHari | null, string?, string?, (number | null)?] =
+    naikKembali != null ? ["naik_kembali", naik, kembali, naikKembali]
+      : naikSelesai != null ? ["naik_selesai", naik, selesaiKerja, naikSelesai]
+      : offLintasan != null ? ["lintasan", d.keluarLintasan, d.tibaLintasan, offLintasan]
+      : diGalangan != null ? ["galangan", d.tibaGalangan, d.selesaiPekerjaan, diGalangan]
+      : berjalan != null ? ["berjalan", awalBerjalan, hariIni, berjalan]
+      : [null, undefined, undefined, null];
+  const utama = dipakai ?? null;
+  const selisih = target != null && utama != null ? utama - target : null;
   return {
-    status, offLintasan, diGalangan, diAtasDock, berjalan, target, selisih, utama: dipakai,
+    status, offLintasan, diGalangan, diAtasDock, berjalan, target, selisih, utama,
     tepat: selisih == null ? null : selisih <= 0,
     mulai: awal,
-    akhir: d.tibaLintasan || d.kembaliLintasan || d.selesaiPekerjaan || d.turunDock,
+    akhir: d.tibaLintasan || kembali || selesaiKerja || d.turunDock,
+    naik, kembali,
     dasar, dariTanggal, sampaiTanggal,
   };
 }
