@@ -362,9 +362,6 @@ export default function DockingPage() {
                     <td className="p-2 text-right tabular-nums font-bold text-slate-900"
                       title={r?.dasar ? `${LABEL_DASAR[r.dasar].panjang}: ${tanggalIndo(r.dariTanggal || "")} → ${tanggalIndo(r.sampaiTanggal || "")}` : undefined}>
                       {r?.utama ?? "—"}
-                      {r?.dasar && (
-                        <span className="block whitespace-nowrap text-[9.5px] font-medium text-slate-400">{LABEL_DASAR[r.dasar].singkat}</span>
-                      )}
                     </td>
                     <td className={`p-2 text-right tabular-nums font-bold ${r?.selisih == null ? "text-slate-300" : r.selisih > 0 ? "text-red-700" : "text-emerald-700"}`}>
                       {r?.selisih == null ? "—" : `${r.selisih > 0 ? "+" : ""}${r.selisih}`}
