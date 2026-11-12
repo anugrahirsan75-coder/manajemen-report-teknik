@@ -2,7 +2,7 @@ import path from "path";
 import ExcelJS from "exceljs";
 import { bubuhiFormulir } from "./ttd";
 import { MaterialRequest, MaterialItem, itemKategori, itemPOText } from "./types";
-import { KAPAL_DB, kapalKode, kapalCostCenter, descByKode } from "./db";
+import { KAPAL_DB, kapalByNama, kapalKode, kapalCostCenter, descByKode } from "./db";
 import { bulanTahun, bulanRomawi, rupiah, terbilangRupiah } from "@/lib/format";
 
 const tpl = (n: string) => path.join(process.cwd(), "templates", "material", n);
@@ -33,16 +33,33 @@ function applyFit(ws: ExcelJS.Worksheet, fitH = 0) {
   ws.pageSetup = { ...ws.pageSetup, fitToPage: true, fitToWidth: 1, fitToHeight: fitH, horizontalCentered: true };
 }
 
-// urutan kapal: SEMUA KAPAL dulu, lalu sesuai KAPAL_DB; hanya yang punya item
-function kapalGroups(items: MaterialItem[]): { kapal: string; items: MaterialItem[] }[] {
-  const order = KAPAL_DB.map((k) => k.nama);
-  const groups: { kapal: string; items: MaterialItem[] }[] = [];
-  for (const nama of order) {
-    const its = items.filter((i) => i.kapal === nama);
-    if (its.length) groups.push({ kapal: nama, items: its });
+/**
+ * Kelompokkan item per kapal, urut KAPAL_DB lalu kapal lain menurut kemunculan.
+ *
+ * Nama kapal dicocokkan LONGGAR lewat kapalByNama (titik, huruf besar-kecil,
+ * dan spasi diabaikan). Dulu dicocokkan huruf per huruf: item hasil tempel dari
+ * Excel bertuliskan "KMP PORTLINK VIII" atau "KMP. Portlink VIII " tidak sama
+ * dengan "KMP. PORTLINK VIII" di daftar, sehingga seluruh itemnya terbuang dan
+ * Template Pendaftaran Material keluar kosong tanpa peringatan apa pun.
+ *
+ * Item yang kapalnya tidak dikenal tidak pernah dibuang — dikelompokkan di
+ * belakang dengan nama apa adanya, supaya tetap terlihat dan bisa diperbaiki.
+ */
+function kelompokKapal(items: MaterialItem[], kosong: string): { kapal: string; items: MaterialItem[] }[] {
+  const urut = KAPAL_DB.map((k) => k.nama);
+  const peta = new Map<string, MaterialItem[]>();
+  for (const it of items) {
+    const nama = kapalByNama(it.kapal)?.nama || (it.kapal || "").trim() || kosong;
+    peta.set(nama, [...(peta.get(nama) || []), it]);
   }
-  return groups;
+  const posisi = (n: string) => { const i = urut.indexOf(n); return i < 0 ? urut.length : i; };
+  return Array.from(peta.keys())
+    .sort((a, b) => posisi(a) - posisi(b))
+    .map((kapal) => ({ kapal, items: peta.get(kapal)! }));
 }
+
+// Template Pendaftaran: item tanpa kapal masuk "SEMUA KAPAL" seperti isian bawaannya
+const kapalGroups = (items: MaterialItem[]) => kelompokKapal(items, "SEMUA KAPAL");
 
 // ---------- 1. Template Pendaftaran Material (SAP) ----------
 export async function fillPendaftaran(req: MaterialRequest): Promise<Buffer> {
@@ -129,19 +146,7 @@ function fillPenawaranRows(ws: ExcelJS.Worksheet, items: MaterialItem[], firstRo
 }
 
 // urutan kapal utk SC: KAPAL_DB dulu, lalu kapal lain yg muncul (tak hilang)
-function scGroups(items: MaterialItem[]): { kapal: string; items: MaterialItem[] }[] {
-  const order = KAPAL_DB.map((k) => k.nama);
-  const seen = new Set<string>();
-  const groups: { kapal: string; items: MaterialItem[] }[] = [];
-  const push = (nama: string) => {
-    if (seen.has(nama)) return;
-    const its = items.filter((i) => (i.kapal || "").trim() === nama);
-    if (its.length) { groups.push({ kapal: nama, items: its }); seen.add(nama); }
-  };
-  order.forEach(push);
-  items.forEach((i) => push((i.kapal || "").trim() || "(Tanpa Kapal)"));
-  return groups;
-}
+const scGroups = (items: MaterialItem[]) => kelompokKapal(items, "(Tanpa Kapal)");
 
 // ---------- 3. Penawaran Suku Cadang ----------
 // Dikelompokkan per KAPAL (header) + per MESIN (sub-header) + spasi 1 baris antar kapal,
