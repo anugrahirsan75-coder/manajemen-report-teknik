@@ -44,8 +44,10 @@ export function RangkaPortal({ aku, children }: { aku: Aku | null; children: Rea
     // arsip berkas tidak rutin: berita acara, temuan, bunker, serah terima
     { href: "/portal/dokumen", label: "Dokumen", ikon: "🗂️" },
     mesin
-      ? { href: "/portal/stok", label: "Stok Filter", ikon: "⚙️" }
+      ? { href: "/portal/stok", label: "Filter", ikon: "⚙️" }
       : { href: "/portal/alkes", label: "Alkes", ikon: "🩺" },
+    // persediaan suku cadang (TF-101.00.11): Deck dan Mesin, masing-masing lembarnya sendiri
+    { href: "/portal/suku-cadang", label: "Sparepart", ikon: "🔩" },
   ];
 
   const keluar = async () => {

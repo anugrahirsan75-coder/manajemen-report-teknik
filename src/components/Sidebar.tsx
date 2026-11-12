@@ -95,6 +95,7 @@ const KELOMPOK: Kelompok[] = [
       { href: "/dokumentasi", icon: "folder", label: "Dokumentasi Pekerjaan", desc: "745 folder foto di arsip laptop" },
       { href: "/sensor", icon: "sinyal", label: "Monitoring Sensor", desc: "Sensor Regional 4" },
       { href: "/armada-data", icon: "kotak", label: "Dokumen Kapal", desc: "Arsip berkas, stok & alkes" },
+      { href: "/stok-suku-cadang", icon: "kotak", label: "Stok Suku Cadang", desc: "Persediaan di atas kapal" },
     ],
   },
   {

@@ -25,7 +25,9 @@ export default function RangkaAplikasi({ sidebar, loneng, children }: {
     || path.startsWith("/uji-permintaan")
     || path.startsWith("/kinerja-anggaran") || path.startsWith("/layar-sertifikat")
     || path.startsWith("/portal")
-    || path.startsWith("/scm");
+    || path.startsWith("/scm")
+    // lembar cetak borang suku cadang: hanya kertasnya, tanpa menu
+    || path.startsWith("/stok-suku-cadang/cetak");
 
   if (terbuka) return <div className="min-h-screen">{children}</div>;
 
