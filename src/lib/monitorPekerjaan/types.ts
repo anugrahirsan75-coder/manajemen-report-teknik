@@ -44,6 +44,27 @@ export const STATUS_BAR: Record<StatusPekerjaan, string> = {
 /** pekerjaan yang masih harus dipikirkan — selesai & batal sudah lepas dari tangan */
 export const masihAktif = (s: StatusPekerjaan) => s !== "selesai" && s !== "batal";
 
+/**
+ * Tim Teknik Cabang Ternate — calon pemilik pekerjaan.
+ *
+ * Ditulis tetap supaya tiap orang selalu muncul di rekap per pemilik, juga
+ * yang belum memegang pekerjaan apa pun: "0 aktif" adalah keterangan, bukan
+ * kekosongan yang boleh disembunyikan. Urutannya dipakai apa adanya. Nama di
+ * luar daftar ini tetap boleh diketik di borang.
+ */
+export const TIM: { nama: string; jabatan: string }[] = [
+  { nama: "Siti", jabatan: "Staf Teknik" },
+  { nama: "Irsan", jabatan: "Staf Teknik" },
+  { nama: "Okmy", jabatan: "Marine Superintendent" },
+  { nama: "Stephen", jabatan: "Marine Superintendent" },
+  { nama: "Syamsul Rijal", jabatan: "Technical Superintendent" },
+  { nama: "Supriady", jabatan: "SPV" },
+];
+
+/** jabatan anggota tim; kosong untuk nama di luar daftar */
+export const jabatanDari = (nama: string): string =>
+  TIM.find((t) => t.nama.toLowerCase() === (nama || "").trim().toLowerCase())?.jabatan || "";
+
 export const KATEGORI = ["Docking", "Rutin", "Investasi", "Administrasi", "Lainnya"] as const;
 export type Kategori = (typeof KATEGORI)[number];
 

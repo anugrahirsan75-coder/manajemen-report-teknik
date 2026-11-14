@@ -17,8 +17,8 @@ import { useEffect, useMemo, useState } from "react";
 import { MonitorPekerjaanProvider, useMonitorPekerjaan, useNamaSaya } from "@/lib/monitorPekerjaan/store";
 import {
   BOBOT_PRIORITAS, KATEGORI, KATEGORI_WARNA, PRIORITAS, PRIORITAS_WARNA, Pekerjaan,
-  STATUS_BAR, STATUS_LABEL, STATUS_WARNA, StatusPekerjaan, URUTAN_STATUS,
-  adalahTautan, masihAktif, pekerjaanKosong, sisaHari, sisaKeMinggu, tandaTenggat,
+  STATUS_BAR, STATUS_LABEL, STATUS_WARNA, StatusPekerjaan, TIM, URUTAN_STATUS,
+  adalahTautan, jabatanDari, masihAktif, pekerjaanKosong, sisaHari, sisaKeMinggu, tandaTenggat,
 } from "@/lib/monitorPekerjaan/types";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
@@ -85,27 +85,40 @@ function Isi() {
     return n;
   }, [items]);
 
-  /** rekap per pemilik — siapa memegang berapa, dan berapa yang telat */
+  /**
+   * Rekap per pemilik — siapa memegang berapa, dan berapa yang telat.
+   * Anggota tim selalu tampil dengan urutan tetap, walau belum memegang apa pun;
+   * nama lain menyusul, yang paling banyak telat lebih dulu.
+   */
   const perPemilik = useMemo(() => {
-    const peta = new Map<string, { nama: string; aktif: number; telat: number }>();
+    type Rekap = { nama: string; jabatan: string; aktif: number; telat: number; tim: boolean };
+    const peta = new Map<string, Rekap>();
+    TIM.forEach((t) => peta.set(t.nama.toLowerCase(), { ...t, aktif: 0, telat: 0, tim: true }));
     items.forEach((p) => {
       (p.pemilik.length ? p.pemilik : ["(tanpa pemilik)"]).forEach((nama) => {
         const kunci = nama.trim().toLowerCase();
-        const d = peta.get(kunci) || { nama, aktif: 0, telat: 0 };
+        const d = peta.get(kunci) || { nama, jabatan: "", aktif: 0, telat: 0, tim: false };
         if (masihAktif(p.status)) d.aktif += 1;
         if (telat(p)) d.telat += 1;
         peta.set(kunci, d);
       });
     });
-    return Array.from(peta.values()).sort((a, b) => b.telat - a.telat || b.aktif - a.aktif || a.nama.localeCompare(b.nama));
+    const semua = Array.from(peta.values());
+    const lain = semua.filter((d) => !d.tim)
+      .sort((a, b) => b.telat - a.telat || b.aktif - a.aktif || a.nama.localeCompare(b.nama));
+    return [...semua.filter((d) => d.tim), ...lain];
   }, [items]);
 
+  /** nama untuk pilihan pemilik: tim dulu (urutan tetap), lalu nama lain dari data */
   const namaDikenal = useMemo(() => {
     const s = new Map<string, string>();
+    TIM.forEach((t) => s.set(t.nama.toLowerCase(), t.nama));
+    const lain = new Map<string, string>();
     [namaSaya, ...items.flatMap((p) => p.pemilik)].forEach((n) => {
-      if (n.trim()) s.set(n.trim().toLowerCase(), s.get(n.trim().toLowerCase()) || n.trim());
+      const k = n.trim().toLowerCase();
+      if (k && !s.has(k) && !lain.has(k)) lain.set(k, n.trim());
     });
-    return Array.from(s.values()).sort((a, b) => a.localeCompare(b));
+    return [...Array.from(s.values()), ...Array.from(lain.values()).sort((a, b) => a.localeCompare(b))];
   }, [items, namaSaya]);
 
   const kapalAda = useMemo(
@@ -239,27 +252,34 @@ function Isi() {
         </div>
       </section>
 
-      {perPemilik.length > 1 && (
-        <section className="mt-3 flex gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible">
-          {perPemilik.map((d) => {
-            const nilai = d.nama === "(tanpa pemilik)" ? "__tanpa" : d.nama;
-            const dipilih = fPemilik === nilai || (nilai !== "__tanpa" && !!fPemilik && samaNama(fPemilik, nilai));
-            return (
-              <button key={d.nama} onClick={() => setFPemilik(dipilih ? "" : nilai)}
-                className={`shrink-0 rounded-xl px-3 py-1.5 text-[11px] ring-1 transition ${
-                  dipilih ? "bg-slate-900 text-white ring-slate-900"
-                    : "bg-white text-slate-700 ring-slate-200 hover:ring-slate-400"}`}>
-                <b>{d.nama}</b>
-                <span className="ml-1.5 tabular-nums opacity-80">{d.aktif} aktif</span>
+      <section className="-mx-3 mt-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0"
+        aria-label="Rekap per pemilik">
+        {perPemilik.map((d) => {
+          const nilai = d.nama === "(tanpa pemilik)" ? "__tanpa" : d.nama;
+          const dipilih = fPemilik === nilai || (nilai !== "__tanpa" && !!fPemilik && samaNama(fPemilik, nilai));
+          const saya = samaNama(d.nama, namaSaya);
+          return (
+            <button key={d.nama} onClick={() => setFPemilik(dipilih ? "" : nilai)} aria-pressed={dipilih}
+              className={`shrink-0 rounded-xl px-3 py-1.5 text-left text-[11px] ring-1 transition ${
+                dipilih ? "bg-slate-900 text-white ring-slate-900"
+                  : "bg-white text-slate-700 ring-slate-200 hover:ring-slate-400"}`}>
+              <span className="flex items-center gap-1.5">
+                <b className="text-[12px]">{d.nama}</b>
+                {saya && (
+                  <span className={`rounded px-1 text-[9px] font-bold uppercase ${
+                    dipilih ? "bg-white/20" : "bg-sky-100 text-sky-800"}`}>saya</span>
+                )}
+                <span className={`tabular-nums ${d.aktif ? "opacity-90" : "opacity-50"}`}>{d.aktif} aktif</span>
                 {d.telat > 0 && (
-                  <span className={`ml-1.5 rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
+                  <span className={`rounded-full px-1.5 py-0.5 text-[10px] font-bold tabular-nums ${
                     dipilih ? "bg-white/20" : "bg-red-100 text-red-700"}`}>{d.telat} telat</span>
                 )}
-              </button>
-            );
-          })}
-        </section>
-      )}
+              </span>
+              {d.jabatan && <span className="block text-[10px] opacity-60">{d.jabatan}</span>}
+            </button>
+          );
+        })}
+      </section>
 
       {/* ── saringan ──────────────────────────────────────────────────────── */}
       <section className="mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
@@ -268,7 +288,14 @@ function Isi() {
         <select value={fPemilik} onChange={(e) => setFPemilik(e.target.value)} className="inp sm:w-auto"
           aria-label="Saring pemilik">
           <option value="">Semua pemilik</option>
-          {namaDikenal.map((n) => <option key={n} value={n}>{samaNama(n, namaSaya) ? `${n} (saya)` : n}</option>)}
+          {namaDikenal.map((n) => {
+            const jab = jabatanDari(n);
+            return (
+              <option key={n} value={n}>
+                {n}{jab ? ` — ${jab}` : ""}{samaNama(n, namaSaya) ? " (saya)" : ""}
+              </option>
+            );
+          })}
           <option value="__tanpa">(tanpa pemilik)</option>
         </select>
         <select value={fStatus} onChange={(e) => setFStatus(e.target.value as SaringStatus)} className="inp sm:w-auto"
@@ -382,12 +409,24 @@ function tambahHari(n: number): string {
 
 /* ── komponen kecil ──────────────────────────────────────────────────────── */
 
+/** pilih "saya" dari daftar tim; nama di luar tim tetap bisa diketik */
 function FormNama({ awal, onSimpan, onBatal }: { awal: string; onSimpan: (n: string) => void; onBatal: () => void }) {
+  const diTim = TIM.some((t) => samaNama(t.nama, awal));
   const [n, setN] = useState(awal);
+  const [ketik, setKetik] = useState(!diTim);
   return (
     <form onSubmit={(e) => { e.preventDefault(); onSimpan(n); }} className="flex flex-1 items-center gap-1.5 sm:flex-none">
-      <input autoFocus value={n} onChange={(e) => setN(e.target.value)} className="inp min-w-0 flex-1 py-1.5 sm:w-36"
-        placeholder="Nama saya" aria-label="Nama saya" />
+      {ketik ? (
+        <input autoFocus value={n} onChange={(e) => setN(e.target.value)} className="inp min-w-0 flex-1 py-1.5 sm:w-40"
+          placeholder="Nama saya" aria-label="Nama saya" />
+      ) : (
+        <select autoFocus value={TIM.find((t) => samaNama(t.nama, n))?.nama || ""} aria-label="Nama saya"
+          onChange={(e) => { if (e.target.value === "__lain") { setKetik(true); setN(""); } else setN(e.target.value); }}
+          className="inp min-w-0 flex-1 py-1.5 sm:w-56">
+          {TIM.map((t) => <option key={t.nama} value={t.nama}>{t.nama} — {t.jabatan}</option>)}
+          <option value="__lain">Nama lain…</option>
+        </select>
+      )}
       <button type="submit" className="btn btn-success px-3 py-1.5 text-xs">OK</button>
       <button type="button" onClick={onBatal} className="btn btn-ghost px-2.5 py-1.5 text-xs">Batal</button>
     </form>
@@ -507,7 +546,7 @@ function Pemilik({ p, namaSaya }: { p: Pekerjaan; namaSaya: string }) {
   return (
     <span className="flex flex-wrap gap-1">
       {p.pemilik.map((n) => (
-        <span key={n} className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
+        <span key={n} title={jabatanDari(n) || undefined} className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
           samaNama(n, namaSaya) ? "bg-sky-100 text-sky-800" : "bg-slate-100 text-slate-700"}`}>{n}</span>
       ))}
     </span>
@@ -635,6 +674,12 @@ function Borang({ awal, baru, namaDikenal, onTutup, onSimpan }: {
     if (daftarPemilik.some((x) => samaNama(x, n))) return;
     setPemilikTeks([...daftarPemilik, n].join(", "));
   };
+  /** tombol anggota tim: tekan sekali masuk, tekan lagi keluar */
+  const alihPemilik = (n: string) => {
+    if (daftarPemilik.some((x) => samaNama(x, n))) {
+      setPemilikTeks(daftarPemilik.filter((x) => !samaNama(x, n)).join(", "));
+    } else tambahPemilik(n);
+  };
 
   const alihKapal = (k: string) =>
     setP((x) => ({ ...x, kapal: x.kapal.includes(k) ? x.kapal.filter((y) => y !== k) : [...x.kapal, k] }));
@@ -661,7 +706,9 @@ function Borang({ awal, baru, namaDikenal, onTutup, onSimpan }: {
     try { await onSimpan(isi); } finally { setSibuk(false); }
   };
 
-  const saran = namaDikenal.filter((n) => !daftarPemilik.some((x) => samaNama(x, n)));
+  // nama di luar tim yang pernah dipakai — tim sendiri sudah punya tombolnya
+  const saran = namaDikenal.filter((n) =>
+    !jabatanDari(n) && !daftarPemilik.some((x) => samaNama(x, n)));
   const lepas = p.status === "selesai" || p.status === "batal";
 
   return (
@@ -683,9 +730,25 @@ function Borang({ awal, baru, namaDikenal, onTutup, onSimpan }: {
           </div>
 
           <div className="sm:col-span-2">
-            <Medan label="Pemilik / PIC" wajib petunjuk="Pisahkan dengan koma bila lebih dari satu orang.">
+            <Medan label="Pemilik / PIC" wajib
+              petunjuk="Pilih satu orang atau lebih. Nama di luar tim boleh diketik, pisahkan dengan koma.">
+              <div className="mb-2 grid grid-cols-2 gap-1.5 sm:grid-cols-3">
+                {TIM.map((t) => {
+                  const on = daftarPemilik.some((x) => samaNama(x, t.nama));
+                  return (
+                    <button key={t.nama} type="button" onClick={() => alihPemilik(t.nama)} aria-pressed={on}
+                      className={`rounded-xl px-2.5 py-1.5 text-left ring-1 transition ${
+                        on ? "bg-[#16357f] text-white ring-[#16357f]" : "bg-white text-slate-700 ring-slate-200 hover:ring-slate-400"}`}>
+                      <span className="block text-[12px] font-bold leading-tight">{on ? "✓ " : ""}{t.nama}</span>
+                      <span className={`block truncate text-[10px] leading-tight ${on ? "text-white/70" : "text-slate-500"}`}>
+                        {t.jabatan}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
               <input value={pemilikTeks} onChange={(e) => setPemilikTeks(e.target.value)} className="inp"
-                placeholder="mis. Irsan, Budi" />
+                placeholder="mis. Irsan, Okmy" aria-label="Pemilik" />
             </Medan>
             {saran.length > 0 && (
               <div className="mt-1.5 flex flex-wrap gap-1">
