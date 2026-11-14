@@ -55,6 +55,14 @@ interface Kelompok { judul: string; menu: Menu[] }
 
 const KELOMPOK: Kelompok[] = [
   {
+    // paling atas: dibuka tiap pagi sebelum menu lain, dan memuat pekerjaan
+    // dari kelompok mana pun di bawahnya
+    judul: "Pekerjaan Saya",
+    menu: [
+      { href: "/monitor-pekerjaan", icon: "centang", label: "Monitor Pekerjaan", desc: "Daftar kerja, tenggat & tindak lanjut" },
+    ],
+  },
+  {
     judul: "Anggaran & Rencana",
     menu: [
       { href: "/dashboard", icon: "grafik", label: "Dashboard Anggaran", desc: "Penyerapan & pagu" },

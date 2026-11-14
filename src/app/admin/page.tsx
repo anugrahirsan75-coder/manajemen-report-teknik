@@ -8,9 +8,10 @@ import { tanggalIndo, bulanTahun } from "@/lib/format";
 const LABEL: Record<string, string> = {
   sppbj: "SPPBJ Pengadaan", nonpr: "SPPBJ Non PR PO", servis: "Monitoring Servis",
   anggaran: "Dashboard Anggaran", kapal: "Ship Database", swakelola: "Generator Swakelola", material: "Kode Material",
+  monitor_pekerjaan: "Monitor Pekerjaan",
 };
-const IKON: Record<string, string> = { sppbj: "📑", nonpr: "🧾", servis: "🔧", anggaran: "📊", kapal: "🚢", swakelola: "⚙️", material: "📦" };
-const HREF: Record<string, string> = { sppbj: "/sppbj", nonpr: "/nonpr", servis: "/servis", anggaran: "/dashboard", kapal: "/kapal", swakelola: "/", material: "/material" };
+const IKON: Record<string, string> = { sppbj: "📑", nonpr: "🧾", servis: "🔧", anggaran: "📊", kapal: "🚢", swakelola: "⚙️", material: "📦", monitor_pekerjaan: "✅" };
+const HREF: Record<string, string> = { sppbj: "/sppbj", nonpr: "/nonpr", servis: "/servis", anggaran: "/dashboard", kapal: "/kapal", swakelola: "/", material: "/material", monitor_pekerjaan: "/monitor-pekerjaan" };
 
 // kuota paket gratis Supabase (acuan kasar untuk peringatan dini)
 const KUOTA_DB = 500 * 1024 * 1024;      // 500 MB database

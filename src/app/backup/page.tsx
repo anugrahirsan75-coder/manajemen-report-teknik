@@ -8,6 +8,7 @@ import { didukung, pilihFolder, folderSiap, namaFolder, lupakanFolder, backupPen
 const LABEL: Record<string, string> = {
   sppbj: "SPPBJ Pengadaan", nonpr: "SPPBJ Non PR PO", servis: "Monitoring Servis",
   anggaran: "Dashboard Anggaran", kapal: "Ship Database", swakelola: "Generator Swakelola", material: "Kode Material",
+  monitor_pekerjaan: "Monitor Pekerjaan",
 };
 
 export default function BackupPage() {
