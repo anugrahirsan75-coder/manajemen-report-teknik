@@ -50,7 +50,17 @@ interface Menu {
   tepat?: boolean;
   /** pengecualian: alamat lain yang TIDAK boleh menyalakan menu ini */
   bukan?: string[];
+  /** tautan ke luar aplikasi (spreadsheet dsb.): dibuka di tab baru, tak pernah "aktif" */
+  luar?: boolean;
 }
+
+/**
+ * Spreadsheet stok suku cadang milik Logistik Pusat — hanya dibuka untuk
+ * dilihat, tidak dibaca aplikasi. Akses tetap diatur oleh izin berbagi Google
+ * Drive-nya, sama seperti URL_LEMBAR di lib/sertifikat/types.ts.
+ */
+const URL_STOK_PUSAT =
+  "https://docs.google.com/spreadsheets/d/1JSZ48FmkKCXJDXMqOK1A8Ih5Bd3YLQ1X/edit?gid=514035109#gid=514035109";
 interface Kelompok { judul: string; menu: Menu[] }
 
 const KELOMPOK: Kelompok[] = [
@@ -105,6 +115,7 @@ const KELOMPOK: Kelompok[] = [
       { href: "/sensor", icon: "sinyal", label: "Monitoring Sensor", desc: "Sensor Regional 4" },
       { href: "/armada-data", icon: "kotak", label: "Dokumen Kapal", desc: "Arsip berkas, stok & alkes" },
       { href: "/stok-suku-cadang", icon: "kotak", label: "Stok Suku Cadang", desc: "Persediaan di atas kapal" },
+      { href: URL_STOK_PUSAT, icon: "kotak", label: "Stok Logistik Pusat", desc: "Suku cadang Logistik Pusat ↗", luar: true },
     ],
   },
   {
@@ -189,6 +200,7 @@ const KELOMPOK: Kelompok[] = [
 const ANAK_SWAKELOLA = ["/isi-data", "/dokumen", "/distribusi"];
 
 function aktifkan(m: Menu, path: string): boolean {
+  if (m.luar) return false;
   if (m.href === "/") return path === "/" || ANAK_SWAKELOLA.some((x) => path.startsWith(x));
   if (m.bukan?.some((x) => path.startsWith(x))) return false;
   if (m.tepat) return path === m.href || (m.sub || []).some((s) => path.startsWith(s.href) && s.href !== "/");
@@ -228,6 +240,18 @@ function JudulKelompok({ judul, jumlah, buka, onKlik }: {
 
 function Baris({ m, path, onNavigate }: { m: Menu; path: string; onNavigate?: () => void }) {
   const aktif = aktifkan(m, path);
+  if (m.luar) {
+    return (
+      <a href={m.href} target="_blank" rel="noopener noreferrer" onClick={onNavigate} title={`${m.label} — dibuka di tab baru`}
+        className="relative flex items-center gap-3 rounded-lg py-2 pl-3 pr-2.5 text-white/80 transition-all duration-150 hover:bg-white/[0.07] hover:pl-3.5 hover:text-white">
+        <Ikon nama={m.icon} className="h-5 w-5 shrink-0 text-white/55" />
+        <span className="min-w-0 leading-tight">
+          <span className="block truncate text-[14px] font-medium">{m.label}</span>
+          <span className="block truncate text-[11px] text-white/45">{m.desc}</span>
+        </span>
+      </a>
+    );
+  }
   return (
     <div className={`rounded-lg transition ${aktif && m.sub ? "bg-white/[0.05]" : ""}`}>
       <Link href={m.href} onClick={onNavigate}
