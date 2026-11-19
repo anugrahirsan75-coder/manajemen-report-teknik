@@ -8,7 +8,11 @@
  */
 
 export interface FolderDrive { nama: string; id: string; url: string; diubah: string }
-export interface BerkasDrive { nama: string; id: string; url: string; mime: string; ukuran: number; diubah: string }
+export interface BerkasDrive {
+  nama: string; id: string; url: string; mime: string; ukuran: number; diubah: string;
+  /** folder tempat berkas ini mendarat (dikirim route lampiran permohonan) */
+  folderUrl?: string;
+}
 export interface IsiFolder {
   jalur: string[];
   nama: string;
@@ -48,11 +52,16 @@ export interface KemajuanUnggah { berkas: string; potongan: number; total: numbe
  * sesaat diulang beberapa kali dengan jeda yang melebar — jaringan kantor di
  * sini kerap putus sebentar, dan mengulang seluruh berkas 20 MB karena satu
  * potongan tersendat itu pemborosan yang tidak perlu.
+ *
+ * `alamat` = route relay-nya. Bawaan Laporan Docking; lampiran Monitoring
+ * Permohonan Cabang memakai /api/permohonan-cabang/berkas dengan bentuk
+ * permintaan yang sama.
  */
 export async function unggahBerkas(
   file: File,
   jalur: string[],
   lapor: (k: KemajuanUnggah) => void = () => {},
+  alamat = "/api/docking/laporan/berkas",
 ): Promise<BerkasDrive> {
   const buf = await file.arrayBuffer();
   const total = Math.max(1, Math.ceil(buf.byteLength / BYTE_PER_POTONGAN));
@@ -66,7 +75,7 @@ export async function unggahBerkas(
     for (let coba = 0; coba < MAKS_COBA && !berhasil; coba++) {
       lapor({ berkas: file.name, potongan: i + 1, total, percobaan: coba });
       try {
-        const r = await fetch("/api/docking/laporan/berkas", {
+        const r = await fetch(alamat, {
           method: "POST", headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             unggahId, indeks: i, total, jalur,

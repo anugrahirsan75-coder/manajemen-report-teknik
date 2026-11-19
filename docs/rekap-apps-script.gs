@@ -12,6 +12,9 @@
  *    Google meminta izin ulang karena script kini juga membuat/menulis spreadsheet
  *    REKAP SPPBJ di Drive pemilik: pilih akun -> Advanced -> Allow.
  *
+ * LAMPIRAN PERMOHONAN (sejak 19 Nov 2026): {aksi:"folderPermohonan"} membuat subfolder
+ * bernomor, {aksi:"potonganPermohonan"} menerima berkas per potongan. Perlu izin Google Drive.
+ *
  * KONTROL PERMOHONAN CABANG (sejak 19 Nov 2026): app menulis/ubah baris di spreadsheet
  * "Kontrol Permohonan Ternate 2026" (perintah {permohonan:[...]}) dan menariknya ({tarikPermohonan:true}).
  * Id spreadsheet: konstanta PERMOHONAN_ID_BAWAAN atau Script Properties "PERMOHONAN_ID".
@@ -43,6 +46,16 @@ var DAFTAR_JENIS = ["Docking", "Rutin", "Persetujuan Lainnya"];
 var PERMOHONAN_ID_BAWAAN = "";
 var PERMOHONAN_GID = 0;
 var P_HEADER_ROW = 2, P_DATA_ROW = 3;
+
+// LAMPIRAN PERMOHONAN (sejak 19 Nov 2026): berkas yang diunggah dari borang
+// Monitoring Permohonan Cabang masuk ke subfolder bernomor ("17. ADDENDUM ...")
+// di folder Drive "KONTROL PERMOHONAN CABANG". Folder induk TIDAK dikirim dari
+// aplikasi: diambil dari Script Properties "PERMOHONAN_FOLDER_ID", konstanta di
+// bawah, atau dicari sendiri dari tautan folder di spreadsheet Kontrol.
+var PERMOHONAN_FOLDER_ID_BAWAAN = "";
+var P_SINGGAH = "_potongan sementara";   // tempat singgah potongan berkas besar
+var P_BATAS_MB = 35;
+var P_JENIS = "lampiranPermohonan";       // penanda jawaban versi ini
 var D = { no: 1, nama: 2, pr: 3, tgl: 4, vendor: 5, jenis: 6, id: 7 };
 
 function doGet() {
@@ -53,6 +66,12 @@ function doPost(e) {
   try {
     var body = JSON.parse(e.postData.contents || "{}");
     if (SECRET && body.secret !== SECRET) return json({ ok: false, error: "secret salah" });
+    // Lampiran Monitoring Permohonan Cabang: dijawab sendiri, tidak menyentuh rekap
+    if (body.aksi === "folderPermohonan" || body.aksi === "potonganPermohonan" || body.aksi === "aturFolderPermohonan") {
+      var lockL = LockService.getScriptLock();
+      lockL.waitLock(30000);   // nomor folder berikutnya tidak boleh dipakai dua kiriman sekaligus
+      try { return json(lampiranPermohonan(body)); } finally { lockL.releaseLock(); }
+    }
     var rows = body.rows || [];
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var results = [];
@@ -349,6 +368,178 @@ function tulisPermohonan(sh, k, row, p, baru, lampiranLama) {
   if (k.ket) sh.getRange(row, k.ket).setValue(String(p.keterangan || ""));
   if (k.ketSetuju) sh.getRange(row, k.ketSetuju).setValue(String(p.ketPersetujuan || ""));
   sh.getRange(row, k.id).setValue(String(p.id));
+}
+
+/* ── LAMPIRAN PERMOHONAN CABANG ────────────────────────────────────────── */
+
+function lampiranPermohonan(body) {
+  if (body.aksi === "aturFolderPermohonan") {
+    // dipakai sekali bila folder induk tidak bisa ditemukan sendiri
+    var idA = pIdFolder(body.url);
+    if (!idA) return { ok: false, jenis: P_JENIS, error: "Tautan itu bukan tautan folder Google Drive." };
+    var fA;
+    try { fA = DriveApp.getFolderById(idA); fA.getName(); }
+    catch (e) { return { ok: false, jenis: P_JENIS, error: "Folder itu tidak bisa dibuka oleh akun pemilik skrip." }; }
+    PropertiesService.getScriptProperties().setProperty("PERMOHONAN_FOLDER_ID", idA);
+    return { ok: true, jenis: P_JENIS, folderNama: fA.getName(), folderUrl: fA.getUrl() };
+  }
+  var induk = pFolderInduk();
+  if (!induk) {
+    return { ok: false, jenis: P_JENIS, perluFolder: true,
+      error: "Folder Drive KONTROL PERMOHONAN CABANG belum diketahui." };
+  }
+  if (body.aksi === "folderPermohonan") return pBuatFolder(induk, body);
+  return pTerimaPotongan(induk, body);
+}
+
+function pFolderInduk() {
+  var props = PropertiesService.getScriptProperties();
+  var id = props.getProperty("PERMOHONAN_FOLDER_ID") || PERMOHONAN_FOLDER_ID_BAWAAN;
+  if (!id) {
+    try { id = pCariFolderInduk(); } catch (e) { id = ""; }
+    if (id) props.setProperty("PERMOHONAN_FOLDER_ID", id);
+  }
+  if (!id) return null;
+  try { return DriveApp.getFolderById(id); } catch (e) { return null; }
+}
+
+// 1) tautan folder di baris 1 ("LINK G DRIVE >>>>> 01. KONTROL PERMOHONAN CABANG 2026"),
+// 2) kalau tidak ada: induk dari folder lampiran baris yang sudah terisi
+function pCariFolderInduk() {
+  var sh = permohonanSheet().sh;
+  var lebar = Math.max(sh.getLastColumn(), 1);
+  var baris1 = sh.getRange(1, 1, 1, lebar).getRichTextValues()[0];
+  for (var c = 0; c < baris1.length; c++) {
+    var id = pIdFolder(pLink(baris1[c]));
+    if (id) return id;
+  }
+  var k = pKolom(sh), n = sh.getLastRow() - P_DATA_ROW + 1;
+  if (!k.lampiran || n < 1) return "";
+  var rich = sh.getRange(P_DATA_ROW, k.lampiran, n, 1).getRichTextValues();
+  for (var i = 0; i < rich.length; i++) {
+    var sub = pIdFolder(pLink(rich[i][0]));
+    if (!sub) continue;
+    try {
+      var par = DriveApp.getFolderById(sub).getParents();
+      if (par.hasNext()) return par.next().getId();
+    } catch (e) {}
+  }
+  return "";
+}
+
+function pLink(rt) {
+  if (!rt) return "";
+  try { var u = rt.getLinkUrl(); if (u) return u; } catch (e) {}
+  try {
+    var runs = rt.getRuns();
+    for (var i = 0; i < runs.length; i++) { var u2 = runs[i].getLinkUrl(); if (u2) return u2; }
+  } catch (e) {}
+  return "";
+}
+
+function pIdFolder(url) {
+  var s = String(url || "");
+  var m = /\/folders\/([A-Za-z0-9_-]{10,})/.exec(s) || /[?&]id=([A-Za-z0-9_-]{10,})/.exec(s);
+  return m ? m[1] : "";
+}
+
+function pBersih(s) {
+  return String(s || "").replace(/[\\\/:*?"<>|\r\n\t]+/g, " ").replace(/\s+/g, " ").trim().slice(0, 120);
+}
+
+function pSub(induk, nama) {
+  var it = induk.getFoldersByName(nama);
+  return it.hasNext() ? it.next() : induk.createFolder(nama);
+}
+
+/**
+ * Siapkan folder lampiran. Nama yang sudah bernomor ("17. ...") dipakai apa
+ * adanya (folder lama, atau dibuat bila belum ada); nama tanpa nomor diberi
+ * nomor berikutnya sesudah folder bernomor terbesar di folder induk.
+ */
+function pBuatFolder(induk, body) {
+  var nama = pBersih(body.nama);
+  if (!nama) return { ok: false, jenis: P_JENIS, error: "nama folder kosong" };
+  if (/^\d+\s*\./.test(nama)) {
+    var f0 = pSub(induk, nama);
+    return { ok: true, jenis: P_JENIS, folderNama: f0.getName(), folderUrl: f0.getUrl() };
+  }
+  var maks = 0, it = induk.getFolders();
+  while (it.hasNext()) {
+    var m = /^(\d+)\s*\./.exec(it.next().getName());
+    if (m) maks = Math.max(maks, Number(m[1]));
+  }
+  var f = induk.createFolder(pad2(maks + 1) + ". " + nama);
+  return { ok: true, jenis: P_JENIS, folderNama: f.getName(), folderUrl: f.getUrl() };
+}
+
+/**
+ * Satu potongan berkas (2,25 MB isi asli). Potongan disinggahkan sebagai berkas
+ * teks; pada potongan terakhir semuanya disatukan jadi berkas di folder
+ * lampiran. Penanda "<id>.jadi" ditulis sebelum singgahan dibuang, supaya
+ * potongan terakhir yang dikirim ulang (jawaban sempat putus) tetap menemukan
+ * hasilnya, bukan galat "potongan hilang".
+ */
+function pTerimaPotongan(induk, body) {
+  var folderNama = pBersih(body.folder);
+  if (!folderNama) return { ok: false, jenis: P_JENIS, error: "folder tujuan kosong" };
+  var unggahId = String(body.unggahId || "").replace(/[^A-Za-z0-9_-]/g, "").slice(0, 60);
+  var indeks = Number(body.indeks), total = Number(body.total);
+  if (!unggahId || !(total > 0) || !(indeks >= 0) || indeks >= total) {
+    return { ok: false, jenis: P_JENIS, error: "potongan tidak dikenali" };
+  }
+  if (total * 2.25 > P_BATAS_MB + 2) return { ok: false, jenis: P_JENIS, error: "berkas lebih dari " + P_BATAS_MB + " MB" };
+
+  var tmp = pSub(induk, P_SINGGAH);
+  var jadi = pBacaPenanda(tmp, unggahId);
+  if (jadi) { jadi.ok = true; jadi.selesai = true; jadi.jenis = P_JENIS; return jadi; }
+
+  var nama = unggahId + "." + indeks;
+  pBuang(tmp, nama);
+  tmp.createFile(Utilities.newBlob(String(body.data || ""), "text/plain", nama));
+  if (indeks + 1 < total) {
+    if (indeks === 0) pSapu(tmp);
+    return { ok: true, jenis: P_JENIS, selesai: false, indeks: indeks };
+  }
+
+  var b64 = "";
+  for (var i = 0; i < total; i++) {
+    var it = tmp.getFilesByName(unggahId + "." + i);
+    if (!it.hasNext()) return { ok: false, jenis: P_JENIS, sementara: true, error: "potongan ke-" + (i + 1) + " belum sampai, coba lagi" };
+    b64 += it.next().getBlob().getDataAsString();
+  }
+  var folder = pSub(induk, folderNama);
+  var namaBerkas = pBersih(body.namaBerkas) || "berkas";
+  var file = folder.createFile(Utilities.newBlob(Utilities.base64Decode(b64),
+    String(body.mime || "application/octet-stream"), namaBerkas));
+  var hasil = {
+    fileId: file.getId(), url: file.getUrl(), nama: file.getName(), ukuran: file.getSize(),
+    folderUrl: folder.getUrl(), folderNama: folder.getName()
+  };
+  tmp.createFile(Utilities.newBlob(JSON.stringify(hasil), "application/json", unggahId + ".jadi"));
+  for (var k = 0; k < total; k++) pBuang(tmp, unggahId + "." + k);
+  hasil.ok = true; hasil.selesai = true; hasil.jenis = P_JENIS;
+  return hasil;
+}
+
+function pBacaPenanda(tmp, unggahId) {
+  var it = tmp.getFilesByName(unggahId + ".jadi");
+  if (!it.hasNext()) return null;
+  try { return JSON.parse(it.next().getBlob().getDataAsString()); } catch (e) { return null; }
+}
+
+function pBuang(folder, nama) {
+  var it = folder.getFilesByName(nama);
+  while (it.hasNext()) it.next().setTrashed(true);
+}
+
+// singgahan lebih tua dari 2 hari (unggahan yang ditinggal di tengah jalan)
+function pSapu(tmp) {
+  var batas = Date.now() - 2 * 24 * 3600 * 1000, it = tmp.getFiles();
+  while (it.hasNext()) {
+    var f = it.next();
+    if (f.getDateCreated().getTime() < batas) f.setTrashed(true);
+  }
 }
 
 function json(obj) {

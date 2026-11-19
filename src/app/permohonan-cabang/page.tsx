@@ -17,6 +17,27 @@ import {
 } from "@/lib/permohonanCabang/types";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
+import { unggahBerkas, ukuranSingkat } from "@/lib/docking/laporan/drive";
+import { ACCEPT_BERKAS } from "@/lib/lapor/berkasJenis";
+
+/**
+ * Nama subfolder lampiran dari judul permohonan, mengikuti kebiasaan folder
+ * yang sudah ada di Drive: "Permohonan Persetujuan Addendum Docking KMP. Kerapu
+ * II Tahun 2026" → "ADDENDUM DOCKING KMP KERAPU II 2026". Nomor urutnya ("17.")
+ * dipasang Apps Script dari folder bernomor terbesar.
+ */
+function usulanFolder(judul: string, tgl: string): string {
+  let s = judul.toUpperCase()
+    .replace(/^\s*PERMOHONAN\s+(PERSETUJUAN\s+)?/, "")
+    .replace(/\bKMP\.\s*/g, "KMP ")
+    .replace(/\bTAHUN\s+(\d{4})\b/g, "$1")
+    .replace(/[\\/:*?"<>|\r\n\t]+/g, " ")
+    .replace(/\s+/g, " ").trim();
+  if (!/\b20\d{2}\b/.test(s) && tgl) s += " " + tgl.slice(0, 4);
+  return s.slice(0, 100);
+}
+
+const ALAMAT_BERKAS = "/api/permohonan-cabang/berkas";
 
 export default function HalamanPermohonanCabang() {
   return (
@@ -324,8 +345,62 @@ function Borang({ awal, baru, onTutup, onSimpan }: {
 }) {
   const [p, setP] = useState<Permohonan>(awal);
   const [biayaTeks, setBiayaTeks] = useState(awal.totalBiaya ? awal.totalBiaya.toLocaleString("id-ID") : "");
-  const [sibuk, setSibuk] = useState(false);
+  const [sibukSimpan, setSibuk] = useState(false);
   const ubah = <K extends keyof Permohonan>(k: K, v: Permohonan[K]) => setP((x) => ({ ...x, [k]: v }));
+
+  /* ── unggah lampiran ke Drive ───────────────────────────────────────── */
+  const [mengunggah, setMengunggah] = useState(false);
+  const [kemajuan, setKemajuan] = useState("");
+  const [terunggah, setTerunggah] = useState<{ nama: string; url: string; ukuran: number }[]>([]);
+  const [perluFolder, setPerluFolder] = useState(false);
+  const [tautanInduk, setTautanInduk] = useState("");
+  const sibuk = sibukSimpan || mengunggah;
+
+  const kirimBerkasApi = async (isi: Record<string, unknown>) => {
+    const r = await fetch(ALAMAT_BERKAS, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(isi) });
+    const d = await r.json().catch(() => ({}));
+    if (d?.perluFolder) setPerluFolder(true);
+    if (!r.ok || !d?.ok) throw new Error(d?.error || `HTTP ${r.status}`);
+    return d;
+  };
+
+  /** folder lampiran: yang sudah bernomor dipakai lagi, kalau belum dibuatkan bernomor */
+  const siapkanFolder = async (): Promise<string> => {
+    const ada = p.lampiranNama.trim();
+    if (/^\d+\s*\./.test(ada) && p.lampiranUrl) return ada;
+    const d = await kirimBerkasApi({ aksi: "folder", nama: ada || usulanFolder(p.judul, p.tglPengajuan) });
+    setP((x) => ({ ...x, lampiranNama: d.folderNama, lampiranUrl: d.folderUrl }));
+    return d.folderNama as string;
+  };
+
+  const unggah = async (daftar: File[]) => {
+    if (!daftar.length) return;
+    if (!p.judul.trim() && !p.lampiranNama.trim()) { await beritahu("Isi dulu Jenis survey / pekerjaan — nama folder lampiran diambil dari situ."); return; }
+    setMengunggah(true);
+    setKemajuan("menyiapkan folder di Google Drive…");
+    try {
+      const folder = await siapkanFolder();
+      for (const f of daftar) {
+        const b = await unggahBerkas(f, [folder], (k) => setKemajuan(
+          `${k.berkas} — ${k.total > 1 ? `potongan ${k.potongan}/${k.total}` : "mengunggah"}${k.percobaan ? ` (ulang ${k.percobaan})` : ""}`), ALAMAT_BERKAS);
+        setTerunggah((x) => [...x, { nama: b.nama, url: b.url, ukuran: b.ukuran }]);
+        if (b.folderUrl) setP((x) => ({ ...x, lampiranUrl: x.lampiranUrl || b.folderUrl! }));
+      }
+      setKemajuan("");
+    } catch (e: any) {
+      setKemajuan("");
+      await beritahu("Unggah lampiran gagal: " + (e?.message || e));
+    } finally { setMengunggah(false); }
+  };
+
+  const simpanFolderInduk = async () => {
+    try {
+      const d = await kirimBerkasApi({ aksi: "aturFolder", url: tautanInduk.trim() });
+      setPerluFolder(false);
+      setTautanInduk("");
+      await beritahu(`Folder induk tersimpan: ${d.folderNama}. Silakan pilih berkas lagi.`);
+    } catch (e: any) { await beritahu(e?.message || String(e)); }
+  };
 
   useEffect(() => {
     const tombol = (e: KeyboardEvent) => {
@@ -429,12 +504,58 @@ function Borang({ awal, baru, onTutup, onSimpan }: {
             <input type="date" value={p.tglSelesai} onChange={(e) => ubah("tglSelesai", e.target.value)} className="inp" />
           </Medan>
 
-          <Medan label="Nama lampiran / folder">
-            <input value={p.lampiranNama} onChange={(e) => ubah("lampiranNama", e.target.value)} className="inp" placeholder="mis. 17. ADDENDUM DOCKING KMP KERAPU II 2026" />
-          </Medan>
-          <Medan label="Tautan lampiran (Google Drive)">
-            <input value={p.lampiranUrl} onChange={(e) => ubah("lampiranUrl", e.target.value)} className="inp" placeholder="https://drive.google.com/…" />
-          </Medan>
+          <div className="rounded-xl border border-dashed border-slate-300 bg-slate-50/60 p-3 sm:col-span-2">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="text-[11px] font-bold uppercase tracking-wide text-slate-600">Lampiran dokumen</span>
+              <label className={`btn btn-primary ml-auto px-3 py-1.5 text-xs ${mengunggah ? "pointer-events-none opacity-60" : "cursor-pointer"}`}>
+                📎 {mengunggah ? "mengunggah…" : "Unggah berkas"}
+                <input type="file" multiple accept={ACCEPT_BERKAS} className="hidden" disabled={mengunggah}
+                  onChange={(e) => { const f = Array.from(e.target.files || []); e.target.value = ""; void unggah(f); }} />
+              </label>
+              {p.lampiranUrl && (
+                <a href={p.lampiranUrl} target="_blank" rel="noreferrer" className="btn btn-ghost px-3 py-1.5 text-xs">📂 Buka folder ↗</a>
+              )}
+            </div>
+            <p className="mt-1 text-[11px] leading-snug text-slate-500">
+              Berkas masuk ke folder Drive <b>KONTROL PERMOHONAN CABANG</b>; subfolder bernomor (mis. “17. ADDENDUM DOCKING KMP KERAPU II 2026”)
+              dibuat otomatis dari judul. PDF, Word, Excel, foto — maks ±34 MB per berkas.
+            </p>
+
+            {kemajuan && <p className="mt-2 text-xs font-semibold text-indigo-700">⏳ {kemajuan}</p>}
+            {terunggah.length > 0 && (
+              <ul className="mt-2 space-y-0.5 text-xs">
+                {terunggah.map((b, i) => (
+                  <li key={i} className="flex gap-2">
+                    <span className="text-emerald-600">✓</span>
+                    <a href={b.url} target="_blank" rel="noreferrer" className="truncate text-slate-700 hover:underline">{b.nama}</a>
+                    <span className="shrink-0 text-slate-400">{ukuranSingkat(b.ukuran)}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {perluFolder && (
+              <div className="mt-2 rounded-lg bg-amber-50 p-2 ring-1 ring-amber-200">
+                <p className="text-[11px] text-amber-900">
+                  Apps Script belum menemukan folder Drive <b>01. KONTROL PERMOHONAN CABANG 2026</b>. Buka folder itu di Google Drive,
+                  salin tautannya dari kolom alamat, tempel di sini (cukup sekali):
+                </p>
+                <div className="mt-1.5 flex gap-1.5">
+                  <input value={tautanInduk} onChange={(e) => setTautanInduk(e.target.value)} className="inp flex-1" placeholder="https://drive.google.com/drive/folders/…" />
+                  <button type="button" onClick={simpanFolderInduk} disabled={!tautanInduk.trim()} className="btn btn-success px-3 text-xs">Simpan</button>
+                </div>
+              </div>
+            )}
+
+            <div className="mt-2 grid gap-2 sm:grid-cols-2">
+              <Medan label="Nama folder lampiran" petunjuk="Terisi sendiri saat unggah; boleh diketik bila folder sudah ada.">
+                <input value={p.lampiranNama} onChange={(e) => ubah("lampiranNama", e.target.value)} className="inp" placeholder="mis. 17. ADDENDUM DOCKING KMP KERAPU II 2026" />
+              </Medan>
+              <Medan label="Tautan folder (Google Drive)">
+                <input value={p.lampiranUrl} onChange={(e) => ubah("lampiranUrl", e.target.value)} className="inp" placeholder="https://drive.google.com/…" />
+              </Medan>
+            </div>
+          </div>
 
           <Medan label="Keterangan">
             <input value={p.keterangan} onChange={(e) => ubah("keterangan", e.target.value)} className="inp" placeholder="mis. Docking, Temuan audit, Hutang BKI" />
@@ -447,7 +568,7 @@ function Borang({ awal, baru, onTutup, onSimpan }: {
         <div className="sticky bottom-0 flex items-center gap-2 border-t border-slate-200 bg-white px-4 py-3 sm:rounded-b-2xl sm:px-5">
           <p className="hidden text-[11px] text-slate-500 sm:block">Tersimpan ke basis data cabang & otomatis ke spreadsheet Kontrol Permohonan.</p>
           <button onClick={onTutup} disabled={sibuk} className="btn btn-ghost ml-auto text-xs">Batal</button>
-          <button onClick={simpanBorang} disabled={sibuk} className="btn btn-success px-5 text-xs">{sibuk ? "menyimpan…" : "Simpan"}</button>
+          <button onClick={simpanBorang} disabled={sibuk} className="btn btn-success px-5 text-xs">{sibukSimpan ? "menyimpan…" : mengunggah ? "tunggu unggahan…" : "Simpan"}</button>
         </div>
       </div>
     </div>
