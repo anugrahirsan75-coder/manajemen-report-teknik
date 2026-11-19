@@ -59,7 +59,9 @@ export async function POST(req: NextRequest) {
       body: JSON.stringify({
         secret, aksi: "potongan", akar: "docking", jalur,
         unggahId: idUnggah, indeks, total,
-        dataBase64, namaBerkas, mime: jenis.mime,
+        // terimaPotongan di Apps Script membaca isi potongan dari `data`;
+        // dulu yang terkirim hanya `dataBase64`, sehingga berkas tersimpan 0 byte
+        data: dataBase64, namaBerkas, mime: jenis.mime,
         // penamaan bawaan Apps Script menambahi periode/jenis/kapal; di sini
         // nama aslinya yang dipakai supaya cocok dengan berkas di Drive
         periode: "", jenis: "", kapal: "", namaApaAdanya: true,
