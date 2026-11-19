@@ -2,6 +2,7 @@
 // rekapSync.ts yang bertanda "use client" supaya route API bisa memakainya juga.
 import { SppbjRequest, SppbjItem, sppbjTotal, hargaSpbjOf, fullNoKontrak } from "./types";
 import { tanggalIndo } from "@/lib/format";
+import { jenisAnggaranOf, JenisAnggaran } from "@/lib/anggaran/types";
 
 export interface RekapRow {
   nomorSppbj: string;   // B (= No PR SAP)
@@ -38,5 +39,38 @@ export function buildRekapRow(req: SppbjRequest): RekapRow {
     nomorPO: fullNoKontrak(req) || (req.noSpbjNum || "").trim(),
     nomorGR: "",
     month, year,
+  };
+}
+
+/**
+ * Satu baris spreadsheet REKAP SPPBJ: daftar ringkas semua pengadaan, satu
+ * baris per catatan aplikasi. Kuncinya id catatan, bukan nomor PR, karena
+ * nomor PR sering baru terisi belakangan dan pengadaan tanpa nomor tetap harus
+ * tampil. Kirim ulang dari aplikasi memperbarui baris yang sama.
+ */
+export interface DaftarRow {
+  id: string;
+  namaPengadaan: string;
+  nomorPR: string;
+  tanggal: string;      // "7 Juli 2026"
+  vendor: string;
+  jenis: string;        // Docking | Rutin | Persetujuan Lainnya
+}
+
+const LABEL_JENIS: Record<JenisAnggaran, string> = {
+  rutin: "Rutin",
+  docking: "Docking",
+  lainnya: "Persetujuan Lainnya",
+};
+
+export function buildDaftarRow(req: SppbjRequest, id: string): DaftarRow {
+  const iso = req.tanggal || "";
+  return {
+    id,
+    namaPengadaan: req.namaPengadaan || "",
+    nomorPR: (req.noPRSAP || req.noSPPBJ || "").trim(),
+    tanggal: iso ? tanggalIndo(iso) : "",
+    vendor: (req.vendor || "").trim(),
+    jenis: LABEL_JENIS[jenisAnggaranOf(req)],
   };
 }

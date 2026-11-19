@@ -39,7 +39,8 @@ export interface LembarExcel {
 
 export interface PerMa { ma: string; item: number; nilai: number }
 
-export type JenisKirim = "rutin" | "docking";
+/** "lainnya" = dibebankan ke surat Persetujuan Biaya Lainnya; suratnya ditautkan di aplikasi */
+export type JenisKirim = "rutin" | "docking" | "lainnya";
 
 export interface OpsiBaca {
   /** pilihan pengirim */
@@ -231,10 +232,14 @@ function tebakKategori(nama: string, dasar: string, ma: string[]): string {
 const jenisDariKategori = (k: string): SppbjRequest["jenisAnggaran"] =>
   /docking/i.test(k) ? "Docking" : k ? "Rutin" : undefined;
 
+// Persetujuan lainnya: KET. rekap biasanya diambil dari surat yang ditautkan di
+// aplikasi. Dari Excel suratnya belum diketahui, jadi hanya investasi yang pasti.
 const kategoriPilihan = (jenis: JenisKirim, investasi: boolean) =>
   jenis === "docking"
     ? (investasi ? "DOCKING (INVESTASI)" : "DOCKING(BIAYA)")
-    : (investasi ? "INVESTASI DILUAR DOCKING" : "RUTIN");
+    : jenis === "lainnya"
+      ? (investasi ? "INVESTASI DILUAR DOCKING" : "")
+      : (investasi ? "INVESTASI DILUAR DOCKING" : "RUTIN");
 
 /* ── tabel ──────────────────────────────────────────────────────────────── */
 
@@ -545,7 +550,7 @@ export function bacaLembar(lembar: LembarExcel, opsi: OpsiBaca = {}): HasilLemba
       mataAnggaran: ma,
       noDRP,
       kategoriRekap: kategori || undefined,
-      jenisAnggaran: jenisDariKategori(kategori),
+      jenisAnggaran: opsi.jenis === "lainnya" ? "Lainnya" : jenisDariKategori(kategori),
       jenisPengadaan: /jasa/i.test(namaPengadaan) ? "jasa" : "barang",
       stafTeknik: STAF_TEKNIK[0],
       deptHead: DEPT_HEAD,

@@ -21,9 +21,13 @@ Private Const BAG As String = "ManajemenReportTeknik"
 Private Const JUDUL As String = "Kirim ke Aplikasi"
 Private Const BARIS_MAKS As Long = 400
 Private Const KOLOM_MAKS As Long = 16
-Private Const VERSI As Long = 2
+' Versi 3: vendor pelaksana, jenis Persetujuan Lainnya, link spreadsheet rekap.
+Private Const VERSI As Long = 3
 Private Const LAJUR_BANTU As Long = 52     ' AZ sampai BB, di luar area cetak
 Private Const NAMA_INDUK As String = "_TEMPLAT"
+' Baris khusus di jawaban server; dibuang dari teks yang ditampilkan.
+Private Const AWAL_VENDOR As String = "@VENDOR "
+Private Const AWAL_REKAP As String = "Spreadsheet rekap: "
 
 ' Nama lembar yang berubah sejak berkas dibuka, dan tanda isi yang sudah
 ' ditanyakan: pengingat cukup sekali untuk satu isi lembar.
@@ -47,8 +51,24 @@ Public Sub LupakanAkun()
     MsgBox "Akun aplikasi sudah dilupakan di laptop ini.", vbInformation, JUDUL
 End Sub
 
+' Link spreadsheet REKAP SPPBJ dikirim server sesudah SPPBJ terkirim, lalu
+' disimpan di laptop ini. Spreadsheetnya sendiri hanya bisa dibuka akun Google
+' yang diberi akses oleh pemiliknya.
+Public Sub BukaRekap()
+    Dim url As String
+    url = GetSetting(BAG, "Umum", "RekapUrl", "")
+    If Len(url) = 0 Then
+        MsgBox "Link spreadsheet rekap muncul sesudah satu SPPBJ terkirim dari laptop ini." & vbLf & _
+               "Kirim dulu lewat tombol KIRIM KE APLIKASI.", vbInformation, JUDUL
+        Exit Sub
+    End If
+    On Error Resume Next
+    ThisWorkbook.FollowHyperlink url
+End Sub
+
 Private Sub KirimLembar(ByVal ws As Worksheet)
     Dim isi As String, jawab As String, kode As String, jenis As String
+    Dim vendor As String, pesan As String, url As String
 
     On Error GoTo Galat
     Application.StatusBar = "Membaca lembar..."
@@ -60,20 +80,31 @@ Private Sub KirimLembar(ByVal ws As Worksheet)
     If kode <> "SIAP" Then
         ' lembar yang terkunci tidak perlu diingatkan lagi
         If kode = "TERKUNCI" Then SaveSetting BAG, "Terkirim", KunciLembar(ws), Tanda(isi)
-        MsgBox PesanJawab(jawab), IIf(kode = "GAGAL", vbExclamation, vbInformation), JUDUL
+        MsgBox BuangBaris(PesanJawab(jawab), AWAL_VENDOR), IIf(kode = "GAGAL", vbExclamation, vbInformation), JUDUL
         GoTo Selesai
     End If
     Application.StatusBar = False
-    jenis = PilihJenis(PesanJawab(jawab))
+    vendor = GetSetting(BAG, "Vendor", KunciLembar(ws), "")
+    jenis = PilihJenis(PesanJawab(jawab), vendor)
     If Len(jenis) = 0 Then GoTo Selesai
+    SaveSetting BAG, "Vendor", KunciLembar(ws), vendor
 
     Application.StatusBar = "Mengirim..."
-    If Not Minta("kirim", isi, jawab, jenis) Then GoTo Selesai
+    If Not Minta("kirim", isi, jawab, jenis, vendor) Then GoTo Selesai
+    pesan = PesanJawab(jawab)
     If KodeJawab(jawab) = "TERKIRIM" Then
         SaveSetting BAG, "Terkirim", KunciLembar(ws), Tanda(isi)
-        MsgBox PesanJawab(jawab), vbInformation, JUDUL
+        url = AmbilBaris(pesan, AWAL_REKAP)
+        If Len(url) > 0 Then
+            SaveSetting BAG, "Umum", "RekapUrl", url
+            Application.StatusBar = False
+            If MsgBox(BuangBaris(pesan, AWAL_REKAP) & vbLf & vbLf & "Buka spreadsheet REKAP SPPBJ sekarang?", _
+                      vbYesNo + vbInformation, JUDUL) = vbYes Then BukaRekap
+        Else
+            MsgBox pesan, vbInformation, JUDUL
+        End If
     Else
-        MsgBox PesanJawab(jawab), vbExclamation, JUDUL
+        MsgBox pesan, vbExclamation, JUDUL
     End If
 Selesai:
     Application.StatusBar = False
@@ -84,15 +115,144 @@ Galat:
     MsgBox "Gagal mengirim: " & Err.Description, vbExclamation, JUDUL
 End Sub
 
-' Ringkasan dan dua tombol jenis. Mengembalikan "" bila dibatalkan.
-Private Function PilihJenis(ByVal pesan As String) As String
+' Ringkasan, pilihan vendor, dan tiga tombol jenis. Mengembalikan "" bila
+' dibatalkan; vendor berisi pilihan terakhir pengirim.
+Private Function PilihJenis(ByVal pesan As String, ByRef vendor As String) As String
     Dim f As FormKirim
     Set f = New FormKirim
-    f.txtRingkas.Text = Replace(pesan, vbLf, vbCrLf)
+    f.txtRingkas.Text = Replace(BuangBaris(pesan, AWAL_VENDOR), vbLf, vbCrLf)
     f.txtRingkas.SelStart = 0
+    f.IsiVendor AmbilBaris(pesan, AWAL_VENDOR), vendor
     f.Show
     PilihJenis = f.Pilihan
+    If Len(f.Pilihan) > 0 Then vendor = f.Vendor
     Unload f
+End Function
+
+' Isi baris yang diawali teks tertentu, atau "" bila tidak ada.
+Private Function AmbilBaris(ByVal teks As String, ByVal awalan As String) As String
+    Dim baris As Variant
+    For Each baris In Split(teks, vbLf)
+        If Left$(baris, Len(awalan)) = awalan Then
+            AmbilBaris = Trim$(Mid$(baris, Len(awalan) + 1))
+            Exit Function
+        End If
+    Next baris
+End Function
+
+Private Function BuangBaris(ByVal teks As String, ByVal awalan As String) As String
+    Dim baris As Variant, hasil As String
+    For Each baris In Split(teks, vbLf)
+        If Left$(baris, Len(awalan)) <> awalan Then
+            If Len(hasil) > 0 Then hasil = hasil & vbLf
+            hasil = hasil & baris
+        End If
+    Next baris
+    BuangBaris = hasil
+End Function
+
+' ---- ekspor ke Excel biasa -----------------------------------------------------
+
+' Sebagian laptop memblokir makro. Tombol ini menyimpan salinan semua sheet ke
+' berkas .xlsx biasa: isi, rumus, format, dan pengaturan cetak ikut; tombol makro
+' dibuang karena tidak berfungsi tanpa makro. Berkas makro ini tidak berubah.
+Public Sub EksporExcelBiasa()
+    Dim tujuan As Variant, masalah As String
+
+    tujuan = Application.GetSaveAsFilename(InitialFileName:=NamaEkspor(), _
+        FileFilter:="Excel tanpa makro (*.xlsx),*.xlsx", Title:="Ekspor ke Excel biasa (tanpa makro)")
+    If VarType(tujuan) = vbBoolean Then Exit Sub
+    If LCase$(Right$(tujuan, 5)) <> ".xlsx" Then tujuan = tujuan & ".xlsx"
+    If Len(Dir$(tujuan)) > 0 Then
+        If MsgBox("Berkas ini sudah ada dan akan ditimpa:" & vbLf & tujuan, vbOKCancel + vbExclamation, JUDUL) <> vbOK Then Exit Sub
+    End If
+
+    masalah = EksporKe(CStr(tujuan))
+    If Len(masalah) > 0 Then
+        MsgBox masalah, vbExclamation, JUDUL
+    Else
+        MsgBox "Tersimpan sebagai Excel biasa:" & vbLf & tujuan & vbLf & vbLf & _
+               "Berkas itu tanpa makro, jadi bisa dibuka di laptop mana pun. Isinya salinan saat ini; " & _
+               "ubahan berikutnya tetap dikerjakan di berkas makro ini." & vbLf & vbLf & _
+               "Untuk mengirim ke aplikasi dari berkas tanpa makro, unggah di:" & vbLf & Alamat() & JALUR_IMPOR, _
+               vbInformation, JUDUL
+    End If
+End Sub
+
+Private Function NamaEkspor() As String
+    Dim dasar As String, folder As String
+    dasar = ThisWorkbook.Name
+    If InStrRev(dasar, ".") > 0 Then dasar = Left$(dasar, InStrRev(dasar, ".") - 1)
+    folder = ThisWorkbook.Path
+    ' berkas yang dibuka dari OneDrive/SharePoint punya alamat web, bukan folder
+    If Len(folder) = 0 Or LCase$(Left$(folder, 4)) = "http" Then folder = Environ$("USERPROFILE") & "\Documents"
+    NamaEkspor = folder & "\" & dasar & " (tanpa makro).xlsx"
+End Function
+
+' Tanpa kotak dialog, dipakai tombol dan skrip uji. Mengembalikan "" bila berhasil.
+Public Function EksporKe(ByVal tujuan As String) As String
+    Dim nama() As Variant, n As Long, ws As Worksheet, wb As Workbook, i As Long
+    Dim tautan As Variant, peringatan As Boolean, layar As Boolean, acara As Boolean
+
+    For Each ws In ThisWorkbook.Worksheets
+        If ws.Visible = xlSheetVisible Then
+            n = n + 1
+            ReDim Preserve nama(1 To n)
+            nama(n) = ws.Name
+        End If
+    Next ws
+    If n = 0 Then
+        EksporKe = "Tidak ada sheet yang bisa diekspor."
+        Exit Function
+    End If
+
+    peringatan = Application.DisplayAlerts
+    layar = Application.ScreenUpdating
+    acara = Application.EnableEvents
+    On Error GoTo Galat
+    Application.DisplayAlerts = False
+    Application.ScreenUpdating = False
+    Application.EnableEvents = False
+
+    ThisWorkbook.Worksheets(nama).Copy      ' buku kerja baru berisi salinan sheet
+    Set wb = ActiveWorkbook
+    For Each ws In wb.Worksheets
+        For i = ws.Shapes.Count To 1 Step -1
+            If BentukMakro(ws.Shapes(i)) Then ws.Shapes(i).Delete
+        Next i
+    Next ws
+    ' rumus yang menunjuk berkas makro diganti nilainya
+    tautan = wb.LinkSources(xlExcelLinks)
+    If Not IsEmpty(tautan) Then
+        For i = LBound(tautan) To UBound(tautan)
+            wb.BreakLink tautan(i), xlLinkTypeExcelLinks
+        Next i
+    End If
+    wb.Worksheets(1).Activate
+    wb.SaveAs Filename:=tujuan, FileFormat:=xlOpenXMLWorkbook
+    wb.Close SaveChanges:=False
+    Set wb = Nothing
+
+Selesai:
+    Application.DisplayAlerts = peringatan
+    Application.ScreenUpdating = layar
+    Application.EnableEvents = acara
+    Exit Function
+
+Galat:
+    EksporKe = "Gagal mengekspor: " & Err.Description
+    On Error Resume Next
+    If Not wb Is Nothing Then wb.Close SaveChanges:=False
+    Resume Selesai
+End Function
+
+' Tombol yang menjalankan makro. Tautan "unggah di web" bukan makro, jadi tetap.
+Private Function BentukMakro(ByVal s As Shape) As Boolean
+    Dim aksi As String
+    On Error Resume Next
+    aksi = s.OnAction
+    On Error GoTo 0
+    BentukMakro = Len(aksi) > 0 Or s.Name Like "Tombol*"
 End Function
 
 ' ---- sheet baru ----------------------------------------------------------------
@@ -408,7 +568,7 @@ End Sub
 
 ' Kirim satu permintaan. Mengembalikan False bila sudah dijelaskan ke pemakai.
 Private Function Minta(ByVal aksi As String, ByVal isi As String, ByRef jawab As String, _
-                       Optional ByVal jenis As String = "") As Boolean
+                       Optional ByVal jenis As String = "", Optional ByVal vendor As String = "") As Boolean
     Dim h As Object, coba As Long, status As Long, token As String
 
     For coba = 1 To 3
@@ -424,7 +584,8 @@ Private Function Minta(ByVal aksi As String, ByVal isi As String, ByRef jawab As
         h.SetRequestHeader "Content-Type", "application/json"
         h.SetRequestHeader "X-Klien", "excel"
         h.SetRequestHeader "Cookie", "mrt_session=" & token
-        h.Send "{""aksi"":""" & aksi & """,""versi"":" & VERSI & ",""jenis"":""" & jenis & """,""lembar"":" & isi & "}"
+        h.Send "{""aksi"":""" & aksi & """,""versi"":" & VERSI & ",""jenis"":""" & jenis & _
+               """,""vendor"":" & KutipJson(vendor) & ",""lembar"":" & isi & "}"
         status = h.Status
         On Error GoTo 0
 
@@ -626,7 +787,12 @@ End Function
 
 ' Pintu untuk skrip uji: tanpa kotak dialog. Mengembalikan jawaban mentah server.
 Public Function MintaLembar(ByVal aksi As String, ByVal namaLembar As String, _
-                            Optional ByVal jenis As String = "") As String
+                            Optional ByVal jenis As String = "", Optional ByVal vendor As String = "") As String
     Dim jawab As String
-    If Minta(aksi, LembarJson(ThisWorkbook.Worksheets(namaLembar)), jawab, jenis) Then MintaLembar = jawab
+    If Minta(aksi, LembarJson(ThisWorkbook.Worksheets(namaLembar)), jawab, jenis, vendor) Then MintaLembar = jawab
+End Function
+
+' Pintu uji tanpa dialog untuk pemisah baris khusus jawaban server.
+Public Function UjiBaris(ByVal teks As String, ByVal awalan As String, ByVal buang As Boolean) As String
+    If buang Then UjiBaris = BuangBaris(teks, awalan) Else UjiBaris = AmbilBaris(teks, awalan)
 End Function

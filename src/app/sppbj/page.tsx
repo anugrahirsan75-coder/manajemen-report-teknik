@@ -8,7 +8,7 @@ import { useSppbj } from "@/lib/sppbj/store";
 import { STATUS_LABEL, STATUS_COLOR, SppbjStatus, fullNoKontrak, GrSes, grSesBaru, nilaiGrEfektif, nilaiGrOtomatis, totalSppbj, totalSpbj, adaHargaSpbj } from "@/lib/sppbj/types";
 import { tanggalIndo, bulanTahun, rupiah } from "@/lib/format";
 import { getKatalog } from "@/lib/katalog/source";
-import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
+import { buildRekapRow, buildDaftarRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import KapalCell, { kapalDariItems } from "@/components/KapalCell";
 import PreviewModal from "@/components/PreviewModal";
 import JenisBadge from "@/components/JenisBadge";
@@ -199,8 +199,10 @@ export default function SppbjList() {
     }))) return;
     setRekapBusy(true);
     try {
-      const r = await sendToRekap(rows);
-      if (r.ok) void beritahu(`Terkirim ${r.results?.length || rows.length} baris ke rekap (per tab bulan).`);
+      const daftar = filtered.filter((x) => x.id).map((x) => buildDaftarRow(x.payload, x.id));
+      const r = await sendToRekap(rows, daftar);
+      if (r.ok) void beritahu(`Terkirim ${r.results?.length || rows.length} baris ke rekap (per tab bulan).` +
+        (r.daftar?.length ? `\nREKAP SPPBJ: ${r.daftar.length} pengadaan diperbarui.` : ""));
       else void beritahu("Gagal kirim: " + r.error);
     } catch (e: any) {
       if (e instanceof NoRekapConfigError) void beritahu("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET (lihat docs/rekap-apps-script.gs).");

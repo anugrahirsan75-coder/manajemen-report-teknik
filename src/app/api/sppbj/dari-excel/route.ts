@@ -22,7 +22,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { dbServer, dbSiap } from "@/lib/dbServer";
 import { bacaLembar, HasilLembar, JenisKirim, LembarExcel } from "@/lib/sppbj/dariExcel";
 import { bacaBerkasExcel } from "@/lib/sppbj/bacaBerkasExcel";
-import { buildRekapRow } from "@/lib/sppbj/rekapBaris";
+import { buildRekapRow, buildDaftarRow } from "@/lib/sppbj/rekapBaris";
+import { rapikanVendor, daftarVendor } from "@/lib/sppbj/vendor";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -30,7 +31,9 @@ export const maxDuration = 60;
 
 const rupiah = (n: number) => "Rp " + Math.round(n).toLocaleString("id-ID");
 const kunci = (s: unknown) => String(s ?? "").toUpperCase().replace(/[^A-Z0-9]/g, "");
-const bacaJenis = (v: unknown): JenisKirim | undefined => (v === "rutin" || v === "docking" ? v : undefined);
+const bacaJenis = (v: unknown): JenisKirim | undefined =>
+  (v === "rutin" || v === "docking" || v === "lainnya" ? v : undefined);
+const LABEL_JENIS: Record<string, string> = { Rutin: "Rutin", Docking: "Docking", Lainnya: "Persetujuan Lainnya" };
 
 interface Tersimpan { id: string; no: string | null; nama: string | null; tgl: string | null }
 
@@ -94,24 +97,41 @@ function ringkasan(h: HasilLembar, tampilKategori: boolean): string[] {
   return baris;
 }
 
-/** Teruskan ke spreadsheet rekap. Gagal di sini tidak membatalkan simpan. */
-async function keRekap(req: any): Promise<string> {
+/**
+ * Teruskan ke dua spreadsheet lewat Apps Script: REKAP PJK KAPAL PERBULAN (butuh
+ * No. SPPB/J sebagai kunci baris) dan REKAP SPPBJ (daftar ringkas, kuncinya id
+ * catatan, jadi pengadaan tanpa nomor tetap tercatat). Gagal di sini tidak
+ * membatalkan simpan.
+ */
+async function keRekap(req: any, id: string, lewatiPjk: boolean): Promise<{ pesan: string[]; url: string }> {
   const url = process.env.REKAP_GAS_URL;
-  if (!url) return "";
-  if (!String(req.noPRSAP || req.noSPPBJ || "").trim()) return "Rekap: menunggu No. SPPB/J.";
+  if (!url) return { pesan: [], url: "" };
+  const adaNomor = !!String(req.noPRSAP || req.noSPPBJ || "").trim();
+  const rows = adaNomor && !lewatiPjk ? [buildRekapRow(req)] : [];
+  const pesan: string[] = [];
+  if (!adaNomor) pesan.push("Rekap PJK: menunggu No. SPPB/J.");
+  if (lewatiPjk) pesan.push(`Rekap PJK dilewati: No. ${req.noSPPBJ} dipakai pengadaan lain.`);
   try {
     const res = await fetch(url, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ secret: process.env.REKAP_GAS_SECRET || "", rows: [buildRekapRow(req)] }),
+      body: JSON.stringify({ secret: process.env.REKAP_GAS_SECRET || "", rows, daftar: [buildDaftarRow(req, id)] }),
       redirect: "follow",
     });
     const data = await res.json().catch(() => ({} as any));
-    const r = data?.results?.[0];
-    if (!res.ok || data?.ok === false || r?.error) return "Rekap GAGAL; kirim ulang dari aplikasi.";
-    return `Rekap: tab ${r?.sheet || "-"} (${r?.action === "append" ? "baris baru" : "diperbarui"}).`;
+    if (!res.ok || data?.ok === false) return { pesan: [...pesan, "Rekap GAGAL; kirim ulang dari aplikasi."], url: "" };
+    if (rows.length) {
+      const r = data?.results?.[0];
+      pesan.push(r?.error ? "Rekap PJK GAGAL; kirim ulang dari aplikasi."
+        : `Rekap PJK: tab ${r?.sheet || "-"} (${r?.action === "append" ? "baris baru" : "diperbarui"}).`);
+    }
+    const d = Array.isArray(data?.daftar) ? data.daftar[0] : undefined;
+    if (!Array.isArray(data?.daftar)) pesan.push("REKAP SPPBJ: Apps Script rekap belum diperbarui.");
+    else if (!d || d.error) pesan.push("REKAP SPPBJ GAGAL" + (d?.error ? ": " + d.error : "") + "; kirim ulang dari aplikasi.");
+    else pesan.push(`REKAP SPPBJ: baris ${d.row} (${d.action === "append" ? "baru" : "diperbarui"}).`);
+    return { pesan, url: String(data?.rekapUrl || "") };
   } catch {
-    return "Rekap GAGAL; kirim ulang dari aplikasi.";
+    return { pesan: [...pesan, "Rekap GAGAL; kirim ulang dari aplikasi."], url: "" };
   }
 }
 
@@ -130,6 +150,10 @@ interface OpsiOlah {
   jenis?: JenisKirim;
   /** pengirim bisa memilih Rutin/Docking; salinan makro pertama belum bisa */
   bisaPilih: boolean;
+  /** vendor pelaksana yang diketik pengirim (makro versi 3) */
+  vendor?: string;
+  /** versi makro; versi 3 ke atas menerima daftar vendor untuk pilihan */
+  versi?: number;
 }
 
 async function olah(lembar: LembarExcel, o: OpsiOlah): Promise<Jawab> {
@@ -157,27 +181,34 @@ async function olah(lembar: LembarExcel, o: OpsiOlah): Promise<Jawab> {
   if (o.aksi !== "kirim") {
     const baris = ["Kirim SPPBJ ini ke aplikasi?", "", ...ringkasan(h, !o.bisaPilih)];
     if (!o.bisaPilih) baris.push("", "Berkas Excel ini versi lama: belum ada pilihan Rutin/Docking. Pakai templat terbaru.");
+    // baris terakhir untuk pilihan vendor di makro; makro membuangnya dari tampilan
+    if ((o.versi || 0) >= 3) baris.push(`@VENDOR ${daftarVendor().join("|")}`);
     return { ...dasar, kode: "SIAP", pesan: baris.join("\n") };
   }
 
   if (o.bisaPilih && !o.jenis) {
-    return { ...dasar, kode: "GAGAL", pesan: "Pilih Rutin atau Docking dulu." };
+    return { ...dasar, kode: "GAGAL", pesan: "Pilih Rutin, Docking, atau Persetujuan Lainnya dulu." };
   }
 
-  const payload = { ...h.req, kind: "sppbj", sumberInput: "excel" };
+  const vendor = rapikanVendor(o.vendor);
+  const payload = { ...h.req, ...(vendor ? { vendor } : {}), kind: "sppbj", sumberInput: "excel" };
   const { data, error } = await c.from("projects")
     .insert({ nama_kapal: h.req.namaPengadaan, tahun: parseInt((h.req.tanggal || "").slice(0, 4), 10) || null, payload })
     .select("id").single();
   if (error) throw new Error(error.message);
 
-  // rekap memakai nomor sebagai kunci baris: nomor kembar akan menimpa baris pengadaan lain
-  const rekap = nomorDipakai
-    ? `Rekap dilewati: No. ${h.req.noSPPBJ} dipakai pengadaan lain.`
-    : await keRekap(payload);
+  // rekap PJK memakai nomor sebagai kunci baris: nomor kembar akan menimpa baris pengadaan lain
+  const rekap = await keRekap(payload, String(data?.id || ""), !!nomorDipakai);
+  const jenis = LABEL_JENIS[h.req.jenisAnggaran || ""] || h.req.jenisAnggaran || "";
   return {
     ...dasar, kode: "TERKIRIM", id: data?.id,
     pesan: [`Masuk ke aplikasi: ${h.req.namaPengadaan}`,
-      `${h.req.jenisAnggaran || ""}, ${h.ringkas.item} item, ${rupiah(h.ringkas.jumlah)}.`, rekap].filter(Boolean).join("\n"),
+      `${jenis}, ${h.ringkas.item} item, ${rupiah(h.ringkas.jumlah)}.`,
+      vendor ? `Vendor: ${vendor}` : "",
+      h.req.jenisAnggaran === "Lainnya" ? "Tautkan surat persetujuannya di aplikasi supaya masuk pagu surat itu." : "",
+      ...rekap.pesan,
+      // baris terakhir dibaca makro versi 3 untuk tombol buka spreadsheet
+      rekap.url ? `Spreadsheet rekap: ${rekap.url}` : ""].filter(Boolean).join("\n"),
   };
 }
 
@@ -214,6 +245,8 @@ export async function POST(req: NextRequest) {
     if (!lembar || !Array.isArray(lembar.baris)) return gagal("Isi lembar tidak terbaca.", 400);
     const hasil = await olah(lembar, {
       aksi: String(body.aksi || "cek"), jenis: bacaJenis(body.jenis), bisaPilih: Number(body.versi) >= 2,
+      vendor: typeof body.vendor === "string" ? body.vendor : undefined,
+      versi: Number(body.versi) || 0,
     });
     return dariExcel ? teksExcel(hasil.kode, hasil.pesan) : NextResponse.json({ ok: true, hasil: [hasil] });
   } catch (e: any) {

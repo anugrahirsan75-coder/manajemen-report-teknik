@@ -18,7 +18,7 @@ import TempelHargaSpbj from "@/components/TempelHargaSpbj";
 import PreviewPengadaan from "@/components/PreviewPengadaan";
 import { KatalogItem } from "@/lib/katalog/source";
 import { ParsedItem } from "@/lib/sppbj/ocrTable";
-import { buildRekapRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
+import { buildRekapRow, buildDaftarRow, sendToRekap, NoRekapConfigError } from "@/lib/sppbj/rekapSync";
 import { useAnggaran, realisasiRutin, nilaiPengadaan } from "@/lib/anggaran/store";
 import { maKey, jenisAnggaranOf, jenisItemOf, anggaranCampuran, kunciSumber } from "@/lib/anggaran/types";
 import PaguProgram from "@/components/anggaran/PaguProgram";
@@ -277,8 +277,12 @@ function SppbjIsiInner() {
     }))) return;
     setRekapBusy(true);
     try {
-      const r = await sendToRekap([buildRekapRow(req)]);
-      if (r.ok) { const res = r.results?.[0]; void beritahu(`Terkirim ke rekap → tab "${res?.sheet || "-"}" (${res?.action === "append" ? "baris baru" : "diperbarui"}).`); }
+      const r = await sendToRekap([buildRekapRow(req)], req.id ? [buildDaftarRow(req, req.id)] : []);
+      if (r.ok) {
+        const res = r.results?.[0];
+        const daftar = r.daftar?.[0] && !r.daftar[0].error ? "\nREKAP SPPBJ: baris diperbarui (vendor & jenis ikut)." : "";
+        void beritahu(`Terkirim ke rekap → tab "${res?.sheet || "-"}" (${res?.action === "append" ? "baris baru" : "diperbarui"}).${daftar}`);
+      }
       else void beritahu("Gagal kirim: " + r.error);
     } catch (e: any) {
       if (e instanceof NoRekapConfigError) void beritahu("Fitur rekap belum aktif.\nDeploy Apps Script + set REKAP_GAS_URL & REKAP_GAS_SECRET di server (lihat docs/rekap-apps-script.gs).");

@@ -1,6 +1,7 @@
 Option Explicit
 
 Public Pilihan As String
+Public Vendor As String
 
 ' Huruf diatur di sini karena kendali yang dibuat lewat skrip perakit tidak
 ' menyediakan objek Font.
@@ -8,18 +9,41 @@ Private Sub UserForm_Initialize()
     txtRingkas.Font.Name = "Consolas"
     txtRingkas.Font.Size = 9
     lblJenis.Font.Bold = True
+    lblVendor.Font.Bold = True
     btnRutin.Font.Bold = True
     btnDocking.Font.Bold = True
+    btnLainnya.Font.Bold = True
+End Sub
+
+' daftar: nama rekanan dari aplikasi, dipisah "|". awal: vendor terakhir untuk
+' lembar ini. Nama yang tidak ada di daftar tetap boleh diketik.
+Public Sub IsiVendor(ByVal daftar As String, ByVal awal As String)
+    Dim v As Variant
+    cmbVendor.Clear
+    If Len(daftar) > 0 Then
+        For Each v In Split(daftar, "|")
+            If Len(Trim$(v)) > 0 Then cmbVendor.AddItem Trim$(v)
+        Next v
+    End If
+    cmbVendor.Text = awal
+End Sub
+
+Private Sub Pilih(ByVal jenis As String)
+    Pilihan = jenis
+    Vendor = Trim$(cmbVendor.Text)
+    Me.Hide
 End Sub
 
 Private Sub btnRutin_Click()
-    Pilihan = "rutin"
-    Me.Hide
+    Pilih "rutin"
 End Sub
 
 Private Sub btnDocking_Click()
-    Pilihan = "docking"
-    Me.Hide
+    Pilih "docking"
+End Sub
+
+Private Sub btnLainnya_Click()
+    Pilih "lainnya"
 End Sub
 
 Private Sub btnBatal_Click()

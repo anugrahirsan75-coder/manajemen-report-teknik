@@ -89,21 +89,59 @@ function Buat-FormKirim($vb) {
   $f.Name = "FormKirim"
   $f.Properties.Item("Caption").Value = "Kirim ke Aplikasi"
   $f.Properties.Item("Width").Value = 470
-  $f.Properties.Item("Height").Value = 350
-  $k = Tambah-Kendali $f "Forms.TextBox.1" "txtRingkas" 10 10 442 250
+  $f.Properties.Item("Height").Value = 400
+  $k = Tambah-Kendali $f "Forms.TextBox.1" "txtRingkas" 10 10 442 226
   $k.MultiLine = $true
   $k.Locked = $true
   $k.ScrollBars = 2
-  $k = Tambah-Kendali $f "Forms.Label.1" "lblJenis" 10 272 90 16
+  $k = Tambah-Kendali $f "Forms.Label.1" "lblVendor" 10 244 442 14
+  $k.Caption = "Vendor pelaksana (pilih atau ketik; boleh kosong bila belum ada):"
+  $k = Tambah-Kendali $f "Forms.ComboBox.1" "cmbVendor" 10 260 442 20
+  $k.Style = 0          # fmStyleDropDownCombo: boleh diketik bebas
+  $k.MatchEntry = 1     # fmMatchEntryComplete
+  $k.ListRows = 12
+  $k = Tambah-Kendali $f "Forms.Label.1" "lblJenis" 10 299 88 16
   $k.Caption = "Kirim sebagai:"
-  $k = Tambah-Kendali $f "Forms.CommandButton.1" "btnRutin" 100 266 110 30
+  $k = Tambah-Kendali $f "Forms.CommandButton.1" "btnRutin" 100 292 90 30
   $k.Caption = "RUTIN"
-  $k = Tambah-Kendali $f "Forms.CommandButton.1" "btnDocking" 216 266 110 30
+  $k = Tambah-Kendali $f "Forms.CommandButton.1" "btnDocking" 196 292 90 30
   $k.Caption = "DOCKING"
-  $k = Tambah-Kendali $f "Forms.CommandButton.1" "btnBatal" 372 266 80 30
+  $k = Tambah-Kendali $f "Forms.CommandButton.1" "btnLainnya" 292 292 160 30
+  $k.Caption = "PERSETUJUAN LAINNYA"
+  $k = Tambah-Kendali $f "Forms.CommandButton.1" "btnBatal" 372 332 80 26
   $k.Caption = "Batal"
   $k.Cancel = $true
   $f.CodeModule.AddFromString((Teks "FormKirim.txt"))
+}
+
+# Form lama (sebelum versi 3) tidak punya pilihan vendor dan Persetujuan Lainnya;
+# kodenya merujuk kendali itu, jadi formnya dibuat ulang, bukan hanya kodenya.
+function Form-Lengkap($form) {
+  try { $null = $form.Designer.Controls.Item("btnLainnya"); $null = $form.Designer.Controls.Item("cmbVendor"); return $true }
+  catch { return $false }
+}
+
+function Pasang-TombolBaru($ws, $sel) {
+  $tombol = @(
+    @{ nama = "TombolRekap"; teks = "BUKA SPREADSHEET REKAP"; aksi = "BukaRekap"; atas = 98 },
+    @{ nama = "TombolEkspor"; teks = "EKSPOR KE EXCEL BIASA"; aksi = "EksporExcelBiasa"; atas = 134 }
+  )
+  foreach ($t in $tombol) {
+    if (Ada-Bentuk $ws $t.nama) {
+      $b = $ws.Buttons($t.nama)
+      $b.Left = $sel.Left + 6
+      $b.OnAction = $t.aksi
+    }
+    else {
+      $b = $ws.Buttons().Add($sel.Left + 6, $sel.Top + $t.atas, 190, 30)
+      $b.Name = $t.nama
+      $b.Caption = $t.teks
+      $b.OnAction = $t.aksi
+      $b.Font.Bold = $true
+      $b.PrintObject = $false
+      $b.Placement = 3
+    }
+  }
 }
 
 function Ada-Bentuk($ws, $nama) {
@@ -273,6 +311,12 @@ try {
 
   if ($null -eq (Cari-Komponen $vb "FormMasuk")) { Buat-FormMasuk $vb }
   $form = Cari-Komponen $vb "FormKirim"
+  if ($null -ne $form -and -not (Form-Lengkap $form)) {
+    # nama dipindah dulu: komponen yang dihapus baru benar-benar hilang belakangan
+    $form.Name = "FormKirimLama"
+    $vb.VBComponents.Remove($form)
+    $form = $null
+  }
   if ($null -eq $form) { Buat-FormKirim $vb } else { Ganti-Kode $form (Teks "FormKirim.txt") }
 
   foreach ($ws in $wb.Worksheets) {
@@ -337,6 +381,7 @@ try {
       $b.PrintObject = $false
       $b.Placement = 3
     }
+    Pasang-TombolBaru $ws $sel
   }
 
   if ($Induk) {
@@ -355,6 +400,13 @@ try {
       $t.Buttons("TombolSheet").OnAction = "TambahSheet"
       $t.Visible = 2   # xlSheetVeryHidden
     }
+  }
+  # Sheet induk ikut mendapat tombol baru, supaya sheet hasil TAMBAH SHEET BARU lengkap.
+  foreach ($ws in $wb.Worksheets) {
+    if ($ws.Name -ne "_TEMPLAT") { continue }
+    $tabel = Baca-Tabel $ws
+    if ($null -eq $tabel) { continue }
+    Pasang-TombolBaru $ws ($ws.Range("$(Huruf ($tabel.kolMa + 1))1"))
   }
   $wb.Worksheets.Item(1).Activate()
   if ($KakDari) {
