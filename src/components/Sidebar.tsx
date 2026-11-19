@@ -60,6 +60,7 @@ const KELOMPOK: Kelompok[] = [
     judul: "Pekerjaan Saya",
     menu: [
       { href: "/monitor-pekerjaan", icon: "centang", label: "Monitor Pekerjaan", desc: "Daftar kerja, tenggat & tindak lanjut" },
+      { href: "/permohonan-cabang", icon: "amplop", label: "Monitoring Permohonan Cabang", desc: "Permohonan ke Pusat & persetujuannya" },
     ],
   },
   {
