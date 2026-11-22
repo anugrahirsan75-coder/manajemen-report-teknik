@@ -20,7 +20,7 @@ import {
 
 export const KIND_RINGKAS = "permintaan_ringkas";
 
-type Patch = Partial<Pick<EvalPermintaan,
+export type Patch = Partial<Pick<EvalPermintaan,
   "prioritas" | "klasifikasi" | "keputusan" | "catatan" | "pic" | "diterima" | "tautPengadaan">>;
 
 const LABEL_UBAH: Record<keyof Patch, string> = {
@@ -134,12 +134,14 @@ export function useMonitorPermintaan() {
   const evalsRef = useRef(evals);
   useEffect(() => { evalsRef.current = evals; }, [evals]);
 
-  const terapkan = useCallback((daftar: BarisMonitor[], patch: Patch) => {
+  /** patch boleh berupa fungsi — tiap barang mendapat isian sendiri (mis. sarannya masing-masing) */
+  const terapkan = useCallback((daftar: BarisMonitor[], patchAtauFn: Patch | ((b: BarisMonitor) => Patch)) => {
     if (!daftar.length) return;
     const oleh = penilai || "Kantor";
     const n = new Map(evalsRef.current);
     const tertulis: EvalPermintaan[] = [];
     daftar.forEach((b) => {
+      const patch = typeof patchAtauFn === "function" ? patchAtauFn(b) : patchAtauFn;
       const dasar = n.get(b.kunci) || evalBaru(b, oleh);
       const ubah = (Object.keys(patch) as (keyof Patch)[])
         .filter((k) => (dasar as any)[k] !== patch[k])
@@ -156,6 +158,19 @@ export function useMonitorPermintaan() {
     setEvals(n);
     tertulis.forEach((e) => tulis(e, tertulis.length > 1));
   }, [penilai, tulis]);
+
+  /**
+   * Satu klik keputusan. Prioritas & klasifikasi yang belum diisi orang ikut
+   * dikunci dari saran mesin saat itu juga — tanpa ini, barang yang disetujui
+   * tetap berlabel "saran" dan orang harus mengonfirmasinya satu per satu.
+   */
+  const putuskan = useCallback((daftar: BarisMonitor[], keputusan: EvalPermintaan["keputusan"]) => {
+    terapkan(daftar, (b) => ({
+      keputusan,
+      prioritas: b.ev?.prioritas || b.saranPrioritas,
+      klasifikasi: b.ev?.klasifikasi || b.saranKlasifikasi,
+    }));
+  }, [terapkan]);
 
   /** konfirmasi saran mesin apa adanya — untuk barang yang belum disentuh */
   const terimaSaran = useCallback((daftar: BarisMonitor[]) => {
@@ -206,7 +221,7 @@ export function useMonitorPermintaan() {
 
   return {
     muat, galat, baris, ringkasan, harga, pengadaan, penilai, gantiPenilai, sibukSimpan: simpanan > 0,
-    muatUlang: ambil, terapkan, terimaSaran,
+    muatUlang: ambil, terapkan, terimaSaran, putuskan,
   };
 }
 
