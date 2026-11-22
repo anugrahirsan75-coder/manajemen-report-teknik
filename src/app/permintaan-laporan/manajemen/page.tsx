@@ -5,22 +5,19 @@
  * Dibaca, bukan diisi. Pertanyaan yang dijawab:
  *  · Kapal mana yang permintaannya menumpuk, dan berapa yang urgent?
  *  · Barang urgent mana yang sudah lewat seminggu belum diproses? (daftar merah)
- *  · Berapa nilai kebutuhan terbuka, dan berapa yang rutin / biaya / investasi?
+ *  · Berapa barang yang rutin / biaya / investasi, dan berapa yang sudah tuntas?
  *  · Seberapa lama permintaan menunggu, dan berapa yang sudah tuntas?
  * Seluruh angka dihitung dari data yang sama dengan layar Monitoring.
  */
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { bulanIndo } from "@/lib/lapor/types";
-import { rupiah, tanggalIndo } from "@/lib/format";
+import { tanggalIndo } from "@/lib/format";
 import { ringkasKapal } from "@/lib/kapal/nama";
-import { nilaiBarang, ringkas } from "@/lib/permintaanMonitor/logika";
+import { ringkas } from "@/lib/permintaanMonitor/logika";
 import { BATAS_MENGGANTUNG_HARI, KLASIFIKASI, PRIORITAS, TAHAP, Tahap } from "@/lib/permintaanMonitor/types";
 import { perKapal, unduhExcel, useMonitorPermintaan } from "@/lib/permintaanMonitor/useMonitor";
 import { beritahu } from "@/components/Konfirmasi";
-
-const jt = (n: number) =>
-  n >= 1e9 ? `${(n / 1e9).toFixed(2)} M` : n >= 1e6 ? `${(n / 1e6).toFixed(1)} jt` : n >= 1e3 ? `${Math.round(n / 1e3)} rb` : n ? String(Math.round(n)) : "0";
 
 const URUT_TAHAP: Tahap[] = ["baru", "menunggu", "disetujui", "stok", "ditunda", "sppbj", "spbj", "selesai", "ditolak"];
 const WARNA_BAR: Record<Tahap, string> = {
@@ -41,10 +38,16 @@ export default function DashboardManajemen() {
   /* pembanding Mesin vs Deck — selalu dari kedua bagian, tak terpengaruh pilihan */
   const duaBagian = useMemo(() => (["mesin", "deck"] as const).map((g) => {
     const d = diBulan.filter((b) => b.jenis.endsWith(g));
-    return { g, r: ringkas(d, m.harga) };
-  }), [diBulan, m.harga]);
-  const r = useMemo(() => ringkas(data, m.harga), [data, m.harga]);
-  const kapal = useMemo(() => perKapal(data, m.harga), [data, m.harga]);
+    return { g, r: ringkas(d, {}) };
+  }), [diBulan]);
+  const r = useMemo(() => ringkas(data, {}), [data]);
+  const kapal = useMemo(() => perKapal(data), [data]);
+  /* barang terbuka per klasifikasi — jumlah barang, bukan rupiah */
+  const perKlas = useMemo(() => {
+    const h = Object.fromEntries(KLASIFIKASI.map((k) => [k.id, 0])) as Record<string, number>;
+    data.forEach((b) => { if (b.tahap !== "selesai" && b.tahap !== "ditolak") h[b.klasifikasi]++; });
+    return h;
+  }, [data]);
 
   const tahap = useMemo(() => {
     const h = Object.fromEntries(URUT_TAHAP.map((t) => [t, 0])) as Record<Tahap, number>;
@@ -79,12 +82,12 @@ export default function DashboardManajemen() {
   }, [m.baris]);
 
   const persenSelesai = r.total ? Math.round((r.selesai / r.total) * 100) : 0;
-  const maksNilai = Math.max(1, ...Object.values(r.nilaiPerKlasifikasi));
+  const maksKlas = Math.max(1, ...Object.values(perKlas));
 
   const ekspor = async () => {
     if (!data.length || unduh) return;
     setUnduh(true);
-    try { await unduhExcel(data, m.harga, [bagian === "mesin" ? "Mesin" : bagian === "deck" ? "Deck" : "", bulan ? bulanIndo(bulan) : `per ${new Date().toLocaleDateString("id-ID")}`].filter(Boolean).join(" - ")); }
+    try { await unduhExcel(data, [bagian === "mesin" ? "Mesin" : bagian === "deck" ? "Deck" : "", bulan ? bulanIndo(bulan) : `per ${new Date().toLocaleDateString("id-ID")}`].filter(Boolean).join(" - ")); }
     catch (e: any) { void beritahu(e?.message || String(e)); }
     finally { setUnduh(false); }
   };
@@ -96,7 +99,7 @@ export default function DashboardManajemen() {
           <div className="h-12 w-12 rounded-2xl bg-gradient-to-br from-indigo-600 to-fuchsia-600 grid place-items-center text-2xl text-white shadow-md shrink-0">📊</div>
           <div className="flex-1 min-w-[240px]">
             <h1 className="text-2xl font-extrabold asdp-text-gradient tracking-tight">Dashboard Manajemen — Permintaan Kapal</h1>
-            <p className="text-slate-500 text-sm">Ringkasan untuk Manajemen Cabang: beban permintaan per kapal, urgent yang tertahan, dan nilai kebutuhan.</p>
+            <p className="text-slate-500 text-sm">Ringkasan untuk Manajemen Cabang: beban permintaan per kapal, urgent yang tertahan, dan sampai mana diproses.</p>
           </div>
           <div className="flex rounded-lg overflow-hidden ring-1 ring-slate-300 print:hidden">
             {([["", "Semua"], ["mesin", "⚙️ Mesin"], ["deck", "🛳️ Deck"]] as const).map(([v, l]) => (
@@ -124,7 +127,7 @@ export default function DashboardManajemen() {
             <Kpi label="Urgent terbuka" nilai={String(r.urgentTerbuka)} warna="text-rose-700" />
             <Kpi label={`Urgent > ${BATAS_MENGGANTUNG_HARI} hari`} nilai={String(r.menggantung)} sub="belum masuk pengadaan" warna={r.menggantung ? "text-red-700" : "text-emerald-700"} />
             <Kpi label="Belum dievaluasi" nilai={String(r.belumDievaluasi)} warna="text-amber-700" />
-            <Kpi label="Nilai terbuka" nilai={`Rp${jt(r.nilaiTerbuka)}`} sub="taksiran RAB / harga kantor" warna="text-indigo-700" />
+            <Kpi label="Sedang diadakan" nilai={String(r.prosesPengadaan)} sub="sudah SPPBJ / SPBJ" warna="text-indigo-700" />
             <Kpi label="Tuntas" nilai={`${persenSelesai}%`} sub={`${r.selesai} selesai · ${r.prosesPengadaan} diproses`} warna="text-emerald-700" />
           </section>
 
@@ -137,7 +140,7 @@ export default function DashboardManajemen() {
                 <p className="text-xs text-slate-600 mt-0.5">
                   <b>{x.terbuka}</b> terbuka · <b className="text-amber-700">{x.belumDievaluasi}</b> belum dinilai · <b className="text-rose-700">{x.urgentTerbuka}</b> urgent
                   {x.menggantung > 0 && <> · <b className="text-red-700">⏰ {x.menggantung} tertahan</b></>}
-                  {" "}· nilai Rp{jt(x.nilaiTerbuka)}
+                  {" "}· {x.prosesPengadaan} diadakan
                 </p>
               </button>
             ))}
@@ -172,7 +175,7 @@ export default function DashboardManajemen() {
                 <table className="w-full text-xs">
                   <thead className="bg-red-50 text-[10px] uppercase text-red-900 font-bold">
                     <tr><th className="p-2 text-left">Kapal</th><th className="p-2 text-left">Bagian</th><th className="p-2 text-left">Barang</th><th className="p-2 text-right">Menunggu</th>
-                      <th className="p-2 text-left">Status</th><th className="p-2 text-right">Taksiran</th><th className="p-2 text-left">Catatan kantor</th></tr>
+                      <th className="p-2 text-left">Status</th><th className="p-2 text-left">Catatan kantor</th></tr>
                   </thead>
                   <tbody>
                     {merah.slice(0, 25).map((b) => (
@@ -183,7 +186,6 @@ export default function DashboardManajemen() {
                           {b.dimintaUlang > 0 && <span className="ml-1 text-[10px] text-amber-700 font-bold">🔁 {b.dimintaUlang}×</span>}</td>
                         <td className="p-2 text-right font-bold text-red-700 whitespace-nowrap">{b.umurHari} hari</td>
                         <td className="p-2 whitespace-nowrap">{TAHAP[b.tahap].label}</td>
-                        <td className="p-2 text-right tabular-nums">{rupiah(nilaiBarang(b, m.harga))}</td>
                         <td className="p-2 text-slate-600">{b.ev?.catatan || "—"}</td>
                       </tr>
                     ))}
@@ -204,7 +206,7 @@ export default function DashboardManajemen() {
                     <th className="p-2 text-left">Kapal</th><th className="p-2 text-right">Terbuka</th><th className="p-2 text-right">Urgent</th>
                     <th className="p-2 text-right">Menggantung</th><th className="p-2 text-right">Belum dinilai</th><th className="p-2 text-right">Diproses</th>
                     <th className="p-2 text-right">Selesai</th>
-                    {KLASIFIKASI.map((k) => <th key={k.id} className="p-2 text-right">{k.label} (Rp)</th>)}
+                    <th className="p-2 text-right">Barang mesin</th><th className="p-2 text-right">Barang deck</th>
                     <th className="p-2 print:hidden" />
                   </tr>
                 </thead>
@@ -218,7 +220,7 @@ export default function DashboardManajemen() {
                       <td className="p-2 text-right tabular-nums text-amber-700">{k.belum || ""}</td>
                       <td className="p-2 text-right tabular-nums">{k.proses || ""}</td>
                       <td className="p-2 text-right tabular-nums text-emerald-700">{k.selesai || ""}</td>
-                      {KLASIFIKASI.map((x) => <td key={x.id} className="p-2 text-right tabular-nums">{k[x.id] ? jt(k[x.id]) : ""}</td>)}
+                      <td className="p-2 text-right tabular-nums">{k.mesin || ""}</td><td className="p-2 text-right tabular-nums">{k.deck || ""}</td>
                       <td className="p-2 print:hidden"><Link href={`/permintaan-laporan/monitoring?kapal=${encodeURIComponent(k.kapal)}&saring=perlu${bagian ? `&bagian=${bagian}` : ""}`} className="text-sky-700 hover:underline whitespace-nowrap">lihat →</Link></td>
                     </tr>
                   ))}
@@ -229,11 +231,11 @@ export default function DashboardManajemen() {
 
           <section className="mt-4 grid md:grid-cols-3 gap-3">
             <div className="bg-white rounded-2xl ring-line elev-sm p-4">
-              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Nilai terbuka per klasifikasi</p>
+              <p className="text-[10px] uppercase tracking-wider text-slate-500 font-bold mb-2">Barang terbuka per klasifikasi</p>
               {KLASIFIKASI.map((k) => (
                 <div key={k.id} className="mb-1.5">
-                  <div className="flex justify-between text-xs"><span>{k.label}</span><b className="tabular-nums">Rp{jt(r.nilaiPerKlasifikasi[k.id])}</b></div>
-                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${(r.nilaiPerKlasifikasi[k.id] / maksNilai) * 100}%` }} /></div>
+                  <div className="flex justify-between text-xs"><span>{k.label}</span><b className="tabular-nums">{perKlas[k.id]} barang</b></div>
+                  <div className="h-2 bg-slate-100 rounded-full overflow-hidden"><div className="h-full bg-indigo-500" style={{ width: `${(perKlas[k.id] / maksKlas) * 100}%` }} /></div>
                 </div>
               ))}
               <p className="text-[10px] text-slate-400 mt-2">Termasuk saran mesin yang belum dikonfirmasi.</p>

@@ -7,7 +7,7 @@
  * barang berbeda dari berkas yang sama tidak saling menimpa.
  */
 import { supabase, isSupabaseReady } from "@/lib/supabase";
-import { EvalPermintaan, JejakEval, KIND_EVAL, Pengadaan } from "./types";
+import { EvalPermintaan, JejakEval, KIND_EVAL, KIND_MANUAL, Pengadaan, PermintaanManual } from "./types";
 
 const HALAMAN = 1000;
 
@@ -111,3 +111,36 @@ export const namaPenilai = () => { try { return localStorage.getItem(KUNCI_NAMA)
 export const ingatPenilai = (n: string) => { try { localStorage.setItem(KUNCI_NAMA, n.trim()); } catch { /* dimatikan */ } };
 
 export const jejakBaru = (oleh: string, ubah: string): JejakEval => ({ pada: new Date().toISOString(), oleh, ubah });
+
+/* ── permintaan input kantor ────────────────────────────────────────────── */
+
+export async function muatManual(): Promise<{ daftar: PermintaanManual[]; idBaris: Map<string, string> }> {
+  const idBaris = new Map<string, string>();
+  const daftar: PermintaanManual[] = [];
+  for (const r of await semuaBaris(KIND_MANUAL)) {
+    const p = r.payload as PermintaanManual;
+    if (!p?.id) continue;
+    daftar.push(p); idBaris.set(p.id, r.id);
+  }
+  return { daftar, idBaris };
+}
+
+export async function simpanManual(id: string | null, p: PermintaanManual): Promise<string> {
+  if (!supabase) throw new Error("Sumber data belum siap");
+  if (id) {
+    const { error } = await supabase.from("projects").update({ payload: p }).eq("id", id);
+    if (error) throw new Error(error.message);
+    return id;
+  }
+  const { data, error } = await supabase.from("projects")
+    .insert({ nama_kapal: p.kapal, tahun: Number(p.tanggal.slice(0, 4)) || new Date().getFullYear(), payload: p })
+    .select("id").single();
+  if (error) throw new Error(error.message);
+  return data!.id as string;
+}
+
+export async function hapusManual(id: string): Promise<void> {
+  if (!supabase) return;
+  const { error } = await supabase.from("projects").delete().eq("id", id);
+  if (error) throw new Error(error.message);
+}

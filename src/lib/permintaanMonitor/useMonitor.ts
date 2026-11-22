@@ -2,20 +2,25 @@
 /**
  * Data bersama halaman Monitoring Permintaan dan Dashboard Manajemen.
  *
- * Empat sumber dirangkai di peramban: kiriman ABK, hasil Juru Baca, penilaian
- * kantor, dan pengadaan (SPPBJ / Non PR PO / SCM). Harga taksiran dicocokkan
- * ke Database RAB lewat indeks lokal — tidak menyentuh Drive.
+ * Lima sumber dirangkai di peramban: kiriman ABK, hasil Juru Baca, permintaan
+ * yang diinput kantor, penilaian kantor, dan pengadaan (SPPBJ / Non PR PO / SCM).
+ *
+ * Layar tidak menampilkan rupiah. Taksiran harga hanya dicari saat barang
+ * dikirim ke borang SPPBJ (taksirUntukSppbj), supaya borang tidak kosong.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { muatBacaan } from "@/lib/lapor/simpananBacaan";
 import type { BarisPermintaan } from "@/lib/lapor/skemaPermintaan";
-import type { KirimanLapor } from "@/lib/lapor/types";
+import type { BerkasLapor, KirimanLapor } from "@/lib/lapor/types";
 import { singkatJenis } from "@/lib/lapor/types";
-import { Ringkasan, hargaLayak, nilaiBarang, ringkas, satuanEfektif, susunBaris } from "./logika";
-import { ingatPenilai, jejakBaru, muatEval, muatPengadaan, namaPenilai, simpanEval } from "./store";
+import { Ringkasan, hargaLayak, ringkas, satuanEfektif, susunBaris } from "./logika";
 import {
-  BarisMonitor, EvalPermintaan, KEPUTUSAN, KIND_EVAL, KLASIFIKASI, Klasifikasi, PRIORITAS, Pengadaan, TAHAP, Tahap,
+  hapusManual, ingatPenilai, jejakBaru, muatEval, muatManual, muatPengadaan, namaPenilai, simpanEval, simpanManual,
+} from "./store";
+import {
+  AWALAN_MANUAL, BarisMonitor, EvalPermintaan, KEPUTUSAN, KIND_EVAL, KIND_MANUAL, KLASIFIKASI, PRIORITAS, Pengadaan,
+  PermintaanManual, TAHAP, Tahap,
 } from "./types";
 
 export const KIND_RINGKAS = "permintaan_ringkas";
@@ -23,10 +28,14 @@ export const KIND_RINGKAS = "permintaan_ringkas";
 export type Patch = Partial<Pick<EvalPermintaan,
   "prioritas" | "klasifikasi" | "keputusan" | "catatan" | "pic" | "diterima" | "tautPengadaan">>;
 
+export type BarangInput = PermintaanManual["baris"][number];
+
 const LABEL_UBAH: Record<keyof Patch, string> = {
   prioritas: "prioritas", klasifikasi: "klasifikasi", keputusan: "keputusan", catatan: "catatan",
   pic: "PIC", diterima: "diterima", tautPengadaan: "tautan pengadaan",
 };
+
+const TANPA_HARGA: Record<string, number> = {};
 
 export function evalBaru(b: BarisMonitor, oleh: string): EvalPermintaan {
   const kini = new Date().toISOString();
@@ -38,13 +47,22 @@ export function evalBaru(b: BarisMonitor, oleh: string): EvalPermintaan {
   };
 }
 
+const idAcak = () => globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+
+/** berkas semu untuk barang input kantor — diperlakukan seperti satu berkas hasil baca */
+const berkasManual = (p: PermintaanManual): BerkasLapor => ({
+  nama: p.untukKiriman ? "Tambahan dari kantor" : (p.nomor || "Input kantor"),
+  mime: "", ukuran: 0, fileId: AWALAN_MANUAL + p.id, url: "", diunggahPada: p.dibuatPada,
+});
+
 export function useMonitorPermintaan() {
-  const [kiriman, setKiriman] = useState<KirimanLapor[]>([]);
-  const [bacaan, setBacaan] = useState<Map<string, { baris: BarisPermintaan[]; status: string }>>(new Map());
+  const [kirimanAsli, setKirimanAsli] = useState<KirimanLapor[]>([]);
+  const [bacaanAsli, setBacaanAsli] = useState<Map<string, { baris: BarisPermintaan[]; status: string }>>(new Map());
+  const [manual, setManual] = useState<PermintaanManual[]>([]);
+  const idManual = useRef<Map<string, string>>(new Map());
   const [evals, setEvals] = useState<Map<string, EvalPermintaan>>(new Map());
   const idBaris = useRef<Map<string, string>>(new Map());
   const [pengadaan, setPengadaan] = useState<Pengadaan[]>([]);
-  const [harga, setHarga] = useState<Record<string, number>>({});
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
   const [penilai, setPenilai] = useState("");
@@ -57,65 +75,64 @@ export function useMonitorPermintaan() {
   const ambil = useCallback(async () => {
     setGalat("");
     try {
-      const [r, bc, ev, pg] = await Promise.all([
+      const [r, bc, ev, pg, mn] = await Promise.all([
         fetch("/api/lapor/daftar", { cache: "no-store" }).then((x) => x.json()),
-        muatBacaan(), muatEval(), muatPengadaan(),
+        muatBacaan(), muatEval(), muatPengadaan(), muatManual(),
       ]);
       if (!r.ok) throw new Error(r.error || "Gagal memuat kiriman kapal");
-      setKiriman((r.baris as KirimanLapor[]).filter((k) => String(k.jenis).startsWith("permintaan")));
+      setKirimanAsli((r.baris as KirimanLapor[]).filter((k) => String(k.jenis).startsWith("permintaan")));
       const m = new Map<string, { baris: BarisPermintaan[]; status: string }>();
       bc.forEach((v, k) => m.set(k, { baris: v.bacaan.baris || [], status: v.bacaan.status }));
-      setBacaan(m);
+      setBacaanAsli(m);
       setEvals(ev.evals); idBaris.current = ev.idBaris;
       setPengadaan(pg);
+      setManual(mn.daftar); idManual.current = mn.idBaris;
     } catch (e: any) { setGalat(e?.message || String(e)); }
     finally { setMuat(false); }
   }, []);
   useEffect(() => { void ambil(); }, [ambil]);
 
-  const baris = useMemo(
-    () => susunBaris({ kiriman, bacaan, evals, pengadaan, harga }),
-    [kiriman, bacaan, evals, pengadaan, harga]);
-
   /*
-   * Taksiran harga dari Database RAB — sekali per barang.
-   *
-   * Kunci yang sudah DIMINTA dicatat di ref, dan permintaan yang sedang jalan
-   * tidak dibatalkan saat layar dirender ulang. Tiap harga yang masuk mengubah
-   * daftar barang (nilainya ikut menentukan saran klasifikasi); kalau efek
-   * membatalkan dirinya setiap kali itu terjadi, hanya potongan pertama yang
-   * pernah sampai dan sisanya tak pernah terisi.
+   * Input kantor dirangkai sebagai kiriman biasa. Tambahan untuk kiriman yang
+   * sudah ada menempel ke kiriman itu sebagai "berkas" tambahan — hasil baca
+   * Juru Baca tidak pernah disentuh, jadi tak ada yang bisa tertimpa.
    */
-  const dimintaHarga = useRef<Set<string>>(new Set());
-  const hidup = useRef(true);
-  useEffect(() => () => { hidup.current = false; }, []);
-  useEffect(() => {
-    const perlu = baris.filter((b) => !dimintaHarga.current.has(b.kunci))
-      .map((b) => ({ id: b.kunci, teks: `${b.nama} ${b.spesifikasi}`.trim(), satuan: satuanEfektif(b) }));
-    if (!perlu.length) return;
-    perlu.forEach((x) => dimintaHarga.current.add(x.id));
-    (async () => {
-      for (let n = 0; n < perlu.length && hidup.current; n += 150) {
-        const potong = perlu.slice(n, n + 150);
-        try {
-          const r = await fetch("/api/harga/cocok", {
-            method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ items: potong.map(({ id, teks }) => ({ id, teks })) }),
-          });
-          const d = await r.json();
-          if (!hidup.current || !d?.ok) { potong.forEach((x) => dimintaHarga.current.delete(x.id)); continue; }
-          setHarga((lama) => {
-            const baru = { ...lama };
-            potong.forEach((x) => { baru[x.id] = hargaLayak(x.satuan, d.hasil?.[x.id]); });
-            return baru;
-          });
-        } catch { potong.forEach((x) => dimintaHarga.current.delete(x.id)); }
-      }
-    })();
-  }, [baris]);
+  const kiriman = useMemo(() => {
+    const salin = kirimanAsli.map((k) => ({ ...k, berkas: [...(k.berkas || [])] }));
+    const perId = new Map(salin.map((k) => [k.id, k]));
+    const baru: KirimanLapor[] = [];
+    manual.forEach((p) => {
+      const induk = p.untukKiriman ? perId.get(p.untukKiriman) : undefined;
+      if (induk) { induk.berkas.push(berkasManual(p)); return; }
+      baru.push({
+        id: `manual-${p.id}`, kapal: p.kapal, jenis: p.jenis, periode: p.tanggal.slice(0, 7),
+        pengirim: `Input kantor${p.oleh ? ` (${p.oleh})` : ""}`, jabatan: "", kontak: "", catatan: p.catatan,
+        berkas: [berkasManual(p)], dikirimPada: `${p.tanggal}T00:00:00`, status: "dibaca", tindakLanjut: "", galatUnggah: "",
+      } as unknown as KirimanLapor);
+    });
+    return [...salin, ...baru];
+  }, [kirimanAsli, manual]);
 
-  const ringkasan: Ringkasan = useMemo(() => ringkas(baris, harga), [baris, harga]);
+  const bacaan = useMemo(() => {
+    const m = new Map(bacaanAsli);
+    manual.forEach((p) => m.set(AWALAN_MANUAL + p.id, { baris: p.baris, status: "selesai" }));
+    return m;
+  }, [bacaanAsli, manual]);
 
-  /* ── simpan ─────────────────────────────────────────────────────────────── */
+  /** status baca tiap berkas — dipakai layar untuk memberi tahu yang belum terbaca */
+  const statusBerkas = useMemo(() => {
+    const m = new Map<string, string>();
+    bacaan.forEach((v, k) => m.set(k, v.status));
+    return m;
+  }, [bacaan]);
+
+  const baris = useMemo(
+    () => susunBaris({ kiriman, bacaan, evals, pengadaan, harga: TANPA_HARGA }),
+    [kiriman, bacaan, evals, pengadaan]);
+
+  const ringkasan: Ringkasan = useMemo(() => ringkas(baris, TANPA_HARGA), [baris]);
+
+  /* ── simpan penilaian ───────────────────────────────────────────────────── */
 
   const tulis = useCallback((e: EvalPermintaan, segera = false) => {
     const lama = jadwal.current.get(e.kunci);
@@ -172,15 +189,61 @@ export function useMonitorPermintaan() {
     }));
   }, [terapkan]);
 
-  /** konfirmasi saran mesin apa adanya — untuk barang yang belum disentuh */
-  const terimaSaran = useCallback((daftar: BarisMonitor[]) => {
-    daftar.forEach((b) => {
-      const p: Patch = {};
-      if (!b.ev?.prioritas) p.prioritas = b.saranPrioritas;
-      if (!b.ev?.klasifikasi) p.klasifikasi = b.saranKlasifikasi;
-      if (Object.keys(p).length) terapkan([b], p);
+  /* ── input kantor ───────────────────────────────────────────────────────── */
+
+  const simpanP = useCallback(async (p: PermintaanManual) => {
+    setSimpanan((n) => n + 1);
+    try {
+      const id = await simpanManual(idManual.current.get(p.id) || null, p);
+      idManual.current.set(p.id, id);
+      setManual((d) => [...d.filter((x) => x.id !== p.id), p]);
+    } catch (e: any) { setGalat(e?.message || String(e)); throw e; }
+    finally { setSimpanan((n) => Math.max(0, n - 1)); }
+  }, []);
+
+  /** permintaan baru yang tidak datang lewat aplikasi (WA, kertas, telepon) */
+  const buatPermintaan = useCallback(async (isi: {
+    kapal: string; jenis: PermintaanManual["jenis"]; tanggal: string; nomor: string; catatan: string; baris: BarangInput[];
+  }) => {
+    const kini = new Date().toISOString();
+    await simpanP({ kind: KIND_MANUAL, id: idAcak(), ...isi, oleh: penilai || "Kantor", dibuatPada: kini, diubahPada: kini });
+  }, [penilai, simpanP]);
+
+  /**
+   * Barang terlewat untuk kiriman yang sudah ada. Semua tambahan satu kiriman
+   * dikumpulkan dalam SATU catatan input kantor, supaya tidak berserakan.
+   */
+  const tambahBarang = useCallback(async (k: KirimanLapor, barang: BarangInput[]) => {
+    if (!barang.length) return;
+    const kini = new Date().toISOString();
+    const idManualKiriman = k.id.startsWith("manual-") ? k.id.slice(7) : "";
+    const ada = idManualKiriman
+      ? manual.find((p) => p.id === idManualKiriman)
+      : manual.find((p) => p.untukKiriman === k.id);
+    if (ada) { await simpanP({ ...ada, baris: [...ada.baris, ...barang], diubahPada: kini }); return; }
+    await simpanP({
+      kind: KIND_MANUAL, id: idAcak(), kapal: k.kapal,
+      jenis: (k.jenis === "permintaan_deck" ? "permintaan_deck" : "permintaan_mesin"),
+      tanggal: (k.dikirimPada || kini).slice(0, 10), nomor: "", catatan: "", untukKiriman: k.id,
+      baris: barang, oleh: penilai || "Kantor", dibuatPada: kini, diubahPada: kini,
     });
-  }, [terapkan]);
+  }, [manual, penilai, simpanP]);
+
+  /** hapus satu barang input kantor (barang hasil baca dikoreksi di layar Isi Permintaan) */
+  const hapusBarangManual = useCallback(async (fileId: string, indeks: number) => {
+    const id = fileId.slice(AWALAN_MANUAL.length);
+    const p = manual.find((x) => x.id === id);
+    if (!p) return;
+    const sisa = p.baris.filter((_, i) => i !== indeks);
+    if (!sisa.length) {
+      const rid = idManual.current.get(id);
+      if (rid) await hapusManual(rid);
+      idManual.current.delete(id);
+      setManual((d) => d.filter((x) => x.id !== id));
+      return;
+    }
+    await simpanP({ ...p, baris: sisa, diubahPada: new Date().toISOString() });
+  }, [manual, simpanP]);
 
   /*
    * Tahap terakhir yang dilihat layar dititipkan ke baris penilaian, dan
@@ -220,45 +283,64 @@ export function useMonitorPermintaan() {
   }, [muat, baris, ringkasan, tulis]);
 
   return {
-    muat, galat, baris, ringkasan, harga, pengadaan, penilai, gantiPenilai, sibukSimpan: simpanan > 0,
-    muatUlang: ambil, terapkan, terimaSaran, putuskan,
+    muat, galat, baris, ringkasan, kiriman, statusBerkas, pengadaan, penilai, gantiPenilai, sibukSimpan: simpanan > 0,
+    muatUlang: ambil, terapkan, putuskan, buatPermintaan, tambahBarang, hapusBarangManual,
   };
+}
+
+/* ── taksiran harga khusus borang SPPBJ (tidak ditampilkan di layar) ─────── */
+
+export async function taksirUntukSppbj(daftar: BarisMonitor[]): Promise<Record<string, number>> {
+  const keluar: Record<string, number> = {};
+  for (let n = 0; n < daftar.length; n += 150) {
+    const potong = daftar.slice(n, n + 150);
+    try {
+      const r = await fetch("/api/harga/cocok", {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: potong.map((b) => ({ id: b.kunci, teks: `${b.nama} ${b.spesifikasi}`.trim() })) }),
+      });
+      const d = await r.json();
+      potong.forEach((b) => { keluar[b.kunci] = d?.ok ? hargaLayak(satuanEfektif(b), d.hasil?.[b.kunci]) : 0; });
+    } catch { /* tanpa taksiran — harga diisi di borang */ }
+  }
+  return keluar;
 }
 
 /* ── ekspor ke Excel ────────────────────────────────────────────────────── */
 
 const label = <T extends { id: string; label: string }>(daftar: T[], id: string) => daftar.find((x) => x.id === id)?.label || "";
 
-export function perKapal(baris: BarisMonitor[], harga: Record<string, number>) {
+export function perKapal(baris: BarisMonitor[]) {
   const m = new Map<string, BarisMonitor[]>();
   baris.forEach((b) => m.set(b.kapal, [...(m.get(b.kapal) || []), b]));
   return Array.from(m.entries()).map(([kapal, d]) => {
-    const r = ringkas(d, harga);
+    const r = ringkas(d, TANPA_HARGA);
     return {
       kapal, total: r.total, terbuka: r.terbuka, belum: r.belumDievaluasi, urgent: r.urgentTerbuka,
       menggantung: r.menggantung, proses: r.prosesPengadaan, selesai: r.selesai,
-      ...(Object.fromEntries(Object.entries(r.nilaiPerKlasifikasi).map(([k, v]) => [k, Math.round(v)])) as Record<Klasifikasi, number>),
+      mesin: d.filter((b) => !b.jenis.endsWith("deck")).length, deck: d.filter((b) => b.jenis.endsWith("deck")).length,
     };
   }).sort((a, b) => b.menggantung - a.menggantung || b.urgent - a.urgent || a.kapal.localeCompare(b.kapal, "id"));
 }
 
-export async function unduhExcel(baris: BarisMonitor[], harga: Record<string, number>, judul: string) {
-  const isi = baris.map((b) => ({
-    kapal: b.kapal, jenis: singkatJenis(b.jenis),
-    dikirim: b.dikirimPada ? new Date(b.dikirimPada).toLocaleDateString("id-ID") : "",
-    umur: b.umurHari, nama: b.nama, spesifikasi: b.spesifikasi, jumlah: b.jumlah, satuan: b.satuan,
-    nilai: Math.round(nilaiBarang(b, harga)),
-    prioritas: label(PRIORITAS, b.prioritas) + (b.prioritasSaran ? " (saran)" : ""),
-    klasifikasi: label(KLASIFIKASI, b.klasifikasi) + (b.klasifikasiSaran ? " (saran)" : ""),
-    keputusan: label(KEPUTUSAN, b.ev?.keputusan || ""),
-    status: TAHAP[b.tahap as Tahap].label,
-    pengadaan: b.pengadaan ? `${b.pengadaan.asal === "nonpr" ? "Non PR PO" : "SPPBJ"} ${b.pengadaan.nomor || ""}`.trim() : "",
-    catatan: b.ev?.catatan || "", pic: b.ev?.pic || "", dimintaUlang: b.dimintaUlang, lk: b.adaLk,
-    menggantung: b.menggantung, berkasUrl: b.berkasUrl, urgent: b.prioritas === "urgent",
-  }));
+export async function unduhExcel(baris: BarisMonitor[], judul: string) {
+  const isi = [...baris].sort((a, b) => (b.dikirimPada || "").localeCompare(a.dikirimPada || "") || a.kapal.localeCompare(b.kapal, "id"))
+    .map((b) => ({
+      kapal: b.kapal, jenis: singkatJenis(b.jenis),
+      dikirim: b.dikirimPada ? new Date(b.dikirimPada).toLocaleDateString("id-ID") : "",
+      umur: b.umurHari, nama: b.nama, spesifikasi: b.spesifikasi, jumlah: b.jumlah, satuan: b.satuan,
+      prioritas: label(PRIORITAS, b.prioritas) + (b.prioritasSaran ? " (saran)" : ""),
+      klasifikasi: label(KLASIFIKASI, b.klasifikasi) + (b.klasifikasiSaran ? " (saran)" : ""),
+      keputusan: label(KEPUTUSAN, b.ev?.keputusan || ""),
+      status: TAHAP[b.tahap as Tahap].label,
+      pengadaan: b.pengadaan ? `${b.pengadaan.asal === "nonpr" ? "Non PR PO" : "SPPBJ"} ${b.pengadaan.nomor || ""}`.trim() : "",
+      catatan: b.ev?.catatan || "", pic: b.ev?.pic || "", dimintaUlang: b.dimintaUlang, lk: b.adaLk,
+      menggantung: b.menggantung, berkasUrl: b.berkasUrl, urgent: b.prioritas === "urgent",
+      sumber: b.fileId.startsWith(AWALAN_MANUAL) ? "Input kantor" : "Kiriman kapal",
+    }));
   const r = await fetch("/api/permintaan/rekap-excel", {
     method: "POST", headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ baris: isi, kapal: perKapal(baris, harga), label: judul }),
+    body: JSON.stringify({ baris: isi, kapal: perKapal(baris), label: judul }),
   });
   if (!r.ok) {
     const d = await r.json().catch(() => ({}));

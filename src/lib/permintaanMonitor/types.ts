@@ -161,3 +161,32 @@ export interface BarisMonitor {
   menggantung: boolean;
   dimintaUlang: number;
 }
+
+/* ── permintaan yang diinput kantor ──────────────────────────────────────── */
+
+export const KIND_MANUAL = "permintaan_manual";
+
+/**
+ * Permintaan yang tidak datang lewat aplikasi — WhatsApp, kertas, telepon —
+ * atau yang terlewat dikirim ABK. Diinput kantor, lalu diperlakukan sama
+ * dengan kiriman kapal: barangnya dinilai dan dipantau di layar yang sama.
+ */
+export interface PermintaanManual {
+  kind: typeof KIND_MANUAL;
+  id: string;
+  kapal: string;
+  jenis: "permintaan_deck" | "permintaan_mesin";
+  /** tanggal permintaan (YYYY-MM-DD) — dasar urutan */
+  tanggal: string;
+  nomor: string;
+  catatan: string;
+  /** diisi bila ini TAMBAHAN untuk kiriman kapal yang sudah ada (barang terlewat) */
+  untukKiriman?: string;
+  baris: { nama: string; spesifikasi: string; jumlah: string; satuan: string; keterangan: string }[];
+  oleh: string;
+  dibuatPada: string;
+  diubahPada: string;
+}
+
+/** awalan fileId untuk barang yang tidak berasal dari berkas Drive */
+export const AWALAN_MANUAL = "manual:";
