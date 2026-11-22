@@ -127,6 +127,8 @@ const KELOMPOK: Kelompok[] = [
         sub: [
           { href: "/permintaan-laporan", label: "Rekap kiriman", icon: "daftar", tepat: true },
           { href: "/permintaan-laporan/isi", label: "Isi permintaan (terbaca)", icon: "dokumen" },
+          { href: "/permintaan-laporan/monitoring", label: "Monitoring permintaan", icon: "centang" },
+          { href: "/permintaan-laporan/manajemen", label: "Dashboard manajemen", icon: "grafik" },
         ],
       },
       { href: "/uji-permintaan", icon: "tabung", label: "Borang Permintaan", desc: "Uji coba — input digital" },

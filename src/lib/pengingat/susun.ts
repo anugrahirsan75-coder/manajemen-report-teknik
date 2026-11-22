@@ -19,7 +19,7 @@ import {
 } from "./kumpul";
 
 /** kind yang dipakai lonceng - payload berat (SPPBJ / Non PR PO) tidak diambil */
-export const KINDS = ["rr", "docking_jadwal", "kelas_bki", "servis", "kerusakan", "anggaran", "lapor_kapal"];
+export const KINDS = ["rr", "docking_jadwal", "kelas_bki", "servis", "kerusakan", "anggaran", "lapor_kapal", "permintaan_ringkas"];
 
 const isoDari = (d: Date) =>
   `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -187,6 +187,30 @@ export function susun(rows: any[]): Pengingat[] {
       judul: `${proses.length} kerusakan sedang ditangani`,
       rincian: proses.slice(0, 4).map((k: any) => ringkasKapal(k.kapal)).join(", "),
       href: "/kerusakan",
+    });
+  }
+
+  // ---------- 6b. Monitoring permintaan kapal ----------
+  /*
+   * Ringkasan ditulis layar Monitoring Permintaan setiap kali dibuka: lonceng
+   * berjalan di server tanpa data SPPBJ, jadi ia tidak menghitung sendiri —
+   * cukup membaca angka terakhir yang dilihat orang.
+   */
+  const pm = rows.find((r) => r.kind === "permintaan_ringkas");
+  if (pm && Number(pm.menggantung) > 0) {
+    tambah({
+      id: "permintaan-menggantung", modul: "Monitoring Permintaan", ikon: "⏰", tingkat: "mendesak",
+      judul: `${pm.menggantung} barang urgent permintaan kapal belum diproses lebih dari 7 hari`,
+      rincian: (pm.contohMenggantung || []).join(" · "),
+      href: "/permintaan-laporan/monitoring?saring=menggantung",
+    });
+  }
+  if (pm && Number(pm.belumDievaluasi) > 0) {
+    tambah({
+      id: "permintaan-belum", modul: "Monitoring Permintaan", ikon: "📋", tingkat: "info",
+      judul: `${pm.belumDievaluasi} barang permintaan kapal belum dievaluasi`,
+      rincian: `${pm.urgentTerbuka || 0} urgent terbuka · ${pm.disetujuiBelumSppbj || 0} disetujui belum SPPBJ`,
+      href: "/permintaan-laporan/monitoring?saring=belum",
     });
   }
 
