@@ -19,9 +19,10 @@ import { BATAS_MENGGANTUNG_HARI, KLASIFIKASI, PRIORITAS, TAHAP, Tahap } from "@/
 import { perKapal, unduhExcel, useMonitorPermintaan } from "@/lib/permintaanMonitor/useMonitor";
 import { beritahu } from "@/components/Konfirmasi";
 
-const URUT_TAHAP: Tahap[] = ["baru", "menunggu", "disetujui", "stok", "ditunda", "sppbj", "spbj", "selesai", "ditolak"];
+const URUT_TAHAP: Tahap[] = ["baru", "menunggu", "usul", "pusat", "io", "disetujui", "stok", "ditunda", "sppbj", "spbj", "selesai", "ditolak"];
 const WARNA_BAR: Record<Tahap, string> = {
-  baru: "bg-slate-300", menunggu: "bg-amber-400", disetujui: "bg-orange-500", stok: "bg-lime-500", ditunda: "bg-slate-500",
+  baru: "bg-slate-300", menunggu: "bg-amber-400", usul: "bg-fuchsia-400", pusat: "bg-violet-500", io: "bg-cyan-500",
+  disetujui: "bg-orange-500", stok: "bg-lime-500", ditunda: "bg-slate-500",
   sppbj: "bg-sky-500", spbj: "bg-indigo-500", selesai: "bg-emerald-500", ditolak: "bg-rose-400",
 };
 

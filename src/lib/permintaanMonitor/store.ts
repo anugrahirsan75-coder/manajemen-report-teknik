@@ -7,7 +7,8 @@
  * barang berbeda dari berkas yang sama tidak saling menimpa.
  */
 import { supabase, isSupabaseReady } from "@/lib/supabase";
-import { EvalPermintaan, JejakEval, KIND_EVAL, KIND_MANUAL, Pengadaan, PermintaanManual } from "./types";
+import { EvalPermintaan, JejakEval, KIND_EVAL, KIND_MANUAL, Pengadaan, PermintaanManual, PermohonanRingkas } from "./types";
+import { VENDOR_DB } from "@/lib/sppbj/db";
 
 const HALAMAN = 1000;
 
@@ -143,4 +144,43 @@ export async function hapusManual(id: string): Promise<void> {
   if (!supabase) return;
   const { error } = await supabase.from("projects").delete().eq("id", id);
   if (error) throw new Error(error.message);
+}
+
+/* ── permohonan ke Pusat (Monitoring Permohonan Cabang) ─────────────────── */
+
+export async function muatPermohonan(): Promise<PermohonanRingkas[]> {
+  const rows = await semuaBaris("permohonan_cabang");
+  return rows.map((r) => {
+    const p = r.payload || {};
+    const d = p.doc || p;            // simpanan modulnya bisa berbungkus doc
+    return {
+      id: String(d.id || r.id), judul: String(d.judul || ""), nomorSurat: String(d.nomorSurat || ""),
+      status: String(d.status || "Proses"), tglPengajuan: String(d.tglPengajuan || ""), tglSelesai: String(d.tglSelesai || ""),
+      jenisUsulan: String(d.jenisUsulan || ""), ketPersetujuan: String(d.ketPersetujuan || ""),
+    };
+  }).filter((x) => x.judul || x.nomorSurat)
+    .sort((a, b) => (b.tglPengajuan || "").localeCompare(a.tglPengajuan || ""));
+}
+
+/* ── daftar vendor ───────────────────────────────────────────────────────
+ * Gabungan rekanan yang sudah dikenal aplikasi: database SPPBJ, daftar vendor
+ * SCM (yang dirawat tim SCM), dan rekanan yang sedang berjalan di rekap hutang
+ * kapal. Nama boleh tetap diketik bebas di layar — daftar ini hanya pemandu.
+ */
+const VENDOR_TAMBAHAN = ["PT. BBS", "PT. Kurnia Mandala Indonusa", "Khresmala", "TS Diesel"];
+const kunciVendor = (s: string) => String(s || "").toUpperCase().replace(/^\s*(PT|CV|UD|KOPKAR|KOPERASI)\b\.?/, "").replace(/[^A-Z0-9]/g, "");
+
+export async function muatVendor(): Promise<string[]> {
+  let scm: string[] = [];
+  if (isSupabaseReady && supabase) {
+    const { data } = await supabase.from("projects").select("payload")
+      .filter("payload->>kind", "eq", "vendor_scm").limit(1);
+    scm = ((data?.[0] as any)?.payload?.daftar || []).map((v: any) => String(v?.nama || "")).filter(Boolean);
+  }
+  const peta = new Map<string, string>();
+  [...VENDOR_DB.map((v) => v.nama), ...scm, ...VENDOR_TAMBAHAN].forEach((n) => {
+    const k = kunciVendor(n);
+    if (k && !peta.has(k)) peta.set(k, n.trim());
+  });
+  return Array.from(peta.values()).sort((a, b) => kunciVendor(a).localeCompare(kunciVendor(b)));
 }

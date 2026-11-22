@@ -16,23 +16,27 @@ import type { BerkasLapor, KirimanLapor } from "@/lib/lapor/types";
 import { singkatJenis } from "@/lib/lapor/types";
 import { Ringkasan, hargaLayak, ringkas, satuanEfektif, susunBaris } from "./logika";
 import {
-  hapusManual, ingatPenilai, jejakBaru, muatEval, muatManual, muatPengadaan, namaPenilai, simpanEval, simpanManual,
+  hapusManual, ingatPenilai, jejakBaru, muatEval, muatManual, muatPengadaan, muatPermohonan, muatVendor, namaPenilai,
+  simpanEval, simpanManual,
 } from "./store";
 import {
   AWALAN_MANUAL, BarisMonitor, EvalPermintaan, KEPUTUSAN, KIND_EVAL, KIND_MANUAL, KLASIFIKASI, PRIORITAS, Pengadaan,
-  PermintaanManual, TAHAP, Tahap,
+  PermintaanManual, PermohonanRingkas, TAHAP, Tahap,
 } from "./types";
 
 export const KIND_RINGKAS = "permintaan_ringkas";
 
 export type Patch = Partial<Pick<EvalPermintaan,
-  "prioritas" | "klasifikasi" | "keputusan" | "catatan" | "pic" | "diterima" | "tautPengadaan">>;
+  "prioritas" | "klasifikasi" | "keputusan" | "catatan" | "pic" | "diterima" | "tautPengadaan" | "vendor"
+  | "usulStatus" | "usulNoSurat" | "usulTgl" | "permohonanId" | "setujuNo" | "setujuTgl" | "noIO" | "poSementara">>;
 
 export type BarangInput = PermintaanManual["baris"][number];
 
 const LABEL_UBAH: Record<keyof Patch, string> = {
   prioritas: "prioritas", klasifikasi: "klasifikasi", keputusan: "keputusan", catatan: "catatan",
-  pic: "PIC", diterima: "diterima", tautPengadaan: "tautan pengadaan",
+  pic: "PIC", diterima: "diterima", tautPengadaan: "tautan pengadaan", vendor: "vendor",
+  usulStatus: "usulan Pusat", usulNoSurat: "no. surat usulan", usulTgl: "tgl usulan", permohonanId: "permohonan",
+  setujuNo: "no. persetujuan", setujuTgl: "tgl persetujuan", noIO: "No. IO", poSementara: "PO Sementara",
 };
 
 const TANPA_HARGA: Record<string, number> = {};
@@ -63,6 +67,8 @@ export function useMonitorPermintaan() {
   const [evals, setEvals] = useState<Map<string, EvalPermintaan>>(new Map());
   const idBaris = useRef<Map<string, string>>(new Map());
   const [pengadaan, setPengadaan] = useState<Pengadaan[]>([]);
+  const [permohonan, setPermohonan] = useState<PermohonanRingkas[]>([]);
+  const [vendor, setVendor] = useState<string[]>([]);
   const [muat, setMuat] = useState(true);
   const [galat, setGalat] = useState("");
   const [penilai, setPenilai] = useState("");
@@ -75,9 +81,10 @@ export function useMonitorPermintaan() {
   const ambil = useCallback(async () => {
     setGalat("");
     try {
-      const [r, bc, ev, pg, mn] = await Promise.all([
+      const [r, bc, ev, pg, mn, pm, vd] = await Promise.all([
         fetch("/api/lapor/daftar", { cache: "no-store" }).then((x) => x.json()),
         muatBacaan(), muatEval(), muatPengadaan(), muatManual(),
+        muatPermohonan().catch(() => [] as PermohonanRingkas[]), muatVendor().catch(() => [] as string[]),
       ]);
       if (!r.ok) throw new Error(r.error || "Gagal memuat kiriman kapal");
       setKirimanAsli((r.baris as KirimanLapor[]).filter((k) => String(k.jenis).startsWith("permintaan")));
@@ -87,6 +94,7 @@ export function useMonitorPermintaan() {
       setEvals(ev.evals); idBaris.current = ev.idBaris;
       setPengadaan(pg);
       setManual(mn.daftar); idManual.current = mn.idBaris;
+      setPermohonan(pm); setVendor(vd);
     } catch (e: any) { setGalat(e?.message || String(e)); }
     finally { setMuat(false); }
   }, []);
@@ -126,9 +134,10 @@ export function useMonitorPermintaan() {
     return m;
   }, [bacaan]);
 
+  const petaPermohonan = useMemo(() => new Map(permohonan.map((p) => [p.id, p])), [permohonan]);
   const baris = useMemo(
-    () => susunBaris({ kiriman, bacaan, evals, pengadaan, harga: TANPA_HARGA }),
-    [kiriman, bacaan, evals, pengadaan]);
+    () => susunBaris({ kiriman, bacaan, evals, pengadaan, permohonan: petaPermohonan, harga: TANPA_HARGA }),
+    [kiriman, bacaan, evals, pengadaan, petaPermohonan]);
 
   const ringkasan: Ringkasan = useMemo(() => ringkas(baris, TANPA_HARGA), [baris]);
 
@@ -283,7 +292,8 @@ export function useMonitorPermintaan() {
   }, [muat, baris, ringkasan, tulis]);
 
   return {
-    muat, galat, baris, ringkasan, kiriman, statusBerkas, pengadaan, penilai, gantiPenilai, sibukSimpan: simpanan > 0,
+    muat, galat, baris, ringkasan, kiriman, statusBerkas, pengadaan, permohonan, vendor, penilai, gantiPenilai,
+    sibukSimpan: simpanan > 0,
     muatUlang: ambil, terapkan, putuskan, buatPermintaan, tambahBarang, hapusBarangManual,
   };
 }
@@ -334,7 +344,9 @@ export async function unduhExcel(baris: BarisMonitor[], judul: string) {
       keputusan: label(KEPUTUSAN, b.ev?.keputusan || ""),
       status: TAHAP[b.tahap as Tahap].label,
       pengadaan: b.pengadaan ? `${b.pengadaan.asal === "nonpr" ? "Non PR PO" : "SPPBJ"} ${b.pengadaan.nomor || ""}`.trim() : "",
-      catatan: b.ev?.catatan || "", pic: b.ev?.pic || "", dimintaUlang: b.dimintaUlang, lk: b.adaLk,
+      catatan: [b.ev?.vendor ? `Vendor: ${b.ev.vendor}` : "", b.ev?.catatan || "",
+        b.ev?.noIO ? `IO ${b.ev.noIO}` : "", b.ev?.poSementara ? `PO Sementara ${b.ev.poSementara}` : ""].filter(Boolean).join(" · "),
+      pic: b.ev?.pic || "", dimintaUlang: b.dimintaUlang, lk: b.adaLk,
       menggantung: b.menggantung, berkasUrl: b.berkasUrl, urgent: b.prioritas === "urgent",
       sumber: b.fileId.startsWith(AWALAN_MANUAL) ? "Input kantor" : "Kiriman kapal",
     }));

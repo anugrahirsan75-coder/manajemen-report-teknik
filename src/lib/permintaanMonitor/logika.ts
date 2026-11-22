@@ -6,8 +6,8 @@ import katalogMentah from "@/lib/rr/katalogRutin.json";
 import type { BarisPermintaan } from "@/lib/lapor/skemaPermintaan";
 import type { KirimanLapor } from "@/lib/lapor/types";
 import {
-  BATAS_MENGGANTUNG_HARI, BarisMonitor, EvalPermintaan, Klasifikasi, Pengadaan, Prioritas, RENTANG_ULANG_HARI,
-  TAHAP_BELUM_PROSES, Tahap,
+  BATAS_MENGGANTUNG_HARI, BarisMonitor, EvalPermintaan, Klasifikasi, Pengadaan, PermohonanRingkas, Prioritas,
+  RENTANG_ULANG_HARI, TAHAP_BELUM_PROSES, Tahap,
 } from "./types";
 
 const SATU_HARI = 86_400_000;
@@ -180,7 +180,19 @@ export function cocokPengadaan(b: { kapal: string; nama: string; dikirimPada: st
 
 /* ── status ──────────────────────────────────────────────────────────────── */
 
-export function tahapBarang(ev: EvalPermintaan | null, p: Pengadaan | null): Tahap {
+/**
+ * Status usulan investasi yang berlaku: bila barangnya ditautkan ke surat di
+ * Monitoring Permohonan Cabang, status surat itu yang dipakai — kantor cukup
+ * memperbarui satu tempat, barang-barang yang ikut di surat itu bergerak sendiri.
+ */
+export function statusUsul(ev: EvalPermintaan | null, pm: PermohonanRingkas | null): "" | "diusulkan" | "disetujui" | "ditolak" {
+  // keputusan Pusat yang dicatat langsung di barang ini menang atas status surat
+  if (ev?.usulStatus === "disetujui" || ev?.usulStatus === "ditolak") return ev.usulStatus;
+  if (pm) return pm.status === "Disetujui" ? "disetujui" : pm.status === "Ditolak" ? "ditolak" : "diusulkan";
+  return ev?.usulStatus || "";
+}
+
+export function tahapBarang(ev: EvalPermintaan | null, p: Pengadaan | null, pm: PermohonanRingkas | null = null): Tahap {
   if (ev?.diterima) return "selesai";
   if (ev?.keputusan === "tolak") return "ditolak";
   if (p) {
@@ -190,7 +202,21 @@ export function tahapBarang(ev: EvalPermintaan | null, p: Pengadaan | null): Tah
     return "sppbj";
   }
   if (ev?.keputusan === "tunda") return "ditunda";
-  if (ev?.keputusan === "setuju") return ev.klasifikasi === "stok" ? "stok" : "disetujui";
+  if (ev?.keputusan === "setuju") {
+    if (ev.klasifikasi === "stok") return "stok";
+    /*
+     * Investasi tidak bisa langsung diadakan: harus diusulkan ke Pusat, menunggu
+     * persetujuannya, lalu nomor IO — kecuali memakai PO Sementara.
+     */
+    if (ev.klasifikasi === "investasi") {
+      const s = statusUsul(ev, pm);
+      if (s === "ditolak") return "ditolak";
+      if (s === "diusulkan") return "pusat";
+      if (s === "disetujui") return ev.noIO || ev.poSementara ? "disetujui" : "io";
+      return "usul";
+    }
+    return "disetujui";
+  }
   if (ev && (ev.prioritas || ev.klasifikasi)) return "menunggu";
   return "baru";
 }
@@ -205,6 +231,8 @@ export interface MasukanSusun {
   bacaan: Map<string, { baris: BarisPermintaan[]; status: string }>;
   evals: Map<string, EvalPermintaan>;
   pengadaan: Pengadaan[];
+  /** permohonan ke Pusat per id (Monitoring Permohonan Cabang) */
+  permohonan?: Map<string, PermohonanRingkas>;
   /** harga satuan taksiran per kunci barang */
   harga?: Record<string, number>;
   kini?: number;
@@ -302,7 +330,8 @@ export function susunBaris(m: MasukanSusun): BarisMonitor[] {
         const sk = saranKlasifikasi(b, k.kapal, nilai);
         const prioritas = (ev?.prioritas || sp) as Prioritas;
         const klasifikasi = (ev?.klasifikasi || sk) as Klasifikasi;
-        const tahap = tahapBarang(ev, pengadaan);
+        const pm = ev?.permohonanId ? m.permohonan?.get(ev.permohonanId) || null : null;
+        const tahap = tahapBarang(ev, pengadaan, pm);
         const umur = umurHari(k.dikirimPada, kini);
         keluar.push({
           kunci, fileId: berkas.fileId, indeks: i, kirimanId: k.id, kapal: k.kapal, jenis: k.jenis, periode: k.periode,
@@ -312,7 +341,7 @@ export function susunBaris(m: MasukanSusun): BarisMonitor[] {
           adaLk: lk, catatanKapal: k.catatan || "", ev,
           saranPrioritas: sp, saranKlasifikasi: sk, prioritas, klasifikasi,
           prioritasSaran: !ev?.prioritas, klasifikasiSaran: !ev?.klasifikasi,
-          tahap, pengadaan, pengadaanOtomatis: otomatis, umurHari: umur,
+          tahap, pengadaan, pengadaanOtomatis: otomatis, permohonan: pm, umurHari: umur,
           menggantung: prioritas === "urgent" && TAHAP_BELUM_PROSES.includes(tahap) && umur > BATAS_MENGGANTUNG_HARI,
           dimintaUlang: 0,
         });

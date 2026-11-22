@@ -23,19 +23,22 @@ import { ringkasKapal } from "@/lib/kapal/nama";
 import { KAPAL_ANGGARAN } from "@/lib/anggaran/types";
 import { angkaRupiah } from "@/lib/permintaanMonitor/logika";
 import {
-  AWALAN_MANUAL, BATAS_MENGGANTUNG_HARI, BarisMonitor, KEPUTUSAN, KLASIFIKASI, Klasifikasi, PRIORITAS, Prioritas, TAHAP, Tahap,
+  AWALAN_MANUAL, BATAS_MENGGANTUNG_HARI, BarisMonitor, KEPUTUSAN, KETERANGAN_CEPAT, KLASIFIKASI, Klasifikasi, PRIORITAS,
+  PermohonanRingkas, Prioritas, TAHAP, Tahap,
 } from "@/lib/permintaanMonitor/types";
 import { BarangInput, Patch, taksirUntukSppbj, unduhExcel, useMonitorPermintaan } from "@/lib/permintaanMonitor/useMonitor";
 import { beritahu, konfirmasi } from "@/components/Konfirmasi";
 
 type Bagian = "mesin" | "deck";
-type Langkah = "nilai" | "siap" | "proses" | "selesai" | "tunda";
+type Langkah = "nilai" | "pusat" | "siap" | "proses" | "selesai" | "tunda";
+type ModeUsul = "usul" | "setuju";
 
 const LANGKAH: { id: Langkah; no: number; label: string; ket: string; tahap: Tahap[] }[] = [
   { id: "nilai", no: 1, label: "Perlu dinilai", ket: "Belum diputuskan kantor", tahap: ["baru", "menunggu"] },
-  { id: "siap", no: 2, label: "Disetujui", ket: "Siap dibuatkan SPPBJ / dikirim dari stok", tahap: ["disetujui", "stok"] },
-  { id: "proses", no: 3, label: "Sedang diadakan", ket: "Sudah SPPBJ / SPBJ / Non PR PO", tahap: ["sppbj", "spbj"] },
-  { id: "selesai", no: 4, label: "Selesai", ket: "Pengadaan tuntas / diterima kapal", tahap: ["selesai"] },
+  { id: "pusat", no: 2, label: "Usulan Pusat", ket: "Barang investasi: diusulkan ke Pusat, menunggu persetujuan / No. IO", tahap: ["usul", "pusat", "io"] },
+  { id: "siap", no: 3, label: "Siap diadakan", ket: "Siap dibuatkan SPPBJ / dikirim dari stok", tahap: ["disetujui", "stok"] },
+  { id: "proses", no: 4, label: "Sedang diadakan", ket: "Sudah SPPBJ / SPBJ / Non PR PO", tahap: ["sppbj", "spbj"] },
+  { id: "selesai", no: 5, label: "Selesai", ket: "Pengadaan tuntas / diterima kapal", tahap: ["selesai"] },
   { id: "tunda", no: 0, label: "Ditunda / ditolak", ket: "", tahap: ["ditunda", "ditolak"] },
 ];
 const langkahDari = (t: Tahap): Langkah => LANGKAH.find((l) => l.tahap.includes(t))?.id || "nilai";
@@ -79,6 +82,7 @@ function Monitoring() {
   const [formTambah, setFormTambah] = useState<KirimanLapor | null>(null);
   const [unduh, setUnduh] = useState(false);
   const [sibukSppbj, setSibukSppbj] = useState(false);
+  const [formUsul, setFormUsul] = useState<{ daftar: BarisMonitor[]; mode: ModeUsul } | null>(null);
   const [bukaBelumBaca, setBukaBelumBaca] = useState(false);
 
   /* tautan dari lonceng & dashboard: ?bagian=deck&saring=menggantung&kapal=KMP. X */
@@ -219,6 +223,28 @@ function Monitoring() {
     finally { setUnduh(false); }
   };
 
+  /** form usulan Pusat: "usul" untuk yang belum diusulkan, "setuju" untuk mencatat persetujuan / No. IO */
+  const bukaUsul = async (d: BarisMonitor[]) => {
+    if (!d.length || !(await pastikanNama())) return;
+    const usul = d.filter((b) => b.tahap === "usul");
+    setFormUsul(usul.length ? { daftar: usul, mode: "usul" } : { daftar: d.filter((b) => b.tahap === "pusat" || b.tahap === "io"), mode: "setuju" });
+  };
+
+  /** daftar barang investasi yang perlu diusulkan — bahan surat usulan / borang IO ke Pusat */
+  const unduhUsulan = () => {
+    const d = m.baris.filter((b) => bagianDari(b.jenis) === bagian && b.tahap === "usul" && (!kapal || b.kapal === kapal))
+      .sort((a, b) => a.kapal.localeCompare(b.kapal, "id") || (a.dikirimPada || "").localeCompare(b.dikirimPada || ""));
+    if (!d.length) { void beritahu("Belum ada barang investasi yang perlu diusulkan."); return; }
+    const kol = ["No", "Kapal", "Nama barang", "Spesifikasi", "Jumlah", "Satuan", "Vendor rencana", "Keterangan", "Tanggal permintaan", "Berkas"];
+    const isi = d.map((b, i) => [i + 1, b.kapal, b.nama, b.spesifikasi, b.jumlah, b.satuan, b.ev?.vendor || "", b.ev?.catatan || "",
+      b.dikirimPada ? tanggalIndo(b.dikirimPada.slice(0, 10)) : "", b.berkasUrl]);
+    const csv = [kol, ...isi].map((r) => r.map((x) => `"${String(x ?? "").replace(/"/g, '""')}"`).join(";")).join("\r\n");
+    const url = URL.createObjectURL(new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url; a.download = `Usulan Investasi ${bagian === "mesin" ? "Mesin" : "Deck"}${kapal ? ` ${ringkasKapal(kapal)}` : ""}.csv`; a.click();
+    URL.revokeObjectURL(url);
+  };
+
   const brsDetail = detail ? m.baris.find((b) => b.kunci === detail) || null : null;
   const namaBagian = bagian === "mesin" ? "mesin" : "deck";
 
@@ -292,6 +318,10 @@ function Monitoring() {
               <option value="">Semua bulan</option>
               {daftarBulan.map((b) => <option key={b} value={b}>{bulanIndo(b)}</option>)}
             </select>
+            {langkah === "pusat" && !hanyaGantung && (
+              <button onClick={unduhUsulan} title="Daftar barang investasi yang belum diusulkan — bahan surat usulan ke Pusat"
+                className="rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-3 py-2 font-semibold">⬇ Daftar usulan</button>
+            )}
             <button onClick={() => setTerlamaDulu(!terlamaDulu)} className="border border-slate-300 rounded-xl px-3 py-2 bg-white font-semibold text-slate-700">
               {terlamaDulu ? "↑ Terlama dulu" : "↓ Terbaru dulu"}
             </button>
@@ -364,7 +394,7 @@ function Monitoring() {
               <KartuPermintaan key={x.k.id} x={x} langkah={hanyaGantung ? "nilai" : langkah} pilih={pilih}
                 alih={alih} alihBanyak={alihBanyak} buka={setDetail}
                 ubah={(d, p) => void ubah(d, p)} putus={(d, k) => void putus(d, k)} diterima={(d) => void diterima(d)}
-                tambah={async () => { if (await pastikanNama()) setFormTambah(x.k); }}
+                tambah={async () => { if (await pastikanNama()) setFormTambah(x.k); }} usul={(d) => void bukaUsul(d)}
                 hapusManual={async (b) => {
                   if (await konfirmasi(`Hapus "${b.nama}" dari input kantor?`)) void m.hapusBarangManual(b.fileId, b.indeks);
                 }} />
@@ -401,6 +431,12 @@ function Monitoring() {
               </select>
             </>
           )}
+          {terpilih.some((b) => b.tahap === "usul") && (
+            <button onClick={() => void bukaUsul(terpilih)} className="font-bold px-4 py-2 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-500">🏛 Tandai diusulkan ke Pusat</button>
+          )}
+          {terpilih.some((b) => b.tahap === "pusat" || b.tahap === "io") && !terpilih.some((b) => b.tahap === "usul") && (
+            <button onClick={() => void bukaUsul(terpilih)} className="font-bold px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500">✓ Persetujuan / No. IO terbit</button>
+          )}
           {terpilih.some((b) => langkahDari(b.tahap) === "siap") && (
             <button onClick={() => void keSppbj()} disabled={sibukSppbj} className="font-bold px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 disabled:opacity-60">
               {sibukSppbj ? "Menyiapkan…" : "→ Buat SPPBJ"}
@@ -409,7 +445,7 @@ function Monitoring() {
           {terpilih.some((b) => ["siap", "proses"].includes(langkahDari(b.tahap))) && (
             <button onClick={() => void diterima(terpilih)} className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500">Sudah diterima kapal</button>
           )}
-          {terpilih.some((b) => ["siap", "tunda", "selesai"].includes(langkahDari(b.tahap))) && (
+          {terpilih.some((b) => ["pusat", "siap", "tunda", "selesai"].includes(langkahDari(b.tahap))) && (
             <button onClick={() => void kembalikan(terpilih)} className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20">↺ Nilai ulang</button>
           )}
           <button onClick={() => setPilih(new Set())} className="px-2 py-2 rounded-xl hover:bg-white/10">✕</button>
@@ -417,7 +453,13 @@ function Monitoring() {
       )}
 
       {brsDetail && <Detail b={brsDetail} tutup={() => setDetail("")} ubah={(p) => void ubah([brsDetail], p)}
+        vendor={m.vendor} permohonan={m.permohonan}
         pengadaan={m.pengadaan.filter((p) => p.items.some((i) => ringkasKapal(i.kapal).toUpperCase() === ringkasKapal(brsDetail.kapal).toUpperCase()))} />}
+
+      {formUsul && formUsul.daftar.length > 0 && (
+        <FormUsulan daftar={formUsul.daftar} mode={formUsul.mode} permohonan={m.permohonan} tutup={() => setFormUsul(null)}
+          simpan={(p) => { m.terapkan(formUsul.daftar, p); setFormUsul(null); setPilih(new Set()); }} />
+      )}
 
       {formBaru && (
         <FormBarang judul="Permintaan baru dari kantor" sub="Untuk permintaan yang datang lewat WhatsApp, kertas, atau telepon."
@@ -440,11 +482,12 @@ function Monitoring() {
 
 /* ── kartu satu permintaan ───────────────────────────────────────────────── */
 
-function KartuPermintaan({ x, langkah, pilih, alih, alihBanyak, buka, ubah, putus, diterima, tambah, hapusManual }: {
+function KartuPermintaan({ x, langkah, pilih, alih, alihBanyak, buka, ubah, putus, diterima, tambah, hapusManual, usul }: {
   x: Kartu; langkah: Langkah; pilih: Set<string>;
   alih: (k: string) => void; alihBanyak: (d: BarisMonitor[]) => void; buka: (k: string) => void;
   ubah: (d: BarisMonitor[], p: Patch) => void; putus: (d: BarisMonitor[], k: "setuju" | "tunda" | "tolak") => void;
   diterima: (d: BarisMonitor[]) => void; tambah: () => void; hapusManual: (b: BarisMonitor) => void;
+  usul: (d: BarisMonitor[]) => void;
 }) {
   const { k, semua, tampil, belumTerbaca } = x;
   const manualSaja = k.id.startsWith("manual-");
@@ -495,6 +538,10 @@ function KartuPermintaan({ x, langkah, pilih, alih, alihBanyak, buka, ubah, putu
             <button onClick={() => putus(tampil, "setuju")} title="Setujui semua barang di kartu ini sesuai saran prioritas & klasifikasi"
               className="text-xs font-bold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white px-3 py-1.5">✓ Setujui semua</button>
           )}
+          {langkah === "pusat" && tampil.filter((b) => b.tahap === "usul").length > 1 && (
+            <button onClick={() => usul(tampil.filter((b) => b.tahap === "usul"))} title="Catat semua barang investasi di kartu ini sebagai sudah diusulkan, dengan satu surat"
+              className="text-xs font-bold rounded-lg bg-fuchsia-600 hover:bg-fuchsia-500 text-white px-3 py-1.5">🏛 Usulkan semua</button>
+          )}
         </div>
       </div>
 
@@ -524,7 +571,7 @@ function KartuPermintaan({ x, langkah, pilih, alih, alihBanyak, buka, ubah, putu
           <tbody>
             {tampil.map((b, i) => (
               <BarisBarang key={b.kunci} b={b} no={i + 1} dipilih={pilih.has(b.kunci)} alih={() => alih(b.kunci)} buka={() => buka(b.kunci)}
-                ubah={(p) => ubah([b], p)} putus={(kp) => putus([b], kp)} diterima={() => diterima([b])}
+                ubah={(p) => ubah([b], p)} putus={(kp) => putus([b], kp)} diterima={() => diterima([b])} usul={() => usul([b])}
                 hapus={b.fileId.startsWith(AWALAN_MANUAL) ? () => hapusManual(b) : undefined} />
             ))}
           </tbody>
@@ -534,12 +581,14 @@ function KartuPermintaan({ x, langkah, pilih, alih, alihBanyak, buka, ubah, putu
   );
 }
 
-function BarisBarang({ b, no, dipilih, alih, buka, ubah, putus, diterima, hapus }: {
+function BarisBarang({ b, no, dipilih, alih, buka, ubah, putus, diterima, usul, hapus }: {
   b: BarisMonitor; no: number; dipilih: boolean; alih: () => void; buka: () => void;
-  ubah: (p: Patch) => void; putus: (k: "setuju" | "tunda" | "tolak") => void; diterima: () => void; hapus?: () => void;
+  ubah: (p: Patch) => void; putus: (k: "setuju" | "tunda" | "tolak") => void; diterima: () => void; usul: () => void; hapus?: () => void;
 }) {
   const t = TAHAP[b.tahap];
   const modeNilai = langkahDari(b.tahap) === "nilai";
+  const modePusat = langkahDari(b.tahap) === "pusat";
+  const ev = b.ev;
   return (
     <tr className={`border-b border-slate-100 last:border-0 align-top transition ${b.menggantung ? "bg-red-50/70" : dipilih ? "bg-sky-50" : "even:bg-slate-50/40 hover:bg-slate-50"}`}>
       <td className="py-2.5 text-center"><input type="checkbox" checked={dipilih} onChange={alih} className="h-4 w-4" /></td>
@@ -552,8 +601,15 @@ function BarisBarang({ b, no, dipilih, alih, buka, ubah, putus, diterima, hapus 
           {b.menggantung && <Tanda kelas="bg-red-600 text-white ring-red-700">⏰ tertahan {b.umurHari} hari</Tanda>}
           {b.dimintaUlang > 0 && <Tanda kelas="bg-amber-50 text-amber-800 ring-amber-200">🔁 diminta ulang</Tanda>}
           {b.adaLk && <Tanda kelas="bg-orange-50 text-orange-800 ring-orange-200">📄 ada LK</Tanda>}
-          {b.ev?.catatan && <span className="text-xs italic text-slate-600">“{b.ev.catatan}”</span>}
         </div>
+        {(ev?.vendor || ev?.catatan || ev?.noIO || ev?.poSementara) && (
+          <div className="mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-slate-600">
+            {ev?.vendor && <span>🏪 <b className="font-semibold">{ev.vendor}</b></span>}
+            {ev?.noIO && <span>IO <b className="font-semibold">{ev.noIO}</b></span>}
+            {ev?.poSementara && <span>PO Sementara <b className="font-semibold">{ev.poSementara}</b></span>}
+            {ev?.catatan && <span className="italic">📝 {ev.catatan}</span>}
+          </div>
+        )}
       </td>
       <td className="py-2.5 text-slate-700 tabular-nums">{b.jumlah || "—"} <span className="text-slate-500">{b.satuan}</span></td>
       <td className="py-2.5 pr-2"><Pil<Prioritas> nilai={b.ev?.prioritas || ""} saran={b.saranPrioritas} daftar={PRIORITAS} ubah={(v) => ubah({ prioritas: v })} /></td>
@@ -565,6 +621,21 @@ function BarisBarang({ b, no, dipilih, alih, buka, ubah, putus, diterima, hapus 
             <button onClick={() => putus("tunda")} className="text-xs px-2.5 py-1.5 rounded-lg ring-1 ring-slate-300 text-slate-600 hover:bg-slate-100">Tunda</button>
             <button onClick={() => putus("tolak")} className="text-xs px-2.5 py-1.5 rounded-lg ring-1 ring-rose-200 text-rose-700 hover:bg-rose-50">Tolak</button>
             {hapus && <button onClick={hapus} title="Hapus barang input kantor" className="text-xs px-1.5 py-1.5 text-slate-400 hover:text-rose-600">🗑</button>}
+          </div>
+        ) : modePusat ? (
+          <div className="space-y-1">
+            <span className={`inline-block text-[11px] font-bold px-2 py-0.5 rounded-md ring-1 ${t.kelas}`}>{t.label}</span>
+            {(b.permohonan || ev?.usulNoSurat) && (
+              <p className="text-[11px] text-slate-600 truncate" title={b.permohonan?.judul || ""}>
+                Usulan {b.permohonan?.nomorSurat || ev?.usulNoSurat}{ev?.usulTgl ? ` · ${tanggalIndo(ev.usulTgl)}` : ""}
+              </p>
+            )}
+            {(ev?.setujuNo || b.permohonan?.ketPersetujuan) && b.tahap === "io" && (
+              <p className="text-[11px] text-slate-600 truncate">Persetujuan {ev?.setujuNo || b.permohonan?.ketPersetujuan}</p>
+            )}
+            <button onClick={usul} className={`text-xs font-bold px-3 py-1.5 rounded-lg text-white ${b.tahap === "usul" ? "bg-fuchsia-600 hover:bg-fuchsia-500" : "bg-violet-600 hover:bg-violet-500"}`}>
+              {b.tahap === "usul" ? "🏛 Tandai diusulkan" : b.tahap === "pusat" ? "✓ Persetujuan terbit" : "Isi No. IO / PO Sementara"}
+            </button>
           </div>
         ) : (
           <div className="space-y-1">
@@ -715,17 +786,30 @@ function FormBarang({ judul, sub, awalKapal, awalBagian, lengkap, tutup, simpan 
 
 /* ── rincian satu barang ─────────────────────────────────────────────────── */
 
-function Detail({ b, tutup, ubah, pengadaan }: {
+function Detail({ b, tutup, ubah, pengadaan, vendor, permohonan }: {
   b: BarisMonitor; tutup: () => void; ubah: (p: Patch) => void;
   pengadaan: ReturnType<typeof useMonitorPermintaan>["pengadaan"];
+  vendor: string[]; permohonan: PermohonanRingkas[];
 }) {
-  const [catatan, setCatatan] = useState(b.ev?.catatan || "");
-  const [pic, setPic] = useState(b.ev?.pic || "");
+  const ev = b.ev;
+  const [catatan, setCatatan] = useState(ev?.catatan || "");
+  const [pic, setPic] = useState(ev?.pic || "");
+  const [vend, setVend] = useState(ev?.vendor || "");
+  const [inv, setInv] = useState({
+    usulNoSurat: ev?.usulNoSurat || "", usulTgl: ev?.usulTgl || "", setujuNo: ev?.setujuNo || "", setujuTgl: ev?.setujuTgl || "",
+    noIO: ev?.noIO || "", poSementara: ev?.poSementara || "",
+  });
+  const investasi = (ev?.klasifikasi || b.saranKlasifikasi) === "investasi";
   const urut = [...pengadaan].sort((x, y) => (y.tanggal || "").localeCompare(x.tanggal || "")).slice(0, 60);
+  const tambahKet = (t: string) => setCatatan((c) => (c.includes(t) ? c : c ? `${c}; ${t}` : t));
   const simpan = () => {
     const p: Patch = {};
-    if (catatan !== (b.ev?.catatan || "")) p.catatan = catatan;
-    if (pic !== (b.ev?.pic || "")) p.pic = pic;
+    if (catatan !== (ev?.catatan || "")) p.catatan = catatan;
+    if (pic !== (ev?.pic || "")) p.pic = pic;
+    if (vend.trim() !== (ev?.vendor || "")) p.vendor = vend.trim();
+    (Object.keys(inv) as (keyof typeof inv)[]).forEach((k) => { if (inv[k] !== ((ev?.[k] as string) || "")) (p as any)[k] = inv[k]; });
+    if (investasi && !ev?.usulStatus && !ev?.permohonanId && inv.usulNoSurat) p.usulStatus = "diusulkan";
+    if (investasi && (inv.setujuNo || inv.noIO) && (ev?.usulStatus || "") !== "disetujui" && !ev?.permohonanId) p.usulStatus = "disetujui";
     if (Object.keys(p).length) ubah(p);
     tutup();
   };
@@ -767,10 +851,44 @@ function Detail({ b, tutup, ubah, pengadaan }: {
               </select>
             </label>
           </div>
-          <label className="block text-xs"><span className="text-slate-500 font-bold">Catatan kantor</span>
-            <textarea value={catatan} onChange={(e) => setCatatan(e.target.value)} rows={2} placeholder="mis. tunggu pagu Desember / ambil dari stok"
-              className="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1.5" />
-          </label>
+          <div className="grid sm:grid-cols-2 gap-3 text-xs">
+            <label className="block"><span className="text-slate-500 font-bold">Vendor rencana</span> <span className="text-slate-400">(acuan awal)</span>
+              <input value={vend} onChange={(e) => setVend(e.target.value)} list="daftar-vendor" placeholder="ketik / pilih vendor…"
+                className="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1.5" />
+              <datalist id="daftar-vendor">{vendor.map((v) => <option key={v} value={v} />)}</datalist>
+            </label>
+            <label className="block"><span className="text-slate-500 font-bold">Keterangan</span>
+              <textarea value={catatan} onChange={(e) => setCatatan(e.target.value)} rows={2} placeholder="mis. PO Sementara / tunggu pagu Desember"
+                className="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1.5" />
+            </label>
+            <div className="sm:col-span-2 flex flex-wrap gap-1.5 -mt-1">
+              {KETERANGAN_CEPAT.map((k) => (
+                <button key={k} type="button" onClick={() => tambahKet(k)}
+                  className="text-[11px] rounded-full ring-1 ring-slate-300 px-2.5 py-0.5 text-slate-600 hover:bg-slate-100">＋ {k}</button>
+              ))}
+            </div>
+          </div>
+          {investasi && (
+            <div className="rounded-xl ring-1 ring-fuchsia-200 bg-fuchsia-50/50 p-3 space-y-2 text-xs">
+              <p className="font-extrabold text-fuchsia-900">🏛 Usulan investasi ke Kantor Pusat <span className="font-semibold text-fuchsia-700">· {TAHAP[b.tahap].label}</span></p>
+              <label className="block"><span className="text-slate-500 font-bold">Tautkan ke surat di Monitoring Permohonan Cabang</span>
+                <select value={ev?.permohonanId || ""} onChange={(e) => ubah({ permohonanId: e.target.value })}
+                  className="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1.5 bg-white">
+                  <option value="">— tidak ditautkan (isi manual di bawah) —</option>
+                  {permohonan.map((p) => <option key={p.id} value={p.id}>[{p.status}] {p.nomorSurat || "tanpa nomor"} · {p.judul.slice(0, 60)}</option>)}
+                </select>
+                {ev?.permohonanId && <span className="block mt-1 text-fuchsia-800">Status mengikuti surat itu otomatis (Proses → Disetujui).</span>}
+              </label>
+              <div className="grid sm:grid-cols-2 gap-2">
+                <Isian label="No. surat usulan" v={inv.usulNoSurat} ubah={(x) => setInv({ ...inv, usulNoSurat: x })} />
+                <Isian label="Tgl usulan" tipe="date" v={inv.usulTgl} ubah={(x) => setInv({ ...inv, usulTgl: x })} />
+                <Isian label="No. persetujuan Pusat" v={inv.setujuNo} ubah={(x) => setInv({ ...inv, setujuNo: x })} />
+                <Isian label="Tgl persetujuan" tipe="date" v={inv.setujuTgl} ubah={(x) => setInv({ ...inv, setujuTgl: x })} />
+                <Isian label="No. IO" v={inv.noIO} ubah={(x) => setInv({ ...inv, noIO: x })} />
+                <Isian label="PO Sementara (bila belum ada IO)" v={inv.poSementara} ubah={(x) => setInv({ ...inv, poSementara: x })} />
+              </div>
+            </div>
+          )}
           <div className="grid sm:grid-cols-3 gap-3 text-xs">
             <label><span className="text-slate-500 font-bold">PIC</span>
               <input value={pic} onChange={(e) => setPic(e.target.value)} placeholder="mis. KKM / Staf Teknik" className="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1.5" />
@@ -800,6 +918,93 @@ function Detail({ b, tutup, ubah, pengadaan }: {
             ) : <p className="text-xs text-slate-400">Belum ada keputusan untuk barang ini.</p>}
           </div>
           <div className="text-right"><button onClick={simpan} className="rounded-xl bg-sky-600 hover:bg-sky-500 text-white font-bold px-5 py-2">Simpan & tutup</button></div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Isian({ label, v, ubah, tipe }: { label: string; v: string; ubah: (x: string) => void; tipe?: string }) {
+  return (
+    <label className="block"><span className="text-slate-500 font-bold">{label}</span>
+      <input type={tipe || "text"} value={v} onChange={(e) => ubah(e.target.value)} className="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1.5 bg-white" />
+    </label>
+  );
+}
+
+/* ── usulan investasi ke Kantor Pusat ────────────────────────────────────── */
+
+function FormUsulan({ daftar, mode, permohonan, tutup, simpan }: {
+  daftar: BarisMonitor[]; mode: ModeUsul; permohonan: PermohonanRingkas[]; tutup: () => void; simpan: (p: Patch) => void;
+}) {
+  const kini = new Date().toISOString().slice(0, 10);
+  const [permohonanId, setPermohonanId] = useState("");
+  const [noSurat, setNoSurat] = useState("");
+  const [tgl, setTgl] = useState(kini);
+  const [setujuNo, setSetujuNo] = useState("");
+  const [setujuTgl, setSetujuTgl] = useState(kini);
+  const [noIO, setNoIO] = useState("");
+  const [po, setPo] = useState("");
+  const pm = permohonan.find((p) => p.id === permohonanId);
+
+  const kirim = () => {
+    if (mode === "usul") {
+      if (!permohonanId && !noSurat.trim()) { void beritahu("Isi nomor surat usulan, atau pilih suratnya dari Monitoring Permohonan Cabang."); return; }
+      simpan({ usulStatus: "diusulkan", permohonanId, usulNoSurat: pm?.nomorSurat || noSurat.trim(), usulTgl: pm?.tglPengajuan || tgl });
+    } else {
+      if (!setujuNo.trim() && !noIO.trim() && !po.trim()) { void beritahu("Isi nomor persetujuan, No. IO, atau PO Sementara."); return; }
+      simpan({ usulStatus: "disetujui", setujuNo: setujuNo.trim(), setujuTgl, noIO: noIO.trim(), poSementara: po.trim() });
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 bg-slate-900/40 grid place-items-center p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+        <div className="px-6 py-4 border-b border-slate-200 flex items-start gap-3">
+          <div className="flex-1">
+            <h2 className="text-lg font-extrabold text-slate-900">{mode === "usul" ? "🏛 Tandai diusulkan ke Kantor Pusat" : "✓ Persetujuan Pusat / No. IO terbit"}</h2>
+            <p className="text-xs text-slate-500">{daftar.length} barang investasi · satu surat untuk semuanya</p>
+          </div>
+          <button onClick={tutup} className="text-slate-400 hover:text-slate-700 text-2xl leading-none">×</button>
+        </div>
+        <div className="p-6 space-y-4 text-sm">
+          <ul className="max-h-36 overflow-y-auto rounded-xl ring-1 ring-slate-200 divide-y divide-slate-100 text-xs">
+            {daftar.map((b) => (
+              <li key={b.kunci} className="px-3 py-1.5 flex gap-2"><b className="w-28 shrink-0 text-slate-700">{ringkasKapal(b.kapal)}</b>
+                <span className="flex-1 truncate">{b.nama}</span><span className="text-slate-500">{b.jumlah} {b.satuan}</span></li>
+            ))}
+          </ul>
+          {mode === "usul" ? (
+            <div className="space-y-3 text-xs">
+              <label className="block"><span className="text-slate-500 font-bold">Surat di Monitoring Permohonan Cabang</span> <span className="text-slate-400">(disarankan)</span>
+                <select value={permohonanId} onChange={(e) => setPermohonanId(e.target.value)} className="mt-1 w-full border border-slate-300 rounded-lg px-2 py-1.5 bg-white">
+                  <option value="">— belum ada / isi manual —</option>
+                  {permohonan.filter((p) => p.status !== "Ditolak").map((p) => (
+                    <option key={p.id} value={p.id}>[{p.status}] {p.nomorSurat || "tanpa nomor"} · {p.judul.slice(0, 60)}</option>
+                  ))}
+                </select>
+                <span className="block mt-1 text-slate-500">Bila ditautkan, barang ini otomatis pindah ke "Siap diadakan" saat surat itu ditandai Disetujui di modul Permohonan Cabang.</span>
+              </label>
+              {!permohonanId && (
+                <div className="grid grid-cols-2 gap-2">
+                  <Isian label="No. surat usulan" v={noSurat} ubah={setNoSurat} />
+                  <Isian label="Tanggal usulan" tipe="date" v={tgl} ubah={setTgl} />
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <Isian label="No. persetujuan Pusat" v={setujuNo} ubah={setSetujuNo} />
+              <Isian label="Tgl persetujuan" tipe="date" v={setujuTgl} ubah={setSetujuTgl} />
+              <Isian label="No. IO" v={noIO} ubah={setNoIO} />
+              <Isian label="PO Sementara (bila IO belum ada)" v={po} ubah={setPo} />
+              <p className="col-span-2 text-slate-500">Tanpa No. IO dan tanpa PO Sementara, barang menunggu di "Disetujui Pusat — menunggu No. IO". Dengan salah satunya, barang pindah ke "Siap diadakan".</p>
+            </div>
+          )}
+          <div className="flex justify-end gap-2">
+            <button onClick={tutup} className="rounded-xl ring-1 ring-slate-300 px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50">Batal</button>
+            <button onClick={kirim} className={`rounded-xl text-white font-bold px-5 py-2 ${mode === "usul" ? "bg-fuchsia-600 hover:bg-fuchsia-500" : "bg-violet-600 hover:bg-violet-500"}`}>Simpan</button>
+          </div>
         </div>
       </div>
     </div>

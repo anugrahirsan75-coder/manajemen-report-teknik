@@ -53,6 +53,9 @@ export const KEPUTUSAN: { id: Keputusan; label: string; kelas: string }[] = [
 export type Tahap =
   | "baru"        // belum disentuh kantor
   | "menunggu"    // sudah dinilai sebagian, keputusan belum ada
+  | "usul"        // investasi disetujui kantor, belum diusulkan ke Pusat
+  | "pusat"       // investasi sudah diusulkan, menunggu persetujuan Pusat
+  | "io"          // persetujuan Pusat terbit, menunggu nomor IO (tanpa PO Sementara)
   | "disetujui"   // disetujui, belum ada SPPBJ
   | "stok"        // disetujui dari stok gudang, belum diterima kapal
   | "ditunda"
@@ -64,6 +67,9 @@ export type Tahap =
 export const TAHAP: Record<Tahap, { label: string; kelas: string; urut: number }> = {
   baru: { label: "Belum dievaluasi", kelas: "bg-slate-100 text-slate-700 ring-slate-300", urut: 0 },
   menunggu: { label: "Menunggu keputusan", kelas: "bg-amber-100 text-amber-800 ring-amber-300", urut: 1 },
+  usul: { label: "Perlu diusulkan ke Pusat", kelas: "bg-fuchsia-100 text-fuchsia-800 ring-fuchsia-300", urut: 1 },
+  pusat: { label: "Menunggu persetujuan Pusat", kelas: "bg-violet-100 text-violet-800 ring-violet-300", urut: 2 },
+  io: { label: "Disetujui Pusat — menunggu No. IO", kelas: "bg-cyan-100 text-cyan-800 ring-cyan-300", urut: 2 },
   disetujui: { label: "Disetujui — belum SPPBJ", kelas: "bg-orange-100 text-orange-800 ring-orange-300", urut: 2 },
   stok: { label: "Kirim dari stok", kelas: "bg-lime-100 text-lime-800 ring-lime-300", urut: 2 },
   ditunda: { label: "Ditunda", kelas: "bg-slate-200 text-slate-700 ring-slate-300", urut: 3 },
@@ -74,9 +80,19 @@ export const TAHAP: Record<Tahap, { label: string; kelas: string; urut: number }
 };
 
 /** tahap yang masih menuntut tindakan kantor */
-export const TAHAP_TERBUKA: Tahap[] = ["baru", "menunggu", "disetujui", "stok", "ditunda", "sppbj", "spbj"];
-/** tahap yang belum menyentuh pengadaan sama sekali — dasar "urgent menggantung" */
-export const TAHAP_BELUM_PROSES: Tahap[] = ["baru", "menunggu", "disetujui", "stok"];
+export const TAHAP_TERBUKA: Tahap[] = ["baru", "menunggu", "usul", "pusat", "io", "disetujui", "stok", "ditunda", "sppbj", "spbj"];
+/**
+ * Tahap yang belum menyentuh pengadaan sama sekali — dasar "urgent menggantung".
+ * "pusat" dan "io" tidak termasuk: barangnya sedang menunggu Kantor Pusat,
+ * bukan tertahan di meja cabang.
+ */
+export const TAHAP_BELUM_PROSES: Tahap[] = ["baru", "menunggu", "usul", "disetujui", "stok"];
+
+/** status usulan barang investasi ke Kantor Pusat */
+export type StatusUsul = "" | "diusulkan" | "disetujui" | "ditolak";
+
+/** pilihan cepat kolom keterangan */
+export const KETERANGAN_CEPAT = ["PO Sementara", "Tunggu nomor IO", "Pakai stok gudang", "Pinjam dari kapal lain", "Tunggu pagu bulan depan", "Dikerjakan saat docking"];
 
 export interface JejakEval { pada: string; oleh: string; ubah: string }
 
@@ -102,6 +118,18 @@ export interface EvalPermintaan {
   pic: string;
   /** tanggal barang diterima kapal (diisi manual) — menutup barangnya */
   diterima: string;
+  /** vendor rencana — acuan awal saat menyusun SPPBJ */
+  vendor?: string;
+  /* ── khusus investasi: usulan ke Kantor Pusat ── */
+  usulStatus?: StatusUsul;
+  usulNoSurat?: string;
+  usulTgl?: string;
+  /** tautan ke Monitoring Permohonan Cabang — statusnya ikut dari sana */
+  permohonanId?: string;
+  setujuNo?: string;
+  setujuTgl?: string;
+  noIO?: string;
+  poSementara?: string;
   /** "" = cocok otomatis; id pengadaan = tautan dipatok; "-" = jangan ditautkan */
   tautPengadaan: string;
   /** ringkasan status terakhir yang dilihat layar — dibaca lonceng pengingat di server */
@@ -113,6 +141,18 @@ export interface EvalPermintaan {
 }
 
 /** pengadaan (SPPBJ / Non PR PO) yang ringkas — cukup untuk mencocokkan barang */
+/** permohonan ke Kantor Pusat (modul Monitoring Permohonan Cabang), ringkas */
+export interface PermohonanRingkas {
+  id: string;
+  judul: string;
+  nomorSurat: string;
+  status: string;
+  tglPengajuan: string;
+  tglSelesai: string;
+  jenisUsulan: string;
+  ketPersetujuan: string;
+}
+
 export interface Pengadaan {
   id: string;
   asal: "sppbj" | "nonpr";
@@ -157,6 +197,8 @@ export interface BarisMonitor {
   tahap: Tahap;
   pengadaan: Pengadaan | null;
   pengadaanOtomatis: boolean;
+  /** surat usulan ke Pusat yang ditautkan (khusus investasi) */
+  permohonan: PermohonanRingkas | null;
   umurHari: number;
   menggantung: boolean;
   dimintaUlang: number;
